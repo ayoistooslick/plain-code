@@ -112,7 +112,7 @@ The translator must follow this shape (library-level, not the Plain runtime
 prelude):
 
 ```js
-const TelegramBot = require("node-telegram-bot-api");
+const { TelegramBot } = require("node-telegram-bot-api");
 const bot = new TelegramBot(token, { polling: true });
 
 bot.onText(/^\/start$/, async (msg) => {
