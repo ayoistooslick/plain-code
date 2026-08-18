@@ -13,7 +13,6 @@
 
 const http  = require('http');
 const https = require('https');
-const crypto = require('crypto');
 
 const DEFAULTS = {
   baseUrl: 'https://api.mistral.ai',
@@ -73,15 +72,13 @@ function postJson(url, payload, apiKey, timeoutMs) {
 
 // Send a single chat request. Returns the assistant's text content.
 async function chat(prompt) {
-  const { apiKey, baseUrl, model } = config();
-  
-  console.log('[AI DEBUG]', {
-    keyHash: crypto.createHash('sha256').update(apiKey).digest('hex'),
-    keyLength: apiKey.length,
-    baseUrl,
-    model
-  });
-  
+   const crypto = require('crypto');
+   console.log('[AI DEBUG]', {
+      keyHash: crypto.createHash('sha256').update(apiKey).digest('hex'),
+      keyLength: apiKey.length,
+      baseUrl,
+      model
+});
   if (!apiKey) {
     throw new Error(
       'No AI provider key is set (MISTRAL_API_KEY or PLAIN_AI_API_KEY).\n' +
@@ -98,7 +95,7 @@ async function chat(prompt) {
       { role: 'system', content: 'You are the Plain compiler — a deterministic JavaScript compiler. You translate Plain source code into JavaScript only. You must be deterministic: return the same output for the same input every time. You validate your output structure before returning it. You rely on caching of previous translations for identical inputs. You handle repair by refining output when validation fails. You respect the public API contract: output exactly the JSON shape specified, nothing else. You never design new language syntax, never invent features, and never modify the Plain language.' },
       { role: 'user', content: prompt },
     ],
-  }, apiKey);
+  });
   const text = data && data.choices && data.choices[0]
     && data.choices[0].message && data.choices[0].message.content;
   if (typeof text !== 'string' || !text.trim()) {
