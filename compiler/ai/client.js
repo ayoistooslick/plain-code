@@ -72,13 +72,12 @@ function postJson(url, payload, apiKey, timeoutMs) {
 
 // Send a single chat request. Returns the assistant's text content.
 async function chat(prompt) {
-  const { apiKey, baseUrl, model } = config();
-  console.log('[AI DEBUG]', {
-  keyPresent: Boolean(apiKey),
-  keyLength: apiKey.length,
-  keyPrefix: apiKey.slice(0, 6),
-  baseUrl,
-  model
+   const crypto = require('crypto');
+   console.log('[AI DEBUG]', {
+      keyHash: crypto.createHash('sha256').update(apiKey).digest('hex'),
+      keyLength: apiKey.length,
+      baseUrl,
+      model
 });
   if (!apiKey) {
     throw new Error(
