@@ -1,7 +1,7 @@
 # Render blueprint for the hosted Plain AI compiler service.
 #
 # Deploy this repository to Render as a web service, then set the
-# PLAIN_AI_API_KEY environment variable in the Render dashboard (it is never
+# MISTRAL_API_KEY environment variable in the Render dashboard (it is never
 # stored in the repository or in generated JavaScript).
 
 services:
@@ -13,9 +13,9 @@ services:
     buildCommand: npm install --omit=dev
     startCommand: npm start
     envVars:
-      - key: PLAIN_AI_API_KEY
+      - key: MISTRAL_API_KEY
         sync: false
       - key: PLAIN_AI_BASE_URL
-        value: https://agentrouter.org
+        value: https://api.mistral.ai
       - key: PLAIN_AI_MODEL
-        value: claude-opus-4-6
+        value: mistral-small-latest

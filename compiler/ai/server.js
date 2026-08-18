@@ -3,7 +3,7 @@
 //
 // Serves the deterministic-first AI compilation pipeline over HTTP so Plain
 // CLI users never need their own provider credential — the provider API key
-// lives only in this service's environment (PLAIN_AI_API_KEY) and is never
+// lives only in this service's environment (MISTRAL_API_KEY) and is never
 // returned, logged, or embedded in generated JavaScript.
 //
 //   POST /translate   { "source": "...", "rule": "bots/telegram"?, "options": {...}? }
@@ -104,7 +104,7 @@ function handleTranslate(req, res, client) {
       return sendJson(res, 500, {
         error: {
           layer: 'config',
-          message: 'The compiler service is not configured. Set PLAIN_AI_API_KEY on the server.',
+          message: 'The compiler service is not configured. Set MISTRAL_API_KEY on the server.',
         },
       });
     }
@@ -160,7 +160,7 @@ if (require.main === module) {
   createServer().listen(port, () => {
     console.log(`Plain AI compiler service listening on port ${port}`);
     if (!config().enabled) {
-      console.warn('Warning: PLAIN_AI_API_KEY is not set. /translate will refuse requests until it is.');
+      console.warn('Warning: MISTRAL_API_KEY is not set. /translate will refuse requests until it is.');
     }
   });
 }

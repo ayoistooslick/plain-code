@@ -35,9 +35,9 @@ configuration.
 To enable AI-assisted compilation, copy `.env.example` to `.env` and set:
 
 ```bash
-PLAIN_AI_API_KEY=...
-PLAIN_AI_BASE_URL=https://agentrouter.org
-PLAIN_AI_MODEL=claude-opus-4-6
+MISTRAL_API_KEY=...
+PLAIN_AI_BASE_URL=https://api.mistral.ai
+PLAIN_AI_MODEL=mistral-small-latest
 ```
 
 Check the layer with `plain ai status`.

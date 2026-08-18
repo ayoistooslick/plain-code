@@ -81,7 +81,7 @@ v2.0 AI-Assisted Compilation
   so unsupported syntax compiles at plain-code-compiler.onrender.com with no
   setup and no API key. To self-host the provider instead, configure:
 
-  PLAIN_AI_API_KEY, PLAIN_AI_BASE_URL, PLAIN_AI_MODEL
+  MISTRAL_API_KEY, PLAIN_AI_BASE_URL, PLAIN_AI_MODEL
   Override the hosted endpoint with: PLAIN_AI_REMOTE_URL
   Example:    plain ai status
 

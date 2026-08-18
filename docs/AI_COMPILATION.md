@@ -94,9 +94,9 @@ which owns the provider credential. Override the endpoint with
 | Variable            | Default                                 | Purpose                              |
 | ------------------- | --------------------------------------- | ------------------------------------ |
 | `PLAIN_AI_REMOTE_URL`| `https://plain-code-compiler.onrender.com` | Hosted compiler service endpoint |
-| `PLAIN_AI_API_KEY`  | *(unset)*                                | Provider API key (self-hosted only)  |
-| `PLAIN_AI_BASE_URL` | `https://agentrouter.org`                | Provider base URL (self-hosted only) |
-| `PLAIN_AI_MODEL`    | `claude-opus-4-6`                        | Model identifier                     |
+| `MISTRAL_API_KEY`   | *(unset)*                                | Provider API key (self-hosted only)  |
+| `PLAIN_AI_BASE_URL` | `https://api.mistral.ai`                | Provider base URL (self-hosted only) |
+| `PLAIN_AI_MODEL`    | `mistral-small-latest`                   | Model identifier                     |
 | `PLAIN_AI_CACHE_DIR`| `~/.plain/ai-cache`                      | Optional cache directory override    |
 
 The provider speaks the OpenAI-compatible chat completions protocol
@@ -116,7 +116,7 @@ npm start          # or: node compiler/ai/server.js  (listens on $PORT or 3000)
 - `POST /translate` — body `{ "source": "...", "rule": "bots/telegram"?, "options": { "noCache": true }? }`; returns the validated output contract. Layer-specific errors map to HTTP statuses: 400 bad request, 422 rule/validation failure, 500 server misconfiguration, 502 provider failure.
 
 Deployment is defined in `render.yaml` (Render blueprint, `npm start`). The
-provider API key is set as a secret environment variable (`PLAIN_AI_API_KEY`)
+provider API key is set as a secret environment variable (`MISTRAL_API_KEY`)
 in the Render dashboard — `sync: false` in the blueprint means it is never
 stored in the repository. The service reads it from the environment at
 runtime, refuses to serve requests when it is missing, scrubs it from any

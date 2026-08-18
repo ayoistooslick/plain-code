@@ -315,9 +315,9 @@ directly) is optional and environment-based only. No secrets live in the
 repository — see `.env.example`:
 
 ```bash
-export PLAIN_AI_API_KEY=...
-export PLAIN_AI_BASE_URL=https://agentrouter.org
-export PLAIN_AI_MODEL=claude-opus-4-6
+export MISTRAL_API_KEY=...
+export PLAIN_AI_BASE_URL=https://api.mistral.ai
+export PLAIN_AI_MODEL=mistral-small-latest
 ```
 
 - Deterministic programs compile fine with no configuration.
@@ -638,7 +638,7 @@ It listens on `$PORT` (Render provides this) or `3000`:
   returns the same validated output contract the CLI consumes.
 
 Deploy on Render with `render.yaml` (web service, `npm start`). Set
-`PLAIN_AI_API_KEY` as a secret in the Render dashboard — it is read from the
+`MISTRAL_API_KEY` as a secret in the Render dashboard — it is read from the
 environment at runtime and is never committed, logged, or embedded in
 generated JavaScript. `plain-code-compiler.onrender.com` is the public
 instance; the CLI reaches it via `compiler/ai/remote.js`.

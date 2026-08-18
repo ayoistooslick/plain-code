@@ -5,7 +5,7 @@
 // API. Run with: node tests/ai.test.js
 //
 // The provider is always mocked — these tests never make network calls and
-// never require PLAIN_AI_API_KEY.
+// never require MISTRAL_API_KEY.
 
 const fs   = require('fs');
 const http = require('http');
@@ -263,7 +263,7 @@ console.log('\nHosted compiler service (HTTP)');
 
 // These tests start a real HTTP service (compiler/ai/server.js) on an ephemeral
 // port and exercise the same shared pipeline over the wire. Several of them
-// mutate PLAIN_AI_API_KEY / PLAIN_AI_REMOTE_URL, so they are serialized on a
+// mutate MISTRAL_API_KEY / PLAIN_AI_REMOTE_URL, so they are serialized on a
 // chain to guarantee deterministic ordering.
 
 function listen(server) {
@@ -365,20 +365,21 @@ testHttp('hosted service: /translate returns a validated contract via the shared
 });
 
 testHttp('hosted service: rejects requests when no provider is configured', async () => {
-  const hadKey = process.env.PLAIN_AI_API_KEY;
+  const hadKey = process.env.MISTRAL_API_KEY;
+  delete process.env.MISTRAL_API_KEY;
   delete process.env.PLAIN_AI_API_KEY;
   const server = createServer();
   const port = await listen(server);
   try {
     const res = await httpRequest(port, 'POST', '/translate', { source: TELEGRAM_SOURCE });
     if (res.status !== 500) throw new Error(`expected 500, got ${res.status}`);
-    if (!res.data.error || !/PLAIN_AI_API_KEY/.test(res.data.error.message)) {
+    if (!res.data.error || !/MISTRAL_API_KEY|PLAIN_AI_API_KEY/.test(res.data.error.message)) {
       throw new Error(`expected a config error, got: ${JSON.stringify(res.data)}`);
     }
   } finally {
     await stop(server);
-    if (hadKey) process.env.PLAIN_AI_API_KEY = hadKey;
-    else delete process.env.PLAIN_AI_API_KEY;
+    if (hadKey) process.env.MISTRAL_API_KEY = hadKey;
+    else delete process.env.MISTRAL_API_KEY;
   }
 });
 
@@ -466,8 +467,9 @@ testHttp('remote: a rule-layer error from the service is surfaced with its layer
 testHttp('translator: routes to the hosted service when no local key is configured', async () => {
   const server = createServer({ client: mockTelegramClient() });
   const port = await listen(server);
-  const hadKey = process.env.PLAIN_AI_API_KEY;
+  const hadKey = process.env.MISTRAL_API_KEY;
   const hadRemote = process.env.PLAIN_AI_REMOTE_URL;
+  delete process.env.MISTRAL_API_KEY;
   delete process.env.PLAIN_AI_API_KEY;
   process.env.PLAIN_AI_REMOTE_URL = `http://127.0.0.1:${port}`;
   try {
@@ -476,8 +478,8 @@ testHttp('translator: routes to the hosted service when no local key is configur
     if (!result.javascript.includes('TelegramBot')) throw new Error('missing generated code');
     if (result.rule !== 'bots/telegram') throw new Error(`wrong rule: ${result.rule}`);
   } finally {
-    if (hadKey) process.env.PLAIN_AI_API_KEY = hadKey;
-    else delete process.env.PLAIN_AI_API_KEY;
+    if (hadKey) process.env.MISTRAL_API_KEY = hadKey;
+    else delete process.env.MISTRAL_API_KEY;
     if (hadRemote) process.env.PLAIN_AI_REMOTE_URL = hadRemote;
     else delete process.env.PLAIN_AI_REMOTE_URL;
     await stop(server);
@@ -485,17 +487,17 @@ testHttp('translator: routes to the hosted service when no local key is configur
 });
 
 testHttp('translator: an injected client uses the local pipeline, never the hosted service', async () => {
-  const hadKey = process.env.PLAIN_AI_API_KEY;
+  const hadKey = process.env.MISTRAL_API_KEY;
   const hadRemote = process.env.PLAIN_AI_REMOTE_URL;
-  process.env.PLAIN_AI_API_KEY = 'test-local-key';
+  process.env.MISTRAL_API_KEY = 'test-local-key';
   process.env.PLAIN_AI_REMOTE_URL = 'http://127.0.0.1:1';
   try {
     const result = await translateSource(TELEGRAM_SOURCE, { noCache: true, client: mockTelegramClient() });
     if (result.deterministic !== false) throw new Error('expected the AI path');
     if (!result.javascript.includes('TelegramBot')) throw new Error('missing generated code');
   } finally {
-    if (hadKey) process.env.PLAIN_AI_API_KEY = hadKey;
-    else delete process.env.PLAIN_AI_API_KEY;
+    if (hadKey) process.env.MISTRAL_API_KEY = hadKey;
+    else delete process.env.MISTRAL_API_KEY;
     if (hadRemote) process.env.PLAIN_AI_REMOTE_URL = hadRemote;
     else delete process.env.PLAIN_AI_REMOTE_URL;
   }

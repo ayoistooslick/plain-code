@@ -40,7 +40,9 @@ async function translateRemote(source, options = {}) {
     const e = new Error(
       `AI compilation error: the hosted compiler service could not be reached.\n${err.message}`
     );
-    e.layer = 'provider';
+    // Preserve the layer from the service response when available (e.g. 422
+    // rule/validation errors).  network / timeout errors fall back to 'provider'.
+    e.layer = (err.response && err.response.error && err.response.error.layer) || 'provider';
     throw e;
   }
 

@@ -42,7 +42,7 @@ the normal bundler/runtime path.
   error, generated JavaScript validation error
 
 **Configuration & security**
-- `.env.example` added (`PLAIN_AI_API_KEY`, `PLAIN_AI_BASE_URL`,
+- `.env.example` added (`MISTRAL_API_KEY`, `PLAIN_AI_BASE_URL`,
   `PLAIN_AI_MODEL`, optional `PLAIN_AI_CACHE_DIR`)
 - `.gitignore` added (`.env`, AI cache, build output)
 - Secrets are never hard-coded or sent to the provider (RFC-0020 §16, §44)

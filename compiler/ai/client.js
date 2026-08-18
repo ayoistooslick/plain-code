@@ -1,12 +1,12 @@
 // AI provider client (RFC-0020 §9–§10).
 //
 // A thin, provider-agnostic HTTP client. The default configuration targets
-// Agent Router with Claude Opus and everything is read from the environment —
+// Mistral and everything is read from the environment —
 // no secrets are hard-coded anywhere in the repository.
 //
-//   PLAIN_AI_API_KEY=...
-//   PLAIN_AI_BASE_URL=https://agentrouter.org
-//   PLAIN_AI_MODEL=claude-opus-4-6
+//   MISTRAL_API_KEY=...
+//   PLAIN_AI_BASE_URL=https://api.mistral.ai
+//   PLAIN_AI_MODEL=mistral-small-latest
 //
 // The endpoint speaks the OpenAI-compatible chat completions protocol so that
 // future providers (Groq, etc.) can be used without changing the compiler.
@@ -15,17 +15,19 @@ const http  = require('http');
 const https = require('https');
 
 const DEFAULTS = {
-  baseUrl: 'https://agentrouter.org',
-  model:   'claude-opus-4-6',
+  baseUrl: 'https://api.mistral.ai',
+  model:   'mistral-small-latest',
 };
 
 // Current provider configuration from the environment (RFC-0020 §9).
+// Accepts MISTRAL_API_KEY (preferred) or PLAIN_AI_API_KEY (legacy).
 function config() {
+  const apiKey = process.env.MISTRAL_API_KEY || process.env.PLAIN_AI_API_KEY || '';
   return {
-    apiKey:  process.env.PLAIN_AI_API_KEY || '',
+    apiKey,
     baseUrl: process.env.PLAIN_AI_BASE_URL || DEFAULTS.baseUrl,
     model:   process.env.PLAIN_AI_MODEL   || DEFAULTS.model,
-    enabled: Boolean(process.env.PLAIN_AI_API_KEY),
+    enabled: Boolean(apiKey),
   };
 }
 
@@ -73,18 +75,18 @@ async function chat(prompt) {
   const { apiKey, baseUrl, model } = config();
   if (!apiKey) {
     throw new Error(
-      'PLAIN_AI_API_KEY is not set.\n' +
-      'AI-assisted compilation needs a provider. Configure PLAIN_AI_API_KEY,\n' +
-      'PLAIN_AI_BASE_URL and PLAIN_AI_MODEL in your environment or .env file\n' +
-      '(see .env.example).'
+      'No AI provider key is set (MISTRAL_API_KEY or PLAIN_AI_API_KEY).\n' +
+      'AI-assisted compilation needs a provider. Configure MISTRAL_API_KEY\n' +
+      'in your environment or .env file (see .env.example).'
     );
   }
   const url  = `${baseUrl.replace(/\/+$/, '')}/v1/chat/completions`;
   const data = await postJson(url, {
     model,
     temperature: 0,
+    response_format: { type: 'json_object' },
     messages: [
-      { role: 'system', content: 'You are the Plain compiler. You translate Plain code into JavaScript. You never design new language syntax.' },
+      { role: 'system', content: 'You are the Plain compiler — a deterministic JavaScript compiler. You translate Plain source code into JavaScript only. You must be deterministic: return the same output for the same input every time. You validate your output structure before returning it. You rely on caching of previous translations for identical inputs. You handle repair by refining output when validation fails. You respect the public API contract: output exactly the JSON shape specified, nothing else. You never design new language syntax, never invent features, and never modify the Plain language.' },
       { role: 'user', content: prompt },
     ],
   });

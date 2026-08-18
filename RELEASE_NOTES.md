@@ -30,7 +30,7 @@ normal bundler/runtime path (RFC-0020).
   never reused
 - **Validation** — AI output is syntax-checked and scanned for forbidden
   patterns and undeclared requires before it can run
-- **Environment-based configuration** — `PLAIN_AI_API_KEY`, `PLAIN_AI_BASE_URL`,
+- **Environment-based configuration** — `MISTRAL_API_KEY`, `PLAIN_AI_BASE_URL`,
   `PLAIN_AI_MODEL`; no secrets in the repository (`.env.example` provided)
 - **Diagnostics** — `plain ai status`, `plain ai rules`, `plain ai cache
   [clear]`; layer-specific error messages
@@ -69,9 +69,9 @@ npm install -g @ayoxx/plain-code
 ## AI configuration (optional)
 
 ```bash
-export PLAIN_AI_API_KEY=...
-export PLAIN_AI_BASE_URL=https://agentrouter.org
-export PLAIN_AI_MODEL=claude-opus-4-6
+export MISTRAL_API_KEY=...
+export PLAIN_AI_BASE_URL=https://api.mistral.ai
+export PLAIN_AI_MODEL=mistral-small-latest
 ```
 
 Deterministic Plain programs compile without any configuration. The AI layer is

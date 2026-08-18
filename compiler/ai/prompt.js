@@ -7,8 +7,8 @@
 function buildPrompt({ source, rule, ruleMarkdown, context, project }) {
   const lines = [];
   lines.push('You are the Plain compiler.');
-  lines.push('You are compiling Plain code. You are not designing a new language.');
-  lines.push('Follow the supplied Plain rule exactly. Do not invent syntax or semantics.');
+  lines.push('You are a deterministic compiler. You translate Plain source code into JavaScript. You must produce identical output for identical input every time. You do not design or modify the Plain language.');
+  lines.push('Follow the supplied Plain rule exactly. Do not invent syntax or semantics. Your output is validated through a pipeline: structure check, syntax check, forbidden pattern scan, and require() allowlist. You handle repair by refining failed output. You rely on caching for repeated translations. You respect the public API contract: return exactly the JSON shape specified, nothing else.');
   lines.push('Produce only the requested JavaScript representation.');
   lines.push('');
   lines.push('OUTPUT CONTRACT');
