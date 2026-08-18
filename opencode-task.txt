@@ -1,0 +1,504 @@
+You are working directly inside the Plain Code repository.
+
+Your job is to audit, fix, test, and improve the AI-assisted compiler rule system. Do not just explain what should be changed. Actually inspect the repository, modify the necessary files, run tests/commands, and leave the working tree in a production-ready state.
+
+IMPORTANT CONTEXT
+
+Plain Code is an intent-oriented programming language that compiles Plain (.pln) source into JavaScript.
+
+The repository contains:
+
+  compiler/rules/
+
+with the current rules:
+
+  compiler/rules/bots/telegram.md
+  compiler/rules/bots/telegram.json
+
+  compiler/rules/http/fetch.md
+  compiler/rules/http/fetch.json
+
+  compiler/rules/web/rest-api.md
+  compiler/rules/web/rest-api.json
+
+There is also a hosted AI compiler service:
+
+  https://plain-code-compiler.onrender.com
+
+The CLI falls back to AI-assisted compilation when the deterministic compiler cannot handle a construct.
+
+The relevant compiler code is under:
+
+  compiler/ai/
+
+and includes the rule resolver, translator, validator, prompt/agent logic, remote compiler client, etc.
+
+CURRENT PROBLEM
+
+We tested all 3 existing rules through the hosted /translate endpoint.
+
+Telegram:
+- The AI generated incompatible node-telegram-bot-api code because the installed package version/API is different from the old examples.
+- The environment currently uses node-telegram-bot-api 2.x, whose CommonJS export exposes `Bot`, not the old `TelegramBot` constructor.
+- A working direct Node test was:
+
+  const { Bot } = require("node-telegram-bot-api");
+
+  const token = process.env.BOT_TOKEN;
+  if (!token) {
+    throw new Error("BOT_TOKEN is not set");
+  }
+
+  const bot = new Bot(token);
+
+  bot.command("start", (ctx) => {
+    return ctx.reply("Baaaka");
+  });
+
+  bot.on("message", (ctx) => {
+    console.log("Received:", ctx.message?.text);
+  });
+
+  bot.startPolling().catch((err) => {
+    console.error("Polling failed:", err);
+  });
+
+This successfully started and received Telegram messages.
+
+HTTP Fetch:
+A request like:
+
+  remember response as await fetch "https://httpbin.org/get"
+
+was translated into JavaScript containing top-level `await`, but the validator rejected it with:
+
+  await is only valid in async functions and the top level bodies of modules
+
+The fetch rule currently says `"async": true` and claims that the Plain runtime wrapper provides top-level await, but the hosted AI output is being validated before the necessary async wrapping occurs.
+
+REST API:
+The basic REST rule currently works. We tested:
+
+  remember app as express app
+
+  app get "/health" as
+      reply "ok"
+  done
+
+  listen app on port 3000
+
+and the hosted compiler returned valid JavaScript:
+
+  const express = require("express");
+  const app = express();
+
+  app.get("/health", (req, res) => {
+    res.send("ok");
+  });
+
+  app.listen(3000);
+
+Do NOT break this working behavior.
+
+YOUR TASK
+
+1. FULLY AUDIT THE AI RULE PIPELINE
+
+Read and understand:
+
+  compiler/ai/translator.js
+  compiler/ai/resolver.js
+  compiler/ai/validator.js
+  compiler/ai/prompt.js
+  compiler/ai/agent.js
+  compiler/ai/remote.js
+  compiler/ai/server.js
+  compiler/ai/index.js
+
+Also inspect:
+
+  compiler/generator.js
+  compiler/dependency-detector.js
+  compiler/bundler.js
+  compiler/parser.js
+  compiler/lexer.js
+  compiler/cli.js
+
+and the existing tests.
+
+Do not assume the existing rule documentation is correct. Verify the actual compiler behavior.
+
+2. FIX THE TELEGRAM RULE
+
+Update the Telegram rule documentation and metadata so the AI generates code compatible with the currently supported `node-telegram-bot-api` API.
+
+Do not blindly use old internet examples.
+
+Inspect package/API expectations and the repository's dependency handling.
+
+The generated implementation must follow the actual supported API, including:
+
+  const { Bot } = require("node-telegram-bot-api");
+
+  const bot = new Bot(token);
+
+  bot.command(...)
+
+  bot.on(...)
+
+  bot.startPolling()
+
+where appropriate.
+
+Make sure async behavior and generated runtime structure are valid.
+
+The rule should cover common Telegram bot functionality such as:
+
+- bot creation
+- /start and other commands
+- text/message handlers
+- replying/sending messages
+- callback queries / inline keyboards if supported by the actual installed API
+- polling startup
+- environment-token usage
+- error handling
+
+Do not invent APIs.
+
+3. FIX THE HTTP FETCH RULE
+
+This is critical.
+
+The current fetch rule claims `"async": true`, but the generated top-level await fails validation before runtime wrapping.
+
+Determine the correct architectural fix.
+
+The final pipeline must allow valid async AI-generated JavaScript without making the validator incorrectly reject it.
+
+Do NOT weaken JavaScript validation merely to make the test pass.
+
+Prefer a proper compiler-level solution where:
+
+- async rule output is represented correctly,
+- validation understands the intended async compilation context,
+- final generated code is wrapped using the existing Plain async runtime mechanism,
+- ordinary synchronous JavaScript remains unchanged.
+
+Test:
+
+  remember response as await fetch "https://httpbin.org/get"
+
+  if response is ok
+      remember data as await response.json()
+      show data
+  otherwise
+      show "api failed"
+  done
+
+The hosted compiler must return a valid translation contract and the CLI must be able to execute the resulting program.
+
+3.5 IMPORTANT: CHECK THE ASYNC CONTRACT
+
+Trace the complete path:
+
+Plain source
+→ deterministic compiler failure
+→ rule resolution
+→ AI translation
+→ generated JavaScript
+→ validation
+→ compileSource / compileFile
+→ CLI compile()
+→ async wrapping
+→ _plain_out.js
+→ Node execution
+
+Find exactly where async information is lost or validated in the wrong context.
+
+Fix the architecture rather than adding a special-case hack for fetch.
+
+4. AUDIT THE RULE FORMAT
+
+Ensure every rule has consistent:
+
+  *.md
+  *.json
+
+metadata.
+
+Verify:
+
+- name
+- category
+- version
+- title
+- purpose
+- keywords
+- triggers
+- dependencies
+- imports
+- async
+- compilerMin
+- resolvablePaths
+
+are internally consistent.
+
+The markdown documentation must describe syntax the compiler can realistically translate.
+
+Do not document imaginary syntax.
+
+5. ADD MORE USEFUL RULES
+
+After fixing the existing rules, inspect the deterministic compiler and identify important capabilities Plain currently lacks that can reasonably be handled through AI-assisted rules.
+
+Do NOT add dozens of pointless rules just to inflate the directory.
+
+Prioritize practical, commonly needed capabilities.
+
+Consider categories such as:
+
+  bots/
+  http/
+  web/
+  databases/
+  files/
+  utilities/
+  automation/
+
+Potential useful rule candidates include, where compatible with the existing Plain philosophy and runtime:
+
+- Discord bots
+- Telegram improvements
+- HTTP API clients
+- Webhooks
+- WebSocket clients/servers
+- Express middleware
+- authentication/session handling
+- JSON APIs
+- SQLite
+- PostgreSQL
+- Redis
+- filesystem operations
+- environment/config handling
+- email sending
+- scheduled jobs
+- CLI tools
+- CSV handling
+- date/time utilities
+
+But DO NOT blindly implement all of these.
+
+First inspect what Plain already supports deterministically. A rule should only cover a genuine gap.
+
+For each new rule:
+
+  compiler/rules/<category>/<name>.md
+  compiler/rules/<category>/<name>.json
+
+Add realistic examples and precise JavaScript targets.
+
+Keep the rule syntax aligned with existing Plain syntax.
+
+6. DEPENDENCY SAFETY
+
+Inspect how dependencies are detected and installed.
+
+Every rule that requires an npm package must declare it correctly.
+
+Do not allow AI-generated code to silently depend on packages that are not declared.
+
+Make sure dependency handling works with:
+
+  plain run
+  plain build
+  plain start
+  plain install
+
+Do not create unnecessary package-lock changes in the compiler repository unless the repository's existing workflow requires them.
+
+7. SECURITY
+
+Preserve the existing validation/security model.
+
+Do NOT solve failures by disabling:
+
+- forbidden pattern checks
+- require allowlisting
+- JavaScript syntax validation
+- dependency validation
+- output contract validation
+
+AI-generated JavaScript must remain validated.
+
+Pay particular attention to:
+
+- arbitrary require()
+- child_process
+- eval
+- Function constructor
+- shell execution
+- secrets
+- API tokens
+- unsafe generated URLs
+- filesystem access
+
+8. TESTS
+
+Add or update automated tests for every fixed rule.
+
+At minimum test:
+
+A. Telegram rule resolution
+B. Telegram generated JavaScript contract
+C. Fetch rule resolution
+D. Fetch async compilation
+E. REST API rule resolution
+F. REST API generated JavaScript
+G. dependency metadata
+H. invalid generated JavaScript rejection
+I. async wrapping
+J. rule resolver behavior
+
+Use the repository's existing test framework and conventions.
+
+Do not create fake tests that merely inspect documentation strings.
+
+Where possible, test actual compilation behavior.
+
+9. TEST THE HOSTED CONTRACT
+
+The hosted compiler at:
+
+  https://plain-code-compiler.onrender.com
+
+is part of the current architecture.
+
+The local compiler should remain compatible with the response contract:
+
+  {
+    deterministic: false,
+    javascript: "...",
+    dependencies: [],
+    imports: [],
+    async: true/false,
+    rule: "...",
+    ruleVersion: ...
+  }
+
+Do not break the remote response contract.
+
+If local code needs changes to correctly handle the contract, make those changes.
+
+10. TEST REAL EXAMPLES
+
+After making changes, run the repository's complete test suite.
+
+Then manually test representative source snippets against the local compiler.
+
+Also test the hosted endpoint where appropriate with curl.
+
+For example:
+
+  curl --location --request POST "https://plain-code-compiler.onrender.com/translate" ^
+    --header "Content-Type: application/json" ^
+    --data "{\"source\":\"remember app as express app\n\napp get \\\"/health\\\" as\n    reply \\\"ok\\ndone\n\nlisten app on port 3000\"}"
+
+Use the correct shell syntax for the current environment.
+
+Also test the fetch and Telegram examples.
+
+11. DO NOT PAPER OVER FAILURES
+
+If something fails:
+
+- inspect the actual generated JavaScript,
+- identify the layer responsible,
+- fix the correct layer,
+- rerun the test.
+
+Do not simply alter the expected output.
+
+Do not weaken validation.
+
+Do not hardcode special cases based only on the three examples.
+
+12. KEEP THE DETERMINISTIC COMPILER AUTHORITATIVE
+
+The AI compiler is a fallback.
+
+Do not modify the language so that ordinary deterministic constructs unnecessarily go through AI.
+
+Do not replace deterministic compiler behavior with AI.
+
+The intended architecture is:
+
+deterministic compiler first
+        ↓
+if unsupported
+        ↓
+rule resolver
+        ↓
+AI translation
+        ↓
+validated JavaScript
+        ↓
+normal runtime
+
+Preserve this architecture.
+
+13. CHECK FOR REGRESSIONS
+
+Before finishing, inspect the git diff carefully.
+
+Make sure:
+
+- no unrelated files were changed,
+- no credentials/secrets were added,
+- no generated junk files were committed,
+- no temporary debug code remains,
+- no package-lock churn is unrelated,
+- no existing working feature was broken.
+
+Run:
+
+  git status
+  git diff --stat
+  git diff
+
+Then run the complete test suite one final time.
+
+14. FINAL REPORT
+
+At the end, report:
+
+- files changed
+- root cause of the Telegram failure
+- root cause of the Fetch async failure
+- how async compilation was fixed
+- rules added
+- tests added/updated
+- exact test commands executed
+- whether all tests pass
+- any remaining known limitations
+
+IMPORTANT WORKING STYLE
+
+You have shell access. Use it.
+
+Do not ask me to manually inspect files that you can inspect yourself.
+
+Do not merely give me code snippets. Modify the repository.
+
+Do not stop after fixing the first error.
+
+Work through the entire task until the repository is tested and consistent.
+
+Do not commit or push anything. Leave the changes unstaged so I can inspect them myself.
+
+The final state should be something I can review with:
+
+  git status
+  git diff
+  git diff --stat
+
+and then commit myself.
