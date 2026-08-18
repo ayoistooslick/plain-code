@@ -88,9 +88,8 @@ contains "x" .includes("x")
 starts with "x" .startsWith("x")
 ends with "x" .endsWith("x")
 between A and B >= A && <= B
-# =>
-Functions
 
+# Functions
 ```plain
 make add(a, b)
     give a + b
