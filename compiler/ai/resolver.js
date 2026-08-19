@@ -74,16 +74,25 @@ function regexMatch(pattern, normalizedSource) {
 }
 
 // Score a rule against a normalized source. Triggers (3 points each) are
-// stronger evidence than generic keywords (1 point each).
+// stronger evidence than generic keywords (1 point each). A rule must have
+// at least one trigger match to be eligible — keyword-only matches are not
+// sufficient to invoke Complex Compilation.
 function scoreRule(rule, norm) {
   let score = 0;
+  let hasTrigger = false;
   for (const kw of rule.keywords || []) {
     if (norm.includes(String(kw).toLowerCase())) score += 1;
   }
   for (const t of rule.triggers || []) {
-    if (t && t.type === 'regex' && regexMatch(t.pattern, norm)) score += 3;
+    if (t && t.type === 'regex' && regexMatch(t.pattern, norm)) {
+      score += 3;
+      hasTrigger = true;
+    }
   }
-  return score;
+  // Require at least one explicit trigger match. Keyword-only matches are
+  // too weak to justify Complex Compilation — they risk misclassifying
+  // arbitrary English as a Plain construct.
+  return hasTrigger ? score : 0;
 }
 
 // Resolve the best rule for `source`.

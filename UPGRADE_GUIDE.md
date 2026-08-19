@@ -1,8 +1,8 @@
-# Upgrade Guide — v1.1 → v2.0.0
+# Upgrade Guide — v1.1 → v2.0.0-latest
 
 ## Overview
 
-Plain 2.0.0 adds an AI-assisted compilation layer (RFC-0020) on top of the
+Plain 2.0.0-latest adds a Complex Compilation layer (RFC-0020) on top of the
 existing deterministic compiler. **No Plain language syntax was removed or
 changed.**
 
@@ -21,18 +21,18 @@ Verify the version:
 
 ```bash
 plain version
-# Plain v2.0.0-beta
+# Plain v2.0.0-latest
 ```
 
 ---
 
-## Step 2 — Optional: configure the AI provider
+## Step 2 — Optional: configure the provider
 
-The AI layer is used only when the deterministic compiler cannot compile a
-supported construct and a matching rule exists. Deterministic programs need no
-configuration.
+The Complex Compilation layer is used only when the deterministic compiler
+cannot compile a supported construct and a matching rule exists. Deterministic
+programs need no configuration.
 
-To enable AI-assisted compilation, copy `.env.example` to `.env` and set:
+To enable Complex Compilation, copy `.env.example` to `.env` and set:
 
 ```bash
 MISTRAL_API_KEY=...
@@ -40,18 +40,24 @@ PLAIN_AI_BASE_URL=https://api.mistral.ai
 PLAIN_AI_MODEL=mistral-small-latest
 ```
 
-Check the layer with `plain ai status`.
+Check the layer with `plain cc status`.
 
 ---
 
 ## Step 3 — What changed
 
 - The `plain` command is now exposed alongside `plain-code`.
-- `compile()` is now deterministic-first with an AI fallback; command output is
-  unchanged for deterministic programs.
-- New diagnostics commands: `plain ai status`, `plain ai rules`,
-  `plain ai cache [clear]`.
-- `plain doctor` additionally reports the AI layer.
+- `plain cc` is the primary Complex Compilation interface; `plain ai` is
+  accepted as an alias for backward compatibility.
+- `compile()` is now deterministic-first with a Complex Compilation fallback;
+  command output is unchanged for deterministic programs.
+- New diagnostics commands: `plain cc status`, `plain cc rules`,
+  `plain cc cache [clear]`.
+- `plain doctor` additionally reports the Complex Compilation layer.
+- Rule system hardened with narrower triggers and most-specific-first
+  precedence.
+- Expanded rules: WebSocket, Cron, HTTP, REST, Telegram.
+- New rule: email (`communication/email`).
 
 ---
 

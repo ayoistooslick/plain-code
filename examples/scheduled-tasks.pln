@@ -1,0 +1,21 @@
+// Scheduled task example
+//
+// This example demonstrates the cron scheduling rule for
+// periodic tasks.
+
+// Run every minute
+schedule task "* * * * *" as
+  show "Tick: " + date()
+done
+
+// Run every 5 minutes
+every 5 minutes as
+  show "Heartbeat: " + date()
+done
+
+// Named daily cleanup task
+remember cleanup as schedule task "0 2 * * *" as
+  show "Running daily cleanup at 2 AM: " + date()
+done
+
+show "Scheduled tasks registered"

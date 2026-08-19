@@ -15,10 +15,11 @@
     "status"
   ],
   "triggers": [
-    { "type": "regex", "pattern": "\\bfetch\\b" },
-    { "type": "regex", "pattern": "\\brequest\\b" },
-    { "type": "regex", "pattern": "response is ok" },
-    { "type": "regex", "pattern": "response is not ok" }
+    { "type": "regex", "pattern": "\\bawait\\s+fetch\\b" },
+    { "type": "regex", "pattern": "\\bremember\\s+\\w+\\s+as\\s+(?:await\\s+)?fetch\\b" },
+    { "type": "regex", "pattern": "\\bresponse\\s+is\\s+ok\\b" },
+    { "type": "regex", "pattern": "\\bresponse\\s+is\\s+not\\s+ok\\b" },
+    { "type": "regex", "pattern": "\\bwith\\s+method\\s+\"\\w+\"\\b" }
   ],
   "dependencies": [],
   "imports": [],

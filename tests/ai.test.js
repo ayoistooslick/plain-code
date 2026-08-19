@@ -1,8 +1,8 @@
-// Tests for the Plain AI-assisted compilation layer (RFC-0020).
+// Tests for the Plain Complex Compilation layer (RFC-0020).
 //
-// Covers the rule resolver, AI output validator, translation cache, the
-// deterministic-first translator (with a mocked provider), and the public AI
-// API. Run with: node tests/ai.test.js
+// Covers the rule resolver, output validator, translation cache, the
+// deterministic-first translator (with a mocked provider), and the public API.
+// Run with: node tests/ai.test.js
 //
 // The provider is always mocked — these tests never make network calls and
 // never require MISTRAL_API_KEY.
@@ -60,6 +60,7 @@ test('resolver: loads the shipped rules with metadata', () => {
   if (!ids.includes('web/rest-api')) throw new Error(`missing rest-api rule: ${ids.join(', ')}`);
   if (!ids.includes('websocket/ws')) throw new Error(`missing ws rule: ${ids.join(', ')}`);
   if (!ids.includes('automation/cron')) throw new Error(`missing cron rule: ${ids.join(', ')}`);
+  if (!ids.includes('communication/email')) throw new Error(`missing email rule: ${ids.join(', ')}`);
   const tg = rules.find(r => r._id === 'bots/telegram');
   if (!tg.dependencies.includes('node-telegram-bot-api')) throw new Error('telegram dependency missing');
   if (typeof tg.version !== 'number') throw new Error('rule version must be a number');
@@ -67,6 +68,8 @@ test('resolver: loads the shipped rules with metadata', () => {
   if (!ws.dependencies.includes('ws')) throw new Error('ws dependency missing');
   const cr = rules.find(r => r._id === 'automation/cron');
   if (!cr.dependencies.includes('node-cron')) throw new Error('cron dependency missing');
+  const em = rules.find(r => r._id === 'communication/email');
+  if (!em.dependencies.includes('nodemailer')) throw new Error('email dependency missing');
 });
 
 test('resolver: matches telegram source', () => {
@@ -92,6 +95,16 @@ test('resolver: matches websocket source', () => {
 test('resolver: matches cron source', () => {
   const rule = resolveRule('schedule task "* * * * *" as\n  show "tick"\ndone');
   if (!rule || rule._id !== 'automation/cron') throw new Error(`wrong rule: ${rule && rule._id}`);
+});
+
+test('resolver: matches email source', () => {
+  const rule = resolveRule('remember transport as email transport with\n  host is "smtp.example.com"\ndone');
+  if (!rule || rule._id !== 'communication/email') throw new Error(`wrong rule: ${rule && rule._id}`);
+});
+
+test('resolver: matches send email source', () => {
+  const rule = resolveRule('send email via transport\n  to is "user@example.com"\n  subject is "Test"\n  text is "Hello"\ndone');
+  if (!rule || rule._id !== 'communication/email') throw new Error(`wrong rule: ${rule && rule._id}`);
 });
 
 test('resolver: returns null for unsupported source', () => {

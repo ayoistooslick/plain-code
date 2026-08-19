@@ -9,12 +9,14 @@
 //   plain new    [name]       scaffold a new Plain project
 //   plain init               create plain.json in the current directory
 //   plain install            install dependencies required by the project's source files
+//   plain start              start the entry file from plain.json
+//   plain doctor             check the Plain project environment
 //   plain add    <package>   install a package and add it to plain.json
 //   plain remove <package>   uninstall a package and remove it from plain.json
 //   plain update             update all installed packages
-//   plain ai     status      show the AI compilation layer status
-//   plain ai     rules       list the installed Plain rules
-//   plain ai     cache       list / clear the local AI translation cache
+//   plain cc     status      show the Complex Compilation layer status
+//   plain cc     rules       list the installed Plain rules
+//   plain cc     cache       list / clear the local Complex Compilation cache
 //   plain version            print the compiler version
 //   plain help               print this help text
 
@@ -63,27 +65,26 @@ Commands
   plain add    <package>   Install a package and add it to plain.json
   plain remove <package>   Remove a package from plain.json and uninstall it
   plain update             Update all installed npm packages
-  plain ai status          Show the AI compilation layer status
-  plain ai rules           List the installed Plain rules
-  plain ai cache           List the local AI translation cache
-  plain ai cache clear     Clear the local AI translation cache
+  plain cc status          Show the Complex Compilation layer status
+  plain cc rules           List the installed Plain rules
+  plain cc cache           List the local Complex Compilation cache
+  plain cc cache clear     Clear the local Complex Compilation cache
   plain version            Print the compiler version
   plain help               Print this help text
 
-v2.0 AI-Assisted Compilation
+v2.0 Complex Compilation
 
   The deterministic compiler stays authoritative. When it cannot compile a
-  valid Plain construct, versioned rules (compiler/rules/) and an AI provider
-  translate it into validated JavaScript that flows through the normal
-  bundler/runtime path (RFC-0020).
+  valid Plain construct, versioned rules (compiler/rules/) and the Complex
+  Compilation layer translate it into validated JavaScript that flows through
+  the normal bundler/runtime path (RFC-0020).
 
-  Plain ships with a hosted compiler service that owns the provider credential,
-  so unsupported syntax compiles at plain-code-compiler.onrender.com with no
-  setup and no API key. To self-host the provider instead, configure:
+  Plain ships with a hosted compiler service so complex constructs compile
+  with no setup and no API key. To self-host instead, configure:
 
   MISTRAL_API_KEY, PLAIN_AI_BASE_URL, PLAIN_AI_MODEL
   Override the hosted endpoint with: PLAIN_AI_REMOTE_URL
-  Example:    plain ai status
+  Example:    plain cc status
 
 v1.0 Language Features
 
@@ -287,11 +288,11 @@ async function compile(filePath, options) {
       files.map(({ ast }) => generate(ast, generationContext)).filter(s => s.trim()).join('\n'), true);
     return generationContext.needsAsync ? wrapAsync(js) : js;
   } catch (err) {
-    console.log(clrYellow('·') + ` Deterministic compiler could not compile "${path.basename(absPath)}" — trying AI-assisted compilation.`);
+    console.log(clrYellow('·') + ` Deterministic compiler could not compile "${path.basename(absPath)}" — trying Complex Compilation.`);
   }
 
-  // AI-assisted fallback (RFC-0020 §5, §17).
-  const compiled = await stageAsync('AI-assisted compilation', async () => {
+  // Complex Compilation fallback (RFC-0020 §5, §17).
+  const compiled = await stageAsync('Complex Compilation', async () => {
     const result = await ai.compileFile(absPath, opts);
     const extra = (result.dependencies || []).filter(pkg => !isBuiltinModule(pkg));
     if (extra.length) {
@@ -524,13 +525,13 @@ function cmdDoctor() {
   check('Formatter', fs.existsSync(path.join(__dirname, 'formatter.js')));
   check('Runtime', fs.existsSync(path.join(__dirname, 'generator.js')));
 
-  // AI-assisted compilation layer (RFC-0020)
+  // Complex Compilation layer (RFC-0020)
   const aiRulesDir = path.join(__dirname, 'rules');
   const aiConfig   = ai.aiStatus();
-  check('AI rules', fs.existsSync(aiRulesDir), aiRulesDir);
-  check('AI provider', true,
+  check('Rules', fs.existsSync(aiRulesDir), aiRulesDir);
+  check('Complex Compilation provider', true,
     aiConfig.enabled ? `${aiConfig.baseUrl} (${aiConfig.model})` : `hosted service — ${aiConfig.hosted}`);
-  check('AI cache', true, `${aiConfig.cacheEntries} entries`);
+  check('Translation cache', true, `${aiConfig.cacheEntries} entries`);
   console.log('');
 
   const config = readPlainJson();
@@ -701,8 +702,8 @@ function cmdAiStatus() {
     const suffix = detail ? ` — ${detail}` : '';
     console.log(`${ok ? clrGreen('✓') : clrRed('✗')} ${label}${suffix}`);
   };
-  console.log('Plain AI compilation\n');
-  check('AI path', true,
+  console.log('Plain Complex Compilation\n');
+  check('Compilation path', true,
     s.enabled ? `local provider — ${s.provider} (${s.model})` : `hosted service — ${s.hosted}`);
   check('API key', s.enabled, s.enabled ? s.apiKey : 'owned by the hosted service');
   check('Compiler', true, `v${s.compilerVersion}`);
@@ -766,6 +767,7 @@ async function main() {
     case 'version': cmdVersion();                 break;
     case 'help':    cmdHelp();                    break;
     case 'ai':
+    case 'cc':
       switch (fileArg) {
         case 'status': cmdAiStatus(); break;
         case 'rules':  cmdAiRules();  break;
@@ -773,7 +775,8 @@ async function main() {
           cmdAiCache(process.argv[4] === 'clear');
           break;
         default:
-          console.error('Usage: plain ai status|rules|cache [clear]');
+          console.error('Usage: plain cc status|rules|cache [clear]');
+          console.error('       (alias: plain ai status|rules|cache [clear])');
           process.exit(1);
       }
       break;

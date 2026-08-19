@@ -1,4 +1,4 @@
-# Render blueprint for the hosted Plain AI compiler service.
+# Render blueprint for the hosted Plain Complex Compilation service.
 #
 # Deploy this repository to Render as a web service, then set the
 # MISTRAL_API_KEY environment variable in the Render dashboard (it is never

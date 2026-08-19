@@ -1,0 +1,30 @@
+// Email sending example
+//
+// This example demonstrates the email rule for sending
+// transactional emails via SMTP.
+
+remember transport as email transport with
+  host is "smtp.gmail.com"
+  port is 587
+  secure is false
+  auth user is env("EMAIL_USER")
+  auth pass is env("EMAIL_PASS")
+done
+
+// Verify the transport
+remember ok as await verify transport
+if ok is true
+  show "SMTP transport is ready"
+otherwise
+  show "SMTP transport configuration is invalid"
+  exit 1
+done
+
+// Send a plain text email
+send email via transport
+  to is "recipient@example.com"
+  subject is "Hello from Plain"
+  text is "This email was sent from a Plain program."
+done
+
+show "Email sent successfully"

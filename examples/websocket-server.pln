@@ -1,0 +1,24 @@
+// WebSocket server and client example
+//
+// This example creates a WebSocket chat server and a client that
+// connects to it.
+
+remember server as ws server on port 8080
+
+when socket connects
+  show "Client connected"
+  send socket "Welcome to the chat server!"
+done
+
+when socket receives message
+  show "Received: " + message
+  broadcast message
+done
+
+when socket disconnects
+  show "Client disconnected"
+done
+
+on server error
+  show "Server error: " + error.message
+done

@@ -1,0 +1,48 @@
+// Telegram bot with buttons and callbacks
+//
+// This example creates a Telegram bot that responds to commands
+// and handles inline keyboard callbacks.
+
+remember token as env("BOT_TOKEN")
+
+remember bot as telegram bot with token
+
+// Start command
+when someone sends "/start"
+  reply "Welcome to the Plain Bot!" with buttons
+    "Help"
+    "About"
+    "Status"
+  done
+done
+
+// Help command
+when someone sends "/help"
+  reply "Available commands:\n/start - Show menu\n/help - Show this help\n/status - Bot status"
+done
+
+// Status command
+when someone sends "/status"
+  reply "Bot is running on Plain v2.0.0-latest"
+done
+
+// Callback handlers for inline buttons
+when someone clicks "Help"
+  reply "This bot demonstrates Plain's Telegram rule."
+done
+
+when someone clicks "About"
+  reply "Built with Plain — an Intent-Oriented Programming Language."
+done
+
+when someone clicks "Status"
+  remember now as date()
+  reply "Current time: " + now
+done
+
+// Error handling
+on bot error
+  show "Bot error: " + error.message
+done
+
+start telegram bot

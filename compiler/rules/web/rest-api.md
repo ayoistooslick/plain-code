@@ -3,7 +3,8 @@
 ## Capability
 
 Building REST API servers with Express: routes, request data, response data,
-JSON responses, path parameters, query parameters, and middleware.
+JSON responses, path parameters, query parameters, middleware, error handling,
+and async route handlers.
 
 ## Purpose
 
@@ -19,30 +20,72 @@ existing dependency detector already maps in `PACKAGE_MAP`.
 remember app as express app
 ```
 
-### 2. Routes
+### 2. GET routes
 
 ```plain
 app get "/health" as
   reply "ok"
 done
+```
 
+### 3. POST routes
+
+```plain
 app post "/users" as
   remember body as request.json
   reply body
 done
+```
 
+### 4. PUT routes
+
+```plain
+app put "/users/:id" as
+  remember id as request.param("id")
+  remember body as request.json
+  reply { "id": id, "updated": true }
+done
+```
+
+### 5. PATCH routes
+
+```plain
+app patch "/users/:id" as
+  remember id as request.param("id")
+  remember body as request.json
+  reply { "id": id, "patched": true }
+done
+```
+
+### 6. DELETE routes
+
+```plain
+app delete "/users/:id" as
+  remember id as request.param("id")
+  reply { "deleted": id }
+done
+```
+
+### 7. Path parameters
+
+```plain
 app get "/users/:id" as
   remember id as request.param("id")
   reply { "id": id }
 done
+```
 
-app get "/users" as
-  remember q as request.query("name")
-  reply { "query": q }
+### 8. Query parameters
+
+```plain
+app get "/search" as
+  remember q as request.query("q")
+  remember limit as request.query("limit")
+  reply { "query": q, "limit": limit }
 done
 ```
 
-### 3. JSON responses
+### 9. JSON responses
 
 ```plain
 app get "/status" as
@@ -53,7 +96,33 @@ done
 `reply` inside a route sends a JSON response when the value is an object or a
 string body otherwise.
 
-### 4. Middleware
+### 10. Response status codes
+
+```plain
+app get "/users/:id" as
+  remember id as request.param("id")
+  if id is "999"
+    reply status 404 with { "error": "not found" }
+  otherwise
+    reply { "id": id }
+  done
+done
+```
+
+### 11. Request headers
+
+```plain
+app get "/protected" as
+  remember auth as request.header("authorization")
+  if auth is empty
+    reply status 401 with { "error": "unauthorized" }
+  otherwise
+    reply { "message": "granted" }
+  done
+done
+```
+
+### 12. Middleware
 
 ```plain
 app use as
@@ -61,7 +130,25 @@ app use as
 done
 ```
 
-### 5. Start the server
+### 13. Error-handling middleware
+
+```plain
+app use error as
+  reply status 500 with { "error": error.message }
+done
+```
+
+### 14. Async route handlers
+
+```plain
+app get "/users" as
+  remember response as await fetch "https://api.example.com/users"
+  remember data as await response.json()
+  reply data
+done
+```
+
+### 15. Start the server
 
 ```plain
 listen app on port 3000
@@ -72,10 +159,13 @@ listen app on port 3000
 - `remember app as express app` creates an Express application.
 - `app <verb> "<path>" as ... done` registers a route for the given HTTP verb.
 - `request` inside a route is the Express request: `request.json`,
-  `request.param("id")`, `request.query("name")`, `request.method`.
+  `request.param("id")`, `request.query("name")`, `request.method`,
+  `request.header("name")`.
 - `reply <value>` inside a route sends the response (`res.json(...)` for
   objects/arrays, `res.send(...)` for strings).
+- `reply status <code> with <value>` sends a response with a specific status code.
 - `app use as ... done` registers middleware.
+- `app use error as ... done` registers error-handling middleware.
 - `listen app on port 3000` starts the server on the given port.
 
 ## JavaScript target
@@ -95,9 +185,18 @@ app.post("/users", async (req, res) => {
   res.json(body);
 });
 
+app.put("/users/:id", (req, res) => {
+  const id = req.params.id;
+  res.json({ id, updated: true });
+});
+
 app.use((req, res, next) => {
   console.log("request: " + req.method);
   next();
+});
+
+app.use((err, req, res, next) => {
+  res.status(500).json({ error: err.message });
 });
 
 app.listen(3000);
@@ -135,6 +234,11 @@ app post "/users" as
   reply body
 done
 
+app delete "/users/:id" as
+  remember id as request.param("id")
+  reply { "deleted": id }
+done
+
 listen app on port 3000
 ```
 
@@ -150,7 +254,7 @@ listen app on port 3000
 - Bind to `0.0.0.0` only when intended; document port exposure.
 - Validate and sanitize `request.param` / `request.query` values — treat them as
   untrusted input.
-- Never send secrets, database credentials, or real request payloads to the AI
+- Never send secrets, database credentials, or real request payloads to the
   provider.
 
 ## Expected compiler output

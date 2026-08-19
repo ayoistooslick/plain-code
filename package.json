@@ -1,6 +1,6 @@
 {
   "name": "@ayoxx/plain-code",
-  "version": "2.0.0-fix",
+  "version": "2.0.0-latest",
   "description": "Plain — an Intent-Oriented Programming Language. When even a simple sentence can be code.",
   "main": "compiler/cli.js",
   "preferGlobal": true,
@@ -11,7 +11,7 @@
   "scripts": {
     "test": "node tests/compiler.test.js && node tests/telegram.test.js && node tests/ai.test.js",
     "start": "node compiler/ai/server.js",
-    "ai:serve": "node compiler/ai/server.js"
+    "cc:serve": "node compiler/ai/server.js"
   },
   "files": [
     "compiler",

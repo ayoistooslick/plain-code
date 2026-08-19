@@ -76,7 +76,7 @@ async function chat(prompt) {
   if (!apiKey) {
     throw new Error(
       'No AI provider key is set (MISTRAL_API_KEY or PLAIN_AI_API_KEY).\n' +
-      'AI-assisted compilation needs a provider. Configure MISTRAL_API_KEY\n' +
+      'Complex Compilation needs a provider. Configure MISTRAL_API_KEY\n' +
       'in your environment or .env file (see .env.example).'
     );
   }

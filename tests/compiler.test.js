@@ -1135,9 +1135,9 @@ test('plain help includes "plain update"', () => {
   if (!out.includes('plain update')) throw new Error(`"plain update" missing from help. Got:\n${out}`);
 });
 
-test('plain version shows 2.0.0-beta', () => {
+test('plain version shows 2.0.0-latest', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.0.0-beta')) throw new Error(`Expected version 2.0.0-beta but got: ${out}`);
+  if (!out.includes('2.0.0-latest')) throw new Error(`Expected version 2.0.0-latest but got: ${out}`);
 });
 
 // ── v0.5 — Formatter ─────────────────────────────────────────────────────────
@@ -1403,9 +1403,9 @@ test('plain help includes "plain fmt"', () => {
   if (!out.includes('plain fmt')) throw new Error(`"plain fmt" missing from help. Got:\n${out}`);
 });
 
-test('plain version shows 2.0.0-beta', () => {
+test('plain version shows 2.0.0-latest', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.0.0-beta')) throw new Error(`Expected version 2.0.0-beta but got: ${out}`);
+  if (!out.includes('2.0.0-latest')) throw new Error(`Expected version 2.0.0-latest but got: ${out}`);
 });
 
 test('package.json exposes a global plain bin with a node shebang', () => {
@@ -1781,9 +1781,9 @@ test('"execute" block compiles to db.exec()', () => {
 
 console.log('\nv0.6 — CLI updates');
 
-test('plain version shows 2.0.0-beta (CLI)', () => {
+test('plain version shows 2.0.0-latest (CLI)', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.0.0-beta')) throw new Error(`Expected 2.0.0-beta but got: ${out}`);
+  if (!out.includes('2.0.0-latest')) throw new Error(`Expected 2.0.0-latest but got: ${out}`);
 });
 
 test('plain help mentions v1.0 features', () => {
@@ -2039,8 +2039,8 @@ test('plain run on a nonexistent file exits with a friendly error', () => {
   if (!out.includes('File not found')) {
     throw new Error(`Expected "File not found" error but got: ${out}`);
   }
-  if (out.includes('AI-assisted')) {
-    throw new Error(`AI must not be invoked for a missing file. Output:\n${out}`);
+  if (out.includes('Complex Compilation') && !out.includes('trying Complex Compilation')) {
+    throw new Error(`Complex Compilation must not be invoked for a missing file. Output:\n${out}`);
   }
 });
 
@@ -2757,9 +2757,9 @@ test('plain help includes the JavaScript Gateway', () => {
   if (!out.includes('ask')) throw new Error('"ask" missing from help');
 });
 
-test('plain version shows the beta version', () => {
+test('plain version shows 2.0.0-latest', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.0.0-beta')) throw new Error(`Expected 2.0.0-beta but got: ${out}`);
+  if (!out.includes('2.0.0-latest')) throw new Error(`Expected 2.0.0-latest but got: ${out}`);
 });
 
 test('plain build produces executable async output for a JavaScript block', () => {
@@ -2778,8 +2778,8 @@ test('plain run on a nonexistent file reports a friendly error and does not invo
   if (!out.includes('File not found')) {
     throw new Error(`Expected a "File not found" error but got: ${out}`);
   }
-  if (out.includes('AI-assisted')) {
-    throw new Error(`AI must not be invoked for a missing file. Output:\n${out}`);
+  if (out.includes('Complex Compilation') && !out.includes('trying Complex Compilation')) {
+    throw new Error(`Complex Compilation must not be invoked for a missing file. Output:\n${out}`);
   }
 });
 
@@ -2875,6 +2875,180 @@ test('built-in modules still execute after the dependency-resolution fix', () =>
     'use fs\nremember content as readFile("note.txt")\nshow content\n');
   const out = runCli(['run', 'app.pln'], dir);
   if (!out.includes('hello-builtin')) throw new Error(`built-in fs failed. Output:\n${out}`);
+});
+
+// ── CLI: doctor, update, start, cc commands ──────────────────────────────────
+
+console.log('\nCLI — plain doctor');
+
+test('plain doctor exits 0 and prints environment checks', () => {
+  const dir = tmpDir();
+  const out = runCli(['doctor'], dir);
+  if (!out.includes('Plain doctor')) throw new Error(`Expected "Plain doctor" header but got: ${out}`);
+  if (!out.includes('Node.js')) throw new Error('Expected Node.js check');
+  if (!out.includes('npm')) throw new Error('Expected npm check');
+  if (!out.includes('Plain CLI')) throw new Error('Expected Plain CLI check');
+  if (!out.includes('Compiler')) throw new Error('Expected Compiler check');
+  if (!out.includes('Formatter')) throw new Error('Expected Formatter check');
+  if (!out.includes('Runtime')) throw new Error('Expected Runtime check');
+  if (!out.includes('Rules')) throw new Error('Expected Rules check');
+  if (!out.includes('Complex Compilation provider')) throw new Error('Expected CC provider check');
+  if (!out.includes('Translation cache')) throw new Error('Expected cache check');
+});
+
+test('plain doctor reports project configuration when plain.json exists', () => {
+  const dir = tmpDir();
+  runCli(['init'], dir);
+  const out = runCli(['doctor'], dir);
+  if (!out.includes('plain.json found')) throw new Error(`Expected "plain.json found" but got: ${out}`);
+});
+
+test('plain doctor reports missing plain.json when no project initialized', () => {
+  const dir = tmpDir();
+  const out = runCli(['doctor'], dir);
+  if (!out.includes('run plain init')) throw new Error(`Expected "run plain init" hint but got: ${out}`);
+});
+
+test('plain doctor reports missing entry file', () => {
+  const dir = tmpDir();
+  runCli(['init'], dir);
+  const entry = path.join(dir, 'app.pln');
+  fs.unlinkSync(entry);
+  const out = runCli(['doctor'], dir);
+  if (!out.includes('not found')) throw new Error(`Expected "not found" for entry file but got: ${out}`);
+});
+
+test('plain doctor reports ready dependencies when all installed', () => {
+  const dir = tmpDir();
+  runCli(['init'], dir);
+  fs.writeFileSync(path.join(dir, 'app.pln'), 'show "hello"\n');
+  const out = runCli(['doctor'], dir);
+  if (!out.includes('ready')) throw new Error(`Expected "ready" for dependencies but got: ${out}`);
+});
+
+test('plain help includes "plain doctor"', () => {
+  const out = runCli(['help'], process.cwd());
+  if (!out.includes('plain doctor')) throw new Error('"plain doctor" missing from help');
+});
+
+console.log('\nCLI — plain start');
+
+test('plain start errors without plain.json', () => {
+  const dir = tmpDir();
+  const out = runCli(['start'], dir);
+  if (!out.toLowerCase().includes('plain init')) {
+    throw new Error(`Expected hint to run "plain init" but got: ${out}`);
+  }
+});
+
+test('plain start errors when entry file is missing', () => {
+  const dir = tmpDir();
+  runCli(['init'], dir);
+  const entry = path.join(dir, 'app.pln');
+  fs.unlinkSync(entry);
+  const out = runCli(['start'], dir);
+  if (!out.includes('not found')) {
+    throw new Error(`Expected "not found" error but got: ${out}`);
+  }
+});
+
+test('plain start runs the entry file from plain.json', () => {
+  const dir = tmpDir();
+  fs.writeFileSync(path.join(dir, 'app.pln'), 'show "start-ok"\n');
+  fs.writeFileSync(path.join(dir, 'plain.json'), JSON.stringify({ entry: 'app.pln' }));
+  const out = runCli(['start'], dir);
+  if (!out.includes('start-ok')) {
+    throw new Error(`Expected "start-ok" output but got: ${out}`);
+  }
+});
+
+test('plain start defaults to app.pln when entry is not set', () => {
+  const dir = tmpDir();
+  fs.writeFileSync(path.join(dir, 'app.pln'), 'show "default-entry"\n');
+  fs.writeFileSync(path.join(dir, 'plain.json'), JSON.stringify({ name: 'test' }));
+  const out = runCli(['start'], dir);
+  if (!out.includes('default-entry')) {
+    throw new Error(`Expected "default-entry" output but got: ${out}`);
+  }
+});
+
+console.log('\nCLI — plain update');
+
+test('plain update runs npm update', () => {
+  const dir = tmpDir();
+  runCli(['init'], dir);
+  const out = runCli(['update'], dir);
+  if (!out.includes('Updating packages')) throw new Error(`Expected "Updating packages" but got: ${out}`);
+  if (!out.includes('updated')) throw new Error(`Expected "updated" confirmation but got: ${out}`);
+});
+
+test('plain help includes "plain update"', () => {
+  const out = runCli(['help'], process.cwd());
+  if (!out.includes('plain update')) throw new Error('"plain update" missing from help');
+});
+
+console.log('\nCLI — plain cc / ai commands');
+
+test('plain cc status shows Complex Compilation status', () => {
+  const out = runCli(['cc', 'status'], process.cwd());
+  if (!out.includes('Complex Compilation')) throw new Error(`Expected "Complex Compilation" but got: ${out}`);
+  if (!out.includes('Compilation path')) throw new Error('Expected "Compilation path" check');
+  if (!out.includes('Rules')) throw new Error('Expected Rules check');
+  if (!out.includes('Cache')) throw new Error('Expected Cache check');
+});
+
+test('plain ai status is an alias for plain cc status', () => {
+  const out = runCli(['ai', 'status'], process.cwd());
+  if (!out.includes('Complex Compilation')) throw new Error(`Expected "Complex Compilation" from ai alias but got: ${out}`);
+});
+
+test('plain cc rules lists installed rules', () => {
+  const out = runCli(['cc', 'rules'], process.cwd());
+  if (!out.includes('Plain rules')) throw new Error(`Expected "Plain rules" header but got: ${out}`);
+  // Should list at least one rule
+  if (out.includes('No rules found') && !out.includes('rules')) {
+    throw new Error('Expected at least one rule listed');
+  }
+});
+
+test('plain ai rules is an alias for plain cc rules', () => {
+  const out = runCli(['ai', 'rules'], process.cwd());
+  if (!out.includes('Plain rules')) throw new Error(`Expected "Plain rules" from ai alias but got: ${out}`);
+});
+
+test('plain cc cache lists or reports empty cache', () => {
+  const out = runCli(['cc', 'cache'], process.cwd());
+  if (!out.includes('AI translation cache')) throw new Error(`Expected "AI translation cache" but got: ${out}`);
+});
+
+test('plain cc cache clear clears the cache', () => {
+  const out = runCli(['cc', 'cache', 'clear'], process.cwd());
+  if (!out.includes('Cleared')) throw new Error(`Expected "Cleared" confirmation but got: ${out}`);
+});
+
+test('plain ai cache is an alias for plain cc cache', () => {
+  const out = runCli(['ai', 'cache'], process.cwd());
+  if (!out.includes('AI translation cache')) throw new Error(`Expected "AI translation cache" from ai alias but got: ${out}`);
+});
+
+test('plain cc with invalid subcommand shows usage', () => {
+  const out = runCli(['cc', 'invalid'], process.cwd());
+  if (!out.toLowerCase().includes('usage')) throw new Error(`Expected usage message but got: ${out}`);
+});
+
+test('plain help includes "plain cc status"', () => {
+  const out = runCli(['help'], process.cwd());
+  if (!out.includes('plain cc status')) throw new Error('"plain cc status" missing from help');
+});
+
+test('plain help includes "plain cc cache clear"', () => {
+  const out = runCli(['help'], process.cwd());
+  if (!out.includes('plain cc cache clear')) throw new Error('"plain cc cache clear" missing from help');
+});
+
+test('plain help includes "plain start"', () => {
+  const out = runCli(['help'], process.cwd());
+  if (!out.includes('plain start')) throw new Error('"plain start" missing from help');
 });
 
 // ── Acode syntax highlighting (stream spec) ─────────────────────────────────

@@ -1,28 +1,28 @@
-# AI-Assisted Compilation
+# Complex Compilation
 
 Part of Plain 2.0.0 (RFC-0020).
 
 Plain's language rules remain authoritative. The existing compiler remains the
-deterministic execution path whenever it understands the syntax. An AI
-compiler layer handles supported Plain constructs that are not yet represented
+deterministic execution path whenever it understands the syntax. A Complex
+Compilation layer handles supported Plain constructs that are not yet represented
 by the deterministic compiler, by consulting versioned rule files and
 translating the Plain program into JavaScript.
 
 > Plain is an Intent-Oriented Programming Language with a deterministic
-> compiler, a growing rule system, and an AI-assisted translation layer for
-> capabilities that have not yet been hard-coded into the compiler.
+> compiler, a growing rule system, and a Complex Compilation translation layer
+> for capabilities that have not yet been hard-coded into the compiler.
 
-## When the AI layer runs
+## When the Complex Compilation layer runs
 
-AI assistance is used only when **all** of these are true:
+Complex Compilation is used only when **all** of these are true:
 
 1. Plain syntax is valid under the language/rules model.
 2. The deterministic compiler does not understand the construct.
 3. A matching rule exists.
 4. Translation is necessary.
 
-Deterministic syntax stays deterministic — offline, fast, free. The AI layer
-never runs for code the compiler already understands.
+Deterministic syntax stays deterministic — offline, fast, free. The Complex
+Compilation layer never runs for code the compiler already understands.
 
 ## Pipeline
 
@@ -45,7 +45,7 @@ Cache lookup (key = rule version + compiler version + model + route + source)
 Provider routing: hosted service (default) or local provider
     │
     ▼
-AI translation (compiler/ai/translator.js → agent → client)
+Complex translation (compiler/ai/translator.js → agent → client)
     │
     ▼
 Validation (compiler/ai/validator.js): structure, fields, JS syntax,
@@ -79,6 +79,9 @@ Shipped rules:
 | Telegram bot  | `bots/telegram`  | `node-telegram-bot-api` | yes  |
 | HTTP fetch    | `http/fetch`     | *(none — global fetch)* | yes  |
 | REST API      | `web/rest-api`   | `express`             | no    |
+| WebSocket     | `websocket/ws`   | *(none)*              | yes  |
+| Cron          | `automation/cron`| *(none)*              | no    |
+| Email         | `communication/email` | *(varies by transport)* | no  |
 
 Rule precedence (most specific wins): exact syntax rule → domain-specific rule
 → generic library rule → generic JavaScript interoperability rule → JavaScript
@@ -139,7 +142,7 @@ Malformed output fails compilation cleanly.
 
 ## Validation
 
-AI-generated JavaScript is never trusted blindly (RFC-0020 §13):
+Generated JavaScript is never trusted blindly (RFC-0020 §13):
 
 1. response structure is checked
 2. required fields are checked
@@ -174,24 +177,27 @@ Errors identify the failing layer (RFC-0020 §39):
 
 - `Plain syntax error`
 - `Plain rule error`
-- `AI compilation error`
+- `Complex Compilation error`
 - `Generated JavaScript validation error`
 - `Runtime dependency error`
 
 If the provider is unreachable, deterministic programs still compile, cached
-translations may still work, and unsupported AI-dependent syntax produces a
+translations may still work, and unsupported syntax-dependent syntax produces a
 clear error — never a silent substitution.
 
 ## Diagnostics
 
 ```bash
-plain ai status       # provider, rules, cache summary
-plain ai rules        # list rules with metadata
-plain ai cache        # list cached translations
-plain ai cache clear  # empty the cache
+plain cc status       # provider, rules, cache summary
+plain cc rules        # list rules with metadata
+plain cc cache        # list cached translations
+plain cc cache clear  # empty the cache
 ```
 
-`plain doctor` also reports the AI layer (rules directory, provider, cache).
+`plain ai` is accepted as an alias for `plain cc`.
+
+`plain doctor` also reports the Complex Compilation layer (rules directory,
+provider, cache).
 
 ## Authoring a rule
 
@@ -200,6 +206,8 @@ plain ai cache clear  # empty the cache
    `version`, `keywords`, `triggers`, `dependencies`, `async`, `compilerMin`.
 3. Add at least one example to the Markdown and mirror it in `tests/ai.test.js`.
 4. Run `npm test`.
+
+See `compiler/rules/README.md` for the full rule-authoring specification.
 
 Adding a common capability this way is substantially cheaper than modifying the
 core lexer/parser/generator.

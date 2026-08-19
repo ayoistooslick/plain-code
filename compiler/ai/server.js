@@ -158,7 +158,7 @@ function createServer(options = {}) {
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3000;
   createServer().listen(port, () => {
-    console.log(`Plain AI compiler service listening on port ${port}`);
+    console.log(`Plain Complex Compilation service listening on port ${port}`);
     if (!config().enabled) {
       console.warn('Warning: MISTRAL_API_KEY is not set. /translate will refuse requests until it is.');
     }

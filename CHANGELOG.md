@@ -4,11 +4,45 @@ All notable changes to Plain are documented here.
 
 ---
 
+## [2.0.0-latest] — 2026
+
+### Rule system hardening
+
+- Narrower triggers: rule matching now requires an explicit trigger match
+  before invoking the Complex Compilation layer, reducing false positives
+- Rules are evaluated most-specific-first; a broad generic rule never overrides
+  an exact Plain language rule
+
+### Expanded rules
+
+- **WebSocket** (`websocket/ws`) — WebSocket client support
+- **Cron scheduling** (`automation/cron`) — scheduled task syntax
+- **HTTP** (`http/fetch`) — expanded coverage
+- **REST** (`web/rest-api`) — expanded coverage
+- **Telegram** (`bots/telegram`) — expanded coverage
+
+### New rule
+
+- **Email** (`communication/email`) — email sending via SMTP
+
+### Documentation
+
+- Updated `compiler/rules/README.md` as the rule-authoring specification
+- Complex Compilation branding update across all documentation
+- Version updated to 2.0.0-latest
+
+### CLI
+
+- `plain cc` command added as the primary Complex Compilation interface
+- `plain ai` retained as an alias for backward compatibility
+
+---
+
 ## [2.0.0] — 2026
 
-### AI-Assisted Compilation (RFC-0020)
+### Complex Compilation (RFC-0020)
 
-Plain gains an AI-assisted compilation layer **without replacing the existing
+Plain gains a Complex Compilation layer **without replacing the existing
 deterministic compiler**. The deterministic compiler stays authoritative;
 versioned rules and an AI provider translate supported constructs that the
 compiler does not yet understand into validated JavaScript that flows through
@@ -21,7 +55,7 @@ the normal bundler/runtime path.
   async, compilerMin — used for deterministic matching and cache keys
 - Rule authoring guide in `compiler/rules/README.md`
 
-**AI layer** (`compiler/ai/`)
+**Complex Compilation layer** (`compiler/ai/`)
 - `resolver.js` — deterministic rule matching (RFC-0020 §8, §37)
 - `translator.js` — rule → cache → provider → validation orchestration
 - `agent.js` — provider-facing `translate()` interface (RFC-0020 §10)
@@ -34,17 +68,17 @@ the normal bundler/runtime path.
   version + model + normalized source (RFC-0020 §15)
 
 **CLI**
-- Deterministic-first compile path with AI fallback (`compile()` in `cli.js`)
-- New commands: `plain ai status`, `plain ai rules`, `plain ai cache [clear]`
-- `plain doctor` reports the AI layer
+- Deterministic-first compile path with Complex Compilation fallback (`compile()` in `cli.js`)
+- New commands: `plain cc status`, `plain cc rules`, `plain cc cache [clear]`
+- `plain doctor` reports the Complex Compilation layer
 - `plain` exposed as a CLI executable alongside `plain-code`
-- Layer-specific diagnostics (RFC-0020 §39): Plain rule error, AI compilation
+- Layer-specific diagnostics (RFC-0020 §39): Plain rule error, Complex Compilation
   error, generated JavaScript validation error
 
 **Configuration & security**
 - `.env.example` added (`MISTRAL_API_KEY`, `PLAIN_AI_BASE_URL`,
   `PLAIN_AI_MODEL`, optional `PLAIN_AI_CACHE_DIR`)
-- `.gitignore` added (`.env`, AI cache, build output)
+- `.gitignore` added (`.env`, Complex Compilation cache, build output)
 - Secrets are never hard-coded or sent to the provider (RFC-0020 §16, §44)
 
 ### Language — Telegram (v1.2 deterministic syntax)
@@ -61,7 +95,7 @@ the normal bundler/runtime path.
 
 ### Documentation
 
-- README updated for 2.0.0 (AI compilation, rules, Telegram, configuration)
+- README updated for 2.0.0 (Complex Compilation, rules, Telegram, configuration)
 - `docs/AI_COMPILATION.md` added
 - `compiler/version.js` centralizes the version constant
 

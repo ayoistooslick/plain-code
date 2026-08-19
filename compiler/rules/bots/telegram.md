@@ -8,18 +8,21 @@ Telegram bot creation and message handling using `node-telegram-bot-api`.
 
 Let users write a working Telegram bot in readable Plain without dropping into a
 JavaScript Gateway block. Covers bot creation, polling, commands, replies,
-buttons (inline keyboards), callback queries, and basic error handling.
+buttons (inline keyboards), callback queries, chat/user information, message
+editing, error handling, and environment-based tokens.
 
 ## Supported Plain syntax
 
 ### 1. Create a bot
 
 ```plain
+remember token as env("BOT_TOKEN")
+
 remember bot as telegram bot with token
 ```
 
 `token` may be an expression, e.g. `env("BOT_TOKEN")`. The actual token value
-is a runtime value and must never be sent to the AI provider.
+is a runtime value and must never be sent to the Complex Compilation provider.
 
 ### 2. Command handler
 
@@ -82,7 +85,37 @@ done
 Inside a handler, `ctx` is the Telegram context: `ctx.chatId`, `ctx.message`,
 `ctx.from`, and `ctx.data` (for callback queries).
 
-### 7. Bot lifecycle
+### 7. Get chat and user information
+
+```plain
+when someone sends "/info"
+  remember chat as getChat chatId
+  remember user as ctx.from
+  reply "Chat: " + chat.title + " | User: " + user.first_name
+done
+```
+
+### 8. Error handling
+
+```plain
+remember token as env("BOT_TOKEN")
+
+remember bot as telegram bot with token
+
+when someone sends "/start"
+  reply "Hello!"
+done
+
+on bot error
+  show "Bot error: " + error.message
+done
+
+start telegram bot
+```
+
+The `on bot error` handler catches polling and API errors.
+
+### 9. Bot lifecycle
 
 ```plain
 when someone sends "/start"
@@ -104,6 +137,9 @@ started.
 - `reply` sends a text message to the current chat.
 - `sendMessage`/`sendPhoto` send to an explicit chat.
 - `editMessage` edits an existing message.
+- `getChat` retrieves chat information.
+- `getMyChats` retrieves the bot's chat list.
+- `on bot error` registers an error handler.
 - `start telegram bot` starts polling and keeps the process alive.
 
 ## JavaScript target
@@ -132,6 +168,10 @@ bot.on("callback_query", (ctx) => {
   if (ctx.data === "option_a") {
     return ctx.reply("You picked A");
   }
+});
+
+bot.on("error", (err) => {
+  console.error("Bot error:", err.message);
 });
 
 bot.startPolling().catch((err) => {
@@ -163,8 +203,6 @@ Telegram call that returns a Promise must be awaited.
 
 ## Examples
 
-See `docs/` and the README Telegram example:
-
 ```plain
 remember token as env("BOT_TOKEN")
 
@@ -173,6 +211,33 @@ remember bot as telegram bot with token
 when someone sends "/start"
   reply "Hello from Plain!"
 done
+
+start telegram bot
+```
+
+Advanced example with buttons and callbacks:
+
+```plain
+remember token as env("BOT_TOKEN")
+
+remember bot as telegram bot with token
+
+when someone sends "/menu"
+  reply "Choose:" with buttons
+    "Yes"
+    "No"
+  done
+done
+
+when someone clicks "Yes"
+  reply "You said yes!"
+done
+
+when someone clicks "No"
+  reply "You said no!"
+done
+
+start telegram bot
 ```
 
 ## Invalid forms
@@ -188,7 +253,7 @@ done
   `env("BOT_TOKEN")`; keep it a runtime environment lookup.
 - Treat incoming messages as untrusted; do not interpolate message text into
   code or shell commands.
-- Do not send tokens, chat histories, or other secrets to the AI provider.
+- Do not send tokens, chat histories, or other secrets to the provider.
 
 ## Expected compiler output
 

@@ -44,6 +44,35 @@ done
 send client "Hello server!"
 ```
 
+### 3. Named connections
+
+```plain
+remember server as ws server on port 8080
+
+when socket connects
+  remember id as socket.id
+  send socket "Your id: " + id
+done
+
+when socket receives message
+  broadcast message
+done
+```
+
+### 4. Error handling
+
+```plain
+remember server as ws server on port 8080
+
+when socket connects
+  send socket "Welcome!"
+done
+
+on server error
+  show "Server error: " + error.message
+done
+```
+
 ## Semantic meaning
 
 - `remember server as ws server on port <port>` creates a WebSocket server
@@ -56,6 +85,7 @@ send client "Hello server!"
 - `remember client as ws client to "<url>"` connects to a WebSocket server.
 - `when client receives message` registers a handler for server messages.
 - `send client <value>` sends a message from the client to the server.
+- `on server error` registers an error handler for the server.
 
 ## JavaScript target
 
@@ -81,6 +111,10 @@ wss.on("connection", (socket) => {
   socket.on("close", () => {
     console.log("client disconnected");
   });
+});
+
+wss.on("error", (err) => {
+  console.error("Server error:", err.message);
 });
 ```
 
@@ -114,6 +148,8 @@ Synchronous. WebSocket setup is event-driven; no top-level await is needed.
 
 ## Examples
 
+Server:
+
 ```plain
 remember server as ws server on port 8080
 
@@ -124,6 +160,18 @@ done
 when socket receives message
   show message
 done
+```
+
+Client:
+
+```plain
+remember client as ws client to "ws://localhost:8080"
+
+when client receives message
+  show message
+done
+
+send client "Hello!"
 ```
 
 ## Invalid forms

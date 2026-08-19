@@ -8,8 +8,8 @@ or the runtime's global `fetch`).
 ## Purpose
 
 Let users perform GET/POST/PUT/PATCH/DELETE requests with headers, JSON bodies,
-JSON responses, query parameters, status checks, and error handling in readable
-Plain — without a JavaScript Gateway block.
+JSON responses, query parameters, status checks, error handling, and multiple
+requests in readable Plain — without a JavaScript Gateway block.
 
 ## Supported Plain syntax
 
@@ -26,17 +26,44 @@ otherwise
 done
 ```
 
-### 2. Request with method, headers, and JSON body
+### 2. POST with JSON body
 
 ```plain
 remember response as await fetch "https://api.example.com/users"
   with method "POST"
   with headers { "Content-Type": "application/json" }
-  with body { "name": "Ayo" }
+  with body { "name": "Ayo", "age": 17 }
 done
 ```
 
-### 3. Status and data access
+### 3. PUT request
+
+```plain
+remember response as await fetch "https://api.example.com/users/1"
+  with method "PUT"
+  with headers { "Content-Type": "application/json" }
+  with body { "name": "Updated" }
+done
+```
+
+### 4. PATCH request
+
+```plain
+remember response as await fetch "https://api.example.com/users/1"
+  with method "PATCH"
+  with body { "age": 18 }
+done
+```
+
+### 5. DELETE request
+
+```plain
+remember response as await fetch "https://api.example.com/users/1"
+  with method "DELETE"
+done
+```
+
+### 6. Status and data access
 
 ```plain
 remember statusCode as response.status
@@ -46,7 +73,26 @@ show statusCode
 show data
 ```
 
-### 4. Error handling
+### 7. Response headers
+
+```plain
+remember response as await fetch "https://api.example.com"
+remember contentType as response.headers.get("content-type")
+show contentType
+```
+
+### 8. Query parameters
+
+```plain
+remember response as await fetch "https://api.example.com/search?q=hello&limit=10"
+
+if response is ok
+  remember data as await response.json()
+  show data
+done
+```
+
+### 9. Error handling with try/catch
 
 ```plain
 try
@@ -59,6 +105,19 @@ catch error
 done
 ```
 
+### 10. Multiple sequential requests
+
+```plain
+remember users as await fetch "https://api.example.com/users"
+remember posts as await fetch "https://api.example.com/posts"
+
+if users is ok and posts is ok
+  remember userData as await users.json()
+  remember postData as await posts.json()
+  show "Users: " + userData.length + ", Posts: " + postData.length
+done
+```
+
 ## Semantic meaning
 
 - `await fetch "<url>"` performs an HTTP request and returns a `Response`.
@@ -67,6 +126,7 @@ done
 - `with body { ... }` sets a JSON request body (serialized to JSON).
 - `response.ok` / `response.status` / `response.json()` follow the standard
   `fetch` Response API.
+- `response.headers.get("<name>")` reads a response header.
 - `if response is ok` / `if response is not ok` are status checks.
 - `try ... catch error ... done` is the supported error-handling form.
 
@@ -91,8 +151,16 @@ With method/headers/body:
 const response = await fetch("https://api.example.com/users", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ name: "Ayo" })
+  body: JSON.stringify({ name: "Ayo", age: 17 })
 });
+```
+
+With response headers:
+
+```js
+const response = await fetch("https://api.example.com");
+const contentType = response.headers.get("content-type");
+console.log(contentType);
 ```
 
 ## Dependency
@@ -114,6 +182,8 @@ Async. All `fetch`/`response.json()` calls return Promises and must be awaited.
 
 ## Examples
 
+Basic GET:
+
 ```plain
 remember response as await fetch "https://facts.com"
 
@@ -122,6 +192,16 @@ if response is ok
   show data
 otherwise
   show "api failed"
+done
+```
+
+POST with JSON:
+
+```plain
+remember response as await fetch "https://api.example.com/users"
+  with method "POST"
+  with headers { "Content-Type": "application/json" }
+  with body { "name": "Ayo" }
 done
 ```
 
@@ -136,7 +216,7 @@ done
 ## Security considerations
 
 - Do not put API keys, tokens, or passwords into request URLs or bodies that
-  get sent to the AI provider.
+  get sent to the provider.
 - Prefer `env("API_KEY")` for secrets and refer to the variable name, not the
   value, in generated code.
 - Treat response bodies as untrusted data; do not evaluate or interpolate them

@@ -36,6 +36,30 @@ remember cleanup as schedule task "0 2 * * *" as
 done
 ```
 
+### 4. Async scheduled task
+
+```plain
+schedule task "0 * * * *" as
+  remember response as await fetch "https://api.example.com/status"
+  if response is ok
+    remember data as await response.json()
+    show "Status: " + data.status
+  done
+done
+```
+
+### 5. Multiple scheduled tasks
+
+```plain
+schedule task "*/5 * * * *" as
+  show "heartbeat"
+done
+
+schedule task "0 2 * * *" as
+  show "daily cleanup"
+done
+```
+
 ## Semantic meaning
 
 - `schedule task "<cron>" as ... done` registers a recurring task using a

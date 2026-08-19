@@ -484,13 +484,26 @@ Plain manages project configuration through `plain.json`.
 
 ### Commands
 
-| Command                 | Behaviour                                          |
-|-------------------------|----------------------------------------------------|
-| `plain init`            | Creates `plain.json` in the current directory      |
-| `plain install`         | Runs `npm install` for all listed dependencies     |
-| `plain add <pkg>`       | Installs package, adds it to `plain.json`          |
-| `plain remove <pkg>`    | Uninstalls package, removes it from `plain.json`   |
-| `plain update`          | Runs `npm update` for all installed packages       |
+| Command                 | Behaviour                                            |
+|-------------------------|------------------------------------------------------|
+| `plain run <file.pln>`  | Install dependencies, compile and execute            |
+| `plain build <file.pln>`| Install dependencies and compile to JavaScript       |
+| `plain check <file.pln>`| Check syntax only (no output, no execution)          |
+| `plain fmt <file.pln>`  | Format a Plain file in-place                         |
+| `plain new [name]`      | Create a new Plain project                           |
+| `plain init`            | Creates `plain.json` in the current directory        |
+| `plain install`         | Install dependencies required by source files        |
+| `plain start`           | Start the entry file from plain.json                 |
+| `plain doctor`          | Check the Plain project environment                  |
+| `plain add <pkg>`       | Installs package, adds it to `plain.json`            |
+| `plain remove <pkg>`    | Uninstalls package, removes it from `plain.json`     |
+| `plain update`          | Runs `npm update` for all installed packages         |
+| `plain cc status`       | Show the Complex Compilation layer status            |
+| `plain cc rules`        | List the installed Plain rules                       |
+| `plain cc cache`        | List the local Complex Compilation cache             |
+| `plain cc cache clear`  | Clear the local Complex Compilation cache            |
+| `plain version`         | Print the compiler version                           |
+| `plain help`            | Print help text                                      |
 
 ### Dependency Validation
 

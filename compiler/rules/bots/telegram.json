@@ -14,12 +14,13 @@
     "button"
   ],
   "triggers": [
-    { "type": "regex", "pattern": "telegram bot with token" },
-    { "type": "regex", "pattern": "\\bsends\\b" },
-    { "type": "regex", "pattern": "\\bclicks\\b" },
-    { "type": "regex", "pattern": "\\bsendMessage\\b" },
-    { "type": "regex", "pattern": "\\bsendPhoto\\b" },
-    { "type": "regex", "pattern": "\\beditMessage\\b" }
+    { "type": "regex", "pattern": "\\btelegram\\s+bot\\s+with\\s+token\\b" },
+    { "type": "regex", "pattern": "\\bwhen\\s+someone\\s+sends\\b" },
+    { "type": "regex", "pattern": "\\bwhen\\s+someone\\s+clicks\\b" },
+    { "type": "regex", "pattern": "\\bsendMessage\\s+\\w+" },
+    { "type": "regex", "pattern": "\\bsendPhoto\\s+\\w+" },
+    { "type": "regex", "pattern": "\\beditMessage\\s+\\w+" },
+    { "type": "regex", "pattern": "\\bstart\\s+telegram\\s+bot\\b" }
   ],
   "dependencies": ["node-telegram-bot-api"],
   "imports": [],
