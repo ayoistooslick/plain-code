@@ -13,7 +13,6 @@
 
 const http  = require('http');
 const https = require('https');
-const crypto = require('crypto');
 
 const DEFAULTS = {
   baseUrl: 'https://api.mistral.ai',
@@ -74,14 +73,6 @@ function postJson(url, payload, apiKey, timeoutMs) {
 // Send a single chat request. Returns the assistant's text content.
 async function chat(prompt) {
   const { apiKey, baseUrl, model } = config();
-  
-  console.log('[AI DEBUG]', {
-    keyHash: crypto.createHash('sha256').update(apiKey).digest('hex'),
-    keyLength: apiKey.length,
-    baseUrl,
-    model
-  });
-  
   if (!apiKey) {
     throw new Error(
       'No AI provider key is set (MISTRAL_API_KEY or PLAIN_AI_API_KEY).\n' +

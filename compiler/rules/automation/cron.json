@@ -1,0 +1,27 @@
+{
+  "name": "cron",
+  "category": "automation",
+  "version": 1,
+  "title": "Scheduled Tasks",
+  "purpose": "Scheduled and recurring tasks using node-cron for automation and background jobs.",
+  "keywords": [
+    "cron",
+    "schedule",
+    "task",
+    "automation",
+    "recurring",
+    "timer",
+    "job"
+  ],
+  "triggers": [
+    { "type": "regex", "pattern": "\\bcron schedule\\b" },
+    { "type": "regex", "pattern": "\\bschedule task\\b" },
+    { "type": "regex", "pattern": "\\brecurring task\\b" },
+    { "type": "regex", "pattern": "\\brun every\\b" }
+  ],
+  "dependencies": ["node-cron"],
+  "imports": [],
+  "async": true,
+  "compilerMin": "2.0.0",
+  "resolvablePaths": ["automation/cron", "automation/cron.json"]
+}

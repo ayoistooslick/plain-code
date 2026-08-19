@@ -1,7 +1,7 @@
 {
   "name": "fetch",
   "category": "http",
-  "version": 1,
+  "version": 2,
   "title": "HTTP Fetch",
   "purpose": "HTTP requests (GET/POST/PUT/PATCH/DELETE) with headers, JSON bodies, JSON responses, status checks, and error handling via fetch.",
   "keywords": [

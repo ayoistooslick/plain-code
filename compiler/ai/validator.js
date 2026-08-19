@@ -32,7 +32,7 @@ const FORBIDDEN_PATTERNS = [
   /\b(?:exec|execSync|spawn|spawnSync|execFile|execFileSync|fork)\s*\(/,
   /child_process/,
   /process\.(?:exit|abort|binding)\b/,
-  /require\(\s*["'](?:\.|http)/,
+  /require\(\s*["'](?:\.\.?\/|https?:\/\/)/,
 ];
 
 const REQUIRE_RE = /require\(\s*["']([^"']+)["']\s*\)/g;
@@ -72,9 +72,16 @@ function validateTranslation(output) {
 
   const code = output.javascript;
 
-  // 3. Syntax (parsed, not executed)
+  // 3. Syntax (parsed, not executed). Top-level await is only valid inside
+  //    async module bodies, so async output is wrapped in an async IIFE
+  //    for syntax validation — mirroring the runtime wrapping applied by
+  //    the generator/bundler.
   try {
-    new vm.Script(code);
+    if (output.async) {
+      new vm.Script(`(async () => {\n${code}\n})()`);
+    } else {
+      new vm.Script(code);
+    }
   } catch (err) {
     throw new ValidationError(`Generated JavaScript validation error: invalid JavaScript syntax.\n${err.message}`);
   }

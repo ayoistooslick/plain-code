@@ -1,7 +1,7 @@
 {
   "name": "telegram",
   "category": "bots",
-  "version": 1,
+  "version": 2,
   "title": "Telegram Bot",
   "purpose": "Telegram bot creation, polling, commands, replies, buttons, callback queries, and messaging.",
   "keywords": [

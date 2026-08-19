@@ -58,9 +58,15 @@ test('resolver: loads the shipped rules with metadata', () => {
   if (!ids.includes('bots/telegram')) throw new Error(`missing telegram rule: ${ids.join(', ')}`);
   if (!ids.includes('http/fetch')) throw new Error(`missing fetch rule: ${ids.join(', ')}`);
   if (!ids.includes('web/rest-api')) throw new Error(`missing rest-api rule: ${ids.join(', ')}`);
+  if (!ids.includes('websocket/ws')) throw new Error(`missing ws rule: ${ids.join(', ')}`);
+  if (!ids.includes('automation/cron')) throw new Error(`missing cron rule: ${ids.join(', ')}`);
   const tg = rules.find(r => r._id === 'bots/telegram');
   if (!tg.dependencies.includes('node-telegram-bot-api')) throw new Error('telegram dependency missing');
   if (typeof tg.version !== 'number') throw new Error('rule version must be a number');
+  const ws = rules.find(r => r._id === 'websocket/ws');
+  if (!ws.dependencies.includes('ws')) throw new Error('ws dependency missing');
+  const cr = rules.find(r => r._id === 'automation/cron');
+  if (!cr.dependencies.includes('node-cron')) throw new Error('cron dependency missing');
 });
 
 test('resolver: matches telegram source', () => {
@@ -76,6 +82,16 @@ test('resolver: matches fetch source', () => {
 test('resolver: matches rest-api source', () => {
   const rule = resolveRule('remember app as express app');
   if (!rule || rule._id !== 'web/rest-api') throw new Error(`wrong rule: ${rule && rule._id}`);
+});
+
+test('resolver: matches websocket source', () => {
+  const rule = resolveRule('remember server as ws server on port 8080');
+  if (!rule || rule._id !== 'websocket/ws') throw new Error(`wrong rule: ${rule && rule._id}`);
+});
+
+test('resolver: matches cron source', () => {
+  const rule = resolveRule('schedule task "* * * * *" as\n  show "tick"\ndone');
+  if (!rule || rule._id !== 'automation/cron') throw new Error(`wrong rule: ${rule && rule._id}`);
 });
 
 test('resolver: returns null for unsupported source', () => {
@@ -101,11 +117,10 @@ console.log('\nOutput validator');
 test('validator: accepts a valid telegram translation', () => {
   const out = {
     javascript:
-      'const TelegramBot = require("node-telegram-bot-api");\n' +
-      'const bot = new TelegramBot(token, { polling: true });\n' +
-      'bot.onText(/^\\/start$/, async (msg) => {\n' +
-      '  const chatId = msg.chat.id;\n' +
-      '  await bot.sendMessage(chatId, "Hello from Plain!");\n' +
+      'const { Bot } = require("node-telegram-bot-api");\n' +
+      'const bot = new Bot(token);\n' +
+      'bot.command("start", (ctx) => {\n' +
+      '  return ctx.reply("Hello from Plain!");\n' +
       '});',
     dependencies: ['node-telegram-bot-api'],
     imports: [],
@@ -142,6 +157,46 @@ test('validator: rejects undeclared require', () => {
   let threw = false;
   try { validateTranslation({ javascript: 'require("crypto-secret-lib")' }); } catch (e) { threw = true; if (!/dependencies/i.test(e.message)) throw new Error(`wrong message: ${e.message}`); }
   if (!threw) throw new Error('expected a throw');
+});
+
+test('validator: accepts async code with top-level await', () => {
+  const out = {
+    javascript:
+      'const response = await fetch("https://httpbin.org/get");\n' +
+      'if (response.ok) {\n' +
+      '  const data = await response.json();\n' +
+      '  console.log(data);\n' +
+      '} else {\n' +
+      '  console.log("api failed");\n' +
+      '}',
+    dependencies: [],
+    imports: [],
+    async: true,
+  };
+  validateTranslation(out); // must not throw — top-level await is valid when async is true
+});
+
+test('validator: rejects non-async code with top-level await', () => {
+  let threw = false;
+  try {
+    validateTranslation({
+      javascript: 'const x = await fetch("https://example.com");',
+      dependencies: [],
+      imports: [],
+      async: false,
+    });
+  } catch (e) { threw = true; if (!/syntax/i.test(e.message)) throw new Error(`wrong message: ${e.message}`); }
+  if (!threw) throw new Error('expected a throw');
+});
+
+test('validator: accepts async code with undeclared require if dependency is listed', () => {
+  const out = {
+    javascript: 'const { Bot } = require("node-telegram-bot-api");\nconst bot = new Bot(token);',
+    dependencies: ['node-telegram-bot-api'],
+    imports: [],
+    async: true,
+  };
+  validateTranslation(out); // must not throw
 });
 
 // ── Agent response parsing ───────────────────────────────────────────────────
@@ -190,15 +245,15 @@ test('translator: telegram source produces validated output via mock provider', 
   const source = 'remember bot as telegram bot with token';
   const client = { chat: async () => JSON.stringify({
     javascript:
-      'const TelegramBot = require("node-telegram-bot-api");\n' +
-      'const bot = new TelegramBot(token, { polling: true });',
+      'const { Bot } = require("node-telegram-bot-api");\n' +
+      'const bot = new Bot(token);',
     dependencies: ['node-telegram-bot-api'],
     imports: [],
     async: true,
   }) };
   const result = await translateSource(source, { client, noCache: true });
   if (result.deterministic !== false) throw new Error('expected the AI path');
-  if (!result.javascript.includes('TelegramBot')) throw new Error('missing generated code');
+  if (!result.javascript.includes('Bot')) throw new Error('missing generated code');
   if (!result.dependencies.includes('node-telegram-bot-api')) throw new Error('missing dependency');
   if (result.rule !== 'bots/telegram') throw new Error(`wrong rule: ${result.rule}`);
 });
@@ -307,8 +362,8 @@ function httpRequest(port, method, requestPath, body) {
 function mockTelegramClient() {
   return { chat: async () => JSON.stringify({
     javascript:
-      'const TelegramBot = require("node-telegram-bot-api");\n' +
-      'const bot = new TelegramBot(token, { polling: true });',
+      'const { Bot } = require("node-telegram-bot-api");\n' +
+      'const bot = new Bot(token);',
     dependencies: ['node-telegram-bot-api'],
     imports: [],
     async: true,
@@ -356,7 +411,7 @@ testHttp('hosted service: /translate returns a validated contract via the shared
       { source: TELEGRAM_SOURCE, options: { noCache: true } });
     if (res.status !== 200) throw new Error(`expected 200, got ${res.status}: ${JSON.stringify(res.data)}`);
     if (res.data.deterministic !== false) throw new Error('expected the AI path');
-    if (!res.data.javascript.includes('TelegramBot')) throw new Error('missing generated code');
+    if (!res.data.javascript.includes('Bot')) throw new Error('missing generated code');
     if (!res.data.dependencies.includes('node-telegram-bot-api')) throw new Error('missing dependency');
     if (res.data.rule !== 'bots/telegram') throw new Error(`wrong rule: ${res.data.rule}`);
   } finally {
@@ -436,7 +491,7 @@ testHttp('remote: translateRemote posts to the service and returns the validated
   process.env.PLAIN_AI_REMOTE_URL = `http://127.0.0.1:${port}`;
   try {
     const result = await translateRemote(TELEGRAM_SOURCE, { noCache: true });
-    if (!result.javascript.includes('TelegramBot')) throw new Error('missing generated code');
+    if (!result.javascript.includes('Bot')) throw new Error('missing generated code');
     if (result.rule !== 'bots/telegram') throw new Error(`wrong rule: ${result.rule}`);
   } finally {
     if (hadRemote) process.env.PLAIN_AI_REMOTE_URL = hadRemote;
@@ -475,7 +530,7 @@ testHttp('translator: routes to the hosted service when no local key is configur
   try {
     const result = await translateSource(TELEGRAM_SOURCE, { noCache: true });
     if (result.deterministic !== false) throw new Error('expected the AI path');
-    if (!result.javascript.includes('TelegramBot')) throw new Error('missing generated code');
+    if (!result.javascript.includes('Bot')) throw new Error('missing generated code');
     if (result.rule !== 'bots/telegram') throw new Error(`wrong rule: ${result.rule}`);
   } finally {
     if (hadKey) process.env.MISTRAL_API_KEY = hadKey;
@@ -494,7 +549,7 @@ testHttp('translator: an injected client uses the local pipeline, never the host
   try {
     const result = await translateSource(TELEGRAM_SOURCE, { noCache: true, client: mockTelegramClient() });
     if (result.deterministic !== false) throw new Error('expected the AI path');
-    if (!result.javascript.includes('TelegramBot')) throw new Error('missing generated code');
+    if (!result.javascript.includes('Bot')) throw new Error('missing generated code');
   } finally {
     if (hadKey) process.env.MISTRAL_API_KEY = hadKey;
     else delete process.env.MISTRAL_API_KEY;

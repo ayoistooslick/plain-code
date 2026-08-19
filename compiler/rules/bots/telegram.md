@@ -97,7 +97,7 @@ started.
 
 ## Semantic meaning
 
-- `remember bot as telegram bot with token` creates a `TelegramBot` instance
+- `remember bot as telegram bot with token` creates a `Bot` instance
   configured for long polling and binds it to `bot`.
 - `when someone sends "<cmd>"` registers a handler for that command/pattern.
 - `when someone clicks "<data>"` registers a callback-query handler.
@@ -109,26 +109,42 @@ started.
 ## JavaScript target
 
 The translator must follow this shape (library-level, not the Plain runtime
-prelude):
+prelude). The installed `node-telegram-bot-api` v2.x exports `Bot`, not
+the old `TelegramBot` constructor:
 
 ```js
-const { TelegramBot } = require("node-telegram-bot-api");
-const bot = new TelegramBot(token, { polling: true });
+const { Bot } = require("node-telegram-bot-api");
 
-bot.onText(/^\/start$/, async (msg) => {
-  const chatId = msg.chat.id;
-  await bot.sendMessage(chatId, "Hello from Plain!");
+const token = process.env.BOT_TOKEN;
+if (!token) throw new Error("BOT_TOKEN is not set");
+
+const bot = new Bot(token);
+
+bot.command("start", (ctx) => {
+  return ctx.reply("Hello from Plain!");
 });
 
-bot.on("callback_query", async (query) => {
-  const chatId = query.message.chat.id;
-  if (query.data === "option_a") {
-    await bot.sendMessage(chatId, "You picked A");
+bot.on("message", (ctx) => {
+  console.log("Received:", ctx.message?.text);
+});
+
+bot.on("callback_query", (ctx) => {
+  if (ctx.data === "option_a") {
+    return ctx.reply("You picked A");
   }
 });
 
-bot.on("polling_error", (err) => console.error(err));
+bot.startPolling().catch((err) => {
+  console.error("Polling failed:", err);
+});
 ```
+
+Key differences from the old API (v1.x):
+- Constructor: `new Bot(token)` — not `new TelegramBot(token, { polling: true })`
+- Commands: `bot.command("name", handler)` — not `bot.onText(/regex/, handler)`
+- Messages: `bot.on("message", handler)` — context has `ctx.message`, `ctx.reply()`
+- Polling: `bot.startPolling()` returns a Promise — call it explicitly
+- Errors: catch polling errors with `.catch()` on `startPolling()`
 
 ## Dependency
 
