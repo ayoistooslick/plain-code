@@ -1,504 +1,896 @@
-You are working directly inside the Plain Code repository.
+Plain v2.0.0-latest — Complex Compilation, Rule System Hardening, Documentation and Language Integrity
 
-Your job is to audit, fix, test, and improve the AI-assisted compiler rule system. Do not just explain what should be changed. Actually inspect the repository, modify the necessary files, run tests/commands, and leave the working tree in a production-ready state.
+You are working directly inside the Plain repository.
 
-IMPORTANT CONTEXT
+Repository:
+https://github.com/ayoistooslick/plain-code
 
-Plain Code is an intent-oriented programming language that compiles Plain (.pln) source into JavaScript.
+Documentation site:
+https://ayoistooslick.github.io/plain-code
 
-The repository contains:
+IMPORTANT PRODUCT DIRECTION
 
-  compiler/rules/
+Plain is an Intent-Oriented Programming Language (IOPL).
 
-with the current rules:
+It is NOT an English-to-code system.
+It is NOT a prompt language.
+It is NOT a chatbot that accepts arbitrary natural-language instructions and guesses what the programmer meant.
 
-  compiler/rules/bots/telegram.md
-  compiler/rules/bots/telegram.json
+Humans may write readable, sentence-like Plain syntax, but Plain still has a defined language, defined constructs, defined semantics, and defined rules.
 
-  compiler/rules/http/fetch.md
-  compiler/rules/http/fetch.json
+The compiler must therefore remain strict.
 
-  compiler/rules/web/rest-api.md
-  compiler/rules/web/rest-api.json
+We are introducing/reframing the v2.0.0 internal compilation architecture as:
 
-There is also a hosted AI compiler service:
+Complex Compilation
 
-  https://plain-code-compiler.onrender.com
+Do NOT publicly brand this as "AI-assisted programming", "AI coding", "natural-language programming", "prompt-to-code", or anything that suggests Plain accepts arbitrary English.
 
-The CLI falls back to AI-assisted compilation when the deterministic compiler cannot handle a construct.
+The model/provider is an implementation mechanism used by the compiler when a defined Plain capability is too complex to hard-code into the deterministic compiler.
 
-The relevant compiler code is under:
-
-  compiler/ai/
-
-and includes the rule resolver, translator, validator, prompt/agent logic, remote compiler client, etc.
-
-CURRENT PROBLEM
-
-We tested all 3 existing rules through the hosted /translate endpoint.
-
-Telegram:
-- The AI generated incompatible node-telegram-bot-api code because the installed package version/API is different from the old examples.
-- The environment currently uses node-telegram-bot-api 2.x, whose CommonJS export exposes `Bot`, not the old `TelegramBot` constructor.
-- A working direct Node test was:
-
-  const { Bot } = require("node-telegram-bot-api");
-
-  const token = process.env.BOT_TOKEN;
-  if (!token) {
-    throw new Error("BOT_TOKEN is not set");
-  }
-
-  const bot = new Bot(token);
-
-  bot.command("start", (ctx) => {
-    return ctx.reply("Baaaka");
-  });
-
-  bot.on("message", (ctx) => {
-    console.log("Received:", ctx.message?.text);
-  });
-
-  bot.startPolling().catch((err) => {
-    console.error("Polling failed:", err);
-  });
-
-This successfully started and received Telegram messages.
-
-HTTP Fetch:
-A request like:
-
-  remember response as await fetch "https://httpbin.org/get"
-
-was translated into JavaScript containing top-level `await`, but the validator rejected it with:
-
-  await is only valid in async functions and the top level bodies of modules
-
-The fetch rule currently says `"async": true` and claims that the Plain runtime wrapper provides top-level await, but the hosted AI output is being validated before the necessary async wrapping occurs.
-
-REST API:
-The basic REST rule currently works. We tested:
-
-  remember app as express app
-
-  app get "/health" as
-      reply "ok"
-  done
-
-  listen app on port 3000
-
-and the hosted compiler returned valid JavaScript:
-
-  const express = require("express");
-  const app = express();
-
-  app.get("/health", (req, res) => {
-    res.send("ok");
-  });
-
-  app.listen(3000);
-
-Do NOT break this working behavior.
-
-YOUR TASK
-
-1. FULLY AUDIT THE AI RULE PIPELINE
-
-Read and understand:
-
-  compiler/ai/translator.js
-  compiler/ai/resolver.js
-  compiler/ai/validator.js
-  compiler/ai/prompt.js
-  compiler/ai/agent.js
-  compiler/ai/remote.js
-  compiler/ai/server.js
-  compiler/ai/index.js
-
-Also inspect:
-
-  compiler/generator.js
-  compiler/dependency-detector.js
-  compiler/bundler.js
-  compiler/parser.js
-  compiler/lexer.js
-  compiler/cli.js
-
-and the existing tests.
-
-Do not assume the existing rule documentation is correct. Verify the actual compiler behavior.
-
-2. FIX THE TELEGRAM RULE
-
-Update the Telegram rule documentation and metadata so the AI generates code compatible with the currently supported `node-telegram-bot-api` API.
-
-Do not blindly use old internet examples.
-
-Inspect package/API expectations and the repository's dependency handling.
-
-The generated implementation must follow the actual supported API, including:
-
-  const { Bot } = require("node-telegram-bot-api");
-
-  const bot = new Bot(token);
-
-  bot.command(...)
-
-  bot.on(...)
-
-  bot.startPolling()
-
-where appropriate.
-
-Make sure async behavior and generated runtime structure are valid.
-
-The rule should cover common Telegram bot functionality such as:
-
-- bot creation
-- /start and other commands
-- text/message handlers
-- replying/sending messages
-- callback queries / inline keyboards if supported by the actual installed API
-- polling startup
-- environment-token usage
-- error handling
-
-Do not invent APIs.
-
-3. FIX THE HTTP FETCH RULE
-
-This is critical.
-
-The current fetch rule claims `"async": true`, but the generated top-level await fails validation before runtime wrapping.
-
-Determine the correct architectural fix.
-
-The final pipeline must allow valid async AI-generated JavaScript without making the validator incorrectly reject it.
-
-Do NOT weaken JavaScript validation merely to make the test pass.
-
-Prefer a proper compiler-level solution where:
-
-- async rule output is represented correctly,
-- validation understands the intended async compilation context,
-- final generated code is wrapped using the existing Plain async runtime mechanism,
-- ordinary synchronous JavaScript remains unchanged.
-
-Test:
-
-  remember response as await fetch "https://httpbin.org/get"
-
-  if response is ok
-      remember data as await response.json()
-      show data
-  otherwise
-      show "api failed"
-  done
-
-The hosted compiler must return a valid translation contract and the CLI must be able to execute the resulting program.
-
-3.5 IMPORTANT: CHECK THE ASYNC CONTRACT
-
-Trace the complete path:
+Think of the architecture like this:
 
 Plain source
-→ deterministic compiler failure
-→ rule resolution
-→ AI translation
-→ generated JavaScript
-→ validation
-→ compileSource / compileFile
-→ CLI compile()
-→ async wrapping
-→ _plain_out.js
-→ Node execution
+→ Plain language/rule recognition
+→ deterministic compiler OR Complex Compilation
+→ validated JavaScript
+→ normal bundler/runtime
 
-Find exactly where async information is lost or validated in the wrong context.
+The important distinction:
 
-Fix the architecture rather than adding a special-case hack for fetch.
+The rule defines what Plain means. The compiler/model implements that meaning.
 
-4. AUDIT THE RULE FORMAT
+The model must NEVER be allowed to invent language semantics.
 
-Ensure every rule has consistent:
+---
 
-  *.md
-  *.json
+1. AUDIT THE ENTIRE CURRENT IMPLEMENTATION FIRST
 
-metadata.
+Before modifying anything, inspect the repository thoroughly.
 
-Verify:
+Read at minimum:
+
+- README.md
+- CHANGELOG.md
+- RELEASE_NOTES.md
+- UPGRADE_GUIDE.md
+- CONTRIBUTION.md
+- package.json
+- compiler/
+- compiler/ai/
+- compiler/rules/
+- compiler/rules/README.md
+- tests/
+- docs/
+- docs/index.html
+- examples/
+- samples/
+- render.yaml
+- version-related files
+
+Also inspect the current git state and recent commits.
+
+Do not blindly overwrite existing work.
+
+The repository already contains fixes for:
+
+- async Complex Compilation validation
+- Telegram rule updates
+- HTTP fetch rule updates
+- REST API rule
+- WebSocket rule
+- Cron/Scheduler rule
+- validator security checks
+- dependency validation
+- require() restrictions
+
+Preserve correct existing work.
+
+---
+
+2. COMPLEX COMPILATION MUST REMAIN RULE-BOUND
+
+This is the most important requirement.
+
+Current and future Complex Compilation must only activate when the source matches a defined, versioned Plain rule.
+
+Do NOT create a fallback like:
+
+«"If the deterministic compiler cannot understand the sentence, send the sentence to the model and let it figure out what the user wants."»
+
+That would turn Plain into a prompt language.
+
+Instead:
+
+1. Lexer/parser/deterministic compiler attempts normal compilation.
+2. If a construct is unsupported, the rule resolver determines whether a known Plain rule matches it.
+3. Only a matching rule may invoke Complex Compilation.
+4. The rule defines:
+   - syntax
+   - semantics
+   - valid forms
+   - invalid forms
+   - JavaScript target
+   - dependencies
+   - async requirements
+   - security constraints
+   - examples
+5. The model translates the defined construct according to the rule.
+6. Generated JavaScript is validated.
+7. Dependency/import requirements are validated.
+8. The normal bundler/runtime executes the result.
+
+If no rule matches, Plain must reject the construct.
+
+It must NOT say:
+
+«"Sure, I'll interpret that."»
+
+It should produce a useful compiler error explaining that the requested construct is not part of the current Plain language/rule set.
+
+This is essential for language integrity.
+
+---
+
+3. STRENGTHEN THE RULE SYSTEM
+
+Audit every existing rule:
+
+- bots/telegram
+- http/fetch
+- web/rest-api
+- websocket/ws
+- automation/cron
+
+For each rule, make sure the Markdown and JSON metadata agree exactly.
+
+Every rule should define, where applicable:
 
 - name
 - category
 - version
-- title
 - purpose
 - keywords
-- triggers
+- deterministic triggers
+- exact supported syntax
+- semantic meaning
+- JavaScript target
 - dependencies
 - imports
-- async
-- compilerMin
-- resolvablePaths
+- async behavior
+- runtime requirements
+- security restrictions
+- invalid forms
+- examples
+- expected compiler output
+- test expectations
 
-are internally consistent.
+Make the resolver deterministic and conservative.
 
-The markdown documentation must describe syntax the compiler can realistically translate.
+Avoid broad triggers that accidentally classify arbitrary English as Plain syntax.
 
-Do not document imaginary syntax.
+If a trigger is too broad, narrow it.
 
-5. ADD MORE USEFUL RULES
+If necessary, introduce explicit syntax markers/grammar constraints so that a phrase cannot accidentally become a rule match merely because it contains a keyword.
 
-After fixing the existing rules, inspect the deterministic compiler and identify important capabilities Plain currently lacks that can reasonably be handled through AI-assisted rules.
+---
 
-Do NOT add dozens of pointless rules just to inflate the directory.
+4. MAKE EXISTING RULES MORE CAPABLE
 
-Prioritize practical, commonly needed capabilities.
+Do not merely add more examples.
 
-Consider categories such as:
+Expand the current rules so they support realistic, composable tasks while remaining strictly defined.
 
-  bots/
-  http/
-  web/
-  databases/
-  files/
-  utilities/
-  automation/
+Telegram
 
-Potential useful rule candidates include, where compatible with the existing Plain philosophy and runtime:
+Expand the Telegram rule where useful for real bot development.
 
-- Discord bots
-- Telegram improvements
-- HTTP API clients
-- Webhooks
-- WebSocket clients/servers
-- Express middleware
-- authentication/session handling
-- JSON APIs
-- SQLite
-- PostgreSQL
-- Redis
+Potential supported capabilities include:
+
+- commands
+- text messages
+- replies
+- chat/user information
+- inline keyboards
+- callback queries
+- sending messages
+- editing messages
+- photos/documents where the syntax can be defined cleanly
+- environment-based bot tokens
+- error handling
+- async handlers
+
+Do NOT invent syntax casually.
+
+Every new capability must have a documented Plain syntax and corresponding rule semantics.
+
+HTTP Fetch
+
+Support realistic HTTP operations where appropriate:
+
+- GET
+- POST
+- PUT
+- PATCH
+- DELETE
+- headers
+- JSON body
+- query parameters
+- response status
+- response headers
+- JSON response
+- text response
+- error handling
+- multiple requests
+- async behavior
+
+Again, define the syntax first.
+
+REST API
+
+Expand the REST rule with well-defined constructs such as:
+
+- GET
+- POST
+- PUT
+- PATCH
+- DELETE
+- path parameters
+- query parameters
+- request body
+- JSON responses
+- status codes
+- middleware
+- error handling
+- request headers
+- route parameters
+- async route handlers
+
+Do not turn this into arbitrary "make me a web server" English.
+
+WebSocket
+
+Audit the newly added WebSocket rule.
+
+Ensure it has:
+
+- connection creation
+- connection events
+- message handling
+- sending messages
+- close/error handling
+- server/client semantics where appropriate
+- dependency handling for "ws"
+- correct async/event behavior
+- security validation
+
+Cron/Scheduler
+
+Audit the newly added Cron rule.
+
+Ensure it has:
+
+- schedule definition
+- recurring task execution
+- timezone handling if supported
+- async jobs
+- error handling
+- dependency handling for "node-cron"
+
+Again, define exact Plain syntax.
+
+---
+
+5. ADD MORE RULES FOR REAL LANGUAGE GAPS
+
+After auditing the repository, identify capabilities that genuinely belong in Plain but are currently missing.
+
+Prioritize useful programming capabilities rather than gimmicks.
+
+Good candidates may include:
+
+- environment/configuration
+- JSON operations
 - filesystem operations
-- environment/config handling
-- email sending
+- database operations
+- authentication/session flows
+- WebSocket
 - scheduled jobs
-- CLI tools
-- CSV handling
-- date/time utilities
+- email
+- queues/jobs
+- caching
+- common API integrations
+- validation
+- structured logging
+- CLI applications
 
-But DO NOT blindly implement all of these.
+However:
 
-First inspect what Plain already supports deterministically. A rule should only cover a genuine gap.
+Do not add a rule simply because an English sentence could describe it.
 
-For each new rule:
+Add a rule only when:
 
-  compiler/rules/<category>/<name>.md
-  compiler/rules/<category>/<name>.json
+1. the capability is useful,
+2. its syntax can be precisely defined,
+3. its semantics can be precisely defined,
+4. its generated JavaScript target can be validated,
+5. its security model is understood,
+6. it can be tested.
 
-Add realistic examples and precise JavaScript targets.
+Do not create dozens of shallow rules just to inflate the feature list.
 
-Keep the rule syntax aligned with existing Plain syntax.
+Quality > quantity.
 
-6. DEPENDENCY SAFETY
+---
 
-Inspect how dependencies are detected and installed.
+6. RULES MUST BE THE LANGUAGE CONTRACT
 
-Every rule that requires an npm package must declare it correctly.
+Update "compiler/rules/README.md" into a serious rule-authoring specification.
 
-Do not allow AI-generated code to silently depend on packages that are not declared.
+Explain that a rule is effectively a language extension contract.
 
-Make sure dependency handling works with:
+Document:
 
-  plain run
-  plain build
-  plain start
-  plain install
+- how to create a rule
+- how to name it
+- directory structure
+- JSON schema
+- Markdown structure
+- triggers
+- syntax design
+- semantic design
+- JavaScript target
+- dependencies
+- async behavior
+- security requirements
+- validation requirements
+- testing requirements
+- versioning
+- cache invalidation
+- backward compatibility
 
-Do not create unnecessary package-lock changes in the compiler repository unless the repository's existing workflow requires them.
+Explicitly state:
 
-7. SECURITY
+«A rule must define what Plain means before Complex Compilation is allowed to implement it.»
 
-Preserve the existing validation/security model.
+Also explain why arbitrary natural-language fallback is forbidden.
 
-Do NOT solve failures by disabling:
+---
 
-- forbidden pattern checks
-- require allowlisting
-- JavaScript syntax validation
-- dependency validation
-- output contract validation
+7. COMPLEX COMPILATION MUST BE INVISIBLE TO NORMAL USERS
 
-AI-generated JavaScript must remain validated.
+We are changing the public product language.
 
-Pay particular attention to:
+Internally, the system may still have files/modules named "ai", because changing the entire internal architecture purely for naming would be unnecessary.
 
-- arbitrary require()
-- child_process
-- eval
-- Function constructor
-- shell execution
-- secrets
-- API tokens
-- unsafe generated URLs
-- filesystem access
+But the PUBLIC PRODUCT should describe the capability as:
 
-8. TESTS
+Complex Compilation
 
-Add or update automated tests for every fixed rule.
+Do not expose provider details in normal user-facing documentation.
 
-At minimum test:
+Do not advertise:
 
-A. Telegram rule resolution
-B. Telegram generated JavaScript contract
-C. Fetch rule resolution
-D. Fetch async compilation
-E. REST API rule resolution
-F. REST API generated JavaScript
-G. dependency metadata
-H. invalid generated JavaScript rejection
-I. async wrapping
-J. rule resolver behavior
+- Mistral
+- provider credentials
+- "AI coding"
+- prompt engineering
+- model selection
+- "tell Plain what you want"
+- natural-language-to-code
+- "AI understands your English"
 
-Use the repository's existing test framework and conventions.
+unless a genuinely technical/internal document requires it.
 
-Do not create fake tests that merely inspect documentation strings.
+The user experience should be:
 
-Where possible, test actual compilation behavior.
+«Plain supports complex constructs through Complex Compilation.»
 
-9. TEST THE HOSTED CONTRACT
+Not:
 
-The hosted compiler at:
+«Plain sends your English to an AI.»
 
-  https://plain-code-compiler.onrender.com
+---
 
-is part of the current architecture.
+8. AUDIT CLI OUTPUT AND PUBLIC DIAGNOSTICS
 
-The local compiler should remain compatible with the response contract:
+Search the entire repository for public-facing references to:
 
-  {
-    deterministic: false,
-    javascript: "...",
-    dependencies: [],
-    imports: [],
-    async: true/false,
-    rule: "...",
-    ruleVersion: ...
-  }
+- AI-assisted
+- AI compilation
+- AI compiler
+- chatbot
+- prompt
+- provider
+- Mistral
+- model
+- API key
+- translation service
 
-Do not break the remote response contract.
+Determine which references are internal developer diagnostics and which are public UX.
 
-If local code needs changes to correctly handle the contract, make those changes.
+Normal users should see language such as:
 
-10. TEST REAL EXAMPLES
+- "Complex Compilation"
+- "Complex Compilation rule"
+- "Complex Compilation failed"
+- "Unsupported Plain construct"
+- "Rule resolution failed"
+- "Generated code validation failed"
 
-After making changes, run the repository's complete test suite.
+Avoid exposing provider implementation details.
 
-Then manually test representative source snippets against the local compiler.
+Do not weaken diagnostics or security merely to hide the word AI.
 
-Also test the hosted endpoint where appropriate with curl.
+Errors still need to be useful.
+
+---
+
+9. VERSIONING
+
+Treat this as the v2.0.0 product presentation.
+
+Audit all places where the version is displayed.
+
+Use a consistent version identity.
+
+Do not leave contradictory messaging such as:
+
+- v2.0.0-beta
+- AI-Assisted Compilation
+- v2.0.0 Complex Compilation
+
+unless there is a deliberate release-stage reason.
+
+Update:
+
+- compiler/version.js
+- package.json if appropriate
+- README
+- docs
+- changelog/release notes
+- CLI output
+- website metadata
+- examples where necessary
+
+Do not arbitrarily change package versions if the repository's release process says otherwise. Follow the project's existing versioning architecture.
+
+---
+
+10. COMPLETELY REWORK THE DOCUMENTATION WEBSITE
+
+Update:
+
+"docs/index.html"
+
+The website should become the authoritative, useful Plain documentation site.
+
+It should explain Plain as an IOPL first.
+
+The site should contain useful sections such as:
+
+Introduction
+
+What Plain is.
+
+What IOPL means.
+
+Why Plain exists.
+
+What Plain is NOT.
+
+Explicitly explain:
+
+«Plain is not an English programming language or prompt language. It is a programming language with human-readable syntax.»
+
+Installation
+
+Show the correct installation flow.
+
+Quick Start
+
+Give a tiny working Plain program.
+
+Language Reference
+
+Document the actual deterministic language:
+
+- variables
+- reassignment
+- conditions
+- comparisons
+- loops
+- functions
+- arrays
+- objects
+- properties
+- files
+- standard library
+- imports
+- JavaScript Gateway
+
+Web Development
+
+Document:
+
+- web app
+- Express
+- routes
+- REST APIs
+
+HTTP
+
+Document fetch syntax and examples.
+
+Telegram
+
+Document the Telegram rule and examples.
+
+WebSocket
+
+Document WebSocket syntax if the rule is shipped.
+
+Scheduling
+
+Document Cron syntax if the rule is shipped.
+
+Database
+
+Document the actual supported database functionality.
+
+Packages
+
+Explain "use", dependency detection, "plain install", "plain add", etc.
+
+Multi-file Projects
+
+Explain imports and dependency ordering.
+
+CLI Reference
+
+Document every real CLI command.
+
+Complex Compilation
+
+Keep this concise and architectural.
+
+Explain that Plain has a compilation layer capable of handling defined complex capabilities.
+
+Do NOT frame it as a chatbot.
+
+Explain that Complex Compilation operates under versioned language rules.
+
+Example wording:
+
+«Complex Compilation extends Plain's compiler for capabilities that would otherwise require large amounts of handwritten compiler machinery. It does not turn Plain into a natural-language prompt system. Every complex capability is defined by a versioned Plain rule with explicit syntax and semantics.»
+
+Security
+
+Explain:
+
+- generated code validation
+- dependency restrictions
+- forbidden patterns
+- environment secrets
+- ".env"
+- rule validation
+- untrusted network data
+- generated JavaScript validation
+
+Examples
+
+Add many genuinely useful examples.
+
+Examples should be copy/pasteable and internally consistent.
+
+Include small examples AND realistic examples.
 
 For example:
 
-  curl --location --request POST "https://plain-code-compiler.onrender.com/translate" ^
-    --header "Content-Type: application/json" ^
-    --data "{\"source\":\"remember app as express app\n\napp get \\\"/health\\\" as\n    reply \\\"ok\\ndone\n\nlisten app on port 3000\"}"
+- CLI hello world
+- calculator
+- file processing
+- REST API
+- REST API fetching multiple APIs
+- Telegram bot
+- WebSocket server
+- scheduled task
+- database-backed API
+- multi-file application
 
-Use the correct shell syntax for the current environment.
+Do not document syntax that does not actually compile.
 
-Also test the fetch and Telegram examples.
+---
 
-11. DO NOT PAPER OVER FAILURES
+11. README AND DOCUMENTATION CONSISTENCY
 
-If something fails:
+Update README.md and any relevant README/documentation files.
 
-- inspect the actual generated JavaScript,
-- identify the layer responsible,
-- fix the correct layer,
-- rerun the test.
+The README should become a concise entry point, not a giant dumping ground for every implementation detail.
 
-Do not simply alter the expected output.
+Move detailed references into docs where appropriate.
 
-Do not weaken validation.
+Search for stale documentation.
 
-Do not hardcode special cases based only on the three examples.
+Pay special attention to documentation that currently says:
 
-12. KEEP THE DETERMINISTIC COMPILER AUTHORITATIVE
+"AI-Assisted Compilation"
 
-The AI compiler is a fallback.
+or exposes provider configuration as a normal user feature.
 
-Do not modify the language so that ordinary deterministic constructs unnecessarily go through AI.
+Rewrite it around Complex Compilation.
 
-Do not replace deterministic compiler behavior with AI.
+Do not lie about how Plain works. Internal architecture can be described in developer documentation when appropriate, but public product documentation should focus on the language and its guarantees.
 
-The intended architecture is:
+---
 
-deterministic compiler first
-        ↓
-if unsupported
-        ↓
-rule resolver
-        ↓
-AI translation
-        ↓
-validated JavaScript
-        ↓
-normal runtime
+12. ADD REAL EXAMPLES
 
-Preserve this architecture.
+Create/update examples for every shipped capability.
 
-13. CHECK FOR REGRESSIONS
+Every example must be tested.
 
-Before finishing, inspect the git diff carefully.
+Do not create documentation examples that are merely theoretical.
 
-Make sure:
+At minimum, include a real integration example combining capabilities, similar to:
 
-- no unrelated files were changed,
-- no credentials/secrets were added,
-- no generated junk files were committed,
-- no temporary debug code remains,
-- no package-lock churn is unrelated,
-- no existing working feature was broken.
+REST API
++
+HTTP fetch
++
+multiple upstream APIs
++
+JSON response
 
-Run:
+The successful test we just performed is exactly the kind of integration that should eventually appear in the documentation.
 
-  git status
-  git diff --stat
-  git diff
+---
 
-Then run the complete test suite one final time.
+13. TESTING REQUIREMENTS
 
-14. FINAL REPORT
+Add or update tests for every meaningful change.
 
-At the end, report:
+Test:
+
+Rule resolution
+
+- positive matches
+- negative matches
+- ambiguous inputs
+- invalid forms
+- rule priority
+
+Complex Compilation
+
+- supported rule compiles
+- generated JavaScript validates
+- async rules validate inside the same async context used at runtime
+- dependency declarations work
+- forbidden JavaScript remains blocked
+- require allowlist remains enforced
+- secrets are not leaked
+- cached translations respect rule versions
+
+Integration
+
+Actually compile and execute representative examples where feasible.
+
+At minimum test:
+
+- REST API
+- HTTP fetch
+- REST + HTTP combined
+- Telegram
+- WebSocket
+- Cron
+
+Do not consider a feature complete merely because a mocked translation test passes.
+
+---
+
+14. SECURITY REQUIREMENTS
+
+Do not weaken any existing security protections.
+
+Preserve and improve:
+
+- generated JavaScript validation
+- forbidden pattern checks
+- "require()" allowlist
+- dependency restrictions
+- secret protection
+- API key protection
+- source minimization
+- rule-bound compilation
+
+Audit for:
+
+- arbitrary "eval"
+- dynamic imports
+- child_process
+- shell execution
+- filesystem escape
+- arbitrary "require"
+- network-based code execution
+- generated code injection
+- malicious rule metadata
+- unsafe URLs where applicable
+
+Remember:
+
+Complex Compilation must produce code from a defined rule, not arbitrary executable code requested through natural language.
+
+---
+
+15. DO NOT BREAK THE DETERMINISTIC COMPILER
+
+This is critical.
+
+The deterministic compiler remains authoritative.
+
+Do NOT move existing deterministic language features into Complex Compilation unnecessarily.
+
+Do NOT make normal Plain syntax dependent on a remote service.
+
+A deterministic Plain program should continue to compile:
+
+- offline
+- without provider credentials
+- without network access
+- without Complex Compilation
+
+Complex Compilation is an extension, not the foundation.
+
+---
+
+16. DO NOT CHANGE PUBLIC SYNTAX CASUALLY
+
+Before introducing new syntax:
+
+1. inspect existing grammar
+2. inspect parser
+3. inspect lexer
+4. inspect generator
+5. inspect existing rules
+6. check for collisions
+7. define the syntax in documentation
+8. add tests
+9. only then implement it
+
+Do not introduce "natural language" variations just because they sound nice.
+
+Plain can be readable without being ambiguous.
+
+For example, a human saying:
+
+«"I want to eat you"»
+
+must not be interpreted as a programming instruction merely because an AI model could guess some intended meaning.
+
+The compiler needs recognizable Plain constructs.
+
+This is exactly why the rule system exists.
+
+---
+
+17. UPDATE THE PRODUCT PHILOSOPHY
+
+Make the documentation clearly communicate this distinction:
+
+Bad model
+
+Human sentence
+→ AI guesses intention
+→ code
+
+Plain model
+
+Defined Plain construct
+→ compiler understands semantics
+→ deterministic compilation OR matching Complex Compilation rule
+→ validated implementation
+→ executable program
+
+The second model is Plain.
+
+Complex Compilation makes the implementation machinery more capable.
+
+It does NOT make the language less precise.
+
+---
+
+18. SEARCH FOR TECHNICAL DEBT WHILE YOU ARE HERE
+
+While implementing the above, identify obvious issues that would undermine this architecture.
+
+Examples:
+
+- duplicated rule logic
+- stale rule metadata
+- inconsistent async handling
+- inconsistent dependency declarations
+- stale docs
+- tests testing obsolete syntax
+- public diagnostics exposing implementation details
+- dead AI/provider code
+- unsafe logging
+- cache/version inconsistencies
+- undocumented compiler behavior
+- inconsistent version strings
+
+Fix issues that are directly relevant to this task.
+
+Do not randomly refactor unrelated parts of the project.
+
+---
+
+19. IMPORTANT: DO NOT FAKE SUCCESS
+
+Run the tests.
+
+Run actual compiler commands.
+
+Run actual examples where possible.
+
+If something cannot be tested because the environment lacks a provider/network/service, clearly report that.
+
+Do not say "all tests pass" unless they actually pass.
+
+Do not hide pre-existing failures.
+
+Distinguish:
+
+- fixed failures
+- new failures
+- pre-existing failures
+- environment-only failures
+
+---
+
+20. FINAL VALIDATION
+
+Before finishing:
+
+1. Run the complete relevant test suite.
+2. Test rule resolution.
+3. Test deterministic compilation.
+4. Test Complex Compilation validation.
+5. Test representative real programs.
+6. Test at least one multi-rule integration program.
+7. Verify docs examples match real syntax.
+8. Search public files for stale "AI-Assisted Compilation" branding.
+9. Search public files for accidental provider/API-key exposure.
+10. Verify version consistency.
+11. Verify no secrets were added.
+12. Verify no package-lock churn unless genuinely required.
+13. Verify no generated junk files.
+14. Verify git diff carefully.
+
+Then provide a concise final report containing:
 
 - files changed
-- root cause of the Telegram failure
-- root cause of the Fetch async failure
-- how async compilation was fixed
+- rules improved
 - rules added
-- tests added/updated
-- exact test commands executed
-- whether all tests pass
-- any remaining known limitations
+- documentation added/updated
+- tests run
+- test results
+- security changes
+- any remaining limitations
 
-IMPORTANT WORKING STYLE
+Do not commit or push unless explicitly asked.
 
-You have shell access. Use it.
+---
 
-Do not ask me to manually inspect files that you can inspect yourself.
+CORE PRINCIPLE
 
-Do not merely give me code snippets. Modify the repository.
+Never optimize Plain for:
 
-Do not stop after fixing the first error.
+«"The AI can probably figure out what the user means."»
 
-Work through the entire task until the repository is tested and consistent.
+Optimize Plain for:
 
-Do not commit or push anything. Leave the changes unstaged so I can inspect them myself.
+«"The language precisely defines what this construct means, and Complex Compilation can implement that construct without requiring the deterministic compiler to contain thousands of lines of specialized implementation code."»
 
-The final state should be something I can review with:
+That distinction is the foundation of Plain v2.0.0.
 
-  git status
-  git diff
-  git diff --stat
-
-and then commit myself.
+Complex Compilation should make Plain more capable, not less of a programming language.
