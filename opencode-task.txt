@@ -1,390 +1,128 @@
-PLAIN CODE v2.0.0-LATEST PRE-RELEASE FIX
+Review and finish the multi-rule Complex Compilation implementation before v2.0.0-latest.
+
+The goal is to make multi-rule compilation work consistently in BOTH local and hosted/remote AI compilation paths.
 
-We have now tested the hosted compiler extensively. Do NOT merely patch the individual generated examples. Fix the underlying compiler architecture while preserving the explicit rule-based language design.
+1. Fix the hosted compiler contract so /translate can receive and use ALL matched rule definitions/rule paths instead of only one rulePath. The hosted compiler must support the same rule-composition architecture as the local provider path.
+
+2. Preserve backward compatibility with requests that provide a single rulePath.
 
-IMPORTANT LANGUAGE PRINCIPLE
-
-Plain is NOT an English prompt language.
-
-Complex Compilation is an internal compiler capability that translates valid Plain syntax covered by explicit compiler rules into JavaScript.
-
-Never make the resolver accept arbitrary English because an AI model can understand it.
-
-If no explicit rule covers the source, compilation MUST fail with the existing "no rule covers this source" behavior.
-
-Every new Plain feature must have an explicit rule defining:
-- syntax
-- semantic meaning
-- JavaScript target
-- dependencies
-- async behavior
-- invalid forms
-- security considerations
-- resolver triggers
-- tests
-
-The AI may perform complex translation inside those boundaries, but it must never invent language semantics from arbitrary natural language.
-
-CURRENT TEST RESULTS
-
-These work correctly:
-- HTTP fetch
-- multiple fetches
-- POST fetch with headers/body
-- REST API routes
-- REST + fetch
-- WebSocket
-- Telegram using the current documented syntax
-- Cron standalone
-- Email standalone
-- Email verification
-- arbitrary English is correctly rejected
-
-These are BROKEN:
-
-1. Cron + Fetch
-
-Input:
-
-schedule task "* * * * *" as
-    remember response as await fetch "https://jsonplaceholder.typicode.com/todos/1"
-    if response is ok
-        remember data as await response.json()
-        show data
-    done
-done
-
-Current compiler incorrectly selects http/fetch and outputs only the fetch body.
-
-The cron schedule is lost.
-
-2. Cron + Email
-
-Input:
-
-remember transport as email transport with
-    host is "smtp.example.com"
-    port is 587
-    secure is false
-    auth user is env("SMTP_USER")
-    auth pass is env("SMTP_PASS")
-done
-
-schedule task "0 9 * * *" as
-    send email via transport
-        to is "test@example.com"
-        subject is "Daily Plain report"
-        text is "The scheduled task ran successfully."
-    done
-done
-
-Current compiler incorrectly selects communication/email and outputs an immediately-executed sendMail() instead of placing it inside cron.schedule().
-
-3. REST + Cron + Fetch
-
-Input:
-
-remember app as express app
-
-app get "/health" as
-    reply "ok"
-done
-
-schedule task "*/5 * * * *" as
-    remember response as await fetch "https://jsonplaceholder.typicode.com/todos/1"
-    if response is ok
-        remember todo as await response.json()
-        show todo
-    done
-done
-
-listen app on port 3000
-
-Current output contains:
-
-schedule("*/5 * * * *", async () => { ... });
-
-but:
-- no node-cron import
-- dependencies only contain express
-- the cron implementation is therefore invalid
-
-This MUST be fixed.
-
-4. Cron shorthand
-
-The cron.md documentation explicitly declares this valid:
-
-every 5 minutes as
-    show "Heartbeat"
-done
-
-But cron.json does not contain a resolver trigger that matches this syntax.
-
-The resolver currently rejects it as "no rule covers this source".
-
-Fix the metadata/resolver trigger so documented syntax and resolver behavior agree.
-
-ARCHITECTURAL REQUIREMENT
-
-DO NOT solve the above by adding special-case prompts such as:
-
-"If source contains schedule task, tell the AI to also use cron."
-
-That would be fragile and would make the rule system progressively worse.
-
-The compiler must understand that a Plain program can contain multiple rule-defined capabilities.
-
-A source program may legitimately combine rules.
-
-Examples:
-
-- REST + HTTP fetch
-- REST + Cron
-- Cron + HTTP fetch
-- Cron + Email
-- Telegram + HTTP fetch
-- Telegram + Database
-- WebSocket + REST
-- Cron + Email + HTTP fetch
-- REST + Database + Authentication
-
-The resolver/compilation architecture must preserve ALL applicable semantics.
-
-RULE COMPOSITION
-
-Investigate the existing resolver, AI client, validator, rule loader, and compilation pipeline.
-
-Determine whether the current architecture assumes exactly ONE selected rule.
-
-If it does, refactor it safely so a complex source can resolve against multiple compatible rules or against a composite rule context.
-
-Do NOT break deterministic compilation.
-
-The existing deterministic compiler must remain authoritative for syntax/features it already handles.
-
-Complex Compilation should only handle source that reaches the AI compilation path according to the existing architecture.
-
-The final generated JavaScript must preserve every capability represented in the source.
-
-DEPENDENCY CORRECTNESS
-
-The final compiler result MUST contain every runtime dependency required by the generated JavaScript.
-
-Examples:
-
-Cron alone:
-dependencies must contain node-cron
-
-Email alone:
-dependencies must contain nodemailer
-
-Cron + Email:
-dependencies must contain both:
-- node-cron
-- nodemailer
-
-REST + Cron:
-dependencies must contain both:
-- express
-- node-cron
-
-REST + Cron + Fetch:
-dependencies must contain:
-- express
-- node-cron
-
-If fetch uses only the Node runtime/global fetch available by the compiler's target environment, do not invent a package dependency.
-
-Generated imports/requires must agree with dependencies.
-
-There must never be generated identifiers such as:
-schedule(...)
-cron.schedule(...)
-WebSocketServer
-nodemailer
-express
-etc.
-without the corresponding required import/dependency when the target runtime requires one.
-
-ASYNC CORRECTNESS
-
-Preserve the existing async validation architecture.
-
-If compiler output says:
-
-async: true
-
-validation must validate the generated JavaScript in the same async execution context used at runtime.
-
-Do not regress the existing top-level-await fix.
-
-For nested async constructs:
-- async route handlers must remain async
-- async cron callbacks must remain async
-- async Telegram handlers must remain async according to their rule
-- async email operations must be awaited
-- async fetch operations must be awaited
-
-Do not mark the whole program async unnecessarily if the generated target does not require it, but do not lie in the output contract.
-
-RULE SELECTION
-
-A rule should not "win" merely because it contains one matching phrase.
-
-For a source containing multiple capabilities, the compiler must account for all applicable rules.
-
-For example:
-
-REST + fetch must not cause the REST semantics to disappear.
-
-Cron + fetch must not cause the cron semantics to disappear.
-
-Cron + email must not cause the schedule to disappear.
-
-REST + cron + fetch must preserve all three.
-
-If the current AI architecture sends the selected rule and source to the provider, redesign that context so the provider receives the relevant rule specifications together with their constraints.
-
-The AI must be explicitly instructed that:
-- it may only use syntax/semantics defined by the supplied rules
-- it must preserve all applicable constructs
-- it must not invent unsupported Plain syntax
-- it must not remove a construct merely because another rule also matches
-- it must produce valid JavaScript satisfying all selected rule contracts
-
-RULE METADATA
-
-Audit every existing *.json rule against its corresponding *.md.
-
-For every documented syntax form, ensure the resolver can actually recognize it.
-
-For every resolver trigger, ensure the documentation actually defines the syntax.
-
-Pay particular attention to:
-- automation/cron
-- communication/email
-- web/rest-api
-- http/fetch
-- websocket/ws
-- bots/telegram
-
-Do not silently invent new syntax during this audit.
-
-Use the actual documented syntax as the source of truth.
-
-CRON FIX
-
-The cron rule documents:
-
-every 5 minutes as
-    ...
-done
-
-Make its JSON resolver trigger support the documented shorthand.
-
-Support singular/plural minute syntax where the documentation intends it.
-
-Do not make it match arbitrary English such as:
-"every day do something"
-unless that exact syntax is explicitly defined as Plain syntax.
-
-TESTS
-
-Add regression tests for every discovered bug.
-
-At minimum:
-
-1. cron standalone
-2. cron + fetch
-3. cron + email
-4. REST + cron
-5. REST + cron + fetch
-6. documented "every 5 minutes" shorthand
-7. email standalone
-8. REST + email if supported by the rules
-9. Telegram + fetch if both constructs are valid
-10. arbitrary English remains rejected
-
-For each test verify:
-- correct rule resolution/composition
-- generated JavaScript contains every required semantic construct
-- generated JavaScript passes validation
-- dependencies contain every required package
-- imports/requires are present where required
-- async output flag is correct
-
-Also add a negative test proving that arbitrary English is still rejected.
-
-SECURITY
-
-Do not weaken any existing validator/security restrictions.
-
-Preserve:
-- eval restrictions
-- child_process restrictions
-- exec/spawn restrictions
-- require allowlist
-- URL/relative require protections
-- secret protection
-- provider secret isolation
-
-Do not send environment variable values, API keys, SMTP passwords, bot tokens, or other runtime secrets to the Complex Compilation provider.
-
-IMPORTANT: Do not log secrets, secret values, authorization headers, API keys, or their raw values.
-
-VALIDATION
-
-After implementation, run the complete relevant test suite.
-
-At minimum:
-node tests/ai.test.js
-node tests/telegram.test.js
-node tests/compiler.test.js
-
-Also run any newly added tests.
-
-If compiler.test.js still has the known pre-existing semver installation failures, verify that the failures are still unrelated and report them clearly.
-
-Perform direct local compilation tests for the multi-rule cases above.
-
-If the repository contains a deterministic compiler test suite, make sure these changes do not regress deterministic compilation.
-
-DO NOT CHANGE THE LANGUAGE JUST TO MAKE TESTS PASS.
-
-The goal is not to make the AI more permissive.
-
-The goal is to make Complex Compilation correctly compile MORE VALID PLAIN PROGRAMS while remaining STRICT about what constitutes valid Plain.
-
-DOCUMENTATION
-
-After fixing the architecture, update the relevant rule documentation and compiler documentation to explain that Plain programs can combine capabilities/rules.
-
-Do not describe Complex Compilation as an English-to-code system.
-
-Use terminology such as:
-- Plain syntax
-- language rules
-- rule composition
-- Complex Compilation
-- compiler
-- generated JavaScript
-
-Do not expose provider/model implementation details unnecessarily in public documentation.
-
-DELIVERABLE
-
-Make the actual code changes.
-
-Do not merely describe what should be changed.
-
+3. Ensure multi-rule compilation correctly combines constructs from unrelated rules in one Plain source. Test combinations such as:
+   - REST API + HTTP fetch
+   - REST API + cron
+   - cron + email
+   - REST API + fetch + cron + email
+   - WebSocket + other applicable constructs where valid
+
+4. Ensure the generated JavaScript preserves EVERY applicable construct. A rule being lower-scoring must never cause its constructs to disappear.
+
+5. Ensure dependencies are the union of:
+   - every matched rule's metadata dependencies
+   - AI-generated dependencies
+   Deduplicate the final dependency list.
+
+6. Ensure imports, async status, validation, caching, and rule metadata remain correct when multiple rules are involved.
+
+7. Fix the cron rule metadata mismatch:
+   cron.md currently documents:
+       every 5 minutes as
+           ...
+       done
+   but cron.json does not have a trigger that reliably resolves "every <n> minutes".
+   Add appropriate resolver coverage for the documented `every <n> minutes` syntax.
+   Do not make the resolver accept arbitrary English scheduling requests. It must remain strict and rule-based.
+
+8. Review every existing rule's .md and .json pair for the same class of mismatch:
+   - syntax documented but not resolvable
+   - syntax resolvable but undocumented
+   - trigger patterns too broad
+   - trigger patterns too narrow
+   - dependencies missing from metadata
+   - incorrect async metadata
+   - examples that do not correspond to actual resolver syntax
+
+9. Add regression tests for:
+   - cron + email composition
+   - REST API + fetch composition
+   - REST API + cron composition
+   - multiple rules with overlapping dependencies
+   - remote multi-rule translation
+   - `every <n> minutes`
+   - rejection of arbitrary natural-language scheduling requests
+
+10. Most importantly, preserve Plain's strict IOPL design:
+    Complex Compilation is NOT an English-language compiler.
+    AI may compose and compile constructs only when those constructs are covered by explicit Plain rules.
+    Never solve missing syntax by allowing arbitrary English instructions.
+    If no rule covers a construct, compilation must fail with a useful error explaining that a matching Plain rule is required.
+
+11. Verify the final generated JavaScript with the existing validator and ensure validation occurs against the actual execution context, including async wrapping where required.
+
+12. Run:
+    node tests/ai.test.js
+    node tests/telegram.test.js
+    node tests/compiler.test.js
+
+    Clearly distinguish new failures from known pre-existing environment/network failures.
+
+13. Do not weaken security checks, dependency allowlists, require restrictions, secret handling, or provider isolation.
+
+14. Do not modify package-lock.json unless genuinely required by an intentional dependency change.
+
+15. Update relevant documentation and examples if the public compiler contract changes.
+
+Add support for backtick strings in Plain.
+
+Features:
+
+1. Single-line backtick strings:
+   remember name as `Ayo`
+
+2. Multiline strings:
+   remember html as `
+   <h1>Hello</h1>
+   `
+
+3. Interpolation:
+   `Hello ${user}`
+   `${a + b}`
+
+4. Support in:
+   - show
+   - reply
+   - fetch bodies
+   - email text/html
+   - SQL queries
+   - JSON generation
+   - HTML generation
+
+5. Parser:
+   Backtick strings must preserve whitespace and line breaks.
+
+6. Validator:
+   Ensure generated JavaScript template literals are syntactically valid.
+
+7. Security:
+   Interpolation must compile to JavaScript expressions only.
+   Do not evaluate interpolation during compilation.
+
+8. Tests:
+   - single line
+   - multiline
+   - interpolation
+   - nested expressions
+   - email templates
+   - fetch JSON body templates
+
+9. Documentation:
+   Add a String Templates section to docs and README.
+
+10. Maintain strict IOPL principles:
+    Backticks are string syntax, not arbitrary code execution.
+    
 When finished, report:
-1. files changed
-2. architecture change
-3. how multi-rule compilation now works
-4. how dependencies are collected
-5. how async handling works
-6. tests executed and results
-7. any remaining limitations
-
-Do not commit or push unless explicitly requested.
+- files changed
+- architectural changes
+- new tests
+- exact test results
+- any remaining limitations
+- whether hosted and local multi-rule compilation now use equivalent rule-composition behavior
