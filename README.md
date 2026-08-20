@@ -1,5 +1,9 @@
 # Plain
 
+<p align="center">
+  <img src="docs/og.svg" alt="Plain Logo" width="200" />
+</p>
+
 > "When even a simple sentence can be code."
 > Don't forget to star the repo
 

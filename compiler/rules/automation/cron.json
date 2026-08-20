@@ -17,7 +17,8 @@
     { "type": "regex", "pattern": "\\bcron schedule\\b" },
     { "type": "regex", "pattern": "\\bschedule task\\b" },
     { "type": "regex", "pattern": "\\brecurring task\\b" },
-    { "type": "regex", "pattern": "\\brun every\\b" }
+    { "type": "regex", "pattern": "\\brun every\\b" },
+    { "type": "regex", "pattern": "\\bevery\\s+\\d+\\s+(?:minutes?|hours?|seconds?)\\s+as\\b" }
   ],
   "dependencies": ["node-cron"],
   "imports": [],

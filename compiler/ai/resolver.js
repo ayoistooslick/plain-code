@@ -95,35 +95,44 @@ function scoreRule(rule, norm) {
   return hasTrigger ? score : 0;
 }
 
-// Resolve the best rule for `source`.
+// Resolve ALL matching rules for `source`, sorted by descending score.
+// A source may legitimately combine multiple capabilities (e.g. cron + fetch),
+// so the compiler must account for every applicable rule.
 // options:
 //   - ruleName / rulePath: explicit selection (e.g. "telegram", "bots/telegram")
 //   - rules: preloaded rule list (avoids re-reading the filesystem)
-// Returns a rule object or null when nothing matches.
-function resolveRule(source, rules, options) {
-  const opts  = options || {};
-  const norm  = normalize(source);
-  const list  = rules || loadRules();
+// Returns an array of rule objects (may be empty).
+function resolveAllRules(source, rules, options) {
+  const opts = options || {};
+  const norm = normalize(source);
+  const list = rules || loadRules();
 
-  // 1. Explicit selection wins.
+  // 1. Explicit selection: return just that rule.
   if (opts.ruleName || opts.rulePath) {
-    const want = String(opts.ruleName || opts.rulePath).toLowerCase();
+    const want  = String(opts.ruleName || opts.rulePath).toLowerCase();
     const found = list.find((r) =>
       r._id === want ||
       r.name === want ||
       (Array.isArray(r.resolvablePaths) && r.resolvablePaths.some((p) => p.toLowerCase() === want))
     );
-    if (found) return found;
+    return found ? [found] : [];
   }
 
-  // 2. Score every rule; keep only matches; most-specific wins.
-  const scored = list
+  // 2. Score every rule; keep only matches; sort by descending score.
+  return list
     .map((rule) => ({ rule, score: scoreRule(rule, norm) }))
     .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score)
+    .map((s) => s.rule);
+}
 
-  if (scored.length === 0) return null;
-  return scored[0].rule;
+// Resolve the best (highest-scoring) rule for `source`.
+// For backward compatibility — callers that need a single rule.
+// options: same as resolveAllRules.
+// Returns a rule object or null when nothing matches.
+function resolveRule(source, rules, options) {
+  const all = resolveAllRules(source, rules, options);
+  return all.length > 0 ? all[0] : null;
 }
 
 module.exports = {
@@ -132,6 +141,7 @@ module.exports = {
   loadRules,
   ruleMarkdown,
   resolveRule,
+  resolveAllRules,
   normalize,
   scoreRule,
 };

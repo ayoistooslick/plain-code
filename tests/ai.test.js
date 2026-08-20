@@ -16,11 +16,12 @@ const path = require('path');
 const TMP_CACHE = path.join(os.tmpdir(), `plain-ai-test-${process.pid}`);
 process.env.PLAIN_AI_CACHE_DIR = TMP_CACHE;
 
-const { loadRules, resolveRule, ruleMarkdown } = require('../compiler/ai/resolver');
+const { loadRules, resolveRule, resolveAllRules, ruleMarkdown } = require('../compiler/ai/resolver');
 const { validateTranslation } = require('../compiler/ai/validator');
 const { computeKey, get, set, list, clear } = require('../compiler/ai/cache');
 const { translateSource, compileSource } = require('../compiler/ai/translator');
 const { extractJson } = require('../compiler/ai/agent');
+const { buildPrompt } = require('../compiler/ai/prompt');
 const ai = require('../compiler/ai');
 const { createServer } = require('../compiler/ai/server');
 const { translateRemote, HOSTED_URL } = require('../compiler/ai/remote');
@@ -569,6 +570,274 @@ testHttp('translator: an injected client uses the local pipeline, never the host
     if (hadRemote) process.env.PLAIN_AI_REMOTE_URL = hadRemote;
     else delete process.env.PLAIN_AI_REMOTE_URL;
   }
+});
+
+// ── Multi-rule composition (v2.0.0) ─────────────────────────────────────────
+
+console.log('\nMulti-rule composition');
+
+test('resolver: cron + fetch matches both automation/cron and http/fetch', () => {
+  const source = [
+    'schedule task "* * * * *" as',
+    '    remember response as await fetch "https://jsonplaceholder.typicode.com/todos/1"',
+    '    if response is ok',
+    '        remember data as await response.json()',
+    '        show data',
+    '    done',
+    'done',
+  ].join('\n');
+  const rules = resolveAllRules(source);
+  const ids = rules.map(r => r._id);
+  if (!ids.includes('automation/cron')) throw new Error(`cron rule missing: ${ids.join(', ')}`);
+  if (!ids.includes('http/fetch')) throw new Error(`fetch rule missing: ${ids.join(', ')}`);
+});
+
+test('resolver: cron + email matches both automation/cron and communication/email', () => {
+  const source = [
+    'remember transport as email transport with',
+    '    host is "smtp.example.com"',
+    '    port is 587',
+    '    secure is false',
+    '    auth user is env("SMTP_USER")',
+    '    auth pass is env("SMTP_PASS")',
+    'done',
+    '',
+    'schedule task "0 9 * * *" as',
+    '    send email via transport',
+    '        to is "test@example.com"',
+    '        subject is "Daily Plain report"',
+    '        text is "The scheduled task ran successfully."',
+    '    done',
+    'done',
+  ].join('\n');
+  const rules = resolveAllRules(source);
+  const ids = rules.map(r => r._id);
+  if (!ids.includes('automation/cron')) throw new Error(`cron rule missing: ${ids.join(', ')}`);
+  if (!ids.includes('communication/email')) throw new Error(`email rule missing: ${ids.join(', ')}`);
+});
+
+test('resolver: REST + cron + fetch matches all three rules', () => {
+  const source = [
+    'remember app as express app',
+    '',
+    'app get "/health" as',
+    '    reply "ok"',
+    'done',
+    '',
+    'schedule task "*/5 * * * *" as',
+    '    remember response as await fetch "https://jsonplaceholder.typicode.com/todos/1"',
+    '    if response is ok',
+    '        remember todo as await response.json()',
+    '        show todo',
+    '    done',
+    'done',
+    '',
+    'listen app on port 3000',
+  ].join('\n');
+  const rules = resolveAllRules(source);
+  const ids = rules.map(r => r._id);
+  if (!ids.includes('web/rest-api')) throw new Error(`rest-api rule missing: ${ids.join(', ')}`);
+  if (!ids.includes('automation/cron')) throw new Error(`cron rule missing: ${ids.join(', ')}`);
+  if (!ids.includes('http/fetch')) throw new Error(`fetch rule missing: ${ids.join(', ')}`);
+});
+
+test('resolver: every N minutes shorthand triggers cron rule', () => {
+  const source = 'every 5 minutes as\n    show "Heartbeat"\ndone';
+  const rule = resolveRule(source);
+  if (!rule || rule._id !== 'automation/cron') throw new Error(`expected cron, got ${rule && rule._id}`);
+});
+
+test('resolver: singular minute also triggers cron', () => {
+  const source = 'every 1 minute as\n    show "tick"\ndone';
+  const rule = resolveRule(source);
+  if (!rule || rule._id !== 'automation/cron') throw new Error(`expected cron, got ${rule && rule._id}`);
+});
+
+test('resolver: every N hours shorthand triggers cron rule', () => {
+  const source = 'every 2 hours as\n    show "check"\ndone';
+  const rule = resolveRule(source);
+  if (!rule || rule._id !== 'automation/cron') throw new Error(`expected cron, got ${rule && rule._id}`);
+});
+
+test('resolver: arbitrary English is still rejected', () => {
+  const rule = resolveRule('wibble wobble nonsense');
+  if (rule) throw new Error(`expected null, got ${rule._id}`);
+});
+
+test('resolver: cron standalone matches only cron', () => {
+  const source = 'schedule task "* * * * *" as\n    show "tick"\ndone';
+  const rules = resolveAllRules(source);
+  const ids = rules.map(r => r._id);
+  if (!ids.includes('automation/cron')) throw new Error(`cron rule missing: ${ids.join(', ')}`);
+  // Should NOT match fetch or email
+  if (ids.includes('http/fetch')) throw new Error('fetch should not match cron standalone');
+  if (ids.includes('communication/email')) throw new Error('email should not match cron standalone');
+});
+
+test('resolver: email standalone matches only email', () => {
+  const source = [
+    'remember transport as email transport with',
+    '    host is "smtp.example.com"',
+    'done',
+  ].join('\n');
+  const rules = resolveAllRules(source);
+  const ids = rules.map(r => r._id);
+  if (!ids.includes('communication/email')) throw new Error(`email rule missing: ${ids.join(', ')}`);
+  if (ids.includes('automation/cron')) throw new Error('cron should not match email standalone');
+  if (ids.includes('http/fetch')) throw new Error('fetch should not match email standalone');
+});
+
+// ── Multi-rule dependency collection ──────────────────────────────────────────
+
+console.log('\nMulti-rule dependency collection');
+
+test('translator: cron + fetch collects dependencies from both rules', async () => {
+  const source = [
+    'schedule task "* * * * *" as',
+    '    remember response as await fetch "https://jsonplaceholder.typicode.com/todos/1"',
+    '    if response is ok',
+    '        remember data as await response.json()',
+    '        show data',
+    '    done',
+    'done',
+  ].join('\n');
+  const client = { chat: async () => JSON.stringify({
+    javascript:
+      'const cron = require("node-cron");\n' +
+      'cron.schedule("* * * * *", async () => {\n' +
+      '  const response = await fetch("https://jsonplaceholder.typicode.com/todos/1");\n' +
+      '  if (response.ok) {\n' +
+      '    const data = await response.json();\n' +
+      '    console.log(data);\n' +
+      '  }\n' +
+      '});',
+    dependencies: ['node-cron'],
+    imports: [],
+    async: true,
+  }) };
+  const result = await translateSource(source, { client, noCache: true });
+  if (result.deterministic !== false) throw new Error('expected the AI path');
+  // Dependencies must include node-cron (from cron rule + AI output)
+  if (!result.dependencies.includes('node-cron')) throw new Error('missing node-cron dependency');
+  // Rules array must include both rules
+  if (!result.rules.includes('automation/cron')) throw new Error('missing cron in rules');
+  if (!result.rules.includes('http/fetch')) throw new Error('missing fetch in rules');
+});
+
+test('translator: cron + email collects dependencies from both rules', async () => {
+  const source = [
+    'remember transport as email transport with',
+    '    host is "smtp.example.com"',
+    'done',
+    '',
+    'schedule task "0 9 * * *" as',
+    '    send email via transport',
+    '        to is "test@example.com"',
+    '        subject is "Daily Plain report"',
+    '        text is "The scheduled task ran successfully."',
+    '    done',
+    'done',
+  ].join('\n');
+  const client = { chat: async () => JSON.stringify({
+    javascript:
+      'const cron = require("node-cron");\n' +
+      'const nodemailer = require("nodemailer");\n' +
+      'const transport = nodemailer.createTransport({ host: "smtp.example.com" });\n' +
+      'cron.schedule("0 9 * * *", async () => {\n' +
+      '  await transport.sendMail({ to: "test@example.com", subject: "Daily Plain report", text: "The scheduled task ran successfully." });\n' +
+      '});',
+    dependencies: ['node-cron', 'nodemailer'],
+    imports: [],
+    async: true,
+  }) };
+  const result = await translateSource(source, { client, noCache: true });
+  if (result.deterministic !== false) throw new Error('expected the AI path');
+  if (!result.dependencies.includes('node-cron')) throw new Error('missing node-cron dependency');
+  if (!result.dependencies.includes('nodemailer')) throw new Error('missing nodemailer dependency');
+  if (!result.rules.includes('automation/cron')) throw new Error('missing cron in rules');
+  if (!result.rules.includes('communication/email')) throw new Error('missing email in rules');
+});
+
+test('translator: REST + cron + fetch collects dependencies from all three rules', async () => {
+  const source = [
+    'remember app as express app',
+    '',
+    'app get "/health" as',
+    '    reply "ok"',
+    'done',
+    '',
+    'schedule task "*/5 * * * *" as',
+    '    remember response as await fetch "https://jsonplaceholder.typicode.com/todos/1"',
+    '    if response is ok',
+    '        remember todo as await response.json()',
+    '        show todo',
+    '    done',
+    'done',
+    '',
+    'listen app on port 3000',
+  ].join('\n');
+  const client = { chat: async () => JSON.stringify({
+    javascript:
+      'const express = require("express");\n' +
+      'const cron = require("node-cron");\n' +
+      'const app = express();\n' +
+      'app.get("/health", (req, res) => { res.send("ok"); });\n' +
+      'cron.schedule("*/5 * * * *", async () => {\n' +
+      '  const response = await fetch("https://jsonplaceholder.typicode.com/todos/1");\n' +
+      '  if (response.ok) {\n' +
+      '    const todo = await response.json();\n' +
+      '    console.log(todo);\n' +
+      '  }\n' +
+      '});\n' +
+      'app.listen(3000);',
+    dependencies: ['express', 'node-cron'],
+    imports: [],
+    async: true,
+  }) };
+  const result = await translateSource(source, { client, noCache: true });
+  if (result.deterministic !== false) throw new Error('expected the AI path');
+  if (!result.dependencies.includes('express')) throw new Error('missing express dependency');
+  if (!result.dependencies.includes('node-cron')) throw new Error('missing node-cron dependency');
+  if (!result.rules.includes('web/rest-api')) throw new Error('missing rest-api in rules');
+  if (!result.rules.includes('automation/cron')) throw new Error('missing cron in rules');
+  if (!result.rules.includes('http/fetch')) throw new Error('missing fetch in rules');
+});
+
+// ── Multi-rule prompt building ────────────────────────────────────────────────
+
+console.log('\nMulti-rule prompt building');
+
+test('prompt: multi-rule prompt includes all rule markdown sections', () => {
+  const source = 'schedule task "* * * * *" as\n    await fetch "url"\ndone';
+  const rule1 = { title: 'Scheduled Tasks' };
+  const rule2 = { title: 'HTTP Fetch' };
+  const md1 = '# Scheduled Tasks\n\nCron syntax here.';
+  const md2 = '# HTTP Fetch\n\nFetch syntax here.';
+  const prompt = buildPrompt({
+    source,
+    rule: rule1,
+    rules: [rule1, rule2],
+    ruleMarkdown: md1,
+    rulesMarkdown: [md1, md2],
+  });
+  if (!prompt.includes('Cron syntax here.')) throw new Error('missing cron markdown');
+  if (!prompt.includes('Fetch syntax here.')) throw new Error('missing fetch markdown');
+  if (!prompt.includes('RULE COMPOSITION')) throw new Error('missing rule composition section');
+  if (!prompt.includes('--- Rule 1 ---')) throw new Error('missing Rule 1 header');
+  if (!prompt.includes('--- Rule 2 ---')) throw new Error('missing Rule 2 header');
+});
+
+test('prompt: single-rule prompt still works (backward compat)', () => {
+  const source = 'remember bot as telegram bot with token';
+  const rule = { title: 'Telegram Bot' };
+  const md = '# Telegram Bot\n\nBot syntax here.';
+  const prompt = buildPrompt({
+    source,
+    rule,
+    ruleMarkdown: md,
+  });
+  if (!prompt.includes('Bot syntax here.')) throw new Error('missing rule markdown');
+  if (!prompt.includes('RULE COMPOSITION')) throw new Error('missing rule composition section');
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────

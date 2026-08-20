@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { VERSION } = require('../version');
-const { resolveRule, ruleMarkdown } = require('./resolver');
+const { resolveRule, resolveAllRules, ruleMarkdown } = require('./resolver');
 const { translate: agentTranslate } = require('./agent');
 const { translateRemote } = require('./remote');
 const { validateTranslation } = require('./validator');
@@ -63,8 +63,9 @@ async function translateSource(source, options = {}) {
   }
 
   // 2. Rule retrieval (RFC-0020 §8, §37). No rule → clean, layer-specific error.
-  const rule = resolveRule(source, null, { rulePath: options.rulePath });
-  if (!rule) {
+  //    A Plain source may combine multiple capabilities; resolve ALL matching rules.
+  const allRules = resolveAllRules(source, null, { rulePath: options.rulePath });
+  if (allRules.length === 0) {
     const err = new Error(
       'AI compilation error: no rule covers this source. ' +
       'Add a matching rule under compiler/rules/.'
@@ -72,13 +73,17 @@ async function translateSource(source, options = {}) {
     err.layer = 'rule';
     throw err;
   }
+  const rule = allRules[0]; // primary rule for backward compat
 
   // 3. Translation cache (RFC-0020 §15). Key covers the rule version, the
   //    compiler version, and the model so stale semantics can never be reused.
+  //    For multi-rule sources the key includes all matched rule IDs.
+  const ruleIds = allRules.map((r) => r._id).sort().join('+');
+  const ruleVersions = allRules.map((r) => r.version).sort((a, b) => a - b).join('+');
   const keyParts = {
     source,
-    rule: rule._id,
-    ruleVersion: rule.version,
+    rules: ruleIds,
+    ruleVersion: ruleVersions,
     compiler: VERSION,
     model: config().model,
     route: options.client ? 'local' : config().enabled ? 'local' : 'remote',
@@ -99,13 +104,17 @@ async function translateSource(source, options = {}) {
       rulePath: options.rulePath,
       noCache,
     });
+    const ruleDependencies = allRules.flatMap((r) => r.dependencies || []);
+    const mergedDeps = [...new Set([...ruleDependencies, ...(remote.dependencies || [])])];
+
     const result = {
       deterministic: false,
       javascript: remote.javascript,
-      dependencies: remote.dependencies || [],
+      dependencies: mergedDeps,
       imports: remote.imports || [],
       async: Boolean(remote.async),
       rule: remote.rule || rule._id,
+      rules: allRules.map((r) => r._id),
       ruleVersion: remote.ruleVersion || rule.version,
     };
     if (!noCache) set(key, result);
@@ -114,7 +123,8 @@ async function translateSource(source, options = {}) {
 
   // 4. Bounded repair loop. Every attempt runs the full validation pipeline;
   //    failure feeds the error back to the provider, up to MAX_RETRIES.
-  const markdown = ruleMarkdown(rule);
+  //    All matching rules' markdown is included so the AI preserves every construct.
+  const allMarkdowns = allRules.map((r) => ruleMarkdown(r));
   let repairHint = null;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -124,7 +134,9 @@ async function translateSource(source, options = {}) {
       output = await agentTranslate({
         source,
         rule,
-        ruleMarkdown: markdown,
+        rules: allRules,
+        ruleMarkdown: allMarkdowns[0],
+        rulesMarkdown: allMarkdowns,
         context: repairHint,
         options: agentOptions,
       });
@@ -159,13 +171,19 @@ async function translateSource(source, options = {}) {
     }
 
     // Dependency extraction + async flag come from the validated contract.
+    // Collect dependencies from ALL matched rules as a baseline, then merge
+    // with what the AI generated (the AI may add runtime-specific deps).
+    const ruleDependencies = allRules.flatMap((r) => r.dependencies || []);
+    const mergedDeps = [...new Set([...ruleDependencies, ...(validated.dependencies || [])])];
+
     const result = {
       deterministic: false,
       javascript: validated.javascript,
-      dependencies: validated.dependencies || [],
+      dependencies: mergedDeps,
       imports: validated.imports || [],
       async: Boolean(validated.async),
       rule: rule._id,
+      rules: allRules.map((r) => r._id),
       ruleVersion: rule.version,
     };
     if (!noCache) set(key, result);
