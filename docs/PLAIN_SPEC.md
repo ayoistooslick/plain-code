@@ -270,6 +270,41 @@ Supported packages:
     use fs         → const fs = require('fs');
     use path       → const path = require('path');
 
+Any npm package can be declared, including hyphenated and scoped names
+(RFC-0011 §5.1):
+
+    use axios                → const axios = require('axios');
+    use node-fetch           → require('node-fetch');        // side effect only
+    use @scope/package-name  → require('@scope/package-name');
+
+### Aliases and version ranges (v2.0.1)
+
+A package that is not a valid JavaScript identifier gets no binding by
+default — declare an alias to bind it to a variable:
+
+    use node-fetch as fetch      → const fetch = require('node-fetch');
+    use left-pad as pad          → const pad = require('left-pad');
+    use @scope/pkg as scoped     → const scoped = require('@scope/pkg');
+
+Rules:
+
+- The alias must be a valid JavaScript identifier; anything else fails with a
+  clear error.
+- Built-in runtime packages (`express`, `sqlite`, `fs`, `path`, `axios`,
+  `chalk`) keep their canonical bindings; aliasing them is an error.
+- A package can be required once per alias; the plain form and an aliased
+  form of the same package may coexist.
+
+Version ranges are part of the specifier and flow through to installation;
+`require()` always uses the bare name:
+
+    use left-pad@^1.3.0          → require('left-pad');   // npm install left-pad@^1.3.0
+    use sqlite@7                 → const Database = require('better-sqlite3');
+    use dotenv@16 as env         → const env = require('dotenv');
+
+`plain install`, `plain run`, and `plain build` check installed-ness by bare
+package name but install with the full `name@range` specifier.
+
 ### Runtime dependency detection and installation
 
 The compiler exposes a reusable dependency detector that reads Plain source
@@ -285,10 +320,15 @@ Plain module names are mapped to npm packages:
 | `web app`    | `express`   |
 | `axios`      | `axios`     |
 | `chalk`      | `chalk`     |
+| `ocr`        | `tesseract.js` |
 
 Node built-in modules, including `fs` and `path`, are ignored because they do
 not need to be installed. A source file with no runtime package uses returns
 an empty list.
+
+Version ranges survive detection: `use left-pad@^1.3.0` is reported as
+`left-pad@^1.3.0`, and friendly names map through the range (`use sqlite@7`
+is reported as `better-sqlite3@7`).
 
 Built-in modules are never installed. Missing npm packages are installed by
 `plain install`, `plain run`, and `plain build`; package checks are cached for
@@ -439,6 +479,51 @@ Shorthand style:
 
 ---
 
+## OCR (v2.0.1)
+
+Extract text from an image file with Tesseract.js:
+
+    ocr "scan.png" as text
+    show text
+
+With a language pack:
+
+    ocr "brief.png" as inhalt using "deu"
+
+Semantics:
+
+- `ocr "<image>" as <variable>` mirrors `ask "<prompt>" as <name>`: the
+  extracted text is bound to `<variable>`.
+- The image may be any expression that evaluates to an image path, buffer,
+  or URL accepted by Tesseract.js.
+- `using "<lang>"` selects the Tesseract language pack (`"eng"` by default;
+  combinations like `"deu+eng"` are allowed).
+- The statement is async — top-level use wraps the program in the async
+  runtime, and using it inside a function makes that function async.
+- `tesseract.js` is an implementation dependency: it never appears in Plain
+  source, but `plain install`, `plain run`, and `plain build` fetch it
+  automatically through dependency detection.
+
+Generated JavaScript shape:
+
+```js
+const { createWorker } = require('tesseract.js');
+
+async function __ocr(imagePath, lang) {
+  const worker = await createWorker(lang || 'eng');
+  try {
+    const { data } = await worker.recognize(imagePath);
+    return data.text;
+  } finally {
+    await worker.terminate();
+  }
+}
+
+let text = await __ocr("scan.png");
+```
+
+---
+
 ## Developer Experience
 
 ### Formatter
@@ -566,6 +651,7 @@ If a package is missing, the compiler prints a friendly error and stops:
     between   and
     web       route      start
     database  query      insert  update  delete  execute
+    ask       ocr        using
     true      false
     note
 

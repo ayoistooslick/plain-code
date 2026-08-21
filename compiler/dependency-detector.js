@@ -14,12 +14,31 @@ const PACKAGE_MAP = Object.freeze({
   sqlite: 'better-sqlite3',
   fs: 'fs',
   path: 'path',
+  // v2.0.1 — OCR statements are backed by tesseract.js. The mapping keeps the
+  // implementation dependency out of Plain's language surface: source says
+  // `ocr ... as text`, tooling installs tesseract.js.
+  ocr: 'tesseract.js',
 });
 
 const BUILTIN_MODULES = new Set(builtinModules);
 
 function isBuiltinModule(name) {
   return BUILTIN_MODULES.has(name) || BUILTIN_MODULES.has(`node:${name}`);
+}
+
+// v2.0.1 — split an npm specifier into its package name and version range.
+//
+//   "express"        → { name: "express", spec: null }
+//   "left-pad@^1.3"  → { name: "left-pad", spec: "^1.3" }
+//   "@scope/pkg"     → { name: "@scope/pkg", spec: null }   (scope, not version)
+//   "@scope/pkg@2"   → { name: "@scope/pkg", spec: "2" }
+//
+// The "@" that starts an npm scope sits at index 0 and never marks a version,
+// so the search for the version separator starts at index 1.
+function splitPackageSpec(specifier) {
+  const at = specifier.indexOf('@', 1);
+  if (at === -1) return { name: specifier, spec: null };
+  return { name: specifier.slice(0, at), spec: specifier.slice(at + 1) };
 }
 
 function visit(node, onUse) {
@@ -38,6 +57,9 @@ function visit(node, onUse) {
   } else if (node.type === 'DatabaseStatement') {
     // The `database` shorthand uses `better-sqlite3` under the hood.
     onUse('sqlite');
+  } else if (node.type === 'OcrStatement') {
+    // v2.0.1 — `ocr "<image>" as <variable>` uses tesseract.js under the hood.
+    onUse('ocr');
   }
 
   for (const value of Object.values(node)) {
@@ -62,9 +84,13 @@ function detectDependencies(source) {
   // Plain's friendly module names (e.g. sqlite) must not be mistaken for Node
   // built-ins just because Node ships a module with the same name.
   const addPackage = (moduleName) => {
-    const packageName = PACKAGE_MAP[moduleName] || moduleName;
+    // A specifier may carry a version range ("left-pad@^1.3.0"); friendly
+    // module names resolve through PACKAGE_MAP before the spec is re-attached,
+    // so `use sqlite@7` still maps to better-sqlite3@7.
+    const { name, spec } = splitPackageSpec(moduleName);
+    const packageName = PACKAGE_MAP[name] || name;
     if (!isBuiltinModule(packageName)) {
-      dependencies.add(packageName);
+      dependencies.add(spec ? `${packageName}@${spec}` : packageName);
     }
   };
 
@@ -86,5 +112,6 @@ function detectDependencies(source) {
 module.exports = {
   detectDependencies,
   isBuiltinModule,
+  splitPackageSpec,
   PACKAGE_MAP,
 };

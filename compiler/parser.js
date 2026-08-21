@@ -7,7 +7,7 @@ const STATEMENT_KEYWORDS = [
   'remember', 'show', 'if', 'make', 'give',
   'for', 'while', 'use', 'import', 'when', 'listen', 'reply', 'serve',
   'web', 'route', 'start', 'database', 'query', 'insert', 'update', 'delete', 'execute',
-  'ask', 'javascript', 'bot',
+  'ask', 'javascript', 'bot', 'ocr',
 ];
 
 // Number words used by the numbered item expression (v1.1):
@@ -208,6 +208,8 @@ function parse(tokens) {
     // v1.1.1 — JavaScript Gateway
     if (token.type === TOKEN.ASK)         return parseAsk();
     if (token.type === TOKEN.JAVASCRIPT_KW) return parseJavaScriptBlock();
+    // v2.0.1 — OCR capability
+    if (token.type === TOKEN.OCR_KW)      return parseOcr();
     // v0.6
     if (token.type === TOKEN.WEB)         return parseWebApp();
     if (token.type === TOKEN.ROUTE_KW)    return parseSimpleRoute();
@@ -336,6 +338,33 @@ function parse(tokens) {
     return { type: 'JavaScriptBlock', name: null, body };
   }
 
+  // v2.0.1 — OCR capability.
+  //
+  //   ocr "<image>" as <variable>
+  //   ocr "<image>" as <variable> using "<lang>"
+  //
+  // Extracts text from an image into a variable (mirrors `ask ... as name`).
+  // The optional `using "<lang>"` selects a Tesseract language pack such as
+  // "eng", "deu", or "deu+eng"; it defaults to "eng".
+  function parseOcr() {
+    consume(TOKEN.OCR_KW);
+    const image = parseExpression();
+    consume(TOKEN.AS,
+      'Expected "as <name>" after the image in an ocr statement.\n\nExamples:\n  ocr "scan.png" as text\n  ocr "scan.png" as text using "deu"'
+    );
+    const variable = consume(TOKEN.IDENTIFIER,
+      'Expected a variable name after "as".\n\nExample:\n  ocr "scan.png" as text'
+    ).value;
+    let lang = null;
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'using') {
+      advance(); // consume using
+      lang = consume(TOKEN.STRING,
+        'Expected a language string after "using".\n\nExample:\n  ocr "scan.png" as text using "deu"'
+      ).value;
+    }
+    return { type: 'OcrStatement', image, variable, lang };
+  }
+
   function parseShow() {
     consume(TOKEN.SHOW);
     // Support both keyword form (show "text") and call form (show("text")).
@@ -411,18 +440,27 @@ function parse(tokens) {
     return { type: 'ImportStatement', path: filePath };
   }
 
-  // use <module>
+  // use <module>            — side-effect or canonical binding
+  // use <module> as <name>  — bind the package to a custom variable name
+  // <module> may carry a version range: use left-pad@^1.3.0
   function parseUse() {
     consume(TOKEN.USE);
     const token = peek();
     if (token.type !== TOKEN.PACKAGE && token.type !== TOKEN.IDENTIFIER) {
       throw new Error(makeError(
-        'Expected a module name after "use".\n\nExample:\n  use express',
+        'Expected a module name after "use".\n\nExamples:\n  use express\n  use node-fetch as fetch\n  use left-pad@^1.3.0',
         token
       ));
     }
     advance();
-    return { type: 'UseStatement', module: token.value };
+    let alias = null;
+    if (peek().type === TOKEN.AS) {
+      advance(); // consume "as"
+      alias = consume(TOKEN.IDENTIFIER,
+        'Expected a variable name after "as".\n\nExample:\n  use node-fetch as fetch'
+      ).value;
+    }
+    return { type: 'UseStatement', module: token.value, alias };
   }
 
   // when someone visits "<path>" ... done     → Express route

@@ -62,6 +62,7 @@ const TOKEN = {
   JAVASCRIPT_KW: 'JAVASCRIPT_KW', // the "javascript" keyword introducing a raw JS block
   JS_BODY:       'JS_BODY',       // raw JavaScript collected between "javascript" and "done"
   ASK:           'ASK',           // interactive input: ask name / ask "prompt" as name
+  OCR_KW:        'OCR_KW',        // v2.0.1 — ocr "<image>" as <name> [using "<lang>"]
   PACKAGE:       'PACKAGE',       // bare npm package name after "use" (may contain -, _, ., /, @)
   // Punctuation
   LBRACE:      'LBRACE',   // { — inline object literal (v1.2)
@@ -139,6 +140,8 @@ const KEYWORDS = {
   // v1.1.1 — JavaScript Gateway (RFC-0011)
   javascript: TOKEN.JAVASCRIPT_KW,
   ask:        TOKEN.ASK,
+  // v2.0.1 — OCR capability
+  ocr:        TOKEN.OCR_KW,
 };
 
 // Keywords that introduce raw SQL blocks (content up to "done" is collected verbatim).
@@ -177,11 +180,12 @@ function tokenize(source) {
     const tokenCol  = col();
 
     // Package name after "use": a bare npm specifier may contain hyphens,
-    // underscores, dots, slashes, and a scope ("@scope/package-name").
+    // underscores, dots, slashes, a scope ("@scope/package-name"), and a
+    // version range ("pkg@^1.2.0", "pkg@~2", "pkg@>=3 <4", "pkg@*").
     if (pendingUse) {
       if (/[A-Za-z0-9@]/.test(source[i])) {
         let pkg = '';
-        while (i < source.length && /[A-Za-z0-9_.@/-]/.test(source[i])) pkg += source[i++];
+        while (i < source.length && /[A-Za-z0-9_.@/^~><=*-]/.test(source[i])) pkg += source[i++];
         tokens.push({ type: TOKEN.PACKAGE, value: pkg, line: tokenLine, col: tokenCol });
         pendingUse = false;
         continue;

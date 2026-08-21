@@ -5,19 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Plain — The programming language that reads like English</title>
-  <meta name="description" content="Plain is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v2.0.0-latest — Complex Compilation.">
+  <meta name="description" content="Plain is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v2.0.1 — OCR, npm aliases &amp; version ranges, fixed Telegram callbacks.">
   <meta name="keywords" content="Plain, IOPL, intent-oriented programming, programming language, JavaScript, Plain language, plain-code, beginner programming language">
   <link rel="canonical" href="https://github.com/ayoistooslick/plain-code">
 
   <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://ayoistooslick.github.io/plain-code/">
   <meta property="og:title"       content="Plain — The programming language that reads like English">
-  <meta property="og:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.0.0-latest — Complex Compilation.">
+  <meta property="og:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.0.1 — OCR, npm aliases &amp; version ranges.">
   <meta property="og:image"       content="https://ayoistooslick.github.io/plain-code/og.png">
 
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="Plain — The programming language that reads like English">
-  <meta name="twitter:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.0.0-latest — Complex Compilation.">
+  <meta name="twitter:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.0.1 — OCR, npm aliases &amp; version ranges.">
   <meta name="twitter:image"       content="https://ayoistooslick.github.io/plain-code/og.png">
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -33,13 +33,14 @@
   <div class="nav-inner">
     <a class="nav-logo" href="#top">
       <span class="logo-word">Plain</span>
-      <span class="logo-ver">v2.0.0-latest</span>
+      <span class="logo-ver">v2.0.1</span>
     </a>
 
     <ul class="nav-links" role="list">
       <li><a href="#introduction">Introduction</a></li>
       <li><a href="#language">Language</a></li>
       <li><a href="#web">Web</a></li>
+      <li><a href="#ocr">OCR</a></li>
       <li><a href="#examples">Examples</a></li>
       <li><a href="#complex-compilation">Complex Compilation</a></li>
       <li><a href="#cli">CLI</a></li>
@@ -69,6 +70,7 @@
   <a href="#web">Web Development</a>
   <a href="#http">HTTP</a>
   <a href="#telegram">Telegram</a>
+  <a href="#ocr">OCR</a>
   <a href="#websocket">WebSocket</a>
   <a href="#scheduling">Scheduling</a>
   <a href="#email">Email</a>
@@ -93,7 +95,7 @@
       <div class="hero-copy">
         <div class="hero-badge">
           <i class="fa-solid fa-bolt"></i>
-          v2.0.0-latest &mdash; Complex Compilation
+          v2.0.1 &mdash; OCR &middot; npm aliases &middot; version ranges
         </div>
         <h1 class="hero-title">
           The language<br>
@@ -895,51 +897,104 @@ require(<span class="str">'@scope/package-name'</span>);</code></pre>
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <section class="section" id="telegram">
   <div class="container">
-    <div class="section-tag"><i class="fa-brands fa-telegram"></i> Telegram</div>
+    <div class="section-tag"><i class="fa-brands fa-telegram"></i> Telegram <span class="tag-new">Fixed in v2.0.1</span></div>
     <h2 class="section-title">Telegram Bot</h2>
     <p class="section-lead">
-      Define a Telegram bot with a versioned Complex Compilation rule. The compiler translates declarative bot syntax into working code.
+      Declarative bot syntax compiles to a dependency-free, polling-based Telegram runtime &mdash; commands, pattern matching, inline keyboards, and callback buttons.
     </p>
 
     <div class="compare" style="margin-bottom:2rem">
       <div class="code-block">
         <div class="code-block-header">
           <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">telegram.pln</span>
+          <span class="code-block-title">bot.pln</span>
           <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
         <pre><code><span class="kw">remember</span> token <span class="kw">as</span> <span class="fn">env</span>(<span class="str">"BOT_TOKEN"</span>)
 
-<span class="kw">remember</span> bot <span class="kw">as</span> telegram bot with token
+<span class="kw">bot</span> token
 
 <span class="kw">when someone sends</span> <span class="str">"/start"</span>
     <span class="kw">reply</span> <span class="str">"Hello from Plain!"</span>
 <span class="kw">done</span>
 
-<span class="kw">when someone sends</span> <span class="str">"/help"</span>
-    <span class="kw">reply</span> <span class="str">"I am a Plain bot. Send /start to begin."</span>
-<span class="kw">done</span></code></pre>
+<span class="cmt">// Inline keyboard buttons carry callback_data…</span>
+<span class="kw">when someone sends</span> <span class="str">"/menu"</span>
+    <span class="kw">reply</span> <span class="str">"Choose an option:"</span> <span class="kw">with buttons</span>
+        <span class="str">"About"</span> -&gt; <span class="str">"about"</span>,  <span class="str">"Help"</span> -&gt; <span class="str">"help"</span>
+    <span class="kw">done</span>
+<span class="kw">done</span>
+
+<span class="cmt">// …and pressing one executes its Plain handler.</span>
+<span class="kw">when someone clicks</span> <span class="str">"about"</span>
+    <span class="kw">reply</span> <span class="str">"You clicked about!"</span>
+<span class="kw">done</span>
+
+<span class="kw">start telegram bot</span></code></pre>
       </div>
       <div class="code-block">
         <div class="code-block-header">
           <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Generated JavaScript</span>
+          <span class="code-block-title">Generated JavaScript (excerpt)</span>
           <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
-        <pre><code><span class="kw">let</span> token = process.env[<span class="str">"BOT_TOKEN"</span>];
-<span class="kw">const</span> { <span class="fn">Telegraf</span> } = <span class="fn">require</span>(<span class="str">'telegraf'</span>);
-<span class="kw">let</span> bot = <span class="kw">new</span> <span class="fn">Telegraf</span>(token);
+        <pre><code><span class="kw">const</span> Telegram = (() =&gt; {
+  <span class="cmt">// zero dependencies — plain fetch() against the Bot API</span>
+  <span class="kw">let</span> token = process.env.TELEGRAM_BOT_TOKEN;
+  <span class="kw">const</span> <span class="fn">call</span> = <span class="kw">async</span> (method, params) =&gt; { <span class="cmt">/* … */</span> };
 
-bot.<span class="fn">command</span>(<span class="str">'start'</span>, (ctx) =&gt; {
-    ctx.<span class="fn">reply</span>(<span class="str">"Hello from Plain!"</span>);
+  <span class="kw">async function</span> <span class="fn">createTelegramBot</span>(botToken) {
+    <span class="cmt">// v2.0.1 — lives inside the module, so the handler</span>
+    <span class="cmt">// registry and transport are in scope; the token you</span>
+    <span class="cmt">// pass is bound to every API call.</span>
+    token = resolved;
+    <span class="kw">return</span> {
+      <span class="fn">onCommand</span>:  (m, h) =&gt; handlers.command.push({ m, h }),
+      <span class="fn">onPattern</span>:  (m, h) =&gt; handlers.pattern.push({ m, h }),
+      <span class="fn">onCallback</span>: (m, h) =&gt; handlers.callback.push({ m, h }),
+      <span class="fn">start</span>: <span class="kw">async</span> () =&gt; { <span class="cmt">/* getUpdates loop */</span> },
+    };
+  }
+})();
+
+BOT = <span class="kw">await</span> Telegram.<span class="fn">createTelegramBot</span>(token);
+
+BOT.<span class="fn">onCommand</span>(<span class="str">"/start"</span>, <span class="kw">async</span> (ctx) =&gt; {
+    <span class="kw">await</span> Telegram.<span class="fn">sendMessage</span>(ctx.chatId, <span class="str">"Hello from Plain!"</span>);
 });
 
-bot.<span class="fn">command</span>(<span class="str">'help'</span>, (ctx) =&gt; {
-    ctx.<span class="fn">reply</span>(<span class="str">"I am a Plain bot. Send /start to begin."</span>);
+BOT.<span class="fn">onCallback</span>(<span class="str">"about"</span>, <span class="kw">async</span> (ctx) =&gt; {
+    <span class="kw">await</span> Telegram.<span class="fn">sendMessage</span>(ctx.chatId, <span class="str">"You clicked about!"</span>);
 });
 
-bot.<span class="fn">launch</span>();</code></pre>
+<span class="kw">await</span> BOT.<span class="fn">start</span>();</code></pre>
       </div>
+    </div>
+
+    <div class="callout callout-info">
+      <i class="fa-solid fa-circle-info"></i>
+      <div class="callout-body">
+        <strong>What changed in v2.0.1</strong>
+        <p>The bot factory now lives inside the generated <code>Telegram</code> module, so rendered inline buttons execute their Plain callbacks correctly, and the token passed to <code>bot "&hellip;"</code> is used for every API call even without <code>TELEGRAM_BOT_TOKEN</code>. A regression test runs a real button press through the generated runtime.</p>
+      </div>
+    </div>
+
+    <h3 class="sub-heading"><i class="fa-solid fa-table-list"></i> Telegram syntax reference</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Plain</th><th>Behavior</th></tr></thead>
+        <tbody>
+          <tr><td><code>bot "&lt;token&gt;"</code></td><td>Create the bot; binds <code>BOT</code>. Falls back to <code>TELEGRAM_BOT_TOKEN</code>.</td></tr>
+          <tr><td><code>when someone sends "/cmd" ... done</code></td><td>Exact command handler.</td></tr>
+          <tr><td><code>when someone sends "pattern *x*" ... done</code></td><td>Regex pattern handler with captures.</td></tr>
+          <tr><td><code>when someone clicks "data" ... done</code></td><td>Inline-button callback handler (<code>callback_query</code>).</td></tr>
+          <tr><td><code>reply "&lt;text&gt;" with buttons ... done</code></td><td>Inline keyboard; each row maps <code>"Label" -&gt; "callback_data"</code>.</td></tr>
+          <tr><td><code>reply photo "&lt;url&gt;" [caption "&hellip;"]</code></td><td>Send a photo.</td></tr>
+          <tr><td><code>send message to chat ...</code></td><td>Proactive message to a known chat.</td></tr>
+          <tr><td><code>chats</code></td><td>List of chats seen by this bot.</td></tr>
+          <tr><td><code>start telegram bot</code></td><td>Start the long-polling loop.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>
@@ -1195,6 +1250,89 @@ cron.<span class="fn">schedule</span>(<span class="str">"*/5 * * * *"</span>, ()
 </section>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- OCR                                                                     -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="ocr">
+  <div class="container">
+    <div class="section-tag"><i class="fa-solid fa-eye"></i> Vision <span class="tag-new">New in v2.0.1</span></div>
+    <h2 class="section-title">OCR &mdash; read text out of images</h2>
+    <p class="section-lead">
+      One sentence extracts text from scans, screenshots, and photos. Tesseract.js does the work; Plain keeps it out of your source.
+    </p>
+
+    <div class="compare" style="margin-bottom:2rem">
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-title">ocr.pln</span>
+          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+        </div>
+        <pre><code><span class="cmt">// Extract text — mirrors ask "... as name"</span>
+<span class="kw">ocr</span> <span class="str">"scan.png"</span> <span class="kw">as</span> text
+<span class="kw">show</span> text
+
+<span class="cmt">// Pick a language pack (default: "eng")</span>
+<span class="kw">ocr</span> <span class="str">"brief.png"</span> <span class="kw">as</span> inhalt <span class="kw">using</span> <span class="str">"deu"</span>
+<span class="kw">show</span> inhalt
+
+<span class="cmt">// Combine packs, use any expression as the image</span>
+<span class="kw">remember</span> shot <span class="kw">as</span> <span class="str">"receipts/receipt-01.png"</span>
+<span class="kw">ocr</span> shot <span class="kw">as</span> total <span class="kw">using</span> <span class="str">"deu+eng"</span>
+
+<span class="kw">if</span> total <span class="kw">contains</span> <span class="str">"INVOICE"</span>
+    <span class="kw">show</span> <span class="str">"invoice detected"</span>
+<span class="kw">done</span></code></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-title">Generated JavaScript</span>
+          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+        </div>
+        <pre><code><span class="kw">const</span> { <span class="fn">createWorker</span> } = <span class="fn">require</span>(<span class="str">'tesseract.js'</span>);
+
+<span class="kw">async function</span> <span class="fn">__ocr</span>(imagePath, lang) {
+    <span class="kw">const</span> worker = <span class="kw">await</span> <span class="fn">createWorker</span>(lang || <span class="str">'eng'</span>);
+    <span class="kw">try</span> {
+        <span class="kw">const</span> { data } = <span class="kw">await</span> worker.<span class="fn">recognize</span>(imagePath);
+        <span class="kw">return</span> data.text;
+    } <span class="kw">finally</span> {
+        <span class="kw">await</span> worker.<span class="fn">terminate</span>();
+    }
+}
+
+<span class="kw">let</span> text = <span class="kw">await</span> <span class="fn">__ocr</span>(<span class="str">"scan.png"</span>, <span class="str">"eng"</span>);
+console.<span class="fn">log</span>(text);</code></pre>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h3 class="sub-heading"><i class="fa-solid fa-table-list"></i> Forms</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Plain</th><th>Behavior</th></tr></thead>
+            <tbody>
+              <tr><td><code>ocr "&lt;image&gt;" as &lt;name&gt;</code></td><td>Extract text into <code>&lt;name&gt;</code> (English by default).</td></tr>
+              <tr><td><code>... using "&lt;lang&gt;"</code></td><td>Tesseract language pack: <code>"deu"</code>, <code>"deu+eng"</code>, &hellip;</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="callout callout-info" style="margin-top:1.9rem">
+          <i class="fa-solid fa-circle-info"></i>
+          <div class="callout-body">
+            <strong>tesseract.js stays out of your source</strong>
+            <p>The implementation dependency is wired automatically: <code>plain install</code>, <code>plain run</code>, and <code>plain build</code> detect <code>ocr</code> statements and fetch <code>tesseract.js</code> for you. The statement is async like <code>ask</code> — top-level use wraps the program, and using it inside a function makes that function async.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- PACKAGES                                                                -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <section class="section section--alt" id="packages">
@@ -1241,19 +1379,31 @@ cron.<span class="fn">schedule</span>(<span class="str">"*/5 * * * *"</span>, ()
               <tr><td><code>use fs</code></td><td><code>const fs = require('fs')</code></td></tr>
               <tr><td><code>use path</code></td><td><code>const path = require('path')</code></td></tr>
               <tr><td><code>web app</code></td><td><code>express</code> (automatic)</td></tr>
+              <tr><td><code>ocr &hellip;</code></td><td><code>tesseract.js</code> (automatic)</td></tr>
               <tr><td><code>use axios</code></td><td><code>const axios = require('axios')</code></td></tr>
               <tr><td><code>use node-fetch</code></td><td><code>require('node-fetch')</code></td></tr>
               <tr><td><code>use @scope/package</code></td><td><code>require('@scope/package')</code></td></tr>
+              <tr><td><code>use node-fetch as fetch</code> <span class="tag-new">v2.0.1</span></td><td><code>const fetch = require('node-fetch')</code></td></tr>
+              <tr><td><code>use left-pad@^1.3.0</code> <span class="tag-new">v2.0.1</span></td><td><code>require('left-pad')</code> &middot; installs <code>left-pad@^1.3.0</code></td></tr>
+              <tr><td><code>use dotenv@16 as env</code> <span class="tag-new">v2.0.1</span></td><td><code>const env = require('dotenv')</code></td></tr>
               <tr><td><code>use &lt;any npm&gt;</code></td><td><code>require('&lt;package&gt;')</code></td></tr>
             </tbody>
           </table>
+        </div>
+
+        <div class="callout callout-info" style="margin-top:1rem">
+          <i class="fa-solid fa-tag"></i>
+          <div class="callout-body">
+            <strong>New in v2.0.1 &mdash; aliases &amp; version ranges</strong>
+            <p>Hyphenated and scoped names can now bind to a variable with <code>as &lt;name&gt;</code>, and any specifier may carry a version range (<code>@^1.3.0</code>, <code>@~2</code>, <code>@*</code>). Ranges flow through to installation; <code>require()</code> always uses the bare name. Aliasing Plain&rsquo;s built-in runtime packages (<code>express</code>, <code>sqlite</code>, &hellip;) produces a friendly error instead of silent breakage.</p>
+          </div>
         </div>
 
         <div class="callout callout-warning" style="margin-top:1rem">
           <i class="fa-solid fa-triangle-exclamation"></i>
           <div class="callout-body">
             <strong>Automatic runtime dependencies</strong>
-            <p>Plain detects <code>use</code>, <code>web app</code>, and database dependencies. <code>plain install</code>, <code>plain run</code>, and <code>plain build</code> install only missing npm packages; built-in Node modules are never installed.</p>
+            <p>Plain detects <code>use</code>, <code>web app</code>, <code>ocr</code>, and database dependencies. <code>plain install</code>, <code>plain run</code>, and <code>plain build</code> install only missing npm packages &mdash; checked by bare name, installed with their full <code>name@range</code> specifier. Built-in Node modules are never installed.</p>
           </div>
         </div>
       </div>
@@ -1796,10 +1946,27 @@ Hello, World!</code></pre>
     <div class="section-tag"><i class="fa-solid fa-map"></i> Roadmap</div>
     <h2 class="section-title">What&rsquo;s next</h2>
     <p class="section-lead">
-      Plain 1.0 is stable, v1.1 added Plain Expressions, v1.1.1 brought the JavaScript Gateway, and v2.0.0-latest adds Complex Compilation. Here&rsquo;s what&rsquo;s planned next.
+      Plain 1.0 is stable, v1.1 added Plain Expressions, v1.1.1 brought the JavaScript Gateway, v2.0.0-latest added Complex Compilation, and v2.0.1 ships OCR plus first-class npm aliases and version ranges. Here&rsquo;s what&rsquo;s planned next.
     </p>
 
     <div class="roadmap">
+
+      <div class="roadmap-item">
+        <div class="roadmap-version">v2.0.1</div>
+        <div class="roadmap-line-wrap">
+          <div class="roadmap-dot done"></div>
+          <div class="roadmap-connector"></div>
+        </div>
+        <div class="roadmap-content">
+          <h4>v2.0.1 &mdash; OCR &amp; npm refinements <span class="badge badge-green" style="margin-left:.5rem"><i class="fa-solid fa-check"></i> Released</span></h4>
+          <ul>
+            <li>OCR statements &mdash; <code>ocr "scan.png" as text [using "deu"]</code>, backed by Tesseract.js</li>
+            <li>npm aliases &mdash; <code>use node-fetch as fetch</code></li>
+            <li>Version ranges &mdash; <code>use left-pad@^1.3.0</code>, installed with the full specifier</li>
+            <li>Telegram fix &mdash; rendered inline buttons execute their Plain callbacks; the declared token drives every API call</li>
+          </ul>
+        </div>
+      </div>
 
       <div class="roadmap-item">
         <div class="roadmap-version">v1.0</div>
@@ -1930,7 +2097,7 @@ Hello, World!</code></pre>
       <div class="faq-item">
         <button class="faq-question">Is Plain production-ready? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Plain 2.0.0-latest includes runtime dependency detection, automatic installation, Complex Compilation, and deployment-oriented CLI commands. It compiles to standard Node.js-compatible JavaScript and remains well-suited for personal projects, tooling, and learning.
+          Plain 2.0.1 includes runtime dependency detection, automatic installation, Complex Compilation, OCR, npm aliases and version ranges, and deployment-oriented CLI commands &mdash; backed by a test suite of 560+ checks. It compiles to standard Node.js-compatible JavaScript and remains well-suited for personal projects, tooling, and learning.
         </div>
       </div>
 
@@ -1944,7 +2111,14 @@ Hello, World!</code></pre>
       <div class="faq-item">
         <button class="faq-question">Can I use npm packages? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Yes. Any npm package can be declared with <code>use &lt;package&gt;</code> and installed with <code>plain add &lt;package&gt;</code>. Plain manages your <code>plain.json</code> and the underlying <code>node_modules</code> automatically. The compiler validates that all declared packages are installed before compiling.
+          Yes. Any npm package can be declared with <code>use &lt;package&gt;</code> and installed with <code>plain add &lt;package&gt;</code>. Since v2.0.1 you can bind hyphenated or scoped packages to a variable with <code>use node-fetch as fetch</code>, and pin ranges inline with <code>use left-pad@^1.3.0</code>. Plain manages your <code>plain.json</code> and the underlying <code>node_modules</code> automatically, validating that all declared packages are installed before compiling.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">How does OCR work? <i class="fa-solid fa-chevron-down"></i></button>
+        <div class="faq-answer">
+          Write <code>ocr "scan.png" as text</code>. The statement is backed by Tesseract.js &mdash; an implementation detail that never appears in your source. <code>plain install</code>, <code>plain run</code>, and <code>plain build</code> detect <code>ocr</code> statements and fetch the package automatically. An optional <code>using "&lt;lang&gt;"</code> clause selects a language pack (<code>"deu"</code>, <code>"deu+eng"</code>, &hellip;); extraction defaults to English.
         </div>
       </div>
 
@@ -2086,16 +2260,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.</code></pre>
       </ul>
     </div>
 
-    <div class="footer-col">
-      <h5>Features</h5>
-      <ul>
-        <li><a href="#web">Web Development</a></li>
-        <li><a href="#http">HTTP</a></li>
-        <li><a href="#telegram">Telegram</a></li>
-        <li><a href="#database">Database</a></li>
-        <li><a href="#cli">CLI Reference</a></li>
-      </ul>
-    </div>
+      <div class="footer-col">
+        <h5>Features</h5>
+        <ul>
+          <li><a href="#web">Web Development</a></li>
+          <li><a href="#http">HTTP</a></li>
+          <li><a href="#telegram">Telegram</a></li>
+          <li><a href="#ocr">OCR</a></li>
+          <li><a href="#database">Database</a></li>
+          <li><a href="#cli">CLI Reference</a></li>
+        </ul>
+      </div>
 
     <div class="footer-col">
       <h5>Project</h5>
@@ -2112,7 +2287,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.</code></pre>
   <div class="footer-bottom">
     <p>Copyright &copy; 2026 Ayokunle. Released under the MIT License.</p>
     <span class="badge badge-blue version-badge">
-      <i class="fa-solid fa-bolt"></i> Plain v2.0.0-latest
+      <i class="fa-solid fa-bolt"></i> Plain v2.0.1
     </span>
   </div>
 </footer>

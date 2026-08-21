@@ -91,12 +91,74 @@ function initScrollSpy() {
       const id = entry.target.getAttribute('id');
       links.forEach(a => {
         const active = a.getAttribute('href') === `#${id}`;
+        a.classList.toggle('active', active);
         a.style.color = active ? 'var(--text)' : '';
       });
     });
   }, { rootMargin: '-50% 0px -45% 0px' });
 
   sections.forEach(s => observer.observe(s));
+}
+
+/* ── Scroll progress bar ─────────────────────────────────────────────────── */
+function initScrollProgress() {
+  let bar = document.getElementById('scroll-progress');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'scroll-progress';
+    document.body.appendChild(bar);
+  }
+  const update = () => {
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - doc.clientHeight;
+    bar.style.width = max > 0 ? `${(doc.scrollTop / max) * 100}%` : '0';
+  };
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+}
+
+/* ── Back to top button ──────────────────────────────────────────────────── */
+function initBackToTop() {
+  let btn = document.getElementById('to-top');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'to-top';
+    btn.className = 'to-top';
+    btn.setAttribute('aria-label', 'Back to top');
+    btn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
+    document.body.appendChild(btn);
+  }
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  const toggle = () => {
+    btn.classList.toggle('visible', window.scrollY > 480);
+  };
+  window.addEventListener('scroll', toggle, { passive: true });
+  toggle();
+}
+
+/* ── Reveal on scroll ────────────────────────────────────────────────────── */
+function initReveal() {
+  /* Skip entirely if the user prefers reduced motion (CSS also guards). */
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const targets = document.querySelectorAll(
+    '.section > .container > .section-tag, .section > .container > .section-title, .section > .container > .section-lead'
+  );
+  targets.forEach(el => el.classList.add('reveal'));
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  targets.forEach(el => observer.observe(el));
 }
 
 /* ── Smooth scroll nav highlight on click ────────────────────────────────── */
@@ -119,4 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initFAQ();
   initScrollSpy();
   initNavLinks();
+  initScrollProgress();
+  initBackToTop();
+  initReveal();
 });

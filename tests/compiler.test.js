@@ -6,7 +6,7 @@ const { tokenize, TOKEN } = require('../compiler/lexer');
 const { parse } = require('../compiler/parser');
 const { generate } = require('../compiler/generator');
 const { bundle, resolveDependencies } = require('../compiler/bundler');
-const { detectDependencies } = require('../compiler/dependency-detector');
+const { detectDependencies, splitPackageSpec } = require('../compiler/dependency-detector');
 const { format } = require('../compiler/formatter');
 
 // Helper: bundle a fixture file and return the generated JS
@@ -2757,6 +2757,73 @@ test('use @scope/package inside a function body works', () => {
 test('use node-fetch inside an if body works', () => {
   const js = compile('if x is 1\n  use node-fetch\ndone');
   if (!js.includes("require('node-fetch');")) throw new Error('missing node-fetch in if');
+});
+
+// ── Generic npm packages: aliases and version specs (v2.0.1) ───────────────
+
+test('splitPackageSpec splits name and version range', () => {
+  assert(JSON.stringify(splitPackageSpec('express')), JSON.stringify({ name: 'express', spec: null }));
+  assert(JSON.stringify(splitPackageSpec('left-pad@^1.3.0')), JSON.stringify({ name: 'left-pad', spec: '^1.3.0' }));
+  assert(JSON.stringify(splitPackageSpec('@scope/pkg')), JSON.stringify({ name: '@scope/pkg', spec: null }));
+  assert(JSON.stringify(splitPackageSpec('@scope/pkg@2')), JSON.stringify({ name: '@scope/pkg', spec: '2' }));
+});
+
+test('use pkg as name binds the package to the alias', () => {
+  assert(compile('use node-fetch as fetch'), "const fetch = require('node-fetch');");
+});
+
+test('use @scope/pkg as name and hyphenated as name bind aliases', () => {
+  const js = compile('use @scope/pkg as scoped\nuse left-pad as pad');
+  if (!js.includes("const scoped = require('@scope/pkg');")) throw new Error(`missing scoped alias:\n${js}`);
+  if (!js.includes("const pad = require('left-pad');")) throw new Error(`missing pad alias:\n${js}`);
+});
+
+test('aliased packages are deduplicated by package and alias', () => {
+  const js = compile('use dotenv as env\nuse dotenv as env');
+  const count = (js.match(/require\('dotenv'\)/g) || []).length;
+  if (count !== 1) throw new Error(`expected one dotenv require but got ${count}`);
+  assert(compile('use semver\nuse semver as sem'),
+    "const semver = require('semver');\nconst sem = require('semver');");
+});
+
+test('aliasing a built-in runtime package fails with guidance', () => {
+  try {
+    compile('use express as app');
+    throw new Error('expected an error but none was thrown');
+  } catch (e) {
+    if (!/already available as "express"/.test(e.message)) throw new Error(`wrong error: ${e.message}`);
+  }
+});
+
+test('an invalid alias fails with a clear error', () => {
+  try {
+    generate(parse(tokenize('use node-fetch as "quoted"')));
+    throw new Error('expected an error but none was thrown');
+  } catch (e) {
+    if (!/variable name after "as"/.test(e.message)) throw new Error(`wrong error: ${e.message}`);
+  }
+});
+
+test('version specs are lexed as part of the package token', () => {
+  const tokens = tokenize('use left-pad@^1.3.0');
+  if (tokens[1].type !== TOKEN.PACKAGE) throw new Error(`type: ${tokens[1].type}`);
+  if (tokens[1].value !== 'left-pad@^1.3.0') throw new Error(`value: ${tokens[1].value}`);
+});
+
+test('version specs are stripped for require()', () => {
+  assert(compile('use left-pad@^1.3.0'), "require('left-pad');");
+  const js = compile('use dotenv@16 as env');
+  if (!js.includes("const env = require('dotenv');")) throw new Error(`spec leaked into require:\n${js}`);
+});
+
+test('known packages keep their canonical binding when versioned', () => {
+  assert(compile('use sqlite@7'), `const Database = require('better-sqlite3');`);
+});
+
+test('detect keeps version specs and maps friendly names through them', () => {
+  assert(JSON.stringify(detectDependencies('use left-pad@^1.3.0')), '["left-pad@^1.3.0"]');
+  assert(JSON.stringify(detectDependencies('use sqlite@7')), '["better-sqlite3@7"]');
+  assert(JSON.stringify(detectDependencies('use @scope/pkg@1')), '["@scope/pkg@1"]');
 });
 
 test('hyphenated package require inside a JavaScript block is preserved verbatim', () => {

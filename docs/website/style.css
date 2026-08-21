@@ -871,3 +871,128 @@ kbd {
   .roadmap-version { text-align: left; width: auto; }
   .roadmap-line-wrap { display: none; }
 }
+
+/* ============================================================
+   v2.0.1 — Interface & experience enhancements
+   ============================================================ */
+
+/* ── "New in vX" pill ───────────────────────────────────────────────────── */
+.tag-new {
+  display: inline-flex;
+  align-items: center;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-family: var(--sans);
+  color: var(--green);
+  background: rgba(52,211,153,.10);
+  border: 1px solid rgba(52,211,153,.3);
+  border-radius: 100px;
+  padding: .14rem .55rem;
+  margin-left: .5rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+td .tag-new { font-size: .58rem; padding: .08rem .45rem; margin-left: .35rem; }
+
+/* ── Scroll progress bar ─────────────────────────────────────────────────── */
+#scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent), #8b5cf6 60%, var(--green));
+  z-index: 300;
+  transition: width 80ms linear;
+  pointer-events: none;
+}
+
+/* ── Back to top ─────────────────────────────────────────────────────────── */
+.to-top {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 250;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: .85rem;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity var(--transition), transform var(--transition),
+              color var(--transition), border-color var(--transition), background var(--transition);
+  box-shadow: var(--shadow);
+}
+.to-top.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.to-top:hover {
+  color: var(--text);
+  border-color: var(--faint);
+  background: var(--surface);
+}
+
+/* ── Reveal on scroll ────────────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity .5s ease, transform .5s ease;
+  will-change: opacity, transform;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  #scroll-progress { transition: none; }
+  .to-top { transition: opacity var(--transition); transform: none; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ── Keyboard focus visibility (a11y) ────────────────────────────────────── */
+a:focus-visible,
+button:focus-visible,
+.faq-question:focus-visible,
+.code-copy:focus-visible,
+.to-top:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Active nav link (set by scroll spy) ─────────────────────────────────── */
+.nav-links a.active {
+  color: var(--text);
+  background: var(--surface);
+}
+
+/* ── Code block hover polish ─────────────────────────────────────────────── */
+.code-block {
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.code-block:hover {
+  border-color: var(--border-2);
+  box-shadow: var(--shadow-lg);
+}

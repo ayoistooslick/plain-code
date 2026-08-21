@@ -4,9 +4,10 @@
 // Run with: node tests/telegram.test.js
 // (Standalone harness; the main suite is tests/compiler.test.js.)
 
+const vm = require('vm');
 const { tokenize, TOKEN } = require('../compiler/lexer');
 const { parse } = require('../compiler/parser');
-const { generate } = require('../compiler/generator');
+const { generate, createGenerationContext, wrapAsync } = require('../compiler/generator');
 const { format } = require('../compiler/formatter');
 
 let passed = 0;
@@ -24,6 +25,19 @@ function test(name, fn) {
   }
 }
 
+// Async tests are queued and joined before the summary (see bottom).
+const pendingTests = [];
+let lastTest = Promise.resolve();
+
+function testAsync(name, fn) {
+  const run = () => fn().then(
+    () => { console.log(`  PASS  ${name}`); passed++; },
+    (e) => { console.log(`  FAIL  ${name}`); console.log(`        ${e.message}`); failed++; },
+  );
+  lastTest = lastTest.then(run, run);
+  pendingTests.push(lastTest);
+}
+
 function assert(actual, expected) {
   const a = actual.trim();
   const e = expected.trim();
@@ -34,6 +48,60 @@ function assert(actual, expected) {
 
 function compile(source) {
   return generate(parse(tokenize(source)));
+}
+
+// Compile Plain source the way `plain build` does (async runtime wrapper).
+function compileProgram(source) {
+  const context = createGenerationContext();
+  let js = generate(parse(tokenize(source)), context);
+  if (context.needsAsync) js = wrapAsync(js);
+  return js;
+}
+
+// Execute generated Telegram JavaScript against a stubbed Telegram API.
+//
+// The stub serves two queued getUpdates batches — a "/menu" command, then a
+// callback query on "about" — and records every other API call. Once the
+// queue is empty it parks the poll loop (a never-resolved promise does not
+// hold the event loop open), so the program settles deterministically.
+function runTelegramProgram(js) {
+  const calls = [];
+  const updatesQueue = [
+    [{ update_id: 1, message: { chat: { id: 42 }, text: '/menu' } }],
+    [{
+      update_id: 2,
+      callback_query: {
+        data: 'about',
+        message: { chat: { id: 42 }, message_id: 10 },
+      },
+    }],
+  ];
+  const sandbox = {
+    console,
+    process: { env: {} },
+    setTimeout,
+    clearTimeout,
+    fetch: async (url, opts) => {
+      const method = url.split('/').pop();
+      if (method === 'getUpdates') {
+        const batch = updatesQueue.shift();
+        if (!batch) return new Promise(() => {});
+        return { json: async () => ({ ok: true, result: batch }) };
+      }
+      calls.push({ method, body: JSON.parse(opts.body), url });
+      return { json: async () => ({ ok: true, result: {} }) };
+    },
+  };
+  vm.runInNewContext(js, sandbox, { filename: 'generated-telegram.js' });
+  return calls;
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Waits until predicate() sees the recorded API calls, or times out.
+async function waitFor(calls, predicate) {
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline && !predicate(calls)) await sleep(25);
 }
 
 function tokenTypes(source) {
@@ -185,9 +253,9 @@ test('generate: reply with buttons includes keyboard rows', () => {
   }
 });
 
-test('generate: bot token call binds BOT', () => {
+test('generate: bot token call binds BOT via the Telegram module factory', () => {
   const js = compile('bot "0123456789:TEST"\nstart telegram bot');
-  if (!js.includes('BOT = await createTelegramBot("0123456789:TEST");')) {
+  if (!js.includes('BOT = await Telegram.createTelegramBot("0123456789:TEST");')) {
     throw new Error(`missing bot binding:\n${js}`);
   }
   if (!js.includes('await BOT.start();')) {
@@ -242,7 +310,58 @@ test('format: reply with buttons block indents button rows', () => {
   if (lines[2] !== 'done') throw new Error('done not dedented');
 });
 
+// ── End-to-end: rendered inline button executes its Plain callback ─────────
+
+const BUTTONS_SOURCE = [
+  'bot "0123456789:TEST"',
+  'when someone sends "/menu"',
+  '  reply "Choose" with buttons',
+  '    "About" -> "about", "Help" -> "help"',
+  '  done',
+  'done',
+  'when someone clicks "about"',
+  '  reply "You clicked about!"',
+  'done',
+  'start telegram bot',
+].join('\n');
+
+testAsync('runtime: rendered inline button carries callback_data and executes its Plain callback', async () => {
+  const calls = runTelegramProgram(compileProgram(BUTTONS_SOURCE));
+
+  // 1. The /menu reply must render the inline keyboard with callback_data.
+  await waitFor(calls, (c) => c.some(m => m.method === 'sendMessage' && m.body.reply_markup));
+  const menu = calls.find(m => m.method === 'sendMessage' && m.body.reply_markup);
+  if (!menu) throw new Error('no sendMessage with an inline keyboard was made');
+  if (menu.body.chat_id !== 42) throw new Error('keyboard sent to the wrong chat');
+  const flatButtons = menu.body.reply_markup.inline_keyboard.flat();
+  const about = flatButtons.find(b => b.text === 'About');
+  if (!about || about.callback_data !== 'about') {
+    throw new Error(`"About" button missing callback_data "about": ${JSON.stringify(flatButtons)}`);
+  }
+
+  // 2. Pressing the button (callback_query update) must execute the Plain
+  //    "when someone clicks" handler — proven by its reply reaching Telegram.
+  await waitFor(calls, (c) => c.some(m => m.method === 'sendMessage' && m.body.text === 'You clicked about!'));
+  const click = calls.find(m => m.method === 'sendMessage' && m.body.text === 'You clicked about!');
+  if (!click) throw new Error('clicking the rendered button did not execute the Plain callback');
+  if (click.body.chat_id !== 42) throw new Error('callback reply went to the wrong chat');
+});
+
+testAsync('runtime: bot token literal is used for API calls without TELEGRAM_BOT_TOKEN', async () => {
+  const js = compileProgram(BUTTONS_SOURCE);
+  if (!js.includes("createTelegramBot")) throw new Error('runtime factory missing');
+  const calls = runTelegramProgram(js);
+  await waitFor(calls, (c) => c.length > 0);
+  for (const call of calls) {
+    if (!call.url.includes('/bot0123456789:TEST/')) {
+      throw new Error(`API call did not use the bot token from bot "...": ${call.url}`);
+    }
+  }
+});
+
 // ── Summary ────────────────────────────────────────────────────────────────
 
-console.log(`\n${passed} passed, ${failed} failed`);
-if (failed > 0) process.exit(1);
+Promise.all(pendingTests).then(() => {
+  console.log(`\n${passed} passed, ${failed} failed`);
+  if (failed > 0) process.exit(1);
+});

@@ -1,0 +1,25 @@
+{
+  "name": "ocr",
+  "category": "vision",
+  "version": 1,
+  "title": "OCR Text Extraction",
+  "purpose": "Extracting text from image files with Tesseract.js via the ocr statement.",
+  "keywords": [
+    "ocr",
+    "image",
+    "text",
+    "tesseract",
+    "scan",
+    "recognize"
+  ],
+  "triggers": [
+    { "type": "regex", "pattern": "\\bocr\\s+\\S+\\s+as\\b" },
+    { "type": "regex", "pattern": "\\bextract\\s+text\\s+from\\b" },
+    { "type": "regex", "pattern": "\\bread\\s+text\\s+(from|in)\\s+(an?\\s+)?(image|photo|picture|scan)\\b" }
+  ],
+  "dependencies": ["tesseract.js"],
+  "imports": [],
+  "async": true,
+  "compilerMin": "2.0.0",
+  "resolvablePaths": ["vision/ocr", "vision/ocr.json"]
+}

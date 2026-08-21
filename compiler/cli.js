@@ -28,7 +28,7 @@ const { parse }    = require('./parser');
 const { generate, createGenerationContext, wrapAsync } = require('./generator');
 const { bundle, resolveDependencies } = require('./bundler');
 const { format }   = require('./formatter');
-const { detectDependencies, PACKAGE_MAP, isBuiltinModule } = require('./dependency-detector');
+const { detectDependencies, PACKAGE_MAP, isBuiltinModule, splitPackageSpec } = require('./dependency-detector');
 const ai = require('./ai');
 
 const { VERSION } = require('./version');
@@ -225,19 +225,23 @@ function requiredDependencies(files, config) {
   return [...packages];
 }
 
+// A dependency may carry a version range ("left-pad@^1.3.0"). Installed-ness
+// is judged by the bare package name; installation uses the full specifier.
 function missingDependencies(files, config, cwd = process.cwd()) {
-  return requiredDependencies(files, config).filter(pkg => !isInstalled(pkg, cwd));
+  return requiredDependencies(files, config)
+    .filter(pkg => !isInstalled(splitPackageSpec(pkg).name, cwd));
 }
 
 function installPackages(packages, cwd = process.cwd()) {
   for (const pkg of packages) {
+    const bareName = splitPackageSpec(pkg).name;
     console.log(`${clrCyan('Installing')} ${pkg}...`);
     try {
       execFileSync('npm', ['install', pkg, '--no-audit', '--no-fund'], {
         cwd,
         stdio: 'ignore',
       });
-      dependencyCache.set(`${cwd}\0${pkg}`, true);
+      dependencyCache.set(`${cwd}\0${bareName}`, true);
       console.log(`${clrGreen('✓')} ${pkg} installed`);
     } catch (_) {
       throw new Error(
@@ -250,7 +254,7 @@ function installPackages(packages, cwd = process.cwd()) {
 
 function ensureDependencies(files, config, install = true) {
   const required = requiredDependencies(files, config);
-  const missing = required.filter(pkg => !isInstalled(pkg));
+  const missing = required.filter(pkg => !isInstalled(splitPackageSpec(pkg).name));
   if (missing.length === 0) return { required, missing };
   if (install) {
     installPackages(missing);
@@ -490,7 +494,7 @@ function cmdInstall() {
   }
 
   // Determine which are missing
-  const missing = requiredPackages.filter(pkg => !isInstalled(pkg));
+  const missing = requiredPackages.filter(pkg => !isInstalled(splitPackageSpec(pkg).name));
 
   if (missing.length === 0) {
     for (const pkg of requiredPackages) console.log(`${clrGreen('✓')} ${pkg} already installed`);
@@ -545,7 +549,7 @@ function cmdDoctor() {
   try {
     const files = resolveDependencies(path.resolve(entry));
     const required = requiredDependencies(files, config);
-    const missing = required.filter(pkg => !isInstalled(pkg));
+    const missing = required.filter(pkg => !isInstalled(splitPackageSpec(pkg).name));
     check('Dependencies', missing.length === 0,
       missing.length ? `missing: ${missing.join(', ')}` : 'ready');
   } catch (err) {

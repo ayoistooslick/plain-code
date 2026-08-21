@@ -6,7 +6,7 @@
 
   <!-- SEO -->
   <title>Plain — The programming language that reads like English</title>
-  <meta name="description" content="Plain is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v1.0.0 — stable.">
+  <meta name="description" content="Plain is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v2.0.1 — OCR, npm aliases &amp; version ranges.">
   <meta name="keywords" content="Plain, IOPL, intent-oriented programming, programming language, JavaScript, Plain language, plain-code, beginner programming language">
   <link rel="canonical" href="https://plain-code.name.ng/">
 
@@ -14,13 +14,13 @@
   <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://plain-lang.dev/">
   <meta property="og:title"       content="Plain — The programming language that reads like English">
-  <meta property="og:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v1.0.0 — stable.">
+  <meta property="og:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.0.1 — OCR, npm aliases &amp; version ranges.">
   <meta property="og:image"       content="https://plain-code.name.ng/og.png">
 
   <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="Plain — The programming language that reads like English">
-  <meta name="twitter:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v1.0.0 stable.">
+  <meta name="twitter:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.0.1 — OCR, npm aliases &amp; version ranges.">
   <meta name="twitter:image"       content="https://plain-code.name.ng/og.png">
 
   <!-- Font Awesome -->
@@ -38,13 +38,14 @@
   <div class="nav-inner">
     <a class="nav-logo" href="#top">
       <span class="logo-word">Plain</span>
-      <span class="logo-ver">v1.0.0</span>
+      <span class="logo-ver">v2.0.1</span>
     </a>
 
     <ul class="nav-links" role="list">
       <li><a href="#quickstart">Docs</a></li>
       <li><a href="#examples">Examples</a></li>
       <li><a href="#language">Language</a></li>
+      <li><a href="#ocr">OCR</a></li>
       <li><a href="#cli">CLI</a></li>
       <li><a href="#packages">Packages</a></li>
       <li><a href="#faq">FAQ</a></li>
@@ -74,6 +75,7 @@
   <a href="#stdlib">Standard Library</a>
   <a href="#web">Web Development</a>
   <a href="#database">SQLite</a>
+  <a href="#ocr">OCR</a>
   <a href="#cli">CLI</a>
   <a href="#packages">Packages</a>
   <a href="#formatter">Formatter</a>
@@ -95,7 +97,7 @@
       <div class="hero-copy">
         <div class="hero-badge">
           <i class="fa-solid fa-bolt"></i>
-          v1.0.0 &mdash; First Stable Release
+          v2.0.1 &mdash; OCR &middot; npm aliases &middot; version ranges
         </div>
         <h1 class="hero-title">
           The language<br>
@@ -164,11 +166,11 @@
 <div class="container">
   <div class="stats-row">
     <div class="stat-item">
-      <div class="stat-value">35<span class="unit">+</span></div>
+      <div class="stat-value">40<span class="unit">+</span></div>
       <div class="stat-label">Keywords</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value">257</div>
+      <div class="stat-value">560<span class="unit">+</span></div>
       <div class="stat-label">Tests Passing</div>
     </div>
     <div class="stat-item">
@@ -809,15 +811,28 @@ scores[<span class="num">1</span>] = <span class="num">95</span>;</code></pre>
               <tr><td><code>use sqlite</code></td><td><code>const Database = require('better-sqlite3')</code></td></tr>
               <tr><td><code>use fs</code></td><td><code>const fs = require('fs')</code></td></tr>
               <tr><td><code>use path</code></td><td><code>const path = require('path')</code></td></tr>
+              <tr><td><code>use axios</code></td><td><code>const axios = require('axios')</code></td></tr>
+              <tr><td><code>use node-fetch as fetch</code> <span class="tag-new">v2.0.1</span></td><td><code>const fetch = require('node-fetch')</code></td></tr>
+              <tr><td><code>use left-pad@^1.3.0</code> <span class="tag-new">v2.0.1</span></td><td><code>require('left-pad')</code> &middot; installs <code>@^1.3.0</code></td></tr>
+              <tr><td><code>use @scope/pkg as scoped</code> <span class="tag-new">v2.0.1</span></td><td><code>const scoped = require('@scope/pkg')</code></td></tr>
+              <tr><td><code>use &lt;any npm&gt;</code></td><td><code>require('&lt;package&gt;')</code></td></tr>
             </tbody>
           </table>
+        </div>
+
+        <div class="callout callout-info" style="margin-top:1rem">
+          <i class="fa-solid fa-tag"></i>
+          <div class="callout-body">
+            <strong>New in v2.0.1 — aliases &amp; version ranges</strong>
+            <p>Bind hyphenated or scoped packages to a variable with <code>as &lt;name&gt;</code>, and pin ranges inline (<code>@^1.3.0</code>, <code>@~2</code>, <code>@*</code>). Ranges flow through to installation; <code>require()</code> always uses the bare name.</p>
+          </div>
         </div>
 
         <div class="callout callout-warning" style="margin-top:1rem">
           <i class="fa-solid fa-triangle-exclamation"></i>
           <div class="callout-body">
             <strong>Dependency validation</strong>
-            <p>Before compiling, Plain checks that every package referenced by <code>use</code> is installed. Missing packages produce a friendly error with the exact command to fix it.</p>
+            <p>Before compiling, Plain checks that every package referenced by <code>use</code> is installed — by bare name, so versioned specifiers resolve against whatever is in <code>node_modules</code>. Missing packages are installed with their full <code>name@range</code> specifier and produce a friendly error with the exact command if that fails.</p>
           </div>
         </div>
       </div>
@@ -986,6 +1001,71 @@ scores[<span class="num">1</span>] = <span class="num">95</span>;</code></pre>
             <p>SQLite files are created automatically if they don&rsquo;t exist. No server to start, no credentials to manage.</p>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- OCR                                                                      -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="ocr">
+  <div class="container">
+    <div class="section-tag"><i class="fa-solid fa-eye"></i> Vision <span class="tag-new">New in v2.0.1</span></div>
+    <h2 class="section-title">OCR &mdash; read text out of images</h2>
+    <p class="section-lead">
+      One sentence extracts text from scans, screenshots, and photos. Tesseract.js does the work; Plain keeps it out of your source.
+    </p>
+
+    <div class="compare" style="margin-bottom:2rem">
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-title">ocr.pln</span>
+          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+        </div>
+        <pre><code><span class="cmt">// Extract text — mirrors ask "... as name"</span>
+<span class="kw">ocr</span> <span class="str">"scan.png"</span> <span class="kw">as</span> text
+<span class="kw">show</span> text
+
+<span class="cmt">// Pick a language pack (default: "eng")</span>
+<span class="kw">ocr</span> <span class="str">"brief.png"</span> <span class="kw">as</span> inhalt <span class="kw">using</span> <span class="str">"deu"</span>
+
+<span class="cmt">// Any expression works as the image source</span>
+<span class="kw">remember</span> shot <span class="kw">as</span> <span class="str">"receipts/receipt-01.png"</span>
+<span class="kw">ocr</span> shot <span class="kw">as</span> total <span class="kw">using</span> <span class="str">"deu+eng"</span>
+
+<span class="kw">if</span> total <span class="kw">contains</span> <span class="str">"INVOICE"</span>
+    <span class="kw">show</span> <span class="str">"invoice detected"</span>
+<span class="kw">done</span></code></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-title">Generated JavaScript</span>
+          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+        </div>
+        <pre><code><span class="kw">const</span> { <span class="fn">createWorker</span> } = <span class="fn">require</span>(<span class="str">'tesseract.js'</span>);
+
+<span class="kw">async function</span> <span class="fn">__ocr</span>(imagePath, lang) {
+    <span class="kw">const</span> worker = <span class="kw">await</span> <span class="fn">createWorker</span>(lang || <span class="str">'eng'</span>);
+    <span class="kw">try</span> {
+        <span class="kw">const</span> { data } = <span class="kw">await</span> worker.<span class="fn">recognize</span>(imagePath);
+        <span class="kw">return</span> data.text;
+    } <span class="kw">finally</span> {
+        <span class="kw">await</span> worker.<span class="fn">terminate</span>();
+    }
+}
+
+<span class="kw">let</span> text = <span class="kw">await</span> <span class="fn">__ocr</span>(<span class="str">"scan.png"</span>, <span class="str">"eng"</span>);</code></pre>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <i class="fa-solid fa-circle-info"></i>
+      <div class="callout-body">
+        <strong>tesseract.js stays out of your source</strong>
+        <p><code>plain install</code>, <code>plain run</code>, and <code>plain build</code> detect <code>ocr</code> statements and fetch the package automatically. The statement is async like <code>ask</code> &mdash; top-level use wraps the program in the async runtime, and using it inside a function makes that function async.</p>
       </div>
     </div>
   </div>
@@ -1169,7 +1249,7 @@ Plain v1.0.0</code></pre>
     <div class="section-tag"><i class="fa-solid fa-map"></i> Roadmap</div>
     <h2 class="section-title">What&rsquo;s next</h2>
     <p class="section-lead">
-      Plain 1.0.0 is the first stable release. Here&rsquo;s what&rsquo;s planned for the versions that follow.
+      Plain 1.0 was the first stable release. v1.1 added Plain Expressions, v1.1.1 the JavaScript Gateway, v2.0 Complex Compilation, and v2.0.1 OCR plus first-class npm aliases and version ranges.
     </p>
 
     <div class="roadmap">
@@ -1184,9 +1264,7 @@ Plain v1.0.0</code></pre>
           <h4>v1.0.0 — Stable <span class="badge badge-green" style="margin-left:.5rem"><i class="fa-solid fa-check"></i> Released</span></h4>
           <ul>
             <li>Compiler audit — all constructs verified</li>
-            <li>257 passing tests</li>
             <li>Full language specification</li>
-            <li>VS Code extension v1.0.0</li>
             <li>GitHub Linguist preparation</li>
           </ul>
         </div>
@@ -1195,33 +1273,17 @@ Plain v1.0.0</code></pre>
       <div class="roadmap-item">
         <div class="roadmap-version">v1.1</div>
         <div class="roadmap-line-wrap">
-          <div class="roadmap-dot"></div>
+          <div class="roadmap-dot done"></div>
           <div class="roadmap-connector"></div>
         </div>
         <div class="roadmap-content">
-          <h4>v1.1 — Developer Experience <span class="badge badge-blue" style="margin-left:.5rem">Planned</span></h4>
+          <h4>v1.1 &amp; v1.1.1 — Expressions &amp; JavaScript Gateway <span class="badge badge-green" style="margin-left:.5rem"><i class="fa-solid fa-check"></i> Released</span></h4>
           <ul>
-            <li><code>plain watch</code> — recompile on file change</li>
-            <li>Error recovery mode — continue parsing after first error</li>
-            <li>Improved error messages with source-map line numbers</li>
-            <li>Multi-file project support improvements</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="roadmap-item">
-        <div class="roadmap-version">v1.2</div>
-        <div class="roadmap-line-wrap">
-          <div class="roadmap-dot"></div>
-          <div class="roadmap-connector"></div>
-        </div>
-        <div class="roadmap-content">
-          <h4>v1.2 — Editor Integration <span class="badge badge-blue" style="margin-left:.5rem">Planned</span></h4>
-          <ul>
-            <li>Language Server Protocol (LSP) support</li>
-            <li>Hover documentation in VS Code</li>
-            <li>Go-to-definition for functions</li>
-            <li>Inline error squiggles</li>
+            <li>Collection items, operations, and <code>of</code> chains</li>
+            <li>JavaScript blocks &mdash; <code>remember x as javascript ... done</code></li>
+            <li>Terminal input &mdash; <code>ask</code></li>
+            <li>Arbitrary npm packages &mdash; including hyphenated and scoped names</li>
+            <li>Automatic async runtime wrapping</li>
           </ul>
         </div>
       </div>
@@ -1229,15 +1291,48 @@ Plain v1.0.0</code></pre>
       <div class="roadmap-item">
         <div class="roadmap-version">v2.0</div>
         <div class="roadmap-line-wrap">
+          <div class="roadmap-dot done"></div>
+          <div class="roadmap-connector"></div>
+        </div>
+        <div class="roadmap-content">
+          <h4>v2.0 — Complex Compilation <span class="badge badge-green" style="margin-left:.5rem"><i class="fa-solid fa-check"></i> Released</span></h4>
+          <ul>
+            <li>Rule system &mdash; Telegram, HTTP fetch, REST APIs, WebSocket, scheduling, email</li>
+            <li>Complex Compilation provider with validated output</li>
+            <li>Deterministic compiler stays authoritative</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-version">v2.0.1</div>
+        <div class="roadmap-line-wrap">
+          <div class="roadmap-dot done"></div>
+          <div class="roadmap-connector"></div>
+        </div>
+        <div class="roadmap-content">
+          <h4>v2.0.1 — OCR &amp; npm refinements <span class="badge badge-green" style="margin-left:.5rem"><i class="fa-solid fa-check"></i> Released</span></h4>
+          <ul>
+            <li>OCR statements &mdash; <code>ocr "scan.png" as text [using "deu"]</code>, backed by Tesseract.js</li>
+            <li>npm aliases &mdash; <code>use node-fetch as fetch</code></li>
+            <li>Version ranges &mdash; <code>use left-pad@^1.3.0</code>, installed with the full specifier</li>
+            <li>Telegram fix &mdash; rendered inline buttons execute their Plain callbacks</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-version">Next</div>
+        <div class="roadmap-line-wrap">
           <div class="roadmap-dot"></div>
         </div>
         <div class="roadmap-content">
-          <h4>v2.0 — Extended Language <span class="badge badge-amber" style="margin-left:.5rem">Future</span></h4>
+          <h4>Future — Extended Language <span class="badge badge-amber" style="margin-left:.5rem">Planned</span></h4>
           <ul>
             <li>Optional type hints (non-breaking)</li>
-            <li>Async operations</li>
-            <li>Standard library expansion</li>
-            <li>Module system refinements</li>
+            <li><code>plain watch</code> — recompile on file change</li>
+            <li>Language Server Protocol (LSP) support</li>
+            <li>Standard library expansion &amp; module refinements</li>
           </ul>
         </div>
       </div>
@@ -1266,7 +1361,7 @@ Plain v1.0.0</code></pre>
       <div class="faq-item">
         <button class="faq-question">Is Plain production-ready? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Plain 1.0.0 is the first stable release. It has a full test suite (257 tests), a complete language specification, and compiles to standard Node.js-compatible JavaScript. It is well-suited for personal projects, tooling, and learning. For large production systems, evaluate whether the JavaScript ecosystem's tooling (TypeScript, linters, bundlers) is needed alongside it.
+          Plain 2.0.1 includes runtime dependency detection, automatic installation, Complex Compilation, OCR, and deployment-oriented CLI commands — backed by a test suite of 560+ checks. It compiles to standard Node.js-compatible JavaScript and is well-suited for personal projects, tooling, and learning. For large production systems, evaluate whether the JavaScript ecosystem's tooling (TypeScript, linters, bundlers) is needed alongside it.
         </div>
       </div>
 
@@ -1280,7 +1375,14 @@ Plain v1.0.0</code></pre>
       <div class="faq-item">
         <button class="faq-question">Can I use npm packages? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Yes. Any npm package can be declared with <code>use &lt;package&gt;</code> and installed with <code>plain add &lt;package&gt;</code>. Plain manages your <code>plain.json</code> and the underlying <code>node_modules</code> automatically. The compiler validates that all declared packages are installed before compiling.
+          Yes. Any npm package can be declared with <code>use &lt;package&gt;</code> and installed with <code>plain add &lt;package&gt;</code>. Since v2.0.1 you can bind hyphenated or scoped packages to a variable with <code>use node-fetch as fetch</code>, and pin ranges inline with <code>use left-pad@^1.3.0</code>. Plain manages your <code>plain.json</code> and the underlying <code>node_modules</code> automatically, validating that all declared packages are installed before compiling.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">How does OCR work? <i class="fa-solid fa-chevron-down"></i></button>
+        <div class="faq-answer">
+          Write <code>ocr "scan.png" as text</code>. The statement is backed by Tesseract.js — an implementation detail that never appears in your source. <code>plain install</code>, <code>plain run</code>, and <code>plain build</code> detect <code>ocr</code> statements and fetch the package automatically. An optional <code>using "&lt;lang&gt;"</code> clause selects a language pack; extraction defaults to English.
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 // Generator: converts a Plain AST into JavaScript source code.
 
 const vm = require('vm');
+const { splitPackageSpec } = require('./dependency-detector');
 
 // Known runtime packages and their require() statements.
 const KNOWN_PACKAGES = {
@@ -43,6 +44,21 @@ const BUILTIN_DECLARATIONS = {
     `  }`,
     `}`,
   ].join('\n'),
+  // v2.0.1 — OCR runtime (tesseract.js). Extracts text from an image file.
+  // The worker is created per call and always terminated, so repeated ocr
+  // statements do not leak workers.
+  ocr: [
+    `const { createWorker } = require('tesseract.js');`,
+    `async function __ocr(imagePath, lang) {`,
+    `  const worker = await createWorker(lang || 'eng');`,
+    `  try {`,
+    `    const { data } = await worker.recognize(imagePath);`,
+    `    return data.text;`,
+    `  } finally {`,
+    `    await worker.terminate();`,
+    `  }`,
+    `}`,
+  ].join('\n'),
   // v1.2 — Telegram runtime. Polling-based: no webhook endpoint needed.
   // Exposes `Telegram` (the raw API client) plus a `createTelegramBot(token)`
   // factory that registers handlers and polls getUpdates in a loop. `BOT` is
@@ -50,11 +66,10 @@ const BUILTIN_DECLARATIONS = {
   // TELEGRAM_BOT_TOKEN environment variable at call time.
   telegram: [
     `const Telegram = (() => {`,
-    `  const token = process.env.TELEGRAM_BOT_TOKEN;`,
-    `  const base = 'https://api.telegram.org/bot' + token;`,
+    `  let token = process.env.TELEGRAM_BOT_TOKEN;`,
     `  const call = async (method, params = {}) => {`,
     `    if (!token) throw new Error('Telegram: TELEGRAM_BOT_TOKEN is not set. Use: bot "YOUR_BOT_TOKEN"');`,
-    `    const response = await fetch(base + '/' + method, {`,
+    `    const response = await fetch('https://api.telegram.org/bot' + token + '/' + method, {`,
     `      method: 'POST',`,
     `      headers: { 'Content-Type': 'application/json' },`,
     `      body: JSON.stringify(params),`,
@@ -71,8 +86,66 @@ const BUILTIN_DECLARATIONS = {
     `      inline_keyboard: [rows.map(([text, data]) => ({ text, callback_data: data }))],`,
     `    },`,
     `  });`,
+    // v2.0.1 — createTelegramBot is defined inside this module so its handler
+    // registry (`handlers`) and API transport (`call`, `sleep`) are in scope.
+    // Defining it outside made every BOT.onCommand/onPattern/onCallback call
+    // throw "ReferenceError: handlers is not defined", so no rendered inline
+    // button could ever execute its Plain callback.
+    `  async function createTelegramBot(botToken) {`,
+    `    const resolved = botToken || process.env.TELEGRAM_BOT_TOKEN;`,
+    `    if (!resolved) throw new Error('Telegram: bot token is missing. Use: bot "YOUR_BOT_TOKEN"');`,
+    `    token = resolved; // bind the API transport to this bot's credential`,
+    `    let offset = 0;`,
+    `    const onText = async (chatId, text) => {`,
+    `      for (const { matcher, handler } of handlers.pattern) {`,
+    `        const match = text.match(matcher);`,
+    `        if (match) { await handler({ chatId, text, matches: match }); return; }`,
+    `      }`,
+    `      const first = text.split(' ')[0];`,
+    `      for (const { matcher, handler } of handlers.command) {`,
+    `        if (first === matcher) {`,
+    `          await handler({ chatId, text, args: text.split(' ').slice(1) });`,
+    `          return;`,
+    `        }`,
+    `      }`,
+    `    };`,
+    `    const onCallback = async (data, message) => {`,
+    `      for (const { matcher, handler } of handlers.callback) {`,
+    `        if (data === matcher) {`,
+    `          await handler({ data, message, chatId: message.chat.id });`,
+    `          return;`,
+    `        }`,
+    `      }`,
+    `    };`,
+    `    return {`,
+    `      start: async () => {`,
+    `        while (true) {`,
+    `          let updates;`,
+    `          try {`,
+    `            updates = await call('getUpdates', { offset, timeout: 30 });`,
+    `          } catch (error) {`,
+    `            await sleep(3000);`,
+    `            continue;`,
+    `          }`,
+    `          for (const update of updates) {`,
+    `            offset = update.update_id + 1;`,
+    `            const chat = (update.message || (update.callback_query || {}).message || {}).chat;`,
+    `            if (chat) chats.set(chat.id, chat);`,
+    `            if (update.message && update.message.text != null) {`,
+    `              await onText(update.message.chat.id, update.message.text);`,
+    `            } else if (update.callback_query && update.callback_query.data != null) {`,
+    `              await onCallback(update.callback_query.data, update.callback_query.message);`,
+    `            }`,
+    `          }`,
+    `        }`,
+    `      },`,
+    `      onCommand: (matcher, handler) => handlers.command.push({ matcher, handler }),`,
+    `      onPattern: (matcher, handler) => handlers.pattern.push({ matcher, handler }),`,
+    `      onCallback: (matcher, handler) => handlers.callback.push({ matcher, handler }),`,
+    `    };`,
+    `  }`,
     `  return {`,
-    `    call, chats, handlers, keyboard,`,
+    `    call, chats, handlers, keyboard, createTelegramBot,`,
     `    sendMessage: async (chatId, text, rows) => call('sendMessage', {`,
     `      chat_id: chatId,`,
     `      text: String(text),`,
@@ -100,58 +173,6 @@ const BUILTIN_DECLARATIONS = {
     `  };`,
     `})();`,
     `let BOT;`,
-    `async function createTelegramBot(token) {`,
-    `  const botToken = token || process.env.TELEGRAM_BOT_TOKEN;`,
-    `  if (!botToken) throw new Error('Telegram: bot token is missing. Use: bot "YOUR_BOT_TOKEN"');`,
-    `  let offset = 0;`,
-    `  const onText = async (chatId, text) => {`,
-    `    for (const { matcher, handler } of handlers.pattern) {`,
-    `      const match = text.match(matcher);`,
-    `      if (match) { await handler({ chatId, text, matches: match }); return; }`,
-    `    }`,
-    `    const first = text.split(' ')[0];`,
-    `    for (const { matcher, handler } of handlers.command) {`,
-    `      if (first === matcher) {`,
-    `        await handler({ chatId, text, args: text.split(' ').slice(1) });`,
-    `        return;`,
-    `      }`,
-    `    }`,
-    `  };`,
-    `  const onCallback = async (data, message) => {`,
-    `    for (const { matcher, handler } of handlers.callback) {`,
-    `      if (data === matcher) {`,
-    `        await handler({ data, message, chatId: message.chat.id });`,
-    `        return;`,
-    `      }`,
-    `    }`,
-    `  };`,
-    `  return {`,
-    `    start: async () => {`,
-    `      while (true) {`,
-    `        let updates;`,
-    `        try {`,
-    `          updates = await call('getUpdates', { offset, timeout: 30 });`,
-    `        } catch (error) {`,
-    `          await sleep(3000);`,
-    `          continue;`,
-    `        }`,
-    `        for (const update of updates) {`,
-    `          offset = update.update_id + 1;`,
-    `          const chat = (update.message || update.callback_query || {}).chat;`,
-    `          if (chat) chats.set(chat.id, chat);`,
-    `          if (update.message && update.message.text != null) {`,
-    `            await onText(update.message.chat.id, update.message.text);`,
-    `          } else if (update.callback_query && update.callback_query.data != null) {`,
-    `            await onCallback(update.callback_query.data, update.callback_query.message);`,
-    `          }`,
-    `        }`,
-    `      }`,
-    `    },`,
-    `    onCommand: (matcher, handler) => handlers.command.push({ matcher, handler }),`,
-    `    onPattern: (matcher, handler) => handlers.pattern.push({ matcher, handler }),`,
-    `    onCallback: (matcher, handler) => handlers.callback.push({ matcher, handler }),`,
-    `  };`,
-    `}`,
   ].join('\n'),
 };
 
@@ -183,7 +204,7 @@ const STDLIB = {
   bot:         (args, context) => {
     ensureBuiltin(context, 'telegram');
     if (!context.inFunction) context.needsAsync = true;
-    return `BOT = await createTelegramBot(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
+    return `BOT = await Telegram.createTelegramBot(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
   },
   sendMessage: (args, context) => {
     ensureBuiltin(context, 'telegram');
@@ -236,19 +257,42 @@ function npmPackageName(moduleName) {
   return NPM_NAME[moduleName] || moduleName;
 }
 
-function emitRequire(context, moduleName) {
-  const npmName = npmPackageName(moduleName);
+function emitRequire(context, moduleName, alias) {
+  // A specifier may carry a version range ("left-pad@^1.3.0"). require() takes
+  // the bare name only — the range is the installer's business (plain install).
+  const { name: bareName } = splitPackageSpec(moduleName);
+  const npmName = npmPackageName(bareName);
+
+  if (alias) {
+    if (!isValidIdentifier(alias)) {
+      throw new Error(
+        `use ${npmName} as ${alias}: "${alias}" is not a valid JavaScript variable name.`
+      );
+    }
+    const known = KNOWN_PACKAGES[bareName];
+    if (known) {
+      const boundAs = known.match(/const (\w+)/)[1];
+      throw new Error(
+        `"${bareName}" is part of Plain's built-in runtime and is already available as "${boundAs}". Remove "as ${alias}".`
+      );
+    }
+    const key = `${npmName}\0${alias}`;
+    if (context.requires.has(key)) return '';
+    context.requires.add(key);
+    return `const ${alias} = require('${npmName}');`;
+  }
+
   if (context.requires.has(npmName)) return '';
   context.requires.add(npmName);
 
-  if (KNOWN_PACKAGES[moduleName]) return KNOWN_PACKAGES[moduleName];
+  if (KNOWN_PACKAGES[bareName]) return KNOWN_PACKAGES[bareName];
 
   // RFC-0011 §5.1 — arbitrary npm packages. A name that is not a valid JS
   // identifier (e.g. node-fetch) is required for its side effect only.
-  if (isValidIdentifier(moduleName)) {
-    return `const ${moduleName} = require('${moduleName}');`;
+  if (isValidIdentifier(bareName)) {
+    return `const ${bareName} = require('${npmName}');`;
   }
-  return `require('${moduleName}');`;
+  return `require('${npmName}');`;
 }
 
 function ensureBuiltin(context, moduleName) {
@@ -260,12 +304,13 @@ function ensureBuiltin(context, moduleName) {
   }
 }
 
-// True when any statement in the block emits `await` (a JavaScript block or
-// `ask`), including inside nested if / loop bodies. Nested Plain function
-// declarations are handled independently, so they are not descended into.
+// True when any statement in the block emits `await` (a JavaScript block,
+// `ask`, or `ocr`), including inside nested if / loop bodies. Nested Plain
+// function declarations are handled independently, so they are not descended
+// into.
 function containsAsyncBlock(statements) {
   for (const stmt of statements || []) {
-    if (stmt.type === 'AskStatement' || stmt.type === 'JavaScriptBlock') return true;
+    if (stmt.type === 'AskStatement' || stmt.type === 'JavaScriptBlock' || stmt.type === 'OcrStatement') return true;
     if (stmt.type === 'IfStatement') {
       if (containsAsyncBlock(stmt.consequent)) return true;
       if (stmt.alternate && containsAsyncBlock(stmt.alternate)) return true;
@@ -333,7 +378,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       return ''; // resolved at bundle time by the bundler
 
     case 'UseStatement': {
-      const pkg = emitRequire(context, node.module);
+      const pkg = emitRequire(context, node.module, node.alias);
       return pkg ? `${indent}${pkg}` : '';
     }
 
@@ -384,6 +429,15 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       if (!context.inFunction) context.needsAsync = true;
       const prompt = node.prompt != null ? JSON.stringify(node.prompt) : '"> "';
       return `${indent}let ${node.variable} = await __ask(${prompt});`;
+    }
+
+    // v2.0.1 — ocr "<image>" as <variable> [using "<lang>"]
+    case 'OcrStatement': {
+      ensureBuiltin(context, 'ocr');
+      if (!context.inFunction) context.needsAsync = true;
+      const image = generateExpr(node.image, context);
+      const langArg = node.lang != null ? `, ${JSON.stringify(node.lang)}` : '';
+      return `${indent}let ${node.variable} = await __ocr(${image}${langArg});`;
     }
 
     case 'FunctionDeclaration': {
