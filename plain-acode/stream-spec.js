@@ -59,7 +59,7 @@ const NUMBER_WORDS = new Set([
 ]);
 
 // Literal words.
-const ATOMS = new Set(['true', 'false']);
+const ATOMS = new Set(['true', 'false', 'null', 'undefined']);
 
 // Standard-library function names (generator.js STDLIB) plus `write`, the
 // documented v1.1 file-operation alias (SPECIAL_CALLS → fs.writeFileSync).
@@ -107,6 +107,16 @@ function token(stream, state) {
   // SQL block: highlight as raw SQL body until a line exactly `done`.
   if (state.inSQL) return tokenSQL(stream, state);
 
+  // Inside a `${...}` interpolation inside a template string.
+  // Handle the closing `}` here, then fall through to Plain tokenization
+  // for the inner expression tokens (skips tokenTemplate to avoid recursion).
+  if (state.inTemplateExpr) {
+    if (stream.eat('}')) { state.inTemplateExpr = false; return 'punctuation'; }
+    // Fall through below for normal Plain tokenization of the inner expression.
+  } else if (state.inTemplate) {
+    return tokenTemplate(stream, state);
+  }
+
   // `//` line comments.
   if (stream.match('//')) {
     stream.skipToEnd();
@@ -139,6 +149,13 @@ function token(stream, state) {
     return isRoute ? 'string-2' : 'string';
   }
   state.pendingRoute = false;
+
+  // Template strings (backtick-delimited, multi-line).
+  if (stream.peek() === '`') {
+    stream.next(); // consume opening backtick
+    state.inTemplate = true;
+    return tokenTemplate(stream, state);
+  }
 
   // Numbers (Plain has no negative-number literal syntax).
   if (stream.match(/^\d+(\.\d+)?/)) return 'number';
@@ -290,6 +307,29 @@ function tokenSQL(stream, state) {
   return 'meta';
 }
 
+// Tokenizer for template strings (backtick-delimited). Highlights string
+// content and `${...}` interpolation as operators. Multi-line: the block
+// continues across lines until a closing backtick is found.
+function tokenTemplate(stream, state) {
+  // Inside a `${...}` expression — Plain tokenization is handled by the
+  // main token() function (which checks inTemplateExpr before entering here).
+  if (state.inTemplateExpr) return null;
+
+  // Scan template string content until `${`, closing backtick, or EOL.
+  while (!stream.eol()) {
+    if (stream.match('${')) {
+      state.inTemplateExpr = true;
+      return 'operator';
+    }
+    if (stream.match('`')) {
+      state.inTemplate = false;
+      return 'string-2';
+    }
+    stream.next();
+  }
+  return 'string-2';
+}
+
 // Exported spec consumed by plain-acode/main.js (StreamLanguage.define).
 module.exports = {
   name: 'plain',
@@ -297,6 +337,8 @@ module.exports = {
     inJavaScript: false,
     inSQL: false,
     inJSComment: false,
+    inTemplate: false,
+    inTemplateExpr: false,
     afterUse: false,
     afterWeb: false,
     pendingRoute: false,

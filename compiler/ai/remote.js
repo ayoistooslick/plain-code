@@ -29,7 +29,11 @@ function remoteUrl() {
 // Throws layer-specific errors (rule / validation / provider / network).
 async function translateRemote(source, options = {}) {
   const body = { source };
-  if (options.rulePath) body.rule = options.rulePath;
+  if (options.rulePaths && Array.isArray(options.rulePaths)) {
+    body.rules = options.rulePaths;
+  } else if (options.rulePath) {
+    body.rule = options.rulePath;
+  }
   if (options.noCache) body.options = { noCache: true };
 
   const url = `${remoteUrl()}/translate`;

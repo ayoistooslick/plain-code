@@ -15,6 +15,7 @@
         "variable", #D4D4D4, #D4D4D4
         "property", #9CDCFE, #9CDCFE
         "string", #6A9955, #6A9955
+        "string2", #CE9178, #CE9178
         "number", #B5CEA8, #B5CEA8
         "package", #4EC9B0, #4EC9B0
         "operator", #D4D4D4, #D4D4D4
@@ -53,6 +54,23 @@
         {
             match: /'.*?'/
             0: "string"
+        }
+
+        // ------------------------------------------------------------
+        // Template strings (backtick-delimited, multi-line)
+        // ------------------------------------------------------------
+
+        {
+            start: {match: /`/}
+            end: {match: /`/}
+            style: "string2"
+
+            contains: [
+                {
+                    match: /\$\{[^}]*\}/
+                    0: "keyword"
+                }
+            ]
         }
 
         // ------------------------------------------------------------
@@ -139,6 +157,11 @@
             0: "keyword"
         }
 
+        {
+            match: /\b(sends|clicks|matching)\b/
+            0: "keyword"
+        }
+
         // ------------------------------------------------------------
         // Comparisons
         // ------------------------------------------------------------
@@ -153,12 +176,17 @@
             0: "operator"
         }
 
+        {
+            match: /\b(greater|less|than)\b/
+            0: "operator"
+        }
+
         // ------------------------------------------------------------
         // Plain Expressions
         // ------------------------------------------------------------
 
         {
-            match: /\b(first|last|item|length|of|from|to|add|remove)\b/
+            match: /\b(first|last|length|of|from|to|add|remove)\b/
             0: "keyword2"
         }
 
@@ -213,7 +241,7 @@
         // ------------------------------------------------------------
 
         {
-            match: /\b(print|show|read|write|readFile|writeFile|fileExists|sleep|time|date|jsonEncode|jsonDecode|env|exit|uuid|uppercase|lowercase|random|round)\b/
+            match: /\b(print|show|read|write|readFile|writeFile|fileExists|sleep|time|date|jsonEncode|jsonDecode|env|exit|uuid|uppercase|lowercase|random|round|bot|sendMessage|sendPhoto|getChat|getMyChats|editMessage)\b/
             0: "builtin"
         }
 

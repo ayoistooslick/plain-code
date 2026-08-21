@@ -79,6 +79,7 @@ const TOKEN = {
   IDENTIFIER:  'IDENTIFIER',
   STRING:      'STRING',
   NUMBER:      'NUMBER',
+  TEMPLATE_STRING: 'TEMPLATE_STRING', // backtick-delimited string with interpolation
   // End of input
   EOF:         'EOF',
 };
@@ -203,6 +204,24 @@ function tokenize(source) {
       }
       i++; // skip closing quote
       tokens.push({ type: TOKEN.STRING, value: str, line: tokenLine, col: tokenCol });
+      continue;
+    }
+
+    // Backtick string (template literal): preserves whitespace and supports interpolation
+    if (source[i] === '`') {
+      let content = '';
+      i++; // skip opening backtick
+      while (i < source.length && source[i] !== '`') {
+        if (source[i] === '\n') { line++; lineStart = i + 1; }
+        content += source[i++];
+      }
+      if (i >= source.length) {
+        throw new Error(
+          `Line ${tokenLine}, Column ${tokenCol}: Unterminated backtick string: the closing \` is missing.`
+        );
+      }
+      i++; // skip closing backtick
+      tokens.push({ type: TOKEN.TEMPLATE_STRING, value: content, line: tokenLine, col: tokenCol });
       continue;
     }
 

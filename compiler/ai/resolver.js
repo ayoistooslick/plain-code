@@ -107,7 +107,15 @@ function resolveAllRules(source, rules, options) {
   const norm = normalize(source);
   const list = rules || loadRules();
 
-  // 1. Explicit selection: return just that rule.
+  // 1. Explicit selection: return just that rule or set of rules.
+  if (opts.rulePaths && Array.isArray(opts.rulePaths)) {
+    const want = opts.rulePaths.map((r) => String(r).toLowerCase());
+    return list.filter((r) =>
+      want.includes(r._id.toLowerCase()) ||
+      want.includes(r.name.toLowerCase()) ||
+      (Array.isArray(r.resolvablePaths) && r.resolvablePaths.some((p) => want.includes(p.toLowerCase())))
+    );
+  }
   if (opts.ruleName || opts.rulePath) {
     const want  = String(opts.ruleName || opts.rulePath).toLowerCase();
     const found = list.find((r) =>

@@ -6,6 +6,7 @@
     "patterns": [
         { "include": "#comments" },
         { "include": "#strings" },
+        { "include": "#template-strings" },
         { "include": "#numbers" },
         { "include": "#keywords" },
         { "include": "#operators" },
@@ -20,7 +21,7 @@
                     "match": "//.*$"
                 },
                 {
-                    "name": "comment.block.documentation.plain",
+                    "name": "comment.line.note.plain",
                     "match": "^\\s*note\\s*:.*$"
                 }
             ]
@@ -29,6 +30,21 @@
             "name": "string.quoted.double.plain",
             "begin": "\"",
             "end": "\"",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.plain",
+                    "match": "\\\\."
+                },
+                {
+                    "name": "meta.embedded.line.plain",
+                    "match": "\\$\\{[^}]*\\}"
+                }
+            ]
+        },
+        "template-strings": {
+            "name": "string.template.plain",
+            "begin": "`",
+            "end": "`",
             "patterns": [
                 {
                     "name": "constant.character.escape.plain",
@@ -60,7 +76,7 @@
                 },
                 {
                     "name": "keyword.operator.comparison.plain",
-                    "match": "\\b(is|greater|less|than|or|equal|to|above|below|at|least|most|not|empty|contains|starts|ends|with|between|and)\\b"
+                    "match": "\\b(is|greater|less|than|to|above|below|at|least|most|not|empty|contains|starts|ends|with|between|and)\\b"
                 },
                 {
                     "name": "keyword.other.web.plain",
@@ -76,11 +92,11 @@
                 },
                 {
                     "name": "support.function.stdlib.plain",
-                    "match": "\\b(readFile|writeFile|fileExists|sleep|time|date|jsonEncode|jsonDecode|env|exit|uuid|bot|sendMessage|sendPhoto|getChat|getMyChats|editMessage)(?=\\s*\\()"
+                    "match": "\\b(uppercase|lowercase|random|round|readFile|writeFile|fileExists|sleep|time|date|jsonEncode|jsonDecode|env|exit|uuid|bot|sendMessage|sendPhoto|getChat|getMyChats|editMessage)(?=\\s*\\()"
                 },
                 {
                     "name": "constant.language.plain",
-                    "match": "\\b(true|false)\\b"
+                    "match": "\\b(true|false|null)\\b"
                 }
             ]
         },
@@ -92,7 +108,7 @@
                 },
                 {
                     "name": "keyword.operator.arithmetic.plain",
-                    "match": "[+\\-*/%]"
+                    "match": "[+]"
                 },
                 {
                     "name": "punctuation.accessor.plain",

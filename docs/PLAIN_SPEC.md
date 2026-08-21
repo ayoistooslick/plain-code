@@ -53,9 +53,12 @@ Reassign:
 ## Printing
 
     show "Hello"
+    show("Hello")
     show age
-    show players[0]
+    show(players[0])
     show user.name
+
+Both keyword form (`show expr`) and call form (`show(expr)`) are valid and produce identical output.
 
 ---
 
@@ -165,6 +168,35 @@ All built-in functions are available without any `use` or `import` statement.
 | `lowercase(x)`  | `(x).toLowerCase()`     |
 | `random()`      | `Math.random()`         |
 | `round(x)`      | `Math.round(x)`         |
+
+### String Templates
+
+Backtick-delimited strings preserve whitespace and support `${expression}` interpolation. They compile to JavaScript template literals.
+
+    remember name as "World"
+    remember greeting as `Hello ${name}!`
+    show greeting
+
+    remember body as `{"key": "value"}`
+    remember response as await fetch "https://api.example.com" with
+      method is "POST"
+      body is body
+      headers is { "Content-Type": "application/json" }
+    done
+
+Multiline templates preserve line breaks:
+
+    remember email as `Dear ${customer},
+
+    Thank you for your order #${orderId}.
+
+    Best regards,
+    The Team`
+
+Notes:
+- Interpolation `${expr}` compiles directly to JavaScript `${expr}` — it is not evaluated at compile time.
+- Literal dollar signs that are not followed by `{` are preserved as-is (e.g. `` `$5` ``).
+- Embedded backtick characters within the template content are escaped in the output.
 
 ### I/O & Files
 

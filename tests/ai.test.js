@@ -840,6 +840,100 @@ test('prompt: single-rule prompt still works (backward compat)', () => {
   if (!prompt.includes('RULE COMPOSITION')) throw new Error('missing rule composition section');
 });
 
+// ── Multi-rule composition ────────────────────────────────────────────────────
+
+console.log('\nMulti-rule composition');
+
+test('resolver: resolveAllRules returns all matching rules for cron+email source', () => {
+  const source = 'every 5 minutes as\n  send email via transport\n    to is "test@example.com"\n    subject is "Tick"\n    body is "ping"\n  done\ndone';
+  const rules = resolveAllRules(source, null, {});
+  const ids = rules.map(r => r._id);
+  if (!ids.includes('automation/cron')) throw new Error('missing cron: ' + ids.join(', '));
+  if (!ids.includes('communication/email')) throw new Error('missing email: ' + ids.join(', '));
+});
+
+test('resolver: resolveAllRules returns all matching rules for REST+fetch+cron+email source', () => {
+  const source = 'remember app as express app\nwhen someone visits "/health" as req\n  reply "ok"\ndone\nevery 10 minutes as\n  remember response as await fetch "https://api.example.com"\n  send email via transport\n    to is "admin@example.com"\n    subject is "Health"\n    body is "checked"\n  done\ndone';
+  const rules = resolveAllRules(source, null, {});
+  const ids = rules.map(r => r._id);
+  if (!ids.includes('web/rest-api')) throw new Error('missing rest-api: ' + ids.join(', '));
+  if (!ids.includes('http/fetch')) throw new Error('missing fetch: ' + ids.join(', '));
+  if (!ids.includes('automation/cron')) throw new Error('missing cron: ' + ids.join(', '));
+  if (!ids.includes('communication/email')) throw new Error('missing email: ' + ids.join(', '));
+});
+
+test('resolver: resolveAllRules with explicit rulePaths selects subset', () => {
+  const source = 'every 5 minutes as\n  show "tick"\ndone';
+  const rules = resolveAllRules(source, null, { rulePaths: ['automation/cron'] });
+  if (rules.length !== 1) throw new Error('expected 1 rule, got ' + rules.length);
+  if (rules[0]._id !== 'automation/cron') throw new Error('wrong rule: ' + rules[0]._id);
+});
+
+test('resolver: cron rule resolves "every N minutes" trigger', () => {
+  const source = 'every 5 minutes as\n  show "tick"\ndone';
+  const rule = resolveRule(source);
+  if (!rule || rule._id !== 'automation/cron') throw new Error('cron not matched');
+});
+
+test('resolver: cron rule resolves "every N hours" trigger', () => {
+  const source = 'every 2 hours as\n  show "check"\ndone';
+  const rule = resolveRule(source);
+  if (!rule || rule._id !== 'automation/cron') throw new Error('cron not matched for hours');
+});
+
+test('resolver: cron rule resolves "every N seconds" trigger', () => {
+  const source = 'every 30 seconds as\n  show "fast"\ndone';
+  const rule = resolveRule(source);
+  if (!rule || rule._id !== 'automation/cron') throw new Error('cron not matched for seconds');
+});
+
+test('resolver: cron rule resolves schedule task trigger', () => {
+  const source = 'schedule task "* * * * *" as\n  show "tick"\ndone';
+  const rule = resolveRule(source);
+  if (!rule || rule._id !== 'automation/cron') throw new Error('cron not matched for schedule');
+});
+
+test('resolver: websocket rule resolves ws server trigger', () => {
+  const source = 'remember server as ws server on port 8080';
+  const rule = resolveRule(source);
+  if (!rule || rule._id !== 'websocket/ws') throw new Error('ws not matched');
+});
+
+test('prompt: multi-rule prompt includes all rule sections', () => {
+  const source = 'every 5 minutes as\n  show "tick"\ndone';
+  const rules = [
+    { title: 'Cron' },
+    { title: 'Fetch' },
+  ];
+  const rulesMarkdown = [
+    '# Cron\n\nCron syntax.',
+    '# Fetch\n\nFetch syntax.',
+  ];
+  const prompt = buildPrompt({ source, rules, rulesMarkdown });
+  if (!prompt.includes('--- Rule 1 ---')) throw new Error('missing Rule 1');
+  if (!prompt.includes('--- Rule 2 ---')) throw new Error('missing Rule 2');
+  if (!prompt.includes('Cron syntax.')) throw new Error('missing cron markdown');
+  if (!prompt.includes('Fetch syntax.')) throw new Error('missing fetch markdown');
+});
+
+test('agent: translate passes rules to buildPrompt', () => {
+  let capturedPrompt = null;
+  const mockClient = { chat: (prompt) => { capturedPrompt = prompt; return Promise.resolve('{"javascript":"//ok","dependencies":[],"imports":[],"async":false}'); } };
+  const { translate } = require('../compiler/ai/agent');
+  return translate({
+    source: 'show "hi"',
+    rules: [{ title: 'Rule A' }, { title: 'Rule B' }],
+    rulesMarkdown: ['# Rule A content', '# Rule B content'],
+    options: { client: mockClient },
+  }).then(() => {
+    if (!capturedPrompt) throw new Error('prompt was not called');
+    if (!capturedPrompt.includes('--- Rule 1 ---')) throw new Error('missing Rule 1 section in prompt');
+    if (!capturedPrompt.includes('--- Rule 2 ---')) throw new Error('missing Rule 2 section in prompt');
+    if (!capturedPrompt.includes('Rule A content')) throw new Error('missing Rule A markdown in prompt');
+    if (!capturedPrompt.includes('Rule B content')) throw new Error('missing Rule B markdown in prompt');
+  });
+});
+
 // ── Summary ──────────────────────────────────────────────────────────────────
 
 Promise.all(pending.concat(pendingHttp)).then(() => {

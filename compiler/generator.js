@@ -550,6 +550,14 @@ function generateExpr(node, context = createGenerationContext()) {
     case 'StringLiteral':    return JSON.stringify(node.value);
     case 'NumberLiteral':    return String(node.value);
 
+    // Backtick template literal: emit as a JavaScript template literal.
+    // Content is preserved verbatim (interpolation, whitespace, line breaks).
+    // Only literal backtick characters inside the content need escaping.
+    case 'TemplateLiteral': {
+      const escaped = node.value.replace(/`/g, '\\`');
+      return '`' + escaped + '`';
+    }
+
     case 'Identifier': {
       // Inside route handlers, remap Plain's request/response to req/res
       if (_inRoute && node.name === 'request')  return 'req';

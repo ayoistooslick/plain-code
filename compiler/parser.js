@@ -338,6 +338,13 @@ function parse(tokens) {
 
   function parseShow() {
     consume(TOKEN.SHOW);
+    // Support both keyword form (show "text") and call form (show("text")).
+    if (peek().type === TOKEN.LPAREN) {
+      advance(); // consume (
+      const value = parseExpression();
+      consume(TOKEN.RPAREN, 'Expected ")" to close "show" call.');
+      return { type: 'ShowStatement', value };
+    }
     const value = parseExpression();
     return { type: 'ShowStatement', value };
   }
@@ -812,6 +819,7 @@ function parse(tokens) {
     const token = peek();
 
     if (token.type === TOKEN.STRING)   { advance(); return { type: 'StringLiteral',  value: token.value }; }
+    if (token.type === TOKEN.TEMPLATE_STRING) { advance(); return { type: 'TemplateLiteral',  value: token.value }; }
     if (token.type === TOKEN.NUMBER)   { advance(); return { type: 'NumberLiteral',  value: token.value }; }
     if (token.type === TOKEN.LBRACKET) { return parseArrayLiteral(); }
     if (token.type === TOKEN.LBRACE)   { return parseInlineObjectLiteral(); }

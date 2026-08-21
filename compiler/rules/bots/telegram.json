@@ -20,7 +20,8 @@
     { "type": "regex", "pattern": "\\bsendMessage\\s+\\w+" },
     { "type": "regex", "pattern": "\\bsendPhoto\\s+\\w+" },
     { "type": "regex", "pattern": "\\beditMessage\\s+\\w+" },
-    { "type": "regex", "pattern": "\\bstart\\s+telegram\\s+bot\\b" }
+    { "type": "regex", "pattern": "\\bstart\\s+telegram\\s+bot\\b" },
+    { "type": "regex", "pattern": "\\bbot\\s+with\\s+token\\b" }
   ],
   "dependencies": ["node-telegram-bot-api"],
   "imports": [],

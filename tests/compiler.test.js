@@ -166,6 +166,21 @@ test('show string literal', () => {
   assert(compile('show "Hello"'), 'console.log("Hello");');
 });
 
+test('show("text") call form compiles identically', () => {
+  assert(compile('show("Hello")'), 'console.log("Hello");');
+});
+
+test('show("expr") call form with expression', () => {
+  assert(
+    compile('remember name as "World"\nshow("Hello " + name)'),
+    'let name = "World";\nconsole.log("Hello " + name);'
+  );
+});
+
+test('show(call) call form with function argument', () => {
+  assert(compile('show(add(5, 7))'), 'console.log(add(5, 7));');
+});
+
 test('remember then show (day1 example)', () => {
   assert(
     compile('remember name as "Ayokunle"\nshow name'),
@@ -3376,6 +3391,64 @@ test('highlight: atoms, invalid characters, and operator set', () => {
   if (highlightType(src, ';') !== 'invalid') throw new Error('; should be invalid in Plain');
 });
 
+test('highlight: atoms null and undefined', () => {
+  const src = [
+    'remember x as null',
+    'remember y as undefined',
+  ].join('\n');
+  if (highlightType(src, 'null') !== 'atom') throw new Error('null not atom');
+  if (highlightType(src, 'undefined') !== 'atom') throw new Error('undefined not atom');
+});
+
+test('highlight: template strings (backtick) are string-2', () => {
+  const src = 'show `Hello World`';
+  if (highlightType(src, '`Hello World`') !== 'string-2') {
+    throw new Error('template string not string-2');
+  }
+});
+
+test('highlight: template strings with interpolation', () => {
+  const src = 'remember msg as `Hello ${name}!`';
+  const tokens = highlight(src);
+  // The `${` triggers an interpolation — it should appear in an operator token
+  const opToken = tokens.find(t => t.type === 'operator' && t.text.includes('${'));
+  if (!opToken) throw new Error('${} interpolation not in operator token');
+  // The closing `}` is punctuation
+  if (highlightType(src, '}') !== 'punctuation') {
+    throw new Error('} closing interpolation not punctuation');
+  }
+  // The variable inside `${...}` is highlighted as a variable
+  if (highlightType(src, 'name') !== 'variable') {
+    throw new Error('interpolated variable not variable');
+  }
+});
+
+test('highlight: multiline template strings', () => {
+  const src = [
+    'remember msg as `line1',
+    'line2',
+    'line3`',
+  ].join('\n');
+  const tokens = highlight(src);
+  const strings = tokens.filter(t => t.type === 'string-2');
+  if (strings.length < 1) {
+    throw new Error('multiline template string not highlighted');
+  }
+});
+
+test('highlight: template string closing backtick resets to Plain', () => {
+  const src = [
+    'show `hello`',
+    'show "world"',
+  ].join('\n');
+  if (highlightType(src, '`hello`') !== 'string-2') {
+    throw new Error('template string not string-2');
+  }
+  if (highlightType(src, '"world"') !== 'string') {
+    throw new Error('string after template not string');
+  }
+});
+
 test('highlight: every emitted token type is a known legacy token', () => {
   const files = [
     'hello.pln', 'variables.pln', 'conditions.pln', 'expressions.pln',
@@ -3559,6 +3632,91 @@ testAsync('plugin: main.js wires init/unmount on the acode global', async () => 
   }
   if (typeof initFn !== 'function') throw new Error('main.js did not call acode.setPluginInit');
   if (typeof unmountFn !== 'function') throw new Error('main.js did not call acode.setPluginUnmount');
+});
+
+// ── String Templates (backtick strings) ─────────────────────────────────────
+
+test('string template: lexer produces TEMPLATE_STRING token', () => {
+  const tokens = tokenize('remember msg as `Hello World`');
+  const t = tokens.find(tok => tok.type === TOKEN.TEMPLATE_STRING);
+  if (!t) throw new Error('Expected TEMPLATE_STRING token');
+  if (t.value !== 'Hello World') throw new Error('Wrong value: ' + t.value);
+});
+
+test('string template: lexer preserves multiline content', () => {
+  const tokens = tokenize('remember msg as `line1\nline2\nline3`');
+  const t = tokens.find(tok => tok.type === TOKEN.TEMPLATE_STRING);
+  if (!t) throw new Error('Expected TEMPLATE_STRING token');
+  if (t.value !== 'line1\nline2\nline3') throw new Error('Wrong value: ' + JSON.stringify(t.value));
+});
+
+test('string template: lexer preserves interpolation syntax', () => {
+  const tokens = tokenize('remember msg as `Hello ${name}!`');
+  const t = tokens.find(tok => tok.type === TOKEN.TEMPLATE_STRING);
+  if (!t) throw new Error('Expected TEMPLATE_STRING token');
+  if (t.value !== 'Hello ${name}!') throw new Error('Wrong value: ' + t.value);
+});
+
+test('string template: unterminated backtick throws', () => {
+  let threw = false;
+  try { tokenize('remember msg as `Hello World'); } catch (e) { threw = true; }
+  if (!threw) throw new Error('Expected error for unterminated backtick');
+});
+
+test('string template: two separate backtick strings', () => {
+  const tokens = tokenize('remember msg as `hello` `world`');
+  const ts = tokens.filter(tok => tok.type === TOKEN.TEMPLATE_STRING);
+  if (ts.length !== 2) throw new Error('Expected 2 templates, got ' + ts.length);
+  if (ts[0].value !== 'hello') throw new Error('First value wrong');
+  if (ts[1].value !== 'world') throw new Error('Second value wrong');
+});
+
+test('string template: parser produces TemplateLiteral node', () => {
+  const tokens = tokenize('remember msg as `Hello World`');
+  const ast = parse(tokens);
+  const stmt = ast.body[0];
+  if (stmt.type !== 'RememberStatement') throw new Error('Wrong stmt type: ' + stmt.type);
+  if (stmt.value.type !== 'TemplateLiteral') throw new Error('Wrong value type: ' + stmt.value.type);
+  if (stmt.value.value !== 'Hello World') throw new Error('Wrong value');
+});
+
+test('string template: generator emits JS template literal', () => {
+  const tokens = tokenize('remember msg as `Hello World`');
+  const code = generate(parse(tokens));
+  if (!code.includes('`Hello World`')) throw new Error('Missing template literal in output: ' + code);
+  if (code.includes('JSON.stringify')) throw new Error('Should not use JSON.stringify for templates');
+});
+
+test('string template: full compile roundtrip', () => {
+  const src = 'remember msg as `Hello World`\nshow msg';
+  const code = generate(parse(tokenize(src)));
+  if (!code.includes('`Hello World`')) throw new Error('Template literal missing');
+});
+
+test('string template: interpolation roundtrip', () => {
+  const src = 'remember name as "World"\nremember msg as `Hello ${name}!`\nshow msg';
+  const code = generate(parse(tokenize(src)));
+  if (!code.includes('`Hello ${name}!`')) throw new Error('Interpolation missing: ' + code);
+});
+
+test('string template: multiline in show roundtrip', () => {
+  const src = 'show `line1\nline2`';
+  const code = generate(parse(tokenize(src)));
+  if (!code.includes('line1\nline2')) throw new Error('Multiline missing: ' + code);
+});
+
+test('string template: backtick contains double and single quotes', () => {
+  const src = 'show `Hello "World" and \'single\'`';
+  const code = generate(parse(tokenize(src)));
+  if (!code.includes('"World"')) throw new Error('Double quotes missing');
+  if (!code.includes("'single'")) throw new Error('Single quotes missing');
+});
+
+test('string template: plain dollar sign without interpolation', () => {
+  const src = 'show `price is $5`';
+  const code = generate(parse(tokenize(src)));
+  if (!code.includes('$5')) throw new Error('Dollar sign missing');
+  if (code.includes('${')) throw new Error('Should not contain interpolation syntax');
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────

@@ -101,6 +101,7 @@ async function translateSource(source, options = {}) {
   //     owns the provider credential — Plain users never need their own key.
   if (!options.client && !config().enabled) {
     const remote = await translateRemote(source, {
+      rulePaths: allRules.map((r) => r._id),
       rulePath: options.rulePath,
       noCache,
     });

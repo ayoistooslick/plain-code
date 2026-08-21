@@ -38,8 +38,8 @@ function extractJson(text) {
   }
 }
 
-async function translate({ source, rule, ruleMarkdown, context, project, options }) {
-  const prompt = buildPrompt({ source, rule, ruleMarkdown, context, project });
+async function translate({ source, rule, rules, ruleMarkdown, rulesMarkdown, context, project, options }) {
+  const prompt = buildPrompt({ source, rule, rules, ruleMarkdown, rulesMarkdown, context, project });
   const client = (options && options.client) ? options.client : { chat };
   const text   = await client.chat(prompt);
   return extractJson(text);

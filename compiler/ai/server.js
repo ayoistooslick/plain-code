@@ -110,7 +110,11 @@ function handleTranslate(req, res, client) {
     }
 
     const options = {};
-    if (body.rule) options.rulePath = body.rule;
+    if (Array.isArray(body.rules) && body.rules.length > 0) {
+      options.rulePaths = body.rules;
+    } else if (body.rule) {
+      options.rulePath = body.rule;
+    }
     if (body.options && body.options.noCache === true) options.noCache = true;
     if (client) options.client = client;
 

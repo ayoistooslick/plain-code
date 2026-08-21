@@ -62,6 +62,25 @@ remember age as 16
 age becomes 17
 ```
 
+### String Templates
+
+Backtick-delimited strings preserve whitespace and support `${expression}` interpolation:
+
+```plain
+remember name as "World"
+remember greeting as `Hello ${name}!`
+show greeting
+
+remember email as `Dear ${customer},
+
+Thank you for your order #${orderId}.
+
+Best regards,
+The Team`
+```
+
+Interpolation compiles directly to JavaScript template literals — it is not evaluated at compile time. Literal dollar signs without `{` are preserved as-is.
+
 ### Conditions (v0.6 comparisons)
 
 ```plain
