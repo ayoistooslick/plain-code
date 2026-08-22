@@ -1,24 +1,27 @@
-// WebSocket server and client example
+// Plain v2.1 — WebSocket chat server
 //
-// This example creates a WebSocket chat server and a client that
-// connects to it.
+// Run with:  plain run examples/websocket-server.pln
+// Then connect any ws client to ws://localhost:8080 and start typing.
+// Every message a client sends is echoed back to it and broadcast to
+// everyone else.
 
-remember server as ws server on port 8080
+websocket server on 8080
 
 when socket connects
-  show "Client connected"
-  send socket "Welcome to the chat server!"
+    send socket "Welcome to the Plain chat server!"
+    broadcast "Someone new joined the chat"
 done
 
-when socket receives message
-  show "Received: " + message
-  broadcast message
+when socket sends message
+    show "Got: " + message
+    send socket "You said: " + message
+    broadcast message
 done
 
 when socket disconnects
-  show "Client disconnected"
+    broadcast "Someone left the chat"
 done
 
-on server error
-  show "Server error: " + error.message
 done
+
+show "Chat server listening on port 8080"

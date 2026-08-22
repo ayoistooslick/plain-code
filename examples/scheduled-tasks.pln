@@ -1,21 +1,23 @@
-// Scheduled task example
+// Plain v2.1 — Scheduled and recurring tasks
 //
-// This example demonstrates the cron scheduling rule for
-// periodic tasks.
+// Run with:  plain run examples/scheduled-tasks.pln
+//
+// "every" covers simple intervals; "schedule" accepts any standard cron
+// expression (powered by croner).
 
-// Run every minute
-schedule task "* * * * *" as
-  show "Tick: " + date()
+// A heartbeat every 30 seconds
+every 30 seconds
+    show "Heartbeat: " + now()
 done
 
-// Run every 5 minutes
-every 5 minutes as
-  show "Heartbeat: " + date()
+// Any standard cron expression
+schedule "*/5 * * * *"
+    show "Five minutes have passed"
 done
 
-// Named daily cleanup task
-remember cleanup as schedule task "0 2 * * *" as
-  show "Running daily cleanup at 2 AM: " + date()
+// Nightly cleanup at 2 AM
+schedule "0 2 * * *"
+    show "Running the nightly cleanup"
 done
 
-show "Scheduled tasks registered"
+show "Scheduled tasks registered — press Ctrl+C to stop"

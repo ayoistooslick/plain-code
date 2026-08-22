@@ -1,0 +1,68 @@
+// Plain v2.1 — A real REST API
+//
+// Run with:  plain run examples/rest-api.pln
+// Try:       curl http://localhost:3000/api/users
+//
+// Demonstrates method routes, route groups, CORS, request validation,
+// path/query/header accessors, status codes and a SQLite database.
+
+database "rest-api-demo.db"
+
+execute
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT
+    )
+done
+
+web app
+allow cors
+
+group "/api"
+
+    route get "/users"
+        remember users as query
+            SELECT * FROM users
+        done
+        reply users
+    done
+
+    route post "/users"
+        remember missing as validate(body of request, ["name", "email"])
+        remember count as length(missing)
+        if count is greater than 0
+            status 400
+            reply missing
+        otherwise
+            remember who as body of request.name
+            remember mail as body of request.email
+            insert
+                INSERT INTO users (name, email) VALUES ({who}, {mail})
+            done
+            status 201
+            reply "created"
+        done
+    done
+
+    route get "/users/:id"
+        remember id as param("id")
+        remember found as query
+            SELECT * FROM users WHERE id = {id}
+        done
+        if length(found) is greater than 0
+            reply found[0]
+        otherwise
+            status 404
+            reply "not found"
+        done
+    done
+
+done
+
+route get "/health"
+    remember token as header("x-token")
+    reply "ok"
+done
+
+start 3000

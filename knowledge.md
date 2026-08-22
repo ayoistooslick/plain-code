@@ -3,7 +3,7 @@
 > **Purpose:** Plain is a small language, but it has sharp edges that trip up
 > code generators (LLMs included). This file is the fastest way to teach an AI
 > — ChatGPT, Claude, Cursor, Copilot — to write Plain code that actually
-> compiles with `@ayoxx/plain-code` v2.0.1.
+> compiles with `@ayoxx/plain-code` v2.1.0.
 >
 > **How to use:**
 > 1. Paste this entire file into your AI chat before asking it to write Plain.
@@ -23,6 +23,9 @@ Plain source files (`.pln`) compile to readable Node.js JavaScript.
 - Indentation is optional but recommended (4 spaces).
 - The compiler auto-wraps programs in an async runtime when needed, so
   top-level async statements just work.
+- Backend plumbing (express, pg, nodemailer, croner, ws, redis) is generated
+  for you — implementation packages never appear in your source and are
+  installed automatically on `plain run`.
 
 ```plain
 // app.pln
@@ -42,9 +45,9 @@ plain build app.pln      # writes app.js — read it to see exactly what happens
 
 These are verified compiler behaviors. Do not generate code that violates them.
 
-1. **Blocks close with `done`.** `if`, `for`, `while`, `make`, route and
-   handler bodies, object literals, SQL blocks, JavaScript blocks — all end
-   with `done`.
+1. **Blocks close with `done`.** `if`, `for`, `while`, `make`, route, group,
+   transaction, mail, schedule and handler bodies, object literals, SQL blocks,
+   JavaScript blocks — all end with `done`.
 
 2. **Only `+` exists as an arithmetic operator.** `*`, `/`, `-`, parentheses
    grouping are lexer errors. There are no negative number literals.
@@ -92,8 +95,9 @@ These are verified compiler behaviors. Do not generate code that violates them.
 
 7. **No `await` prefix in expressions.** `remember r as await fetch("...")`
    silently produces broken JavaScript (`let r = await;`). Async work comes
-   from dedicated statements (`ask`, `ocr`, telegram handlers) or JavaScript
-   blocks, which handle awaiting for you.
+   from dedicated statements (`ask`, `ocr`, email sends, database queries,
+   cache reads, telegram handlers) or JavaScript blocks, which handle
+   awaiting for you.
 
 8. **No try/catch statement.** Wrap risky code in a JavaScript block if you
    need error handling.
@@ -102,11 +106,14 @@ These are verified compiler behaviors. Do not generate code that violates them.
    deterministic parser.
 
 10. **Keywords are reserved.** Don't name variables `show`, `is`, `make`,
-    `use`, `when`, `start`, `bot`, `ocr`, etc.
+    `use`, `when`, `start`, `bot`, `ocr`, `route`, `database`, etc.
+    Contextual words (`status`, `query`, `send`, `broadcast`, `cache`) keep
+    their ordinary meaning when followed by `becomes` or `(...)`.
 
 11. **Strings use double quotes or backticks.** Backticks support `${expr}`
     interpolation and multiline text. Single quotes are not string delimiters
-    in Plain source.
+    in Plain source — except inside raw SQL blocks, where `'text literals'`
+    are allowed and pass through verbatim.
 
 12. **Reassignment uses `becomes`,** not `=`:
 
@@ -143,7 +150,7 @@ show user.name            // dot access
 | `is at least` | `>=` |
 | `is at most` | `<=` |
 | `is empty` / `is not empty` | `.length === 0` / `.length > 0` |
-| `contains "x"` | `.includes("x")` |
+| `contains "x"` (bare form also valid) | `.includes("x")` |
 | `starts with "x"` | `.startsWith("x")` |
 | `ends with "x"` | `.endsWith("x")` |
 
@@ -163,6 +170,7 @@ done
 
 There are no numeric range loops — build a list and loop over it, or count
 with `while` and `x becomes x + 1`.
+(`every 5 minutes … done` is scheduling, not a loop — see §9.)
 
 ### Functions
 
@@ -193,7 +201,7 @@ remember players as [
 
 players[1] becomes "Palmer"
 
-remember user as { name: "Ayo", age: 17 }     // inline form
+remember user as { name: "Ayo", age: 17 }     // inline form uses ":"
 show user.name
 user.age becomes 18
 
@@ -225,13 +233,24 @@ Best regards`
 
 ## 4. Standard library (no import needed)
 
+Text, numbers, time, system:
+
 | Call | JavaScript |
 |---|---|
 | `length(x)` | `(x).length` |
 | `uppercase(x)` / `lowercase(x)` | `.toUpperCase()` / `.toLowerCase()` |
+| `trim(x)` | `.trim()` |
+| `replace(s, from, to)` | `.replaceAll(from, to)` |
+| `split(s, sep)` | `.split(sep)` |
+| `join(list, sep)` | `.join(sep)` |
+| `number(x)` / `text(x)` | `Number(x)` / `String(x)` |
+| `floor(x)` / `ceiling(x)` / `round(x)` | `Math.floor` / `Math.ceil` / `Math.round` |
 | `random()` | `Math.random()` |
-| `round(x)` | `Math.round(x)` |
 | `readFile(path)` / `writeFile(path, c)` / `fileExists(p)` | sync `fs` calls |
+| `appendFile(path, c)` | `fs.appendFileSync` |
+| `copyFile(a, b)` / `moveFile(a, b)` / `deleteFile(p)` | sync `fs` calls |
+| `makeFolder(p)` / `deleteFolder(p)` / `listFolder(p)` | sync `fs` calls |
+| `readBytes(p)` / `writeBytes(p, data)` | Buffer read/write |
 | `time()` / `date()` | `Date.now()` / ISO timestamp |
 | `sleep(ms)` | blocking sleep |
 | `uuid()` | crypto UUID |
@@ -239,18 +258,31 @@ Best regards`
 | `exit(code)` | `process.exit(code)` |
 | `jsonEncode(x)` / `jsonDecode(s)` | `JSON.stringify` / `JSON.parse` |
 
+Collections (all verified):
+
+| Call | Result |
+|---|---|
+| `sort(x)` | sorted copy — unified ordering across mixed types |
+| `reverse(x)` | reversed copy |
+| `unique(x)` | de-duplicated copy |
+| `sum(numbers)` | total |
+| `smallest(x)` / `largest(x)` | min / max |
+| `keys(obj)` / `values(obj)` | arrays of keys / values |
+| `hasKey(obj, k)` | true/false |
+| `merge(a, b)` | shallow merge, `b` wins |
+
 ---
 
 ## 5. Packages — `use`
 
-Any npm package works. v2.0.1 adds aliases and version ranges.
+Any npm package works. Aliases and version ranges are supported.
 
 ```plain
 use express                    // const express = require('express')
 use node-fetch                 // require('node-fetch')  — side effect only,
                                // because "-" isn't a valid JS identifier
 
-use node-fetch as fetch        // const fetch = require('node-fetch')  ← v2.0.1
+use node-fetch as fetch        // const fetch = require('node-fetch')
 use @scope/pkg as scoped       // scoped packages can be aliased too
 use left-pad@^1.3.0            // version range flows through to installation
 use dotenv@16 as env           // combine both
@@ -263,7 +295,9 @@ Rules:
   binds as `Database` (better-sqlite3). Aliasing these is a friendly error.
 - Version ranges install via npm; `require()` always uses the bare name.
 - Missing packages are installed automatically by `plain run`, `plain build`,
-  and `plain install`.
+  and `plain install` — including the packages behind v2.1 features
+  (`pg`, `nodemailer`, `croner`, `ws`, `redis`), which you never `use`
+  yourself.
 - Built-in Node modules (`fs`, `path`) are detected and never installed.
 
 ---
@@ -288,7 +322,7 @@ route "/api/status"
     done
 done
 
-start 3000
+start 3000          // start env("PORT") also works
 ```
 
 Classic style (same output):
@@ -305,36 +339,137 @@ listen on 3000
 done
 ```
 
+### Method routes, groups, request data (v2.1)
+
+```plain
+web app
+allow cors                       // permissive CORS + OPTIONS preflight
+
+group "/api"                     // composes prefixes; groups may nest
+
+    route get "/users"           // get|post|put|patch|delete
+        reply users
+    done
+
+    route post "/users"
+        remember missing as validate(body of request, ["name", "email"])
+        remember count as length(missing)
+        if count is greater than 0
+            status 400
+            reply missing
+        otherwise
+            remember who as body of request.name
+            reply "created"
+        done
+    done
+
+    route get "/users/:id"
+        remember id as param("id")            // req.params
+        remember page as query("page")        // req.query
+        remember token as header("x-token")   // req.headers
+        if length(found) is greater than 0
+            reply found[0]
+        otherwise
+            status 404
+            reply "not found"
+        done
+    done
+
+done
+
+start env("PORT")
+```
+
+Sharp edges:
+
+- A plain `route "/"` is GET — existing programs keep their meaning.
+- `param(...)`, `query(...)`, `header(...)` are **compile errors outside a
+  route**.
+- `status <expr>` sets the response code, but `status becomes 404` is still a
+  normal variable reassignment, and `status(x)` stays a function call.
+- Route bodies are JSON-parsed automatically (`express.json()`).
+- `validate(data, fields)` returns the list of missing field names.
+- Reply objects/arrays become `res.json`; strings become `res.send`.
+
 ---
 
-## 7. SQLite
+## 7. Databases
+
+### SQLite
 
 ```plain
 database "app.db"
 
-insert
-    INSERT INTO users (name, age) VALUES ('Ayo', 17)
-done
-
-query
-    SELECT * FROM users
-done
-
-update
-    UPDATE users SET age = 18 WHERE name = 'Ayo'
-done
-
-delete
-    DELETE FROM users WHERE id = 1
-done
-
 execute
     CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY, body TEXT)
+done
+
+insert
+    INSERT INTO users (name, age) VALUES ('Ayo', 17)
 done
 ```
 
 Raw SQL goes verbatim into prepared statements. Files are created
-automatically.
+automatically. Single quotes inside SQL blocks are fine (they are raw text,
+not Plain strings).
+
+### Parameters and captured results (v2.1)
+
+Placeholders are written `{likeThis}` and bind to Plain variables of the same
+name. Statements run immediately, in program order:
+
+```plain
+remember who as "ana"
+insert
+    INSERT INTO users (name, age) VALUES ({who}, 30)
+done
+// → info.changes === 1
+
+remember minAge as 30
+remember adults as query
+    SELECT * FROM users WHERE age >= {minAge} ORDER BY name
+done
+for each row in adults
+    show row.name
+done
+```
+
+- `query` captures an **array of row objects**.
+- `insert` / `update` / `delete` capture the run info (`changes`,
+  `lastInsertRowid`).
+- There is no "callable statement" form — define variables first, then use
+  `{var}` in the block.
+
+### Transactions (v2.1)
+
+```plain
+transaction
+    insert
+        INSERT INTO users (name) VALUES ('bo')
+    done
+    insert
+        INSERT INTO users (name) VALUES ('cy')
+    done
+done
+```
+
+All enclosed writes commit together or roll back entirely.
+
+### PostgreSQL (v2.1)
+
+```plain
+postgres env("DATABASE_URL")
+
+remember minAge as 21
+remember rows as query
+    SELECT * FROM people WHERE age > {minAge}
+done
+show length(rows)
+```
+
+Every later SQL statement compiles to awaited pool queries with `$n`
+placeholders; `query` captures `.rows`. Transactions use `BEGIN`/`COMMIT`/
+`ROLLBACK` on a dedicated client.
 
 ---
 
@@ -372,7 +507,84 @@ arithmetic operators, and `await`.
 
 ---
 
-## 9. Telegram bots
+## 9. Email, schedules, background jobs, WebSocket, cache (v2.1)
+
+### Email (nodemailer under the hood)
+
+```plain
+mail transport
+    host is "smtp.gmail.com"
+    port is 587
+    user is env("EMAIL_USER")        // becomes SMTP auth
+    pass is env("EMAIL_PASS")
+done
+
+send mail
+    from is "hello@plain.dev"
+    to is "you@example.com"
+    subject is "Hello from Plain"
+    text is "Sent from a Plain program."
+done
+```
+
+Send one transport per program, then send many mails. Sending without a
+transport fails with a teaching error.
+
+### Cron and intervals (croner)
+
+```plain
+every 5 minutes                    // seconds|minutes|hours|days, plural ok
+    show "heartbeat"
+done
+
+schedule "0 2 * * *"               // any standard cron expression
+    show "nightly cleanup"
+done
+
+run background resizeImage("photo.png")   // fire-and-forget; errors logged
+```
+
+Bodies run later in callbacks — they may contain `show`, database calls,
+`send mail`, anything. Errors inside a scheduled body are logged, never crash
+the process.
+
+### WebSocket servers (ws)
+
+```plain
+websocket server on 8080
+    when socket connects
+        send socket "Welcome!"         // reply to this client
+    done
+
+    when socket sends message
+        broadcast message              // `message` holds the payload text
+        send socket "You said: " + message
+    done
+
+    when socket disconnects
+    done
+done
+```
+
+Handlers are optional; only those three exist. `broadcast <value>` reaches
+every connected client. Objects are sent as JSON automatically.
+
+### Cache (Redis)
+
+```plain
+cache env("REDIS_URL")             // or cache "redis://localhost:6379"
+
+cacheSet("greeting", "hi", 60)     // third arg = TTL seconds (optional)
+remember greeting as cacheGet("greeting")
+cacheDelete("greeting")
+```
+
+All three accessors are async and fail with a teaching error if no `cache`
+statement ran first.
+
+---
+
+## 10. Telegram bots
 
 Zero dependencies — the generated runtime polls the Bot API with `fetch`.
 
@@ -397,12 +609,12 @@ done
 start telegram bot               // begins the polling loop
 ```
 
-Notes (fixed in v2.0.1): rendered inline buttons execute their Plain
-callbacks, and the token given to `bot "…"` drives every API call.
+Notes: rendered inline buttons execute their Plain callbacks, and the token
+given to `bot "…"` drives every API call.
 
 ---
 
-## 10. OCR
+## 11. OCR
 
 Extract text from images with Tesseract.js — the package never appears in
 your source; dependency detection installs it automatically.
@@ -420,7 +632,7 @@ automatically.
 
 ---
 
-## 11. Multi-file projects
+## 12. Multi-file projects
 
 ```plain
 // app.pln
@@ -436,7 +648,7 @@ show add(3, 4)
 
 ---
 
-## 12. CLI cheat sheet
+## 13. CLI cheat sheet
 
 | Command | What it does |
 |---|---|
@@ -451,7 +663,7 @@ show add(3, 4)
 
 ---
 
-## 13. Verification workflow (do this after generating code)
+## 14. Verification workflow (do this after generating code)
 
 ```bash
 plain check app.pln     # fast syntax gate — run this before anything else
@@ -463,7 +675,7 @@ include suggestions ("Did you mean ...") — trust them.
 
 ---
 
-## 14. Copy-paste prompt for your AI
+## 15. Copy-paste prompt for your AI
 
 > You are writing Plain (`.pln`) source that compiles with
 > `@ayoxx/plain-code`. Follow these rules strictly:
@@ -484,11 +696,25 @@ include suggestions ("Did you mean ...") — trust them.
 >   handling), use:
 >   `remember result as javascript ... return value ... done`
 > - Packages: `use pkg`, `use pkg as alias`, `use pkg@^1.2.0`.
+> - Web: `web app` + `route get|post "<path>" ... done` + `group "/api"` +
+>   `param()/query()/header()` inside routes + `status 404` +
+>   `allow cors` + `validate(body of request, ["f"])`.
+> - Database: `database "app.db"` or `postgres env("URL")`. SQL placeholders
+>   are `{varName}` bound to Plain variables; `remember rows as query ... done`
+>   captures results; `transaction ... done` wraps writes atomically.
+> - Email: `mail transport ... done` then `send mail ... done`.
+> - Schedules: `every 5 minutes ... done`, `schedule "* * * * *" ... done`,
+>   `run background someFn(args)`.
+> - Realtime: `websocket server on 8080` with `when socket connects /
+>   sends message / disconnects ... done`, `send socket x`, `broadcast x`.
+> - Cache: `cache "redis://..."` then `cacheGet/cacheSet/cacheDelete`.
+> - Never import or require express/pg/nodemailer/croner/ws/redis — the
+>   compiler generates and installs them.
 > - After writing code, run `plain check app.pln` and fix reported lines.
 >
 > Full reference follows in knowledge.md.
 
 ---
 
-*Every claim in this file reflects the deterministic compiler as of v2.0.1.
+*Every claim in this file reflects the deterministic compiler as of v2.1.0.
 When in doubt: `plain check` is ground truth.*

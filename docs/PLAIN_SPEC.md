@@ -479,6 +479,128 @@ Shorthand style:
 
 ---
 
+## HTTP Routing (v2.1.0)
+
+Method routes extend the v0.6 route shorthand. The plain form stays GET.
+
+    route get|post|put|patch|delete "<path>" ... done
+    group "<prefix>" ... done
+
+Groups compose: a route inside two groups accumulates both prefixes.
+`param("id")`, `query("page")` and `header("x-token")` read request data and
+are compile-time errors outside routes. `status <expr>` sets the response
+code; `status becomes n` keeps its ordinary variable meaning. `allow cors`
+enables permissive CORS middleware (including OPTIONS preflight). Inside a
+`web app` block the body is parsed as JSON automatically.
+
+    remember missing as validate(body of request, ["name", "email"])
+
+returns the list of missing field names.
+
+## Databases (v2.1.0)
+
+SQL placeholders are written `{likeThis}` and bind to Plain variables of the
+same name. Results are captured with `remember`:
+
+    database "app.db"
+    remember who as "ana"
+    insert
+        INSERT INTO users (name) VALUES ({who})
+    done
+    remember adults as query
+        SELECT * FROM users WHERE age >= {minAge}
+    done
+    transaction
+        insert
+            INSERT INTO users (name) VALUES ('bo')
+        done
+    done
+
+A `transaction ... done` block runs all enclosed writes atomically.
+
+PostgreSQL swaps the driver for every later SQL statement:
+
+    postgres env("DATABASE_URL")
+
+compiles to `new Pool({ connectionString })`; queries become awaited pool
+queries with `$n` markers, and `remember x as query` captures `.rows`.
+
+## Filesystem and Helpers (v2.1.0)
+
+Filesystem: `copyFile`, `moveFile`, `deleteFile`, `makeFolder`,
+`deleteFolder`, `listFolder`, `appendFile`, `readBytes`, `writeBytes`.
+
+Text/numbers: `trim`, `replace`, `split`, `join`, `number`, `text`, `floor`,
+`ceiling`. Collections: `sort` (unified ordering across types), `reverse`,
+`unique`, `sum`, `smallest`, `largest`, `keys`, `values`, `hasKey`, `merge`.
+
+## Email (v2.1.0)
+
+    mail transport
+        host is "smtp.gmail.com"
+        port is 587
+        user is env("EMAIL_USER")
+        pass is env("EMAIL_PASS")
+    done
+
+    send mail
+        from is "hello@plain.dev"
+        to is "you@example.com"
+        subject is "Hello"
+        text is "Body"
+    done
+
+Uses nodemailer; `user`/`pass` become the SMTP `auth`.
+
+## Scheduling and Background Jobs (v2.1.0)
+
+    every 5 minutes
+        show "tick"
+    done
+
+    schedule "0 2 * * *"
+        show "nightly cleanup"
+    done
+
+    run background resizeImage("photo.png")
+
+`every` accepts seconds/minutes/hours/days (plural or singular). `schedule`
+accepts any standard cron expression (powered by croner). `run background`
+fires the call without blocking; errors are logged, never raised.
+
+## WebSocket Servers (v2.1.0)
+
+    websocket server on 8080
+        when socket connects
+            send socket "Welcome!"
+        done
+        when socket sends message
+            broadcast message
+        done
+        when socket disconnects
+        done
+    done
+
+Handlers are optional. `send socket <value>` replies to one client,
+`broadcast <value>` to all connected clients. Uses the ws package.
+
+## Cache (v2.1.0)
+
+    cache "redis://localhost:6379"
+
+connects Redis once. Then:
+
+| Plain                        | Compiles to                    |
+|------------------------------|--------------------------------|
+| `cacheGet("k")`              | `client.get(k)`                |
+| `cacheSet("k", v)`           | `client.set(k, v)`             |
+| `cacheSet("k", v, 60)`       | `client.set(k, v, { EX: 60 })` |
+| `cacheDelete("k")`           | `client.del(k)`                |
+
+All three are async and require a configured cache first.
+
+---
+
 ## OCR (v2.0.1)
 
 Extract text from an image file with Tesseract.js:

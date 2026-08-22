@@ -4,6 +4,47 @@ All notable changes to Plain are documented here.
 
 ---
 
+## [2.1.0] — 2026
+
+### Backend capabilities as first-class language features
+
+Everything below compiles deterministically — no rules, no Complex
+Compilation, no hidden codegen. Implementation packages (`pg`, `nodemailer`,
+`croner`, `ws`, `redis`) are detected and installed automatically; they never
+appear in source.
+
+- **HTTP routing**: `route get|post|put|patch|delete "<path>"`, nestable
+  `group "<prefix>"` blocks, `param()` / `query()` / `header()` accessors
+  (compile errors outside routes), contextual `status <expr>`, `allow cors`
+  middleware with OPTIONS preflight, `validate(data, fields)` builtin, and
+  automatic JSON body parsing in `web app`.
+- **Databases**: `{name}` placeholders bound to Plain variables in SQL blocks,
+  captured results via `remember x as query|insert|update|delete ... done`,
+  atomic `transaction ... done` blocks, and `postgres env("URL")` switching
+  every later statement to awaited node-postgres pool queries (`$n`).
+- **Filesystem**: `copyFile`, `moveFile`, `deleteFile`, `makeFolder`,
+  `deleteFolder`, `listFolder`, `appendFile`, `readBytes`, `writeBytes`.
+- **Stdlib expansion**: `trim`, `replace`, `split`, `join`, `number`, `text`,
+  `floor`, `ceiling`, `sort` (unified mixed-type ordering), `reverse`,
+  `unique`, `sum`, `smallest`, `largest`, `keys`, `values`, `hasKey`, `merge`.
+- **Email**: `mail transport ... done` (user/pass become SMTP auth) and
+  `send mail ... done` via nodemailer.
+- **Scheduling**: `every <n> <unit>s ... done` and `schedule "<cron>" ... done`
+  via croner.
+- **Background jobs**: `run background someFn(args)` fire-and-forget with
+  logged errors.
+- **WebSocket servers**: `websocket server on <port>` with
+  `when socket connects | sends message | disconnects` handlers,
+  `send socket <value>` and `broadcast <value>` via ws.
+
+### Fixed
+
+- npm install/update on Windows: Node ≥18.20 blocks spawning `.cmd` shims
+  (CVE-2024-27980), so the CLI now spawns npm's JS entry point directly and
+  anchors installs to the project's own package.json.
+
+---
+
 ## [2.0.0-latest] — 2026
 
 ### Rule system hardening

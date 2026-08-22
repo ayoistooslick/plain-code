@@ -18,6 +18,13 @@ const PACKAGE_MAP = Object.freeze({
   // implementation dependency out of Plain's language surface: source says
   // `ocr ... as text`, tooling installs tesseract.js.
   ocr: 'tesseract.js',
+  // v2.1.0 — PostgreSQL behind the friendly "postgres" name.
+  postgres: 'pg',
+  // v2.1.0 — backend integrations keep implementation packages out of source.
+  mailer: 'nodemailer',
+  scheduler: 'croner',
+  websocket: 'ws',
+  cache: 'redis',
 });
 
 const BUILTIN_MODULES = new Set(builtinModules);
@@ -57,9 +64,24 @@ function visit(node, onUse) {
   } else if (node.type === 'DatabaseStatement') {
     // The `database` shorthand uses `better-sqlite3` under the hood.
     onUse('sqlite');
+  } else if (node.type === 'PostgresStatement') {
+    // v2.1.0 — `postgres "<url>"` uses node-postgres under the hood.
+    onUse('postgres');
   } else if (node.type === 'OcrStatement') {
     // v2.0.1 — `ocr "<image>" as <variable>` uses tesseract.js under the hood.
     onUse('ocr');
+  } else if (node.type === 'MailTransportStatement' || node.type === 'SendMailStatement') {
+    // v2.1.0 — email statements use nodemailer under the hood.
+    onUse('mailer');
+  } else if (node.type === 'ScheduleStatement') {
+    // v2.1.0 — cron schedules use croner under the hood.
+    onUse('scheduler');
+  } else if (node.type === 'WebSocketServerStatement') {
+    // v2.1.0 — websocket servers use ws under the hood.
+    onUse('websocket');
+  } else if (node.type === 'CacheStatement') {
+    // v2.1.0 — cache statements use the redis client under the hood.
+    onUse('cache');
   }
 
   for (const value of Object.values(node)) {

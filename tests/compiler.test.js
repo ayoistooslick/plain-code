@@ -1150,9 +1150,9 @@ test('plain help includes "plain update"', () => {
   if (!out.includes('plain update')) throw new Error(`"plain update" missing from help. Got:\n${out}`);
 });
 
-test('plain version shows 2.0.0-latest', () => {
+test('plain version shows 2.1.0', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.0.0-latest')) throw new Error(`Expected version 2.0.0-latest but got: ${out}`);
+  if (!out.includes('2.1.0')) throw new Error(`Expected version 2.1.0 but got: ${out}`);
 });
 
 // ── v0.5 — Formatter ─────────────────────────────────────────────────────────
@@ -1418,9 +1418,9 @@ test('plain help includes "plain fmt"', () => {
   if (!out.includes('plain fmt')) throw new Error(`"plain fmt" missing from help. Got:\n${out}`);
 });
 
-test('plain version shows 2.0.0-latest', () => {
+test('plain version shows 2.1.0', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.0.0-latest')) throw new Error(`Expected version 2.0.0-latest but got: ${out}`);
+  if (!out.includes('2.1.0')) throw new Error(`Expected version 2.1.0 but got: ${out}`);
 });
 
 test('package.json exposes a global plain bin with a node shebang', () => {
@@ -1796,9 +1796,9 @@ test('"execute" block compiles to db.exec()', () => {
 
 console.log('\nv0.6 — CLI updates');
 
-test('plain version shows 2.0.0-latest (CLI)', () => {
+test('plain version shows 2.1.0 (CLI)', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.0.0-latest')) throw new Error(`Expected 2.0.0-latest but got: ${out}`);
+  if (!out.includes('2.1.0')) throw new Error(`Expected 2.1.0 but got: ${out}`);
 });
 
 test('plain help mentions v1.0 features', () => {
@@ -2839,9 +2839,9 @@ test('plain help includes the JavaScript Gateway', () => {
   if (!out.includes('ask')) throw new Error('"ask" missing from help');
 });
 
-test('plain version shows 2.0.0-latest', () => {
+test('plain version shows 2.1.0', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.0.0-latest')) throw new Error(`Expected 2.0.0-latest but got: ${out}`);
+  if (!out.includes('2.1.0')) throw new Error(`Expected 2.1.0 but got: ${out}`);
 });
 
 test('plain build produces executable async output for a JavaScript block', () => {

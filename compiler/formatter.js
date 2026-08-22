@@ -21,6 +21,7 @@ const INDENT_STARTERS = [
   /^while\s+/,                 // while ...
   /^when\s+someone\s+visits/,  // when someone visits ...
   /^when\s+someone\s+(sends|clicks)\b/, // when someone sends / clicks (Telegram)
+  /^when\s+socket\b/,          // when socket connects / sends message / disconnects (v2.1)
   /^javascript\b/,             // javascript raw JS block (v1.2)
   /^reply\b.*\bwith\s+buttons\s*$/, // reply ... with buttons ... done (v1.2)
   /^listen\s+on\s+/,           // listen on ...
@@ -28,6 +29,14 @@ const INDENT_STARTERS = [
   /^remember\s+\S+\s+as\s*$/,  // remember x as   (object literal, ends with "as")
   /^remember\s+\S+\s+as\s+javascript\s*$/, // remember x as javascript (raw JS block)
   /^route\s+"/,                // route "..."       (v0.6 Express DX)
+  /^route\s+(get|post|put|patch|delete)\s+"/, // route <method> "..." (v2.1)
+  /^group\s+"/,                // group "..."       (v2.1 route composition)
+  /^transaction\s*$/,          // transaction       (v2.1 atomic DB block)
+  /^every\s+\d+\s+(seconds?|minutes?|hours?|days?)\b/, // every 5 minutes (v2.1)
+  /^schedule\s+"/,             // schedule "..."    (v2.1 cron)
+  /^websocket\s+server\b/,     // websocket server  (v2.1)
+  /^mail\s+transport\s*$/,     // mail transport    (v2.1)
+  /^send\s+mail\s*$/,          // send mail         (v2.1)
   /^query\b/,                  // query SQL block   (v0.6 SQLite DX)
   /^insert\b/,                 // insert SQL block
   /^update\b/,                 // update SQL block

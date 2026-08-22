@@ -1,6 +1,41 @@
-use sqlite
+// Plain v2.1 — Databases: SQLite, parameters and transactions
+//
+// Run with:  plain run examples/database.pln
+//
+// SQL placeholders are written {likeThis} and bind to Plain variables of
+// the same name. A transaction block runs all enclosed writes atomically.
 
-remember db as sqlite("app.db")
+database "plain-demo.db"
 
-show "Database connection created"
-show db
+execute
+    CREATE TABLE IF NOT EXISTS users (
+        name TEXT,
+        age NUMBER
+    )
+done
+
+remember who as "ana"
+insert
+    INSERT INTO users (name, age) VALUES ({who}, 30)
+done
+
+// Several writes that must succeed or fail together
+transaction
+    insert
+        INSERT INTO users (name, age) VALUES ('bo', 31)
+    done
+    insert
+        INSERT INTO users (name, age) VALUES ('cy', 40)
+    done
+done
+
+remember minAge as 30
+remember adults as query
+    SELECT name FROM users WHERE age >= {minAge} ORDER BY name
+done
+
+for each row in adults
+    show row.name
+done
+
+show "Database demo complete"

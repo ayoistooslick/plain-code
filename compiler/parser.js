@@ -21,6 +21,31 @@ const NUMBER_WORDS = {
   nineteen: 19, twenty: 20,
 };
 
+// HTTP methods accepted by the route statement (v2.1.0). Lowercase only —
+// Plain keywords are lowercase by convention.
+const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete'];
+
+// Time units accepted by the "every <n> <unit>" statement, in milliseconds
+// (used by the generator to build the interval directly).
+const TIME_UNITS = {
+  second: 1000, seconds: 1000,
+  minute: 60 * 1000, minutes: 60 * 1000,
+  hour: 60 * 60 * 1000, hours: 60 * 60 * 1000,
+  day: 24 * 60 * 60 * 1000, days: 24 * 60 * 60 * 1000,
+};
+
+// v2.1.0 — split raw SQL into placeholder-free text and ordered parameter
+// names. "{name}" marks a bound parameter; the generator renders "?" for
+// SQLite or "$1…" for PostgreSQL.
+function extractSqlParams(rawSql) {
+  const params = [];
+  const sql = String(rawSql).replace(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_match, name) => {
+    params.push(name);
+    return '?';
+  });
+  return { sql, params };
+}
+
 // Returns the Levenshtein edit distance between two strings.
 function levenshtein(a, b) {
   const m = a.length, n = b.length;
@@ -198,6 +223,13 @@ function parse(tokens) {
     if (token.type === TOKEN.MAKE)        return parseMake();
     if (token.type === TOKEN.GIVE)        return parseGive();
     if (token.type === TOKEN.FOR)         return parseForEach();
+    // v2.1.0 — every <n> <unit>s … done: interval scheduling. "every" also
+    // lexes as TOKEN.EACH (the "for every" alias), so only the number+unit
+    // form is intercepted; "for every item in list" keeps its meaning.
+    if (token.type === TOKEN.EACH && peekAt(1).type === TOKEN.NUMBER &&
+        peekAt(2).type === TOKEN.IDENTIFIER && TIME_UNITS[peekAt(2).value]) {
+      return parseEvery();
+    }
     if (token.type === TOKEN.WHILE)       return parseWhile();
     if (token.type === TOKEN.USE)         return parseUse();
     if (token.type === TOKEN.IMPORT)      return parseImport();
@@ -215,6 +247,12 @@ function parse(tokens) {
     if (token.type === TOKEN.ROUTE_KW)    return parseSimpleRoute();
     if (token.type === TOKEN.START_KW)    return parseStart();
     if (token.type === TOKEN.DATABASE_KW) return parseDatabase();
+    // v2.1.0 — query("field"): the HTTP query-string accessor. The SQLite
+    // block form keeps priority when "query" stands alone on a line; a
+    // call form is always the accessor.
+    if (token.type === TOKEN.QUERY_KW && peekAt(1).type === TOKEN.LPAREN) {
+      return { type: 'ExpressionStatement', expression: parseCallExpression() };
+    }
     if (token.type === TOKEN.QUERY_KW)    return parseSqlBlock('query',   'QueryStatement');
     if (token.type === TOKEN.INSERT_KW)   return parseSqlBlock('insert',  'InsertStatement');
     if (token.type === TOKEN.UPDATE_KW)   return parseSqlBlock('update',  'UpdateStatement');
@@ -234,6 +272,138 @@ function parse(tokens) {
         peekAt(1).type === TOKEN.IDENTIFIER ||
         peekAt(1).type === TOKEN.LBRACKET || peekAt(1).type === TOKEN.LBRACE;
       if (token.value === 'bot' && nextIsValue) return parseBot();
+
+      // v2.1.0 — allow cors: enables CORS middleware on the current app.
+      // Contextual (not a reserved keyword): a variable named "allow" keeps
+      // its ordinary meaning.
+      if (token.value === 'allow' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'cors') {
+        advance(); // allow
+        advance(); // cors
+        return { type: 'AllowCorsStatement' };
+      }
+
+      // v2.1.0 — group "<prefix>" ... done: composes routes under a shared
+      // path prefix. Contextual like "bot": only intercepted when a quoted
+      // prefix follows.
+      if (token.value === 'group' && peekAt(1).type === TOKEN.STRING) {
+        advance(); // group
+        const prefix = advance().value; // consume STRING
+        const body = parseBody('"group" block');
+        return { type: 'GroupStatement', prefix, body };
+      }
+
+      // v2.1.0 — postgres "<connection>": binds the PostgreSQL driver.
+      // Contextual: a variable named "postgres" keeps its meaning unless a
+      // connection value follows on the same line.
+      if (token.value === 'postgres' && (
+          peekAt(1).type === TOKEN.STRING || peekAt(1).type === TOKEN.IDENTIFIER ||
+          peekAt(1).type === TOKEN.LPAREN || peekAt(1).type === TOKEN.TEMPLATE_STRING)) {
+        return parsePostgres();
+      }
+
+      // v2.1.0 — cache "<redis-url>" / cache env("REDIS_URL"): connects the
+      // shared Redis client used by cacheGet / cacheSet / cacheDelete.
+      // Contextual like "postgres": a variable named "cache" keeps its
+      // meaning unless a connection value follows on the same line.
+      if (token.value === 'cache' && (
+          peekAt(1).type === TOKEN.STRING || peekAt(1).type === TOKEN.TEMPLATE_STRING ||
+          peekAt(1).type === TOKEN.IDENTIFIER || peekAt(1).type === TOKEN.LPAREN)) {
+        advance(); // cache
+        const url = parseExpression();
+        return { type: 'CacheStatement', url };
+      }
+
+      // v2.1.0 — transaction … done: groups database writes atomically.
+      // Contextual: "transaction becomes x" and "transaction(...)" keep
+      // their ordinary variable/function meanings.
+      if (token.value === 'transaction' &&
+          peekAt(1).type !== TOKEN.BECOMES && peekAt(1).type !== TOKEN.LPAREN) {
+        advance(); // transaction
+        const body = parseBody('"transaction" block');
+        return { type: 'TransactionStatement', body };
+      }
+
+      // v2.1.0 — mail transport … done: configures the outgoing mailer.
+      if (token.value === 'mail' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'transport') {
+        advance(); // mail
+        advance(); // transport
+        return { type: 'MailTransportStatement', options: parsePropertyList('"mail transport" block') };
+      }
+
+      // v2.1.0 — send mail … done: sends one email through the transport.
+      if (token.value === 'send' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'mail') {
+        advance(); // send
+        advance(); // mail
+        return { type: 'SendMailStatement', fields: parsePropertyList('"send mail" block') };
+      }
+
+      // v2.1.0 — every <n> <unit>s … done: repeat work on an interval.
+      // ("every" lexes as TOKEN.EACH — see the EACH dispatch above — so this
+      // identifier-form branch only guards against future lexer changes.)
+      if (token.value === 'every' && peekAt(1).type === TOKEN.NUMBER &&
+          peekAt(2).type === TOKEN.IDENTIFIER && TIME_UNITS[peekAt(2).value]) {
+        return parseEvery();
+      }
+
+      // v2.1.0 — schedule "<cron>" … done: run work on a cron schedule.
+      if (token.value === 'schedule' && peekAt(1).type === TOKEN.STRING) {
+        advance(); // schedule
+        const expression = advance().value; // cron string
+        const body = parseBody('"schedule" block');
+        return { type: 'ScheduleStatement', expression, body };
+      }
+
+      // v2.1.0 — run background <call>: fire-and-forget execution.
+      if (token.value === 'run' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'background') {
+        advance(); // run
+        advance(); // background
+        const call = parsePrimary();
+        if (call.type !== 'CallExpression') {
+          throw new Error(makeError(
+            'Expected a function call after "run background".\n\nExample:\n  run background resizeImage("photo.png")',
+            peek()
+          ));
+        }
+        return { type: 'RunBackgroundStatement', call };
+      }
+
+      // v2.1.0 — websocket server on <port> … done: realtime endpoint.
+      if (token.value === 'websocket' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'server') {
+        return parseWebSocketServer();
+      }
+
+      // v2.1.0 — broadcast <expr>: sends to every connected socket.
+      if (token.value === 'broadcast') {
+        advance(); // broadcast
+        const value = parseExpression();
+        return { type: 'BroadcastStatement', value };
+      }
+
+      // v2.1.0 — send socket <expr>: replies to one connected socket.
+      if (token.value === 'send' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'socket') {
+        advance(); // send
+        advance(); // socket
+        const value = parseExpression();
+        return { type: 'SendSocketStatement', value };
+      }
+
+      // v2.1.0 — status 404 / status <expr>: sets the HTTP response status.
+      // Contextual: "status becomes 404" is still a normal reassignment of a
+      // variable named "status", and "status(...)" remains a function call.
+      if (token.value === 'status' && peekAt(1).type !== TOKEN.BECOMES &&
+          (peekAt(1).type === TOKEN.NUMBER || peekAt(1).type === TOKEN.STRING ||
+           peekAt(1).type === TOKEN.TEMPLATE_STRING ||
+           peekAt(1).type === TOKEN.IDENTIFIER)) {
+        advance(); // status
+        const value = parseExpression();
+        return { type: 'StatusStatement', value };
+      }
 
       const expr = parsePrimary();
 
@@ -294,6 +464,21 @@ function parse(tokens) {
       const body = advance().value; // consume JS_BODY
       consume(TOKEN.DONE, 'Expected "done" to close the JavaScript block.');
       return { type: 'JavaScriptBlock', name, body };
+    }
+
+    // v2.1.0 — remember <name> as query|insert|update|delete … done
+    // Captures the SQL result: rows for "query", the run info (changes /
+    // lastInsertRowid) for the write forms. The call form query("field")
+    // is the HTTP accessor and still parses as an expression below.
+    if (
+      [TOKEN.QUERY_KW, TOKEN.INSERT_KW, TOKEN.UPDATE_KW, TOKEN.DELETE_KW, TOKEN.EXECUTE_KW]
+        .includes(peek().type) && peekAt(1).type === TOKEN.SQL_BODY
+    ) {
+      const kindToken = advance();
+      const kind = kindToken.value;
+      const sql = advance().value; // consume SQL_BODY
+      consume(TOKEN.DONE, `Expected "done" to close the "${kind}" block.`);
+      return { type: 'RememberSqlStatement', name, kind, ...extractSqlParams(sql) };
     }
 
     // Object literal: next token is IDENTIFIER followed by IS
@@ -467,8 +652,17 @@ function parse(tokens) {
   // when someone sends "<command>" ... done    → Telegram command handler
   // when someone sends matching "<pattern>" ... done
   // when someone clicks "<data>" ... done      → Telegram callback handler
+  // when socket connects|sends message|disconnects   → v2.1.0 websocket handlers
   function parseWhen() {
     consume(TOKEN.WHEN);
+
+    // v2.1.0 — socket handlers inside a "websocket server" block come first:
+    // they read "when socket …", not "when someone …".
+    const whenToken = peek();
+    if (whenToken.type === TOKEN.IDENTIFIER && whenToken.value === 'socket') {
+      return parseSocketHandler();
+    }
+
     consume(TOKEN.SOMEONE,
       'Expected "someone" after "when".\n\nExample:\n  when someone visits "/"\n    reply "Hello"\n  done');
     const next = peek();
@@ -489,6 +683,43 @@ function parse(tokens) {
       'Expected "visits", "sends", or "clicks" after "when someone".\n\nExamples:\n  when someone visits "/"\n  when someone sends "/start"\n  when someone clicks "about"',
       next
     ));
+  }
+
+  // v2.1.0 — socket handlers inside a "websocket server" block:
+  //   when socket connects … done
+  //   when socket sends message … done
+  //   when socket disconnects … done
+  function parseSocketHandler() {
+    advance(); // socket
+    const event = peek();
+    if (event.type !== TOKEN.IDENTIFIER ||
+        !['connects', 'sends', 'disconnects'].includes(event.value)) {
+      throw new Error(makeError(
+        'Expected "connects", "sends message", or "disconnects" after "when socket".',
+        event
+      ));
+    }
+    const kind = event.value;
+    advance(); // event word
+
+    if (kind === 'sends') {
+      const payload = peek();
+      if (payload.type === TOKEN.IDENTIFIER && payload.value === 'message') {
+        advance(); // optional word "message" naming the payload
+      } else if (payload.type !== TOKEN.DONE) {
+        throw new Error(makeError(
+          'Expected the word "message" after "when socket sends".\n\nExample:\n  when socket sends message\n    send socket message\n  done',
+          payload
+        ));
+      }
+      const body = parseBody('"when socket sends message" block');
+      return { type: 'SocketMessageStatement', body };
+    }
+
+    const body = parseBody(`"when socket ${kind}" block`);
+    return kind === 'connects'
+      ? { type: 'SocketConnectStatement', body }
+      : { type: 'SocketDisconnectStatement', body };
   }
 
   // Parses the route body after `when someone visits "<path>"`.
@@ -629,13 +860,31 @@ function parse(tokens) {
     return { type: 'WebAppStatement' };
   }
 
-  // route "<path>" ... done
+  // route "<path>" ... done              → GET route (v0.6 form)
+  // route get|post|put|patch|delete "<path>" ... done   → v2.1.0 method routes
   function parseSimpleRoute() {
     consume(TOKEN.ROUTE_KW);
+    // Optional HTTP method word before the path string. The plain form keeps
+    // its v0.6 meaning (GET), so existing programs compile unchanged.
+    // "delete" lexes as the SQL keyword token (DELETE_KW), so both spellings
+    // of that one method are accepted.
+    let method = 'get';
+    const methodToken = peek();
+    const methodWord = methodToken.type === TOKEN.IDENTIFIER ? methodToken.value
+      : methodToken.type === TOKEN.DELETE_KW ? 'delete'
+      : null;
+    if (
+      methodWord &&
+      HTTP_METHODS.includes(methodWord) &&
+      peekAt(1).type === TOKEN.STRING
+    ) {
+      method = methodWord;
+      advance(); // method word
+    }
     const routePath = consume(TOKEN.STRING,
       'Expected a route path after "route".\n\nExample:\n  route "/"\n    reply "Hello"\n  done').value;
     const body = parseBody('route');
-    return { type: 'SimpleRouteStatement', path: routePath, body };
+    return { type: 'SimpleRouteStatement', method, path: routePath, body };
   }
 
   // bot "<token>"  /  bot env("BOT_TOKEN")
@@ -679,7 +928,22 @@ function parse(tokens) {
     return { type: 'DatabaseStatement', file };
   }
 
+  // v2.1.0 — postgres "<connection-string>": binds the PostgreSQL pool to
+  // "db". SQL statements afterwards compile to async pool queries.
+  function parsePostgres() {
+    // "postgres" is contextual: only a declaration when followed by a value.
+    advance(); // postgres
+    const connection = parseExpression();
+    return { type: 'PostgresStatement', connection };
+  }
+
   // query/insert/update/delete/execute SQL_BODY DONE
+  //
+  // v2.1.0 — the raw SQL may reference Plain variables with {name}
+  // placeholders. They are extracted at parse time and replaced: SQLite gets
+  // anonymous "?" markers, PostgreSQL numbered "$1…" markers (the generator
+  // decides). Values are always passed as bound parameters — never spliced
+  // into the SQL text.
   function parseSqlBlock(keyword, nodeType) {
     advance(); // consume the keyword token (QUERY_KW, INSERT_KW, etc.)
     const sqlToken = peek();
@@ -689,9 +953,9 @@ function parse(tokens) {
         sqlToken
       ));
     }
-    const sql = advance().value; // consume SQL_BODY
+    const rawSql = advance().value; // consume SQL_BODY
     consume(TOKEN.DONE, `Expected "done" to close the "${keyword}" block.`);
-    return { type: nodeType, sql };
+    return { type: nodeType, ...extractSqlParams(rawSql) };
   }
 
   // ── Conditions ─────────────────────────────────────────────────────────────
@@ -868,6 +1132,12 @@ function parse(tokens) {
       return { type: 'Identifier', name: token.value };
     }
 
+    // v2.1.0 — query("field") as a value: the HTTP query-string accessor.
+    // The SQLite block form only applies when "query" stands alone.
+    if (token.type === TOKEN.QUERY_KW && peekAt(1).type === TOKEN.LPAREN) {
+      return parseCallExpression();
+    }
+
     throw new Error(makeError(
       `Expected a value (a word, number, string, or array) but got "${token.value || token.type}".`,
       token
@@ -935,6 +1205,98 @@ function parse(tokens) {
     }
     advance(); // consume DONE
     return { type: 'ObjectLiteral', properties };
+  }
+
+  // v2.1.0 — "key is value" pairs until "done", shared by the mail
+  // statements. Returns [{ key, value }] and consumes the closing DONE.
+  function parsePropertyList(contextName) {
+    const properties = [];
+    while (peek().type !== TOKEN.DONE) {
+      if (peek().type === TOKEN.EOF) {
+        throw new Error(makeError(
+          `Expected keyword "done" to close the ${contextName} before end of file.`,
+          peek()
+        ));
+      }
+      const key = consume(TOKEN.IDENTIFIER, 'Expected a property name.').value;
+      consume(TOKEN.IS, `Expected "is" after property name "${key}".\n\nExample:\n  ${key} is "value"`);
+      const value = parseExpression();
+      properties.push({ key, value });
+    }
+    advance(); // consume DONE
+    return properties;
+  }
+
+  // v2.1.0 — every <n> <unit>s … done: repeat work on an interval.
+  // The unit is resolved to milliseconds at parse time; the generator emits
+  // a plain setInterval with count * unit.
+  function parseEvery() {
+    advance(); // every (TOKEN.EACH)
+    const count = advance().value; // NUMBER
+    const unitToken = peek();
+    if (count <= 0) {
+      throw new Error(makeError('The count in "every" must be at least 1.\n\nExample:\n  every 5 minutes\n    show "tick"\n  done', unitToken));
+    }
+    if (unitToken.type !== TOKEN.IDENTIFIER || !TIME_UNITS[unitToken.value]) {
+      throw new Error(makeError(
+        'Expected a time unit after the number in "every".\n\nUnits: seconds, minutes, hours, days\n\nExample:\n  every 5 minutes',
+        unitToken
+      ));
+    }
+    const unit = TIME_UNITS[advance().value];
+    const body = parseBody('"every" block');
+    return { type: 'EveryStatement', count, unit, body };
+  }
+
+  // v2.1.0 — websocket server on <port> … done
+  //
+  //   websocket server on 8081
+  //       when socket connects … done
+  //       when socket sends message … done
+  //       when socket disconnects … done
+  //   done
+  //
+  // Handlers are optional and may appear in any order.
+  function parseWebSocketServer() {
+    advance(); // websocket
+    advance(); // server
+    const onToken = peek();
+    const isOn = (onToken.type === TOKEN.IDENTIFIER && onToken.value === 'on') || onToken.type === TOKEN.ON;
+    if (!isOn) {
+      throw new Error(makeError(
+        'Expected "on <port>" after "websocket server".\n\nExample:\n  websocket server on 8081',
+        onToken
+      ));
+    }
+    advance(); // on
+    const port = parseExpression();
+
+    let connectBody = null;
+    let messageBody = null;
+    let disconnectBody = null;
+
+    while (peek().type !== TOKEN.DONE) {
+      if (peek().type === TOKEN.EOF) {
+        throw new Error(makeError(
+          'Expected keyword "done" to close the websocket block before end of file.',
+          peek()
+        ));
+      }
+      const stmt = parseStatement();
+      if (!stmt) continue;
+      if (stmt.type === 'SocketConnectStatement')    connectBody = stmt.body;
+      else if (stmt.type === 'SocketMessageStatement') messageBody = stmt.body;
+      else if (stmt.type === 'SocketDisconnectStatement') disconnectBody = stmt.body;
+      else {
+        throw new Error(makeError(
+          'A websocket block may only contain "when socket connects", "when socket sends message", and "when socket disconnects" handlers.',
+          peek()
+        ));
+      }
+    }
+    advance(); // consume DONE
+
+    return { type: 'WebSocketServerStatement', port, connectBody, messageBody, disconnectBody };
   }
 
   // name(arg, arg, ...)

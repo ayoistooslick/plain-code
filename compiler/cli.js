@@ -127,6 +127,34 @@ Examples:
   plain remove express
 `.trim();
 
+// ── npm invocation ────────────────────────────────────────────────────────────
+
+// Locate npm's CLI entry script so npm can be spawned through Node.
+// Spawning "npm" directly fails on Windows since Node 18.20/20.12: npm ships
+// as an .cmd shim there, and child_process refuses to spawn .bat/.cmd files
+// for security reasons (CVE-2024-27980). Running npm-cli.js with
+// process.execPath works on every platform and keeps argument arrays
+// injection-safe because no shell is involved.
+function findNpmCli() {
+  const candidates = [];
+  // Official Node distributions install npm next to the node executable.
+  candidates.push(path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js'));
+  try { candidates.push(require.resolve('npm/bin/npm-cli.js')); } catch (_) { /* npm not resolvable */ }
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+// Run npm with an argument array. Never uses a shell unless absolutely
+// necessary (Windows fallback without npm-cli.js), so package names can never
+// be interpreted as shell commands.
+function runNpm(args, options = {}) {
+  const npmCli = findNpmCli();
+  if (npmCli) return execFileSync(process.execPath, [npmCli, ...args], options);
+  return execFileSync('npm', args, { ...options, shell: process.platform === 'win32' });
+}
+
 // ── Package-name validation ───────────────────────────────────────────────────
 
 // Accept standard npm package names including scoped packages (@org/pkg).
@@ -192,18 +220,19 @@ async function stageAsync(label, fn) {
 // Keep dependency checks in one CLI execution cheap and deterministic.
 const dependencyCache = new Map();
 
-// Check whether an npm package is installed in the nearest node_modules.
+// Check whether an npm package is installed in this project's node_modules.
+// Deliberately NOT require.resolve: that would also walk up ancestor
+// directories and global folders, reporting a package as available when this
+// project does not actually have it.
 function isInstalled(npmPkg, cwd = process.cwd()) {
   if (isBuiltinModule(npmPkg)) return true;
   const cacheKey = `${cwd}\0${npmPkg}`;
   if (dependencyCache.has(cacheKey)) return dependencyCache.get(cacheKey);
-  let installed = false;
-  try {
-    require.resolve(npmPkg, { paths: [cwd] });
-    installed = true;
-  } catch (_) {
-    installed = false;
-  }
+  const segments  = npmPkg.split('/');
+  const pkgDir    = path.join(cwd, 'node_modules', ...segments);
+  const installed =
+    fs.existsSync(path.join(pkgDir, 'package.json')) ||
+    (segments.length > 1 && fs.existsSync(pkgDir)); // scope placeholder
   dependencyCache.set(cacheKey, installed);
   return installed;
 }
@@ -232,12 +261,28 @@ function missingDependencies(files, config, cwd = process.cwd()) {
     .filter(pkg => !isInstalled(splitPackageSpec(pkg).name, cwd));
 }
 
+// Ensure a package.json exists in the project directory before invoking npm.
+// Without one, npm walks up the directory tree and may install into an
+// unrelated ancestor project's node_modules instead of this project's. The
+// scaffold is minimal and marked private so it is never published.
+function ensurePackageJson(cwd = process.cwd()) {
+  const pkgPath = path.join(cwd, 'package.json');
+  if (fs.existsSync(pkgPath)) return;
+  const config = readPlainJson();
+  fs.writeFileSync(pkgPath, JSON.stringify({
+    name: (config && config.name) || path.basename(cwd),
+    version: (config && config.version) || '0.1.0',
+    private: true,
+  }, null, 2) + '\n', 'utf8');
+}
+
 function installPackages(packages, cwd = process.cwd()) {
+  ensurePackageJson(cwd);
   for (const pkg of packages) {
     const bareName = splitPackageSpec(pkg).name;
     console.log(`${clrCyan('Installing')} ${pkg}...`);
     try {
-      execFileSync('npm', ['install', pkg, '--no-audit', '--no-fund'], {
+      runNpm(['install', pkg, '--no-audit', '--no-fund'], {
         cwd,
         stdio: 'ignore',
       });
@@ -522,7 +567,7 @@ function cmdDoctor() {
   };
   check('Node.js', Boolean(process.version));
   let npmVersion = '';
-  try { npmVersion = execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim(); } catch (_) {}
+  try { npmVersion = runNpm(['--version'], { encoding: 'utf8' }).trim(); } catch (_) {}
   check('npm', Boolean(npmVersion), npmVersion);
   check('Plain CLI', true);
   check('Compiler', fs.existsSync(path.join(__dirname, 'parser.js')));
@@ -582,8 +627,9 @@ function cmdAdd(packageName) {
 
   console.log(`Installing ${packageName}...`);
   try {
-    // Use execFileSync with an argument array — no shell, no injection risk.
-    execFileSync('npm', ['install', packageName], { stdio: 'inherit', cwd: process.cwd() });
+    ensurePackageJson();
+    // Argument array through runNpm — no shell, no injection risk.
+    runNpm(['install', packageName], { stdio: 'inherit', cwd: process.cwd() });
   } catch (e) {
     console.error(`Failed to install "${packageName}".`);
     process.exit(1);
@@ -627,8 +673,9 @@ function cmdRemove(packageName) {
 
   console.log(`Uninstalling ${packageName}...`);
   try {
-    // Use execFileSync with an argument array — no shell, no injection risk.
-    execFileSync('npm', ['uninstall', packageName], { stdio: 'inherit', cwd: process.cwd() });
+    ensurePackageJson();
+    // Argument array through runNpm — no shell, no injection risk.
+    runNpm(['uninstall', packageName], { stdio: 'inherit', cwd: process.cwd() });
   } catch (e) {
     console.error(`Failed to uninstall "${packageName}".`);
     process.exit(1);
@@ -639,7 +686,10 @@ function cmdRemove(packageName) {
 function cmdUpdate() {
   console.log('Updating packages...');
   try {
-    execFileSync('npm', ['update'], { stdio: 'inherit', cwd: process.cwd() });
+    // Anchor npm to this project: without a local package.json it would walk
+    // up the directory tree and update an unrelated ancestor project.
+    ensurePackageJson();
+    runNpm(['update'], { stdio: 'inherit', cwd: process.cwd() });
     console.log('\n✓ Packages updated.');
   } catch (e) {
     console.error('npm update failed.');

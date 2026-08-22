@@ -9,7 +9,7 @@
 
 Plain is an Intent-Oriented Programming Language (IOPL). You describe **what** you want; the compiler decides **how** to implement it in JavaScript.
 
-**Current version:** v2.0.0-latest — Complex Compilation (RFC-0020).
+**Current version:** v2.1.0 — Backend capabilities as first-class language features.
 
 ---
 
@@ -400,6 +400,115 @@ done
 
 ---
 
+## Backend Capabilities (v2.1.0)
+
+Everything a backend needs, as first-class deterministic language features —
+no rules, no AI, no hidden codegen.
+
+### HTTP routing
+
+```plain
+web app
+allow cors
+
+group "/api"
+
+    route get "/users"
+        remember users as query
+            SELECT * FROM users
+        done
+        reply users
+    done
+
+    route post "/users"
+        remember missing as validate(body of request, ["name", "email"])
+        if length(missing) is greater than 0
+            status 400
+            reply missing
+        otherwise
+            reply "created"
+        done
+    done
+
+done
+
+start env("PORT")
+```
+
+`param("id")`, `query("page")` and `header("x-token")` read request data;
+`group` composes path prefixes; `status <n>` sets the response code.
+
+### Databases with parameters and transactions
+
+```plain
+database "app.db"                    // or: postgres env("DATABASE_URL")
+
+transaction
+    insert
+        INSERT INTO users (name) VALUES ({who})
+    done
+done
+```
+
+Placeholders `{likeThis}` bind to Plain variables. `postgres "..."` switches
+every SQL statement to node-postgres pool queries (`$n`, awaited).
+
+### Email
+
+```plain
+mail transport
+    host is "smtp.gmail.com"
+    port is 587
+    user is env("EMAIL_USER")
+    pass is env("EMAIL_PASS")
+done
+
+send mail
+    from is "hello@plain.dev"
+    to is "you@example.com"
+    subject is "Hello from Plain"
+    text is "Sent from a Plain program."
+done
+```
+
+### Cron and background jobs
+
+```plain
+every 5 minutes
+    show "heartbeat"
+done
+
+schedule "0 2 * * *"
+    show "nightly cleanup"
+done
+
+run background resizeImage("photo.png")
+```
+
+### WebSocket servers
+
+```plain
+websocket server on 8080
+    when socket connects
+        send socket "Welcome!"
+    done
+    when socket sends message
+        broadcast message
+    done
+done
+```
+
+### Cache (Redis)
+
+```plain
+cache env("REDIS_URL")
+remember token as cacheGet("token")
+cacheSet("greeting", "hi", 60)
+cacheDelete("greeting")
+```
+
+---
+
 ## Multi-file projects (v0.4.1)
 
 ```plain
@@ -407,6 +516,7 @@ import "./math.pln"
 import "./utils.pln"
 
 show PI
+
 show double(5)
 ```
 

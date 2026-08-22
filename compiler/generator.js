@@ -11,12 +11,15 @@ const KNOWN_PACKAGES = {
   path:    `const path = require('path');`,
   axios:   `const axios = require('axios');`,
   chalk:   `const chalk = require('chalk');`,
+  // v2.1.0 — PostgreSQL driver behind the friendly "postgres" name.
+  postgres: `const { Pool } = require('pg');`,
 };
 
 // Plain module names whose npm package name differs from the Plain name.
 // Used to de-duplicate runtime requires across aliases (RFC-0011 §22).
 const NPM_NAME = {
   sqlite: 'better-sqlite3',
+  postgres: 'pg',
 };
 
 // JavaScript reserved words that cannot be used as a const binding name.
@@ -57,6 +60,66 @@ const BUILTIN_DECLARATIONS = {
     `  } finally {`,
     `    await worker.terminate();`,
     `  }`,
+    `}`,
+  ].join('\n'),
+  // v2.1.0 — request validation runtime. Returns the names of required
+  // fields whose value is missing (undefined/null/empty string) in data.
+  validation: [
+    `function __validate(data, fields) {`,
+    `  return (fields || []).filter((field) => {`,
+    `    const value = data == null ? undefined : data[field];`,
+    `    return value === undefined || value === null || value === '';`,
+    `  });`,
+    `}`,
+  ].join('\n'),
+  // v2.1.0 — email runtime (nodemailer). One transport per program; sending
+  // fails with a teaching error when no transport was configured.
+  mailer: [
+    `const nodemailer = require('nodemailer');`,
+    `let __mailTransport = null;`,
+    `function __mailCreate(options) { __mailTransport = nodemailer.createTransport(options); }`,
+    `async function __mailSend(options) {`,
+    `  if (!__mailTransport) throw new Error('Email: no transport configured. Use "mail transport ... done" before "send mail".');`,
+    `  return __mailTransport.sendMail(options);`,
+    `}`,
+  ].join('\n'),
+  // v2.1.0 — cron scheduling runtime (croner). Zero dependencies, validates
+  // expressions at registration time.
+  scheduler: [
+    `const cron = require('croner');`,
+  ].join('\n'),
+  // v2.1.0 — WebSocket runtime (ws). Standalone server bound to its own port.
+  websocket: [
+    `const { WebSocketServer } = require('ws');`,
+    `function __wsServerCreate(port, handlers) {`,
+    `  const server = new WebSocketServer({ port });`,
+    `  server.on('connection', (socket) => {`,
+    `    if (handlers.connect) handlers.connect(socket);`,
+    `    socket.on('message', (raw) => {`,
+    `      if (handlers.message) handlers.message(socket, raw.toString());`,
+    `    });`,
+    `    socket.on('close', () => { if (handlers.disconnect) handlers.disconnect(socket); });`,
+    `  });`,
+    `  return server;`,
+    `}`,
+    `function __wsSend(socket, value) {`,
+    `  socket.send(typeof value === 'string' ? value : JSON.stringify(value));`,
+    `}`,
+    `function __wsBroadcast(server, value) {`,
+    `  const text = typeof value === 'string' ? value : JSON.stringify(value);`,
+    `  for (const client of server.clients) {`,
+    `    if (client.readyState === 1) client.send(text);`,
+    `  }`,
+    `}`,
+  ].join('\n'),
+  // v2.1.0 — cache runtime (Redis via the redis package). The client is
+  // created by the "cache" statement; accessors fail with a teaching error
+  // when no cache was configured.
+  cache: [
+    `let __cache = null;`,
+    `function __cacheClient() {`,
+    `  if (!__cache) throw new Error('Cache: no cache configured. Add a cache "<redis-url>" statement first.');`,
+    `  return __cache;`,
     `}`,
   ].join('\n'),
   // v1.2 — Telegram runtime. Polling-based: no webhook endpoint needed.
@@ -226,7 +289,116 @@ const STDLIB = {
     ensureBuiltin(context, 'telegram');
     return `Telegram.editMessage(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
   },
+  // v2.1.0 — HTTP request accessors. Only meaningful inside a route handler,
+  // where Express provides req/res.
+  param:   (args, context) => routeAccessor('param',   'params',   args, context),
+  query:   (args, context) => routeAccessor('query',   'query',    args, context),
+  header:  (args, context) => routeAccessor('header',  'headers',  args, context),
+  // v2.1.0 — request validation. Returns the list of missing required fields.
+  validate: (args, context) => {
+    ensureBuiltin(context, 'validation');
+    return `__validate(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
+  },
+
+  // ── v2.1.0 — filesystem helpers (sync, matching readFile/writeFile style)
+
+  copyFile:   (args, context) => { ensureBuiltin(context, 'fs'); return `fs.copyFileSync(${args.map(a => generateExpr(a, context)).join(', ')})`; },
+  moveFile:   (args, context) => { ensureBuiltin(context, 'fs'); return `fs.renameSync(${args.map(a => generateExpr(a, context)).join(', ')})`; },
+  deleteFile: (args, context) => { ensureBuiltin(context, 'fs'); return `fs.unlinkSync(${generateExpr(args[0], context)})`; },
+  makeFolder: (args, context) => { ensureBuiltin(context, 'fs'); return `fs.mkdirSync(${generateExpr(args[0], context)}, { recursive: true })`; },
+  deleteFolder: (args, context) => { ensureBuiltin(context, 'fs'); return `fs.rmSync(${generateExpr(args[0], context)}, { recursive: true, force: true })`; },
+  listFolder: (args, context) => { ensureBuiltin(context, 'fs'); return `fs.readdirSync(${generateExpr(args[0], context)})`; },
+  appendFile: (args, context) => {
+    ensureBuiltin(context, 'fs');
+    return `fs.appendFileSync(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)}, 'utf8')`;
+  },
+  readBytes:  (args, context) => { ensureBuiltin(context, 'fs'); return `fs.readFileSync(${generateExpr(args[0], context)})`; },
+  writeBytes: (args, context) => {
+    ensureBuiltin(context, 'fs');
+    return `fs.writeFileSync(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`;
+  },
+
+  // ── v2.1.0 — text, number and collection helpers
+
+  trim:     (args, context) => `String(${generateExpr(args[0], context)}).trim()`,
+  replace:  (args, context) => {
+    const [target, from, to] = args;
+    return `String(${generateExpr(target, context)}).split(${generateExpr(from, context)}).join(${generateExpr(to, context)})`;
+  },
+  split:    (args, context) => {
+    const sep = args.length > 1 ? generateExpr(args[1], context) : '" "';
+    return `String(${generateExpr(args[0], context)}).split(${sep})`;
+  },
+  join:     (args, context) => `(${generateExpr(args[0], context)}).join(${args.length > 1 ? generateExpr(args[1], context) : '","'})`,
+  number:   (args, context) => `Number(${generateExpr(args[0], context)})`,
+  text:     (args, context) => `String(${generateExpr(args[0], context)})`,
+  floor:    (args, context) => `Math.floor(${generateExpr(args[0], context)})`,
+  ceiling:  (args, context) => `Math.ceil(${generateExpr(args[0], context)})`,
+
+  // The shared comparator keeps sorting predictable for both text and
+  // numbers without a separate sort call per type.
+  sort:     (args, context) => `[...${generateExpr(args[0], context)}].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))`,
+  reverse:  (args, context) => `[...${generateExpr(args[0], context)}].reverse()`,
+  unique:   (args, context) => `[...new Set(${generateExpr(args[0], context)})]`,
+  sum:      (args, context) => `(${generateExpr(args[0], context)}).reduce((a, b) => a + b, 0)`,
+  smallest: (args, context) => `Math.min(...${generateExpr(args[0], context)})`,
+  largest:  (args, context) => `Math.max(...${generateExpr(args[0], context)})`,
+
+  keys:     (args, context) => `Object.keys(${generateExpr(args[0], context)})`,
+  values:   (args, context) => `Object.values(${generateExpr(args[0], context)})`,
+  hasKey:   (args, context) => `Object.prototype.hasOwnProperty.call(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  merge:    (args, context) => `{ ...${generateExpr(args[0], context)}, ...${generateExpr(args[1], context)} }`,
+
+  // ── v2.1.0 — cache (Redis) accessors. All async.
+
+  cacheGet: (args, context) => {
+    ensureBuiltin(context, 'cache');
+    markAsync(context);
+    return `await __cacheClient().get(String(${generateExpr(args[0], context)}))`;
+  },
+  cacheSet: (args, context) => {
+    ensureBuiltin(context, 'cache');
+    markAsync(context);
+    const key = `String(${generateExpr(args[0], context)})`;
+    const value = `String(${generateExpr(args[1], context)})`;
+    if (args.length > 2) {
+      return `await __cacheClient().set(${key}, ${value}, { EX: ${generateExpr(args[2], context)} })`;
+    }
+    return `await __cacheClient().set(${key}, ${value})`;
+  },
+  cacheDelete: (args, context) => {
+    ensureBuiltin(context, 'cache');
+    markAsync(context);
+    return `await __cacheClient().del(String(${generateExpr(args[0], context)}))`;
+  },
+
+  // v2.1.0 — email sending helper (statement form uses this too).
+  sendMail: (args, context) => {
+    ensureBuiltin(context, 'mailer');
+    markAsync(context);
+    return `__mailSend(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
+  },
 };
+
+// Mark the enclosing program async when a call awaits at the top level.
+function markAsync(context) {
+  if (!context.inFunction) context.needsAsync = true;
+}
+
+// v2.1.0 — generate a request accessor (param/query/header). These compile to
+// direct Express req.<bucket>[key] reads and are rejected outside routes so
+// mistakes surface at compile time with a teaching error.
+function routeAccessor(name, bucket, args, context) {
+  if (!_inRoute) {
+    throw new Error(
+      `"${name}(...)" can only be used inside a route handler.\n\nExample:\n  route get "/users/:id"\n    show ${name}("id")\n  done`
+    );
+  }
+  if (args.length !== 1) {
+    throw new Error(`"${name}" takes exactly one argument: the ${name} name.\n\nExample:\n  ${name}("id")`);
+  }
+  return `req.${bucket}[${generateExpr(args[0], context)}]`;
+}
 
 // Set to true while generating inside a route handler body.
 // Remaps Plain's "request" → "req" and "response" → "res".
@@ -234,6 +406,43 @@ let _inRoute = false;
 // True while generating inside a Telegram handler body. Remaps Plain's
 // "reply" statement to send a chat message instead of an HTTP response.
 let _inTelegram = false;
+// v2.1.0 — active "group" prefixes. Route paths are prefixed with the
+// concatenation of every enclosing group, innermost last.
+const _routePrefixes = [];
+
+// v2.1.0 — active SQL driver. "sqlite" (default) targets better-sqlite3's
+// synchronous prepare/run/exec API; "pg" targets node-postgres pools and
+// makes every SQL statement async. Set by database/postgres declarations.
+let _sqlDriver = 'sqlite';
+// The object SQL statements call. "db" normally; a checked-out pool client
+// while generating inside a PostgreSQL transaction.
+let _sqlClientVar = 'db';
+
+// Full path for a route, honouring enclosing group prefixes.
+function routePath(path) {
+  return _routePrefixes.join('') + path;
+}
+
+// v2.1.0 — render the JavaScript expression that executes one SQL statement
+// under the active driver. kind: query | write | execute.
+function emitSqlCall(kind, sql, params, indent, context) {
+  const args = params.join(', ');
+  if (_sqlDriver === 'pg') {
+    // Convert the parser's anonymous "?" markers to PostgreSQL "$n" markers.
+    // Only the markers we produced are converted; literal question marks in
+    // the SQL survive untouched.
+    let n = 0;
+    const pgSql = String(sql).replace(/\?/g, () => (++n <= params.length ? `$${n}` : '?'));
+    const call = `${_sqlClientVar}.query(\`${pgSql}\`, [${args}])`;
+    return kind === 'query' ? `(await ${call}).rows` : `await ${call}`;
+  }
+  switch (kind) {
+    case 'query':   return `db.prepare(\`${sql}\`).all(${args})`;
+    case 'write':   return `db.prepare(\`${sql}\`).run(${args})`;
+    case 'execute': return `db.exec(\`${sql}\`)`;
+    default: throw new Error(`Unknown SQL kind "${kind}".`);
+  }
+}
 
 function createGenerationContext() {
   return {
@@ -304,6 +513,31 @@ function ensureBuiltin(context, moduleName) {
   }
 }
 
+// Builtins whose calls await. A statement containing one of these anywhere in
+// its expressions must compile into an async context.
+const ASYNC_CALL_NAMES = new Set([
+  // v2.1.0 — cache and email
+  'cacheGet', 'cacheSet', 'cacheDelete', 'sendMail',
+  // v1.2 — Telegram helpers (await their API transport)
+  'bot', 'sendMessage', 'sendPhoto', 'editMessage', 'getChat', 'getMyChats',
+]);
+
+// Collect async builtin call names reachable from an AST fragment.
+function findAsyncCalls(node, found) {
+  if (!node || typeof node !== 'object') return found;
+  if (Array.isArray(node)) {
+    for (const item of node) findAsyncCalls(item, found);
+    return found;
+  }
+  if (node.type === 'CallExpression' && ASYNC_CALL_NAMES.has(node.name)) {
+    found.add(node.name);
+  }
+  for (const value of Object.values(node)) {
+    if (value && typeof value === 'object') findAsyncCalls(value, found);
+  }
+  return found;
+}
+
 // True when any statement in the block emits `await` (a JavaScript block,
 // `ask`, or `ocr`), including inside nested if / loop bodies. Nested Plain
 // function declarations are handled independently, so they are not descended
@@ -311,6 +545,16 @@ function ensureBuiltin(context, moduleName) {
 function containsAsyncBlock(statements) {
   for (const stmt of statements || []) {
     if (stmt.type === 'AskStatement' || stmt.type === 'JavaScriptBlock' || stmt.type === 'OcrStatement') return true;
+    // v2.1.0 — transactions always await; PostgreSQL SQL statements await;
+    // mail sends, cache setup and websocket handlers await.
+    if (stmt.type === 'TransactionStatement') return true;
+    if (stmt.type === 'SendMailStatement' || stmt.type === 'CacheStatement') return true;
+    if (_sqlDriver === 'pg' && (
+      stmt.type === 'QueryStatement' || stmt.type === 'InsertStatement' ||
+      stmt.type === 'UpdateStatement' || stmt.type === 'DeleteStatement' ||
+      stmt.type === 'ExecuteStatement' || stmt.type === 'RememberSqlStatement'
+    )) return true;
+    if (findAsyncCalls(stmt, new Set()).size > 0) return true;
     if (stmt.type === 'IfStatement') {
       if (containsAsyncBlock(stmt.consequent)) return true;
       if (stmt.alternate && containsAsyncBlock(stmt.alternate)) return true;
@@ -485,7 +729,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       const handlerAsync = containsAsyncBlock(node.body) ? 'async ' : '';
       const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
       _inRoute = false;
-      return `${indent}app.get(${JSON.stringify(node.path)}, ${handlerAsync}(req, res) => {\n${body}\n${indent}});`;
+      return `${indent}app.get(${JSON.stringify(routePath(node.path))}, ${handlerAsync}(req, res) => {\n${body}\n${indent}});`;
     }
 
     case 'ReplyStatement':
@@ -520,7 +764,13 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // v0.6 — Express DX
 
     case 'WebAppStatement':
-      return [emitRequire(context, 'express'), `${indent}const app = express();`]
+      return [
+        emitRequire(context, 'express'),
+        `${indent}const app = express();`,
+        // v2.1.0 — parse JSON request bodies so POST/PUT handlers can read
+        // "body of request". Harmless for GET-only v2.0.1 programs.
+        `${indent}app.use(express.json());`,
+      ]
         .filter(Boolean).map(line => line.startsWith('const ') ? `${indent}${line}` : line).join('\n');
 
     case 'SimpleRouteStatement': {
@@ -528,30 +778,119 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       const handlerAsync = containsAsyncBlock(node.body) ? 'async ' : '';
       const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
       _inRoute = false;
-      return `${indent}app.get(${JSON.stringify(node.path)}, ${handlerAsync}(req, res) => {\n${body}\n${indent}});`;
+      return `${indent}app.${node.method}(${JSON.stringify(routePath(node.path))}, ${handlerAsync}(req, res) => {\n${body}\n${indent}});`;
     }
+
+    // v2.1.0 — group "<prefix>" ... done: composes routes under a shared
+    // prefix. Groups nest; every enclosed route (either form) gets the
+    // concatenated prefix. Non-route statements run in program order.
+    case 'GroupStatement': {
+      _routePrefixes.push(node.prefix);
+      const body = node.body.map(s => generateStatement(s, indent, context)).join('\n');
+      _routePrefixes.pop();
+      return body;
+    }
+
+    // v2.1.0 — status <expr>: sets the HTTP response status code. Only valid
+    // inside a route handler (res is in scope there).
+    case 'StatusStatement':
+      if (!_inRoute) {
+        throw new Error('"status" can only be used inside a route handler, where a response exists.\n\nExample:\n  route get "/missing"\n    status 404\n    reply "Not found"\n  done');
+      }
+      return `${indent}res.status(${generateExpr(node.value, context)});`;
+
+    // v2.1.0 — allow cors: enables cross-origin requests on the current app.
+    // Applies to routes registered after this statement.
+    case 'AllowCorsStatement':
+      return [
+        `${indent}app.use((req, res, next) => {`,
+        `${indent}  res.header('Access-Control-Allow-Origin', '*');`,
+        `${indent}  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');`,
+        `${indent}  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');`,
+        `${indent}  if (req.method === 'OPTIONS') return res.sendStatus(204);`,
+        `${indent}  next();`,
+        `${indent}});`,
+      ].join('\n');
 
     case 'StartStatement':
       return `${indent}app.listen(${generateExpr(node.port, context)});`;
 
-    // v0.6 — SQLite DX
+    // v0.6 — SQLite DX. v2.1.0 adds parameterized SQL, captured results and
+    // transactions; the driver switches to PostgreSQL when a "postgres"
+    // declaration is active.
 
     case 'DatabaseStatement':
+      _sqlDriver = 'sqlite';
+      _sqlClientVar = 'db';
       return [
         emitRequire(context, 'sqlite'),
         `${indent}const db = new Database(${JSON.stringify(node.file)});`,
       ].filter(Boolean).map(line => line.startsWith('const ') ? `${indent}${line}` : line).join('\n');
 
+    // v2.1.0 — postgres "<connection>": node-postgres pool bound to "db".
+    // Every SQL statement afterwards compiles to async pool queries.
+    case 'PostgresStatement': {
+      _sqlDriver = 'pg';
+      _sqlClientVar = 'db';
+      if (!context.inFunction) context.needsAsync = true;
+      return [
+        emitRequire(context, 'postgres'),
+        `${indent}const db = new Pool({ connectionString: ${generateExpr(node.connection, context)} });`,
+      ].filter(Boolean).map(line => line.startsWith('const ') ? `${indent}${line}` : line).join('\n');
+    }
+
     case 'QueryStatement':
-      return `${indent}db.prepare(\`${node.sql}\`).all();`;
+      return `${indent}${emitSqlCall('query', node.sql, node.params, indent, context)};`;
 
     case 'InsertStatement':
     case 'UpdateStatement':
     case 'DeleteStatement':
-      return `${indent}db.prepare(\`${node.sql}\`).run();`;
+      return `${indent}${emitSqlCall('write', node.sql, node.params, indent, context)};`;
 
     case 'ExecuteStatement':
-      return `${indent}db.exec(\`${node.sql}\`);`;
+      return `${indent}${emitSqlCall('execute', node.sql, node.params, indent, context)};`;
+
+    // v2.1.0 — remember <name> as query|insert|update|delete … done
+    case 'RememberSqlStatement': {
+      const kind = node.kind === 'query' ? 'query'
+        : node.kind === 'execute' ? 'execute' : 'write';
+      return `${indent}let ${node.name} = ${emitSqlCall(kind, node.sql, node.params, indent, context)};`;
+    }
+
+    // v2.1.0 — transaction … done: all enclosed database statements run
+    // atomically (all succeed or none are applied).
+    case 'TransactionStatement': {
+      if (_sqlDriver === 'pg') {
+        const prevClient = _sqlClientVar;
+        _sqlClientVar = '__txClient';
+        if (!context.inFunction) context.needsAsync = true;
+        const body = node.body.map(s => generateStatement(s, indent + '      ', context)).join('\n');
+        _sqlClientVar = prevClient;
+        return [
+          `${indent}{`,
+          `${indent}  const __txClient = await db.connect();`,
+          `${indent}  try {`,
+          `${indent}    await __txClient.query('BEGIN');`,
+          `${indent}    try {`,
+          body,
+          `${indent}      await __txClient.query('COMMIT');`,
+          `${indent}    } catch (__txError) {`,
+          `${indent}      await __txClient.query('ROLLBACK');`,
+          `${indent}      throw __txError;`,
+          `${indent}    }`,
+          `${indent}  } finally {`,
+          `${indent}    __txClient.release();`,
+          `${indent}  }`,
+          `${indent}}`,
+        ].join('\n');
+      }
+      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      return [
+        `${indent}(db.transaction(() => {`,
+        body,
+        `${indent}}))();`,
+      ].join('\n');
+    }
 
     // v1.2 — Telegram statements
 
@@ -581,6 +920,119 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       if (!context.inFunction) context.needsAsync = true;
       return `${indent}await BOT.start();`;
     }
+
+    // v2.1.0 — mail, cache, scheduling, background jobs, websocket
+
+    case 'MailTransportStatement': {
+      ensureBuiltin(context, 'mailer');
+      const options = {};
+      let user = null;
+      let pass = null;
+      for (const { key, value } of node.options) {
+        if (key === 'user') { user = generateExpr(value, context); continue; }
+        if (key === 'pass') { pass = generateExpr(value, context); continue; }
+        options[key] = generateExpr(value, context);
+      }
+      if (user != null || pass != null) {
+        const pair = [
+          user != null ? `user: ${user}` : null,
+          pass != null ? `pass: ${pass}` : null,
+        ].filter(Boolean).join(', ');
+        options.auth = `{ ${pair} }`;
+      }
+      const parts = Object.entries(options)
+        .map(([k, v]) => `${JSON.stringify(k)}: ${v}`)
+        .join(', ');
+      return `${indent}__mailCreate({ ${parts} });`;
+    }
+
+    case 'SendMailStatement': {
+      ensureBuiltin(context, 'mailer');
+      markAsync(context);
+      const fields = node.fields
+        .map(f => `${JSON.stringify(f.key)}: ${generateExpr(f.value, context)}`)
+        .join(', ');
+      return `${indent}await __mailSend({ ${fields} });`;
+    }
+
+    // cache "<redis-url>" — connects the shared Redis client. At the top
+    // level the connect is awaited in program order; inside functions it is
+    // connected fire-and-forget.
+    case 'CacheStatement': {
+      ensureBuiltin(context, 'cache');
+      markAsync(context);
+      const url = generateExpr(node.url, context);
+      const lines = [
+        `${indent}{`,
+        `${indent}  const { createClient } = require('redis');`,
+        `${indent}  __cache = createClient({ url: ${url} });`,
+        `${indent}  __cache.on('error', (error) => console.error('Cache error:', error.message));`,
+      ];
+      if (context.inFunction) {
+        lines.push(`${indent}  __cache.connect().catch((error) => console.error('Cache error:', error.message));`);
+        lines.push(`${indent}}`);
+      } else {
+        lines.push(`${indent}  await __cache.connect();`);
+        lines.push(`${indent}}`);
+      }
+      return lines.join('\n');
+    }
+
+    case 'EveryStatement': {
+      const body = node.body.map(s => generateStatement(s, indent + '    ', context)).join('\n');
+      return [
+        `${indent}setInterval(async () => {`,
+        `${indent}  try {`,
+        body,
+        `${indent}  } catch (error) { console.error(error); }`,
+        `${indent}}, ${node.count * node.unit});`,
+      ].join('\n');
+    }
+
+    case 'ScheduleStatement': {
+      ensureBuiltin(context, 'scheduler');
+      const body = node.body.map(s => generateStatement(s, indent + '    ', context)).join('\n');
+      return [
+        `${indent}cron.schedule(${JSON.stringify(node.expression)}, async () => {`,
+        `${indent}  try {`,
+        body,
+        `${indent}  } catch (error) { console.error(error); }`,
+        `${indent}});`,
+      ].join('\n');
+    }
+
+    case 'RunBackgroundStatement':
+      return [
+        `${indent}setImmediate(() => {`,
+        `${indent}  try {`,
+        `${indent}    Promise.resolve(${generateExpr(node.call, context)}).catch((error) => console.error(error));`,
+        `${indent}  } catch (error) { console.error(error); }`,
+        `${indent}});`,
+      ].join('\n');
+
+    case 'WebSocketServerStatement': {
+      ensureBuiltin(context, 'websocket');
+      const handler = (name, params, body) => {
+        if (!body) return '';
+        const js = body.map(s => generateStatement(s, indent + '    ', context)).join('\n');
+        return `\n${indent}  ${name}: async (${params}) => {\n${js}\n${indent}  },`;
+      };
+      return [
+        `${indent}const __wsServer = __wsServerCreate(${generateExpr(node.port, context)}, {` +
+          handler('connect', 'socket', node.connectBody) +
+          handler('message', 'socket, message', node.messageBody) +
+          handler('disconnect', 'socket', node.disconnectBody),
+        `${indent}});`,
+      ].join('\n');
+    }
+
+    case 'SendSocketStatement':
+      ensureBuiltin(context, 'websocket');
+      return `${indent}__wsSend(socket, ${generateExpr(node.value, context)});`;
+
+    case 'BroadcastStatement':
+      ensureBuiltin(context, 'websocket');
+      return `${indent}__wsBroadcast(__wsServer, ${generateExpr(node.value, context)});`;
 
     default:
       throw new Error(`Unknown statement type "${node.type}".`);

@@ -1,30 +1,22 @@
-// Email sending example
+// Plain v2.1 — Sending email
 //
-// This example demonstrates the email rule for sending
-// transactional emails via SMTP.
+// Run with:  MAIL_PASS=secret plain run examples/email-send.pln
+//
+// Configure the outgoing transport once, then send as many mails as you
+// like. Credentials come from the environment — never hardcode them.
 
-remember transport as email transport with
-  host is "smtp.gmail.com"
-  port is 587
-  secure is false
-  auth user is env("EMAIL_USER")
-  auth pass is env("EMAIL_PASS")
+mail transport
+    host is "smtp.gmail.com"
+    port is 587
+    user is env("EMAIL_USER")
+    pass is env("EMAIL_PASS")
 done
 
-// Verify the transport
-remember ok as await verify transport
-if ok is true
-  show "SMTP transport is ready"
-otherwise
-  show "SMTP transport configuration is invalid"
-  exit 1
-done
-
-// Send a plain text email
-send email via transport
-  to is "recipient@example.com"
-  subject is "Hello from Plain"
-  text is "This email was sent from a Plain program."
+send mail
+    from is "hello@plain.dev"
+    to is "you@example.com"
+    subject is "Hello from Plain"
+    text is "This email was sent from a Plain program."
 done
 
 show "Email sent successfully"
