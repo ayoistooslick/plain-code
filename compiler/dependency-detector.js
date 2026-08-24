@@ -29,6 +29,10 @@ const PACKAGE_MAP = Object.freeze({
   // engine used by the `database` statement's fallback chain is sql.js.
   uploads: 'multer',
   'wasm-sqlite': 'sql.js',
+  // v2.1.1 — WhatsApp bots run on Baileys; QR codes render in the terminal
+  // through qrcode-terminal. Neither package ever appears in Plain source.
+  whatsapp: '@whiskeysockets/baileys',
+  'wa-qrcode': 'qrcode-terminal',
 });
 
 const BUILTIN_MODULES = new Set(builtinModules);
@@ -98,6 +102,11 @@ function visit(node, onUse) {
   } else if (node.type === 'CacheStatement') {
     // v2.1.0 — cache statements use the redis client under the hood.
     onUse('cache');
+  } else if (node.type === 'WhatsAppBotStatement') {
+    // v2.1.1 — WhatsApp bots run on Baileys and render QR codes with
+    // qrcode-terminal; both are implementation packages, never source.
+    onUse('whatsapp');
+    onUse('wa-qrcode');
   }
 
   for (const value of Object.values(node)) {

@@ -428,6 +428,24 @@ function parse(tokens) {
         return parseWebSocketServer();
       }
 
+      // v2.1.1 — whatsapp bot … done: WhatsApp bot runtime (Baileys under
+      // the hood). Contextual: a variable named "whatsapp" keeps its meaning;
+      // only "whatsapp bot" opens the block.
+      if (token.value === 'whatsapp' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'bot') {
+        return parseWhatsAppBot();
+      }
+
+      // v2.1.1 — log message: prints the normalized message record inside an
+      // "on message" handler. Generation rejects it everywhere else with a
+      // teaching error.
+      if (token.value === 'log' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'message') {
+        advance(); // log
+        advance(); // message
+        return { type: 'WhatsAppLogStatement' };
+      }
+
       // v2.1.0 — broadcast <expr>: sends to every connected socket.
       if (token.value === 'broadcast') {
         advance(); // broadcast
@@ -1856,6 +1874,115 @@ function parse(tokens) {
     advance(); // consume DONE
 
     return { type: 'WebSocketServerStatement', port, connectBody, messageBody, disconnectBody };
+  }
+
+  // v2.1.1 — whatsapp bot … done
+  //
+  //   whatsapp bot
+  //       auth "session"                       (optional; session folder name)
+  //       login qr                             — or —
+  //       login pairing "2348012345678"
+  //
+  //       on message
+  //           log message
+  //           if message.text is "/start"
+  //               reply "Welcome!"
+  //           done
+  //       done
+  //   done
+  //
+  // The Baileys runtime, its socket, events and auth APIs stay hidden: this
+  // block is the whole surface. Defaults: auth folder "plain-whatsapp-auth",
+  // QR login when no `login` line is present.
+  function parseWhatsAppBot() {
+    advance(); // whatsapp
+    advance(); // bot
+
+    let authFolder = null;
+    let login = null;
+    const handlers = [];
+
+    while (peek().type !== TOKEN.DONE) {
+      if (peek().type === TOKEN.EOF) {
+        throw new Error(makeError(
+          'Expected keyword "done" to close the "whatsapp bot" block before end of file.',
+          peek()
+        ));
+      }
+
+      // auth "<folder>" — where WhatsApp session credentials persist.
+      if (peek().type === TOKEN.IDENTIFIER && peek().value === 'auth' &&
+          peekAt(1).type === TOKEN.STRING) {
+        advance(); // auth
+        authFolder = advance().value; // folder name
+        continue;
+      }
+
+      // login qr  |  login pairing "<phone>"
+      if (peek().type === TOKEN.IDENTIFIER && peek().value === 'login') {
+        advance(); // login
+        const modeToken = peek();
+        if (modeToken.type === TOKEN.IDENTIFIER && modeToken.value === 'qr') {
+          advance();
+          login = { mode: 'qr' };
+          continue;
+        }
+        if (modeToken.type === TOKEN.IDENTIFIER && modeToken.value === 'pairing') {
+          advance(); // pairing
+          const phoneToken = consume(TOKEN.STRING,
+            'Expected a phone number string after "login pairing".\n\nExample:\n  login pairing "2348012345678"');
+          login = { mode: 'pairing', phone: validatePairingPhone(phoneToken.value, phoneToken) };
+          continue;
+        }
+        throw new Error(makeError(
+          'Expected "qr" or "pairing \\"<number>\\"" after "login".\n\nExamples:\n  login qr\n  login pairing "2348012345678"',
+          modeToken
+        ));
+      }
+
+      // on message … done — the message handler.
+      if (peek().type === TOKEN.ON && peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'message') {
+        advance(); // on
+        advance(); // message
+        const body = parseBody('"on message" block');
+        handlers.push({ type: 'WhatsAppOnMessageStatement', body });
+        continue;
+      }
+
+      throw new Error(makeError(
+        'A "whatsapp bot" block may only contain an "auth", a "login", and "on message" statements.\n\nExample:\n  whatsapp bot\n      auth "session"\n      login qr\n\n      on message\n          log message\n      done\n  done',
+        peek()
+      ));
+    }
+    advance(); // consume DONE
+
+    return {
+      type: 'WhatsAppBotStatement',
+      authFolder: authFolder || 'plain-whatsapp-auth',
+      login: login || { mode: 'qr' },
+      handlers,
+    };
+  }
+
+  // Baileys requires the pairing phone number in international format:
+  // digits only (country code included), no leading "+", at most 15 digits
+  // (E.164). Common separators are accepted in source and stripped here so
+  // both "2348012345678" and "+234 801-234-5678" compile to the same value.
+  function validatePairingPhone(raw, token) {
+    const cleaned = String(raw).replace(/[\s()+\-\.]/g, '');
+    if (!/^[0-9]+$/.test(cleaned)) {
+      throw new Error(makeError(
+        `"${raw}" is not a valid phone number for "login pairing".\n\nUse the full international number, digits only — country code first, no "+" and no spaces:\n\nExample:\n  login pairing "2348012345678"`,
+        token
+      ));
+    }
+    if (cleaned.length < 8 || cleaned.length > 15) {
+      throw new Error(makeError(
+        `"${raw}" is not a valid phone number for "login pairing".\n\nThe international number must be 8 to 15 digits long (country code included):\n\nExample:\n  login pairing "2348012345678"`,
+        token
+      ));
+    }
+    return cleaned;
   }
 
   // name(arg, arg, ...)

@@ -39,6 +39,8 @@ const INDENT_STARTERS = [
   /^every\s+\d+\s+(seconds?|minutes?|hours?|days?)\b/, // every 5 minutes (v2.1)
   /^schedule\s+"/,             // schedule "..."    (v2.1 cron)
   /^websocket\s+server\b/,     // websocket server  (v2.1)
+  /^whatsapp\s+bot\s*$/,       // whatsapp bot      (v2.1.1 WhatsApp runtime)
+  /^on\s+message\s*$/,         // on message        (v2.1.1 WhatsApp handler)
   /^mail\s+transport\s*$/,     // mail transport    (v2.1)
   /^send\s+mail\s*$/,          // send mail         (v2.1)
   /^google\s+oauth\s*$/,       // google oauth      (v2.1.1 Google sign-in)

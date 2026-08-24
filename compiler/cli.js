@@ -87,6 +87,7 @@ ${section('THE LANGUAGE IN EIGHT LINES')}
 ${section('ALSO SHIPPED')}
   Comparisons and stdlib (v1.0) · Plain Expressions (v1.1) ·
   JavaScript gateway with ask (v1.1.1) · OCR · Telegram bots ·
+  WhatsApp bots (v2.1.1) ·
   email · schedules · WebSocket · cache (v2.1) ·
   sessions · uploads · cookies · rate limits · api keys · OAuth (v2.1.1)
 

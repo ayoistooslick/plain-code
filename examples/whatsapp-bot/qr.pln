@@ -1,0 +1,8 @@
+whatsapp bot
+    auth "session"
+    login qr
+
+    on message
+        log message
+    done
+done

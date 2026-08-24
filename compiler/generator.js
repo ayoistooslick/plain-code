@@ -126,6 +126,152 @@ const BUILTIN_DECLARATIONS = {
     `  return __cache;`,
     `}`,
   ].join('\n'),
+  // v2.1.1 — WhatsApp runtime (@whiskeysockets/baileys behind the
+  // "whatsapp bot" block). Everything Baileys-shaped stays in here: socket
+  // creation, auth-state files, QR rendering, pairing codes, connection
+  // lifecycle and messages.upsert normalization. Plain programs only ever
+  // see __whatsappStart/__whatsappOnMessage/__whatsappReply.
+  whatsapp: [
+    `const { __whatsappStart, __whatsappOnMessage, __whatsappReply } = (() => {`,
+    `  let sock = null;`,
+    `  const handlers = [];`,
+    `  const __waSilentLogger = (() => {`,
+    `    const noop = () => {};`,
+    `    const logger = { level: 'silent', child: () => logger, trace: noop, debug: noop, info: noop, warn: noop, error: noop, fatal: noop };`,
+    `    return logger;`,
+    `  })();`,
+    `  function __waNormalizePhone(raw) {`,
+    `    const digits = String(raw == null ? '' : raw).replace(/[\\s()+\\-.]/g, '');`,
+    `    if (!/^[0-9]+$/.test(digits) || digits.length < 8 || digits.length > 15) {`,
+    `      throw new Error('WhatsApp: "' + raw + '" is not a valid pairing phone number. Use the full international number, digits only (country code included, no "+").');`,
+    `    }`,
+    `    return digits;`,
+    `  }`,
+    `  function __waUnwrap(content) {`,
+    `    let node = content;`,
+    `    for (let depth = 0; node && depth < 5; depth++) {`,
+    `      const inner = (node.ephemeralMessage || node.viewOnceMessage || node.viewOnceMessageV2 || node.documentWithCaptionMessage || {}).message;`,
+    `      if (!inner) break;`,
+    `      node = inner;`,
+    `    }`,
+    `    return node;`,
+    `  }`,
+    `  function __waExtractText(content) {`,
+    `    if (!content) return '';`,
+    `    return String(` +
+      `(content.conversation || (content.extendedTextMessage || {}).text || ` +
+      `(content.imageMessage || {}).caption || (content.videoMessage || {}).caption || ` +
+      `(content.documentMessage || {}).caption) || '');`,
+    `  }`,
+    `  async function __whatsappReply(chat, value) {`,
+    `    if (!sock) throw new Error('WhatsApp: cannot reply because the bot is not connected yet.');`,
+    `    const text = typeof value === 'string' ? value : JSON.stringify(value);`,
+    `    return sock.sendMessage(chat, { text });`,
+    `  }`,
+    `  function __whatsappOnMessage(handler) { handlers.push(handler); }`,
+    `  async function __whatsappStart(options) {`,
+    `    const baileys = require('@whiskeysockets/baileys');`,
+    `    const makeWASocket = baileys.default;`,
+    `    const { useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, DisconnectReason, Browsers } = baileys;`,
+    `    const folder = options.folder || 'plain-whatsapp-auth';`,
+    `    const mode = options.login && options.login.mode === 'pairing' ? 'pairing' : 'qr';`,
+    `    const pairingPhone = mode === 'pairing' ? __waNormalizePhone(options.login.phone) : null;`,
+    `    let connecting = false;`,
+    `    const connect = async () => {`,
+    `      if (connecting) return;`,
+    `      connecting = true;`,
+    `      try {`,
+    // Auth/session persistence: useMultiFileAuthState stores credentials in
+    // the folder from `auth "<name>"`; saveCreds writes every update back.
+    `        const { state, saveCreds } = await useMultiFileAuthState(folder);`,
+    `        let version;`,
+    `        try { version = (await fetchLatestBaileysVersion()).version; } catch (_) {}`,
+    `        sock = makeWASocket({`,
+    `          ...(version ? { version } : {}),`,
+    `          browser: Browsers.windows('Firefox'),`,
+    `          printQRInTerminal: false,`,
+    `          logger: __waSilentLogger,`,
+    `          auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, __waSilentLogger) },`,
+    `        });`,
+    `        sock.ev.on('creds.update', saveCreds);`,
+    // Connection lifecycle: QR / pairing codes while linking, a friendly note
+    // on open, and automatic reconnection on every close except loggedOut.
+    `        sock.ev.on('connection.update', async (update) => {`,
+    `          try {`,
+    `            const statusCode = update.lastDisconnect && update.lastDisconnect.error && (`,
+    `              (update.lastDisconnect.error.output || {}).statusCode != null`,
+    `                ? update.lastDisconnect.error.output.statusCode`,
+    `                : (((update.lastDisconnect.error.error || {}).output || {}).statusCode));`,
+    `            if (update.qr) {`,
+    `              if (mode === 'pairing') {`,
+    `                if (!sock.authState.creds.registered) {`,
+    `                  const rawCode = await sock.requestPairingCode(pairingPhone);`,
+    `                  const pretty = String(rawCode || '').replace(/[^A-Za-z0-9]/g, '').replace(/(.{4})(?=.)/g, '$1-');`,
+    `                  console.log('WhatsApp pairing code: ' + pretty);`,
+    `                  console.log('Enter it on your phone: WhatsApp > Settings > Linked devices > Link a device > Link with phone number instead.');`,
+    `                }`,
+    `              } else {`,
+    `                console.log('Scan this QR code with WhatsApp (Settings > Linked devices > Link a device):');`,
+    `                try {`,
+    `                  require('qrcode-terminal').generate(update.qr, { small: true });`,
+    `                } catch (_) {`,
+    `                  console.log(update.qr);`,
+    `                }`,
+    `              }`,
+    `            }`,
+    `            if (update.connection === 'open') {`,
+    `              console.log('WhatsApp connected.');`,
+    `            }`,
+    `            if (update.connection === 'close') {`,
+    `              sock = null;`,
+    `              if (statusCode === DisconnectReason.loggedOut) {`,
+    `                console.error('WhatsApp signed out. Delete the "' + folder + '" folder and restart to link this device again.');`,
+    `              } else {`,
+    `                console.error('WhatsApp connection closed (' + statusCode + '). Reconnecting in 3 seconds...');`,
+    `                setTimeout(() => { connect().catch((error) => console.error('WhatsApp reconnect failed: ' + error.message)); }, 3000);`,
+    `              }`,
+    `            }`,
+    `          } catch (error) {`,
+    `            console.error('WhatsApp connection error: ' + error.message);`,
+    `          }`,
+    `        });`,
+    // Incoming messages: only fresh ("notify") deliveries, never our own,
+    // never status broadcasts. Each message becomes a Plain record.
+    `        sock.ev.on('messages.upsert', async (upsert) => {`,
+    `          try {`,
+    `            if (!upsert || upsert.type !== 'notify') return;`,
+    `            for (const msg of upsert.messages || []) {`,
+    `              const key = msg.key || {};`,
+    `              if (key.fromMe) continue;`,
+    `              const chat = key.remoteJid;`,
+    `              if (!chat || chat === 'status@broadcast') continue;`,
+    `              const message = {`,
+    `                text: __waExtractText(__waUnwrap(msg.message)),`,
+    `                chat,`,
+    `                sender: key.participant || chat,`,
+    `                name: msg.pushName || null,`,
+    `                id: key.id || null,`,
+    `                time: Number(msg.messageTimestamp) > 0 ? Number(msg.messageTimestamp) * 1000 : Date.now(),`,
+    `                isGroup: chat.endsWith('@g.us'),`,
+    `              };`,
+    `              const ctx = { chat, message, reply: (value) => __whatsappReply(chat, value) };`,
+    `              for (const handler of handlers) {`,
+    `                await handler(ctx);`,
+    `              }`,
+    `            }`,
+    `          } catch (error) {`,
+    `            console.error(error);`,
+    `          }`,
+    `        });`,
+    `      } finally {`,
+    `        connecting = false;`,
+    `      }`,
+    `    };`,
+    `    await connect();`,
+    `  }`,
+    `  return { __whatsappStart, __whatsappOnMessage, __whatsappReply };`,
+    `})();`,
+  ].join('\n'),
   // v2.1.1 — HTTP client runtime on the global fetch API (Node.js 18+).
   // Every response becomes a Plain-friendly record: { ok, status, headers,
   // data }, where data holds parsed JSON when the content type says JSON.
@@ -850,6 +996,10 @@ let _inRoute = false;
 // True while generating inside a Telegram handler body. Remaps Plain's
 // "reply" statement to send a chat message instead of an HTTP response.
 let _inTelegram = false;
+// v2.1.1 — true while generating inside a WhatsApp "on message" handler.
+// Remaps Plain's "reply" to a WhatsApp chat message and Plain's "message"
+// identifier to the normalized message record of the current delivery.
+let _inWhatsApp = false;
 // v2.1.0 — active "group" prefixes. Route paths are prefixed with the
 // concatenation of every enclosing group, innermost last.
 const _routePrefixes = [];
@@ -1199,6 +1349,10 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       if (_inTelegram) {
         return `${indent}await Telegram.sendMessage(ctx.chatId, ${generateExpr(node.value, context)});`;
       }
+      if (_inWhatsApp) {
+        ensureBuiltin(context, 'whatsapp');
+        return `${indent}await __whatsappReply(__waCtx.chat, ${generateExpr(node.value, context)});`;
+      }
       return `${indent}res.send(${generateExpr(node.value, context)});`;
 
     case 'ReplyJsonStatement': {
@@ -1207,6 +1361,10 @@ function generateStatement(node, indent = '', context = createGenerationContext(
         .join(', ');
       if (_inTelegram) {
         return `${indent}await Telegram.sendMessage(ctx.chatId, JSON.stringify({ ${props} }));`;
+      }
+      if (_inWhatsApp) {
+        ensureBuiltin(context, 'whatsapp');
+        return `${indent}await __whatsappReply(__waCtx.chat, JSON.stringify({ ${props} }));`;
       }
       return `${indent}res.json({ ${props} });`;
     }
@@ -1516,6 +1674,54 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       return `${indent}await BOT.start();`;
     }
 
+    // ── v2.1.1 — WhatsApp statements ────────────────────────────────────────
+
+    // whatsapp bot … done — starts the Baileys runtime with the declared
+    // auth folder and login mode, then registers every "on message" handler.
+    case 'WhatsAppBotStatement': {
+      ensureBuiltin(context, 'whatsapp');
+      markAsync(context);
+      const loginArg = node.login.mode === 'pairing'
+        ? `{ mode: 'pairing', phone: ${JSON.stringify(node.login.phone)} }`
+        : `{ mode: 'qr' }`;
+      const lines = [
+        `${indent}await __whatsappStart({`,
+        `${indent}  folder: ${JSON.stringify(node.authFolder)},`,
+        `${indent}  login: ${loginArg},`,
+        `${indent}});`,
+      ];
+      for (const handlerNode of node.handlers) {
+        const generated = generateStatement(handlerNode, indent, context);
+        if (generated) lines.push(generated);
+      }
+      return lines.join('\n');
+    }
+
+    // on message … done — registers the handler that receives each incoming
+    // WhatsApp message as a normalized Plain record on `message`.
+    case 'WhatsAppOnMessageStatement': {
+      ensureBuiltin(context, 'whatsapp');
+      if (!context.inFunction) context.needsAsync = true;
+      const prevInWhatsApp = _inWhatsApp;
+      _inWhatsApp = true;
+      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      _inWhatsApp = prevInWhatsApp;
+      return [
+        `${indent}__whatsappOnMessage(async (__waCtx) => {`,
+        body,
+        `${indent}});`,
+      ].join('\n');
+    }
+
+    // log message — prints the current message record. Handler-only by
+    // design: outside "on message" there is no message to log.
+    case 'WhatsAppLogStatement':
+      if (!_inWhatsApp) {
+        throw new Error('"log message" can only be used inside an "on message" block.\n\nExample:\n  whatsapp bot\n      on message\n          log message\n      done\n  done');
+      }
+      ensureBuiltin(context, 'whatsapp');
+      return `${indent}console.log(__waCtx.message);`;
+
     // v2.1.0 — mail, cache, scheduling, background jobs, websocket
 
     case 'MailTransportStatement': {
@@ -1689,6 +1895,9 @@ function generateExpr(node, context = createGenerationContext()) {
       // Inside route handlers, remap Plain's request/response to req/res
       if (_inRoute && node.name === 'request')  return 'req';
       if (_inRoute && node.name === 'response') return 'res';
+      // Inside WhatsApp "on message" handlers, Plain's "message" is the
+      // normalized record of the current delivery.
+      if (_inWhatsApp && node.name === 'message') return '__waCtx.message';
       return node.name;
     }
 

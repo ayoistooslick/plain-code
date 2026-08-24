@@ -1,0 +1,17 @@
+whatsapp bot
+    auth "session"
+    login pairing "2348012345678"
+
+    on message
+        log message
+
+        if message.text is "/start"
+            reply "Welcome!"
+        done
+
+        if message.text is "/help"
+            reply `Available commands:
+/start /help`
+        done
+    done
+done

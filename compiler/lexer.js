@@ -168,6 +168,18 @@ const SQL_BLOCK_WORDS = {
   execute: TOKEN.EXECUTE_KW,
 };
 
+// Decode one escape sequence inside a double-quoted string, starting at
+// source[index] (the backslash). Returns [decodedText, charsConsumed].
+// Supported: \n \t \r \0 \\ \" \' — any other escaped character is kept as
+// itself (JavaScript-style leniency), so "\q" means "q".
+function decodeEscape(source, index) {
+  const next = source[index + 1];
+  if (next === undefined) return ['', 1]; // trailing backslash at EOF: drop it
+  const simple = { n: '\n', t: '\t', r: '\r', 0: '\0', '\\': '\\', '"': '"', "'": "'" };
+  if (next in simple) return [simple[next], 2];
+  return [next, 2];
+}
+
 function tokenize(source) {
   const tokens = [];
   let i = 0;
@@ -208,12 +220,25 @@ function tokenize(source) {
       pendingUse = false; // not a package start — tokenize normally
     }
 
-    // String literal
+    // String literal. Normal escapes are decoded here (\n, \t, \r, \\, \",
+    // \', \0) so generated JavaScript receives the intended characters.
+    // An unknown escape keeps the escaped character itself, matching the
+    // lenient behaviour of JavaScript string literals.
     if (source[i] === '"') {
       let str = '';
       i++; // skip opening quote
       while (i < source.length && source[i] !== '"') {
         if (source[i] === '\n') { line++; lineStart = i + 1; }
+        if (source[i] === '\\') {
+          const [decoded, consumed] = decodeEscape(source, i, tokenLine, tokenCol);
+          str += decoded;
+          // Track newlines inside multi-character escapes like "\n".
+          for (let k = 0; k < consumed; k++) {
+            if (source[i + k] === '\n') { line++; lineStart = i + k + 1; }
+          }
+          i += consumed;
+          continue;
+        }
         str += source[i++];
       }
       if (i >= source.length) {
@@ -226,12 +251,26 @@ function tokenize(source) {
       continue;
     }
 
-    // Backtick string (template literal): preserves whitespace and supports interpolation
+    // Backtick string (template literal): preserves whitespace and supports
+    // interpolation. Scanning is escape-aware — a backslash escapes the next
+    // character verbatim (\` does not close the string, \\ stays a backslash,
+    // \$ guards ${ from interpolating) while ordinary characters, real
+    // newlines and ${expr} pass through untouched for the generator to emit.
     if (source[i] === '`') {
       let content = '';
       i++; // skip opening backtick
       while (i < source.length && source[i] !== '`') {
         if (source[i] === '\n') { line++; lineStart = i + 1; }
+        if (source[i] === '\\' && i + 1 >= source.length) {
+          throw new Error(
+            `Line ${tokenLine}, Column ${tokenCol}: Unterminated backtick string: the closing \` is missing.`
+          );
+        }
+        if (source[i] === '\\') {
+          content += source[i] + source[i + 1]; // keep escape pair verbatim
+          i += 2;
+          continue;
+        }
         content += source[i++];
       }
       if (i >= source.length) {
