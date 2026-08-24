@@ -9,7 +9,7 @@
 
 Plain is an Intent-Oriented Programming Language (IOPL). You describe **what** you want; the compiler decides **how** to implement it in JavaScript.
 
-**Current version:** v2.1.1 — Portable databases, HTTP client, auth, sessions, uploads, rate limiting and OAuth as first-class language features.
+**Current version:** v2.1.2 — Interactive console input (`ask`) and WhatsApp pairing numbers from any value.
 
 ---
 
@@ -628,6 +628,18 @@ done
 - `login qr` prints a scannable QR code; `login pairing "<number>"` prints an
   enter-on-phone code instead. Pairing numbers are validated at compile time
   (digits only after normalization, 8–15).
+- Since v2.1.2, `login pairing` also accepts any value — prompt for the number
+  at runtime instead of hard-coding it:
+
+  ```plain
+  ask "WhatsApp number: " as phone
+
+  whatsapp bot
+      auth "session"
+      login pairing phone
+  done
+  ```
+
 - Inside `on message`, `message` holds `{ text, chat, sender, name, id,
   time, isGroup }`; `reply` answers the current chat.
 - The bot ignores its own messages and status broadcasts and keeps working in

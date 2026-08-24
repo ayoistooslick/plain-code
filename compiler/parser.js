@@ -1881,7 +1881,8 @@ function parse(tokens) {
   //   whatsapp bot
   //       auth "session"                       (optional; session folder name)
   //       login qr                             — or —
-  //       login pairing "2348012345678"
+  //       login pairing "2348012345678"        (literal) — or —
+  //       login pairing phone                  (any value, e.g. from ask)
   //
   //       on message
   //           log message
@@ -1929,9 +1930,23 @@ function parse(tokens) {
         }
         if (modeToken.type === TOKEN.IDENTIFIER && modeToken.value === 'pairing') {
           advance(); // pairing
-          const phoneToken = consume(TOKEN.STRING,
-            'Expected a phone number string after "login pairing".\n\nExample:\n  login pairing "2348012345678"');
-          login = { mode: 'pairing', phone: validatePairingPhone(phoneToken.value, phoneToken) };
+          // v2.1.2 — the phone may be a string literal (validated here at
+          // compile time) or any Plain value, typically a variable filled by
+          // `ask`:
+          //
+          //   ask "WhatsApp number: " as phone
+          //   whatsapp bot
+          //       auth "session"
+          //       login pairing phone
+          //   done
+          //
+          // Expression phones are validated at runtime before connecting.
+          if (peek().type === TOKEN.STRING) {
+            const phoneToken = advance();
+            login = { mode: 'pairing', phone: validatePairingPhone(phoneToken.value, phoneToken) };
+          } else {
+            login = { mode: 'pairing', phoneExpr: parseExpression() };
+          }
           continue;
         }
         throw new Error(makeError(

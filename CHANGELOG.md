@@ -4,6 +4,33 @@ All notable changes to Plain are documented here.
 
 ---
 
+## [2.1.2] — 2026
+
+### Deterministic console input is a first-class pairing source
+
+- `login pairing` now accepts any Plain value, not only a string literal.
+  The headline use is interactive linking:
+
+  ```plain
+  ask "WhatsApp number: " as phone
+
+  whatsapp bot
+      auth "session"
+      login pairing phone
+  done
+  ```
+
+- String literals keep their exact previous behaviour, including
+  compile-time validation of digits/length; the new value form is validated
+  at startup with the same teaching message before any connection attempt,
+  so bad input never reaches WhatsApp's servers.
+- `ask "<prompt>" as <name>` (terminal input via Node's `readline`, async
+  handled for you) is confirmed as a general Plain capability — its value
+  composes everywhere values are accepted. Existing compiler and runtime
+  tests cover it end to end, including its use in pairing.
+
+---
+
 ## [2.1.1] — 2026
 
 ### Portable databases (SQLite native or WebAssembly)

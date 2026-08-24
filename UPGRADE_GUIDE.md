@@ -1,10 +1,14 @@
-# Upgrade Guide — v1.1 → v2.1.1
+# Upgrade Guide — v1.1 → v2.1.2
 
 ## Overview
 
-Plain 2.1.1 turns the compiler into a complete backend platform: portable
-databases, an HTTP client, auth, sessions, uploads, cookies, rate limiting,
-OAuth and error handling are all first-class deterministic language features.
+Plain 2.1.2 keeps everything from 2.1.1 and adds one composition upgrade:
+`login pairing` accepts any Plain value, so a WhatsApp number can be typed in
+at runtime with `ask "WhatsApp number: " as phone` instead of being
+hard-coded. Plain 2.1.1 had already turned the compiler into a complete
+backend platform: portable databases, an HTTP client, auth, sessions,
+uploads, cookies, rate limiting, OAuth and error handling are all first-class
+deterministic language features.
 **No Plain language syntax was removed or changed.**
 
 All programs written for v1.0/v1.1 continue to compile and run without
@@ -22,7 +26,7 @@ Verify the version:
 
 ```bash
 plain version
-# Plain v2.1.1
+# Plain v2.1.2
 ```
 
 ---
@@ -79,6 +83,18 @@ start 3000
 New in this line: WhatsApp bots. A `whatsapp bot ... done` block links a real
 WhatsApp account (QR scan or pairing code) and answers messages — see the
 README's "WhatsApp Bots (v2.1.1)" section and `examples/whatsapp-bot/`.
+
+New in v2.1.2: `login pairing` accepts any value, so the number can be typed
+in at runtime:
+
+```plain
+ask "WhatsApp number: " as phone
+
+whatsapp bot
+    auth "session"
+    login pairing phone
+done
+```
 
 See the README's "Backend Services (v2.1.1)" section for every new feature
 with examples.

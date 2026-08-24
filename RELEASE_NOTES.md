@@ -1,8 +1,38 @@
-# Plain v2.1.1 — Release Notes
+# Plain v2.1.2 — Release Notes
 
 **Release date:** 2026
 
 ---
+
+## What's new in v2.1.2?
+
+### Pairing numbers from any value
+
+- `login pairing` accepts any Plain value, not only a string literal:
+
+  ```plain
+  ask "WhatsApp number: " as phone
+
+  whatsapp bot
+      auth "session"
+      login pairing phone
+  done
+  ```
+
+- String literals keep compile-time validation; the value form is validated
+  at startup with the same teaching message before connecting.
+- `ask "<prompt>" as <name>` (Node `readline` terminal input, async handled
+  for you) is confirmed as a general Plain capability and is now covered by
+  deterministic compiler and runtime tests, including its use in pairing.
+
+### Breaking changes
+
+- None. Existing Plain syntax is unchanged; the literal pairing form behaves
+  exactly as before.
+
+---
+
+# Plain v2.1.1 — Release Notes
 
 ## What is Plain 2.1.1?
 
@@ -74,7 +104,7 @@ to implement it in JavaScript.
   `tests/acceptance.test.js`.
 - New example `examples/whatsapp-bot/` (`qr.pln`, `pairing.pln`).
 - New feature suites `tests/v211.test.js` and `tests/whatsapp.test.js`; full
-  suite now 595 tests.
+  suite now 595 tests (603 as of v2.1.2).
 
 ### Breaking changes
 

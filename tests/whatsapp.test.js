@@ -94,11 +94,12 @@ async function waitFor(predicate, timeoutMs = 5000) {
 // Executes a compiled WhatsApp program against a fake @whiskeysockets/baileys
 // module. Returns the recorder so tests can fire socket events and inspect
 // what the bot did.
-async function runWhatsAppProgram(js) {
+async function runWhatsAppProgram(js, initialState = {}) {
   const recorder = {
     events: {},            // sock.ev.on registrations: name → handler
     socketConfigs: [],     // every makeWASocket(...) argument
     authFolders: [],       // every useMultiFileAuthState(folder)
+    keyStoreWraps: [],     // every makeCacheableSignalKeyStore(keys) call
     saveCredsCalls: 0,     // creds.update → saveCreds persistence calls
     pairingRequests: [],   // requestPairingCode(phone) numbers
     sentMessages: [],      // sendMessage(chat, { text })
@@ -106,7 +107,10 @@ async function runWhatsAppProgram(js) {
     logs: [],
     errors: [],
     timers: [],            // [fn, delayMs] captured instead of scheduled
+    askPrompts: [],        // every prompt passed to rl.question(...)
+    answers: [],           // queued console answers, shifted per ask
     credsRegistered: false,
+    ...initialState,
   };
 
   const sock = {
@@ -130,10 +134,13 @@ async function runWhatsAppProgram(js) {
     default: (config) => { recorder.socketConfigs.push(config); return sock; },
     useMultiFileAuthState: async (folder) => {
       recorder.authFolders.push(folder);
-      return { state: { creds: { registered: false }, keys: {} }, saveCreds: () => { recorder.saveCredsCalls++; } };
+      return {
+        state: { creds: { get registered() { return recorder.credsRegistered; } }, keys: {} },
+        saveCreds: () => { recorder.saveCredsCalls++; },
+      };
     },
     fetchLatestBaileysVersion: async () => ({ version: [6, 7, 18] }),
-    makeCacheableSignalKeyStore: (keys) => keys,
+    makeCacheableSignalKeyStore: (keys) => { recorder.keyStoreWraps.push({ keys }); return keys; },
     DisconnectReason: {
       loggedOut: 401, connectionClosed: 428, connectionLost: 409,
       timedOut: 408, restartedRequired: 515,
@@ -142,6 +149,15 @@ async function runWhatsAppProgram(js) {
   };
   const qrcodeStub = {
     generate: (qr, options) => recorder.qrRendered.push({ qr, options }),
+  };
+  const readlineStub = {
+    createInterface: () => ({
+      question: (prompt, cb) => {
+        recorder.askPrompts.push(prompt);
+        cb(recorder.answers.length > 0 ? recorder.answers.shift() : '');
+      },
+      close: () => {},
+    }),
   };
 
   const sandboxConsole = {
@@ -158,6 +174,7 @@ async function runWhatsAppProgram(js) {
   const stubRequire = (name) => {
     if (name === '@whiskeysockets/baileys') return baileysStub;
     if (name === 'qrcode-terminal') return qrcodeStub;
+    if (name === 'readline') return readlineStub;
     throw new Error('Unexpected require in test: ' + name);
   };
 
@@ -390,6 +407,30 @@ testAsync('runtime: startup creates the Baileys socket and registers lifecycle h
   }
 });
 
+testAsync('runtime: the socket uses the proven pairing-safe settings', async () => {
+  const rec = await runWhatsAppProgram(compileProgram(PAIRING_SOURCE));
+  const config = rec.socketConfigs[0];
+  if (!config) throw new Error('makeWASocket was never called');
+  if (JSON.stringify(config.browser) !== JSON.stringify(['Ubuntu', 'Edge', '20.0.04'])) {
+    throw new Error(`browser mismatch: ${JSON.stringify(config.browser)}`);
+  }
+  if (JSON.stringify(config.version) !== JSON.stringify([6, 7, 18])) {
+    throw new Error(`fetched Baileys version not passed through: ${JSON.stringify(config.version)}`);
+  }
+  for (const [key, expected] of [
+    ['syncFullHistory', false],
+    ['markOnlineOnConnect', false],
+    ['defaultQueryTimeoutMs', 60000],
+    ['keepAliveIntervalMs', 30000],
+    ['printQRInTerminal', false],
+  ]) {
+    if (config[key] !== expected) throw new Error(`${key} should be ${expected}, got ${config[key]}`);
+  }
+  if (rec.keyStoreWraps.length !== 1 || !config.auth || !config.auth.creds || !config.auth.keys) {
+    throw new Error('auth must carry creds with keys wrapped by makeCacheableSignalKeyStore');
+  }
+});
+
 testAsync('runtime: auth/session persists through the declared folder and saveCreds', async () => {
   const rec = await runWhatsAppProgram(compileProgram(QR_SOURCE));
   if (JSON.stringify(rec.authFolders) !== JSON.stringify(['session'])) {
@@ -399,9 +440,14 @@ testAsync('runtime: auth/session persists through the declared folder and saveCr
   if (rec.saveCredsCalls !== 1) throw new Error('creds.update did not persist credentials via saveCreds');
 });
 
-testAsync('pairing flow: a fresh session requests a code for the validated number', async () => {
+testAsync('pairing flow: a fresh session requests a code 2s after socket creation', async () => {
   const rec = await runWhatsAppProgram(compileProgram(PAIRING_SOURCE));
-  rec.events['connection.update']({ qr: 'QRDATA', connection: 'connecting' });
+  // The code is requested by a timer scheduled at socket-creation time — no
+  // QR event or any other trigger may be involved.
+  const pairTimer = rec.timers.find(([fn, delay]) => delay === 2000);
+  if (!pairTimer) throw new Error(`expected a 2000ms pairing timer, got ${JSON.stringify(rec.timers.map(t => t[1]))}`);
+  if (rec.pairingRequests.length !== 0) throw new Error('pairing code was requested before the 2 second delay');
+  pairTimer[0]();
   await waitFor(() => rec.pairingRequests.length > 0);
   if (rec.pairingRequests[0] !== '2348012345678') {
     throw new Error(`requestPairingCode received ${rec.pairingRequests[0]}`);
@@ -410,10 +456,9 @@ testAsync('pairing flow: a fresh session requests a code for the validated numbe
 });
 
 testAsync('pairing flow: an already-registered session never re-pairs', async () => {
-  const rec = await runWhatsAppProgram(compileProgram(PAIRING_SOURCE));
-  rec.credsRegistered = true;
-  rec.events['connection.update']({ qr: 'QRDATA', connection: 'connecting' });
+  const rec = await runWhatsAppProgram(compileProgram(PAIRING_SOURCE), { credsRegistered: true });
   await sleep(50);
+  for (const [fn] of rec.timers) fn(); // flush every pending timer
   if (rec.pairingRequests.length !== 0) throw new Error('paired device requested another code');
 });
 
@@ -567,6 +612,98 @@ testAsync('acceptance: the compiled example files boot against real-shaped event
   recQr.events['messages.upsert']({ type: 'notify', messages: [mockMessage('/anything')] });
   await waitFor(() => recQr.logs.length > 0);
   if (!JSON.parse(recQr.logs[0]).text) throw new Error('qr example logging broken');
+});
+
+// ── v2.1.2 — ask (general console input) + login pairing with a value ───────
+
+const ASK_PAIRING_SOURCE = [
+  'ask "WhatsApp number: " as phone',
+  '',
+  'whatsapp bot',
+  '    auth "session"',
+  '    login pairing phone',
+  '',
+  '    on message',
+  '        log message',
+  '    done',
+  'done',
+].join('\n');
+
+test('compiler: login pairing accepts a value, not only a string literal', () => {
+  const bot = parse(tokenize(ASK_PAIRING_SOURCE)).body.find((n) => n.type === 'WhatsAppBotStatement');
+  if (!bot) throw new Error('whatsapp bot statement missing');
+  if (bot.login.mode !== 'pairing') throw new Error('login mode wrong');
+  if (!bot.login.phoneExpr || bot.login.phoneExpr.name !== 'phone') {
+    throw new Error(`expected the phone expression, got ${JSON.stringify(bot.login)}`);
+  }
+});
+
+test('compiler: login pairing still parses the literal form with compile-time validation', () => {
+  const bot = parse(tokenize(PAIRING_SOURCE)).body.find((n) => n.type === 'WhatsAppBotStatement');
+  if (bot.login.mode !== 'pairing' || bot.login.phone !== '2348012345678' || bot.login.phoneExpr) {
+    throw new Error(`literal form broken: ${JSON.stringify(bot.login)}`);
+  }
+  assertThrows(
+    () => parse(tokenize('whatsapp bot\nlogin pairing "abc"\ndone')),
+    'is not a valid phone number for "login pairing"',
+  );
+});
+
+test('generate: the pairing phone flows from the variable into the runtime options', () => {
+  const js = compileProgram(ASK_PAIRING_SOURCE);
+  if (!js.includes("login: { mode: 'pairing', phone: (phone) },") && !js.includes("login: { mode: 'pairing', phone:(phone) },")) {
+    throw new Error('expected the variable to be passed through:\n' +
+      js.split('\n').filter((l) => l.includes('login:')).join('\n'));
+  }
+});
+
+test('compiler: ask + expression pairing compiles deterministically and formats cleanly', () => {
+  const first = compileProgram(ASK_PAIRING_SOURCE);
+  const second = compileProgram(ASK_PAIRING_SOURCE);
+  if (first !== second) throw new Error('compilation is not deterministic');
+  const formatted = format(ASK_PAIRING_SOURCE);
+  if (!formatted.includes('login pairing phone')) throw new Error('formatter lost the value form');
+});
+
+testAsync('runtime: ask reads console input asynchronously into the variable', async () => {
+  const rec = await runWhatsAppProgram(compileProgram('ask "Name: " as name\nshow name'), {
+    answers: ['Ada Lovelace'],
+  });
+  if (rec.askPrompts[0] !== 'Name: ') {
+    throw new Error(`wrong prompt: ${JSON.stringify(rec.askPrompts[0])}`);
+  }
+  await sleep(10);
+  const printed = rec.logs.join('|');
+  if (!printed.includes('Ada Lovelace')) throw new Error(`answer not bound to the variable: ${printed}`);
+});
+
+testAsync('runtime: ask feeds login pairing end to end', async () => {
+  const rec = await runWhatsAppProgram(compileProgram(ASK_PAIRING_SOURCE), {
+    answers: ['2348012345678'],
+  });
+  if (rec.askPrompts[0] !== 'WhatsApp number: ') throw new Error('prompt never reached readline');
+  if (rec.socketConfigs.length !== 1) throw new Error('socket not started after the answer');
+  const pairTimer = rec.timers.find(([fn, delay]) => delay === 2000);
+  if (!pairTimer) throw new Error('the 2s pairing timer was not scheduled');
+  if (rec.pairingRequests.length !== 0) throw new Error('paired before the 2s wait');
+  pairTimer[0]();
+  await waitFor(() => rec.pairingRequests.length > 0);
+  if (rec.pairingRequests[0] !== '2348012345678') {
+    throw new Error(`pairing used ${rec.pairingRequests[0]} instead of the typed number`);
+  }
+  if (rec.qrRendered.length !== 0) throw new Error('value-based pairing fell back to QR');
+});
+
+testAsync('runtime: a bad runtime phone value teaches instead of crashing silently', async () => {
+  let message = null;
+  try {
+    await runWhatsAppProgram(compileProgram(ASK_PAIRING_SOURCE), { answers: ['hello'] });
+  } catch (e) {
+    message = e.message;
+  }
+  if (!message || !message.includes('is not a valid pairing phone number')) {
+    throw new Error(`expected the teaching error, got: ${message}`);
+  }
 });
 
 // ── Summary ─────────────────────────────────────────────────────────────────

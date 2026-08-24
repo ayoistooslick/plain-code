@@ -709,6 +709,10 @@ ask "What is your name?" as who
 show `Hey ${who}`
 ```
 
+It is a general Plain capability, not tied to any feature: whatever the user
+types becomes an ordinary value you can `show`, compare, or pass to anything
+that takes a value — including `login pairing phone` in a WhatsApp bot (§14).
+
 JavaScript Gateway blocks remain the pressure valve for what Plain's surface
 doesn't cover — method chains, `Math.*`, streams, `finally`. Since v2.1.1,
 error handling (`try`/`recover`) and awaiting (`wait for`) are native, so you
@@ -877,7 +881,9 @@ whatsapp bot
 
     login qr                                // scan the printed QR code, or:
     // login pairing "2348012345678"        // type the printed XXXX-XXXX code
-                                            // on the phone instead
+                                            // on the phone instead, or:
+    // login pairing phone                  // any value — e.g. typed in at
+                                            // runtime (see below)
 
     on message                              // every incoming text lands here
         log message                         // prints the normalized record
@@ -892,6 +898,14 @@ whatsapp bot
         done
     done
 done
+
+// Interactive linking: prompt for the number instead of hard-coding it.
+ask "WhatsApp number: " as phone
+
+whatsapp bot
+    auth "session"
+    login pairing phone
+done
 ```
 
 Sharp edges:
@@ -899,7 +913,9 @@ Sharp edges:
 - One bot per program. Omit `auth` to use the default folder
   (`plain-whatsapp-auth`), omit `login` for QR linking. Pairing numbers are
   digits only after normalization (`+234 801-234-5678` works) and must be
-  8–15 of them — anything else fails at compile time.
+  8–15 of them. String literals are validated at compile time; a value form
+  like `login pairing phone` is validated when the bot starts, so bad input
+  fails with the same teaching message before any connection attempt.
 - Inside `on message`, `message` holds `{ text, chat, sender, name, id,
   time, isGroup }` (times in milliseconds). `reply "<value>"` answers the
   current chat; non-string values are sent as JSON.
@@ -1026,7 +1042,9 @@ include suggestions ("Did you mean ...") — trust them.
 >   sends message / disconnects ... done`, `send socket x`, `broadcast x`.
 > - Cache: `cache "redis://..."` then `cacheGet/cacheSet/cacheDelete`.
 > - WhatsApp: `whatsapp bot ... done` with `auth "<folder>"`, `login qr` or
->   `login pairing "<digits>"` (8–15 digits), and `on message ... done`
+>   `login pairing "<digits>"` (8–15 digits) or `login pairing <value>` —
+>   typically a variable filled by `ask "WhatsApp number: " as phone` — and
+>   `on message ... done`
 >   handlers using `message.text`, `reply "..."`
 >   (also `log message`). One bot per program.
 > - Escape hatch: `remember result as javascript ... return value ... done`.
@@ -1039,5 +1057,5 @@ include suggestions ("Did you mean ...") — trust them.
 
 ---
 
-*Every claim in this file reflects the deterministic compiler as of v2.1.1.
+*Every claim in this file reflects the deterministic compiler as of v2.1.2.
 When in doubt: `plain check` is ground truth.*

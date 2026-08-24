@@ -172,7 +172,7 @@ const BUILTIN_DECLARATIONS = {
     `  async function __whatsappStart(options) {`,
     `    const baileys = require('@whiskeysockets/baileys');`,
     `    const makeWASocket = baileys.default;`,
-    `    const { useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, DisconnectReason, Browsers } = baileys;`,
+    `    const { useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, DisconnectReason } = baileys;`,
     `    const folder = options.folder || 'plain-whatsapp-auth';`,
     `    const mode = options.login && options.login.mode === 'pairing' ? 'pairing' : 'qr';`,
     `    const pairingPhone = mode === 'pairing' ? __waNormalizePhone(options.login.phone) : null;`,
@@ -186,37 +186,49 @@ const BUILTIN_DECLARATIONS = {
     `        const { state, saveCreds } = await useMultiFileAuthState(folder);`,
     `        let version;`,
     `        try { version = (await fetchLatestBaileysVersion()).version; } catch (_) {}`,
+    // Proven socket settings: these exact options are required for pairing
+    // codes to survive WhatsApp's handshake without a 428 connection close.
     `        sock = makeWASocket({`,
     `          ...(version ? { version } : {}),`,
-    `          browser: Browsers.windows('Firefox'),`,
+    `          browser: ['Ubuntu', 'Edge', '20.0.04'],`,
     `          printQRInTerminal: false,`,
+    `          syncFullHistory: false,`,
+    `          markOnlineOnConnect: false,`,
+    `          defaultQueryTimeoutMs: 60000,`,
+    `          keepAliveIntervalMs: 30000,`,
     `          logger: __waSilentLogger,`,
     `          auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, __waSilentLogger) },`,
     `        });`,
     `        sock.ev.on('creds.update', saveCreds);`,
-    // Connection lifecycle: QR / pairing codes while linking, a friendly note
-    // on open, and automatic reconnection on every close except loggedOut.
+    // Pairing codes are requested two seconds after socket creation — asking
+    // earlier aborts the link attempt. Plain calls requestPairingCode(phone)
+    // with no custom suffix; the number was validated at compile time.
+    `        if (mode === 'pairing' && !state.creds.registered) {`,
+    `          setTimeout(() => {`,
+    `            if (!sock) return;`,
+    `            sock.requestPairingCode(pairingPhone).then((rawCode) => {`,
+    `              const pretty = String(rawCode || '').replace(/[^A-Za-z0-9]/g, '').replace(/(.{4})(?=.)/g, '$1-');`,
+    `              console.log('WhatsApp pairing code: ' + pretty);`,
+    `              console.log('Enter it on your phone: WhatsApp > Settings > Linked devices > Link a device > Link with phone number instead.');`,
+    `            }).catch((error) => {`,
+    `              console.error('WhatsApp pairing code failed: ' + error.message);`,
+    `            });`,
+    `          }, 2000);`,
+    `        }`,
+    // Connection lifecycle: the QR code while linking, a friendly note on
+    // open, and automatic reconnection on every close except loggedOut.
     `        sock.ev.on('connection.update', async (update) => {`,
     `          try {`,
     `            const statusCode = update.lastDisconnect && update.lastDisconnect.error && (`,
     `              (update.lastDisconnect.error.output || {}).statusCode != null`,
     `                ? update.lastDisconnect.error.output.statusCode`,
     `                : (((update.lastDisconnect.error.error || {}).output || {}).statusCode));`,
-    `            if (update.qr) {`,
-    `              if (mode === 'pairing') {`,
-    `                if (!sock.authState.creds.registered) {`,
-    `                  const rawCode = await sock.requestPairingCode(pairingPhone);`,
-    `                  const pretty = String(rawCode || '').replace(/[^A-Za-z0-9]/g, '').replace(/(.{4})(?=.)/g, '$1-');`,
-    `                  console.log('WhatsApp pairing code: ' + pretty);`,
-    `                  console.log('Enter it on your phone: WhatsApp > Settings > Linked devices > Link a device > Link with phone number instead.');`,
-    `                }`,
-    `              } else {`,
-    `                console.log('Scan this QR code with WhatsApp (Settings > Linked devices > Link a device):');`,
-    `                try {`,
-    `                  require('qrcode-terminal').generate(update.qr, { small: true });`,
-    `                } catch (_) {`,
-    `                  console.log(update.qr);`,
-    `                }`,
+    `            if (update.qr && mode === 'qr') {`,
+    `              console.log('Scan this QR code with WhatsApp (Settings > Linked devices > Link a device):');`,
+    `              try {`,
+    `                require('qrcode-terminal').generate(update.qr, { small: true });`,
+    `              } catch (_) {`,
+    `                console.log(update.qr);`,
     `              }`,
     `            }`,
     `            if (update.connection === 'open') {`,
@@ -1681,9 +1693,17 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     case 'WhatsAppBotStatement': {
       ensureBuiltin(context, 'whatsapp');
       markAsync(context);
-      const loginArg = node.login.mode === 'pairing'
-        ? `{ mode: 'pairing', phone: ${JSON.stringify(node.login.phone)} }`
-        : `{ mode: 'qr' }`;
+      // v2.1.2 — the pairing phone may be a compile-time literal or any
+      // Plain expression (e.g. a variable filled by `ask`). Runtime values
+      // are normalized/validated by __waNormalizePhone at startup.
+      let loginArg;
+      if (node.login.mode === 'pairing') {
+        loginArg = node.login.phoneExpr != null
+          ? `{ mode: 'pairing', phone: (${generateExpr(node.login.phoneExpr, context)}) }`
+          : `{ mode: 'pairing', phone: ${JSON.stringify(node.login.phone)} }`;
+      } else {
+        loginArg = `{ mode: 'qr' }`;
+      }
       const lines = [
         `${indent}await __whatsappStart({`,
         `${indent}  folder: ${JSON.stringify(node.authFolder)},`,

@@ -5,19 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
   <title>Plain — The programming language that reads like English</title>
-  <meta name="description" content="Plain is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v2.1.1 — WhatsApp bots, backend services, portable databases.">
+  <meta name="description" content="Plain is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
   <meta name="keywords" content="Plain, IOPL, intent-oriented programming, programming language, JavaScript, Plain language, plain-code, beginner programming language">
   <link rel="canonical" href="https://github.com/ayoistooslick/plain-code">
 
   <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://ayoistooslick.github.io/plain-code/">
   <meta property="og:title"       content="Plain — The programming language that reads like English">
-  <meta property="og:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.1 — WhatsApp bots, backend services, portable databases.">
+  <meta property="og:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
   <meta property="og:image"       content="https://ayoistooslick.github.io/plain-code/og.png">
 
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="Plain — The programming language that reads like English">
-  <meta name="twitter:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.1 — WhatsApp bots, backend services, portable databases.">
+  <meta name="twitter:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
   <meta name="twitter:image"       content="https://ayoistooslick.github.io/plain-code/og.png">
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -33,7 +33,7 @@
   <div class="nav-inner">
     <a class="nav-logo" href="#top">
       <span class="logo-word">Plain</span>
-      <span class="logo-ver">v2.1.1</span>
+      <span class="logo-ver">v2.1.2</span>
     </a>
 
     <ul class="nav-links" role="list">
@@ -96,7 +96,7 @@
       <div class="hero-copy">
         <div class="hero-badge">
           <i class="fa-solid fa-bolt"></i>
-          v2.1.1 &mdash; WhatsApp bots &middot; backend services &middot; portable databases
+          v2.1.2 &mdash; console input &middot; pairing from any value &middot; WhatsApp bots
         </div>
         <h1 class="hero-title">
           The language<br>
@@ -165,7 +165,7 @@
       <div class="stat-label">Keywords</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value">595</div>
+      <div class="stat-value">603</div>
       <div class="stat-label">Tests Passing</div>
     </div>
     <div class="stat-item">
@@ -2010,7 +2010,7 @@ Hello, World!</code></pre>
     <div class="section-tag"><i class="fa-solid fa-map"></i> Roadmap</div>
     <h2 class="section-title">What&rsquo;s next</h2>
     <p class="section-lead">
-      Plain 1.0 is stable, v1.1 added Plain Expressions, v1.1.1 brought the JavaScript Gateway, v2.0 rebuilt the compiler platform and added Telegram bots, v2.0.1 shipped OCR plus first-class npm aliases and version ranges, and v2.1.1 completes the backend services. Here&rsquo;s what&rsquo;s planned next.
+      Plain 1.0 is stable, v1.1 added Plain Expressions, v1.1.1 brought the JavaScript Gateway, v2.0 rebuilt the compiler platform and added Telegram bots, v2.0.1 shipped OCR plus first-class npm aliases and version ranges, v2.1.1 completed the backend services with WhatsApp bots, and v2.1.2 let WhatsApp pairing numbers come from any value. Here&rsquo;s what&rsquo;s planned next.
     </p>
 
     <div class="roadmap">
@@ -2139,6 +2139,21 @@ Hello, World!</code></pre>
       </div>
 
       <div class="roadmap-item">
+        <div class="roadmap-version">v2.1.2</div>
+        <div class="roadmap-line-wrap">
+          <div class="roadmap-dot done"></div>
+        </div>
+        <div class="roadmap-content">
+          <h4>v2.1.2 &mdash; Interactive Input <span class="badge badge-green" style="margin-left:.5rem"><i class="fa-solid fa-check"></i> Shipped</span></h4>
+          <ul>
+            <li><code>login pairing</code> accepts any value, not only a string literal</li>
+            <li>Prompt for the WhatsApp number at runtime: <code>ask "WhatsApp number: " as phone</code></li>
+            <li>Literals keep compile-time validation; runtime values are validated before connecting</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
         <div class="roadmap-version">v2.1.1</div>
         <div class="roadmap-line-wrap">
           <div class="roadmap-dot done"></div>
@@ -2180,7 +2195,7 @@ Hello, World!</code></pre>
       <div class="faq-item">
         <button class="faq-question">Is Plain production-ready? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Plain 2.1.1 includes runtime dependency detection, automatic installation, OCR, npm aliases and version ranges, portable databases, an HTTP client, sessions, uploads, rate limiting, deployment-oriented CLI commands, and WhatsApp bots &mdash; backed by a test suite of 595 checks. It compiles to standard Node.js-compatible JavaScript and remains well-suited for personal projects, tooling, and learning.
+          Plain 2.1.2 includes runtime dependency detection, automatic installation, OCR, npm aliases and version ranges, portable databases, an HTTP client, sessions, uploads, rate limiting, deployment-oriented CLI commands, WhatsApp bots, and interactive terminal input &mdash; backed by a test suite of 603 checks. It compiles to standard Node.js-compatible JavaScript and remains well-suited for personal projects, tooling, and learning.
         </div>
       </div>
 
@@ -2208,7 +2223,7 @@ Hello, World!</code></pre>
       <div class="faq-item">
         <button class="faq-question">Can Plain build WhatsApp bots? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Yes, as of v2.1.1. Write a <code>whatsapp bot</code> block with an <code>auth</code> folder and either <code>login qr</code> or <code>login pairing "&lt;number&gt;"</code>. The first run links a real WhatsApp account by scanning the printed QR code or typing the pairing code into Linked Devices; later runs reconnect from saved credentials. Incoming messages flow through <code>on message ... done</code> handlers, and <code>reply</code> answers the current chat. Baileys is installed automatically &mdash; it never appears in your source.
+          Yes, as of v2.1.1. Write a <code>whatsapp bot</code> block with an <code>auth</code> folder and either <code>login qr</code>, <code>login pairing "&lt;number&gt;"</code>, or <code>login pairing phone</code> with the number typed in at runtime via <code>ask</code>. The first run links a real WhatsApp account by scanning the printed QR code or typing the pairing code into Linked Devices; later runs reconnect from saved credentials. Incoming messages flow through <code>on message ... done</code> handlers, and <code>reply</code> answers the current chat. Baileys is installed automatically &mdash; it never appears in your source.
         </div>
       </div>
 
@@ -2385,7 +2400,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.</code></pre>
   <div class="footer-bottom">
     <p>Copyright &copy; 2026 Ayokunle. Released under the MIT License.</p>
     <span class="badge badge-blue version-badge">
-      <i class="fa-solid fa-bolt"></i> Plain v2.1.1
+      <i class="fa-solid fa-bolt"></i> Plain v2.1.2
     </span>
   </div>
 </footer>

@@ -6,7 +6,7 @@
 
   <!-- SEO -->
   <title>Plain — The programming language that reads like English</title>
-  <meta name="description" content="Plain is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v2.1.1 — WhatsApp bots, backend services, portable databases.">
+  <meta name="description" content="Plain is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
   <meta name="keywords" content="Plain, IOPL, intent-oriented programming, programming language, JavaScript, Plain language, plain-code, beginner programming language">
   <link rel="canonical" href="https://plain-code.name.ng/">
 
@@ -14,13 +14,13 @@
   <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://plain-lang.dev/">
   <meta property="og:title"       content="Plain — The programming language that reads like English">
-  <meta property="og:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.1 — WhatsApp bots, backend services, portable databases.">
+  <meta property="og:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
   <meta property="og:image"       content="https://plain-code.name.ng/og.png">
 
   <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="Plain — The programming language that reads like English">
-  <meta name="twitter:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.1 — WhatsApp bots, backend services, portable databases.">
+  <meta name="twitter:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
   <meta name="twitter:image"       content="https://plain-code.name.ng/og.png">
 
   <!-- Font Awesome -->
@@ -38,7 +38,7 @@
   <div class="nav-inner">
     <a class="nav-logo" href="#top">
       <span class="logo-word">Plain</span>
-      <span class="logo-ver">v2.1.1</span>
+      <span class="logo-ver">v2.1.2</span>
     </a>
 
     <ul class="nav-links" role="list">
@@ -97,7 +97,7 @@
       <div class="hero-copy">
         <div class="hero-badge">
           <i class="fa-solid fa-bolt"></i>
-          v2.1.1 &mdash; WhatsApp bots &middot; backend services &middot; portable databases
+          v2.1.2 &mdash; console input &middot; pairing from any value &middot; WhatsApp bots
         </div>
         <h1 class="hero-title">
           The language<br>
@@ -170,7 +170,7 @@
       <div class="stat-label">Keywords</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value">595<span class="unit">+</span></div>
+      <div class="stat-value">603<span class="unit">+</span></div>
       <div class="stat-label">Tests Passing</div>
     </div>
     <div class="stat-item">
@@ -1249,7 +1249,7 @@ Plain v1.0.0</code></pre>
     <div class="section-tag"><i class="fa-solid fa-map"></i> Roadmap</div>
     <h2 class="section-title">What&rsquo;s next</h2>
     <p class="section-lead">
-      Plain 1.0 was the first stable release. v1.1 added Plain Expressions, v1.1.1 the JavaScript Gateway, v2.0 the rebuilt compiler platform and Telegram bots, v2.0.1 OCR plus first-class npm aliases and version ranges, and v2.1.1 backend services plus WhatsApp bots.
+      Plain 1.0 was the first stable release. v1.1 added Plain Expressions, v1.1.1 the JavaScript Gateway, v2.0 the rebuilt compiler platform and Telegram bots, v2.0.1 OCR plus first-class npm aliases and version ranges, v2.1.1 backend services plus WhatsApp bots, and v2.1.2 WhatsApp pairing numbers from any value.
     </p>
 
     <div class="roadmap">
@@ -1340,6 +1340,21 @@ Plain v1.0.0</code></pre>
       </div>
 
       <div class="roadmap-item">
+        <div class="roadmap-version">v2.1.2</div>
+        <div class="roadmap-line-wrap">
+          <div class="roadmap-dot done"></div>
+        </div>
+        <div class="roadmap-content">
+          <h4>v2.1.2 &mdash; Interactive Input <span class="badge badge-green" style="margin-left:.5rem"><i class="fa-solid fa-check"></i> Shipped</span></h4>
+          <ul>
+            <li><code>login pairing</code> accepts any value, not only a string literal</li>
+            <li>Prompt for the WhatsApp number at runtime: <code>ask "WhatsApp number: " as phone</code></li>
+            <li>Literals keep compile-time validation; runtime values are validated before connecting</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
         <div class="roadmap-version">v2.1.1</div>
         <div class="roadmap-line-wrap">
           <div class="roadmap-dot done"></div>
@@ -1397,7 +1412,7 @@ Plain v1.0.0</code></pre>
       <div class="faq-item">
         <button class="faq-question">Is Plain production-ready? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Plain 2.1.1 includes runtime dependency detection, automatic installation, OCR, portable databases, an HTTP client, sessions, uploads, rate limiting, deployment-oriented CLI commands, and WhatsApp bots — backed by a test suite of 595 checks. It compiles to standard Node.js-compatible JavaScript and is well-suited for personal projects, tooling, and learning. For large production systems, evaluate whether the JavaScript ecosystem's tooling (TypeScript, linters, bundlers) is needed alongside it.
+          Plain 2.1.2 includes runtime dependency detection, automatic installation, OCR, portable databases, an HTTP client, sessions, uploads, rate limiting, deployment-oriented CLI commands, WhatsApp bots, and interactive terminal input — backed by a test suite of 603 checks. It compiles to standard Node.js-compatible JavaScript and is well-suited for personal projects, tooling, and learning. For large production systems, evaluate whether the JavaScript ecosystem's tooling (TypeScript, linters, bundlers) is needed alongside it.
         </div>
       </div>
 
@@ -1579,7 +1594,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.</code></pre>
   <div class="footer-bottom">
     <p>Copyright &copy; 2024 Ayokunle. Released under the MIT License.</p>
     <span class="badge badge-blue version-badge">
-      <i class="fa-solid fa-bolt"></i> Plain v2.1.1
+      <i class="fa-solid fa-bolt"></i> Plain v2.1.2
     </span>
   </div>
 </footer>

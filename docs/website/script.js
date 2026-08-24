@@ -1,4 +1,4 @@
-/* Plain v2.1.1 — Documentation Website JS */
+/* Plain v2.1.2 — Documentation Website JS */
 
 /* ── Copy buttons ────────────────────────────────────────────────────────── */
 function initCopyButtons() {

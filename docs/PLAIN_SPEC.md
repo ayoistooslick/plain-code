@@ -1,4 +1,4 @@
-# Plain Language Specification (v2.1.1)
+# Plain Language Specification (v2.1.2)
 
 Version: 2.1.1
 Status: Stable
@@ -818,7 +818,7 @@ let text = await __ocr("scan.png");
 
 ---
 
-## WhatsApp Bots (v2.1.1)
+## WhatsApp Bots (v2.1.1, pairing values in v2.1.2)
 
 A `whatsapp bot` block declares one WhatsApp connection and its message
 handlers. The implementation package (`@whiskeysockets/baileys`, with
@@ -828,6 +828,7 @@ it never appears in Plain source.
     whatsapp bot
         auth "session"                      // credential folder
         login pairing "2348012345678"       // or: login qr
+                                            // or: login pairing phone
 
         on message
             log message
@@ -843,6 +844,15 @@ it never appears in Plain source.
         done
     done
 
+Interactive linking — the number may come from any value:
+
+    ask "WhatsApp number: " as phone
+
+    whatsapp bot
+        auth "session"
+        login pairing phone
+    done
+
 Syntax:
 
 - The block opens with `whatsapp bot` and closes with `done`. It may contain
@@ -856,6 +866,10 @@ Syntax:
   pairing code instead. Pairing numbers are validated at compile time: after
   stripping separators and a leading plus (`+234 801-234-5678`) they must be
   8–15 digits.
+- Since v2.1.2, `login pairing` also accepts any Plain value
+  (`login pairing phone`) — typically a variable filled by `ask`. Values are
+  normalized and validated when the bot starts; invalid input fails with the
+  same teaching message before any connection attempt.
 - `on message ... done` registers one handler for incoming messages. Inside:
   - `message` refers to the normalized record `{ text, chat, sender, name,
     id, time, isGroup }` of the current delivery.
@@ -885,6 +899,7 @@ const { __whatsappStart, __whatsappOnMessage, __whatsappReply } = (() => {
   // here, behind require('@whiskeysockets/baileys')
 })();
 await __whatsappStart({ folder: "session", login: { mode: 'pairing', phone: "2348012345678" } });
+// value form (v2.1.2): login: { mode: 'pairing', phone: (phone) }
 __whatsappOnMessage(async (__waCtx) => {
   console.log(__waCtx.message);
   if (__waCtx.message.text === "/start") {
