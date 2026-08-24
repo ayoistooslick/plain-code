@@ -1,6 +1,6 @@
 {
   "name": "@ayoxx/plain-code",
-  "version": "2.1.1",
+  "version": "2.1.1-test",
   "description": "Plain — an Intent-Oriented Programming Language. When even a simple sentence can be code.",
   "main": "compiler/cli.js",
   "preferGlobal": true,
