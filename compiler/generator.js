@@ -20,6 +20,10 @@ const KNOWN_PACKAGES = {
 const NPM_NAME = {
   sqlite: 'better-sqlite3',
   postgres: 'pg',
+  // v2.1.1 — portable WebAssembly SQLite engine used by the "database"
+  // statement as an automatic fallback (or explicit choice) when
+  // better-sqlite3's native binding is unavailable.
+  'wasm-sqlite': 'sql.js',
 };
 
 // JavaScript reserved words that cannot be used as a const binding name.
@@ -120,6 +124,387 @@ const BUILTIN_DECLARATIONS = {
     `function __cacheClient() {`,
     `  if (!__cache) throw new Error('Cache: no cache configured. Add a cache "<redis-url>" statement first.');`,
     `  return __cache;`,
+    `}`,
+  ].join('\n'),
+  // v2.1.1 — HTTP client runtime on the global fetch API (Node.js 18+).
+  // Every response becomes a Plain-friendly record: { ok, status, headers,
+  // data }, where data holds parsed JSON when the content type says JSON.
+  http: [
+    `async function __httpRequest(method, url, options = {}) {`,
+    `  if (typeof fetch !== 'function') {`,
+    `    throw new Error('HTTP requests need Node.js 18 or newer (global fetch is missing). Current version: ' + process.version);`,
+    `  }`,
+    `  const timeoutMs = options.timeoutMs == null ? 30000 : Number(options.timeoutMs);`,
+    `  const controller = new AbortController();`,
+    `  const timer = setTimeout(() => controller.abort(), timeoutMs);`,
+    `  let response;`,
+    `  try {`,
+    `    response = await fetch(url, {`,
+    `      method,`,
+    `      headers: options.headers,`,
+    `      body: options.body == null ? undefined`,
+    `        : (typeof options.body === 'string' || Buffer.isBuffer(options.body) ? options.body : JSON.stringify(options.body)),`,
+    `      signal: controller.signal,`,
+    `    });`,
+    `  } catch (error) {`,
+    `    clearTimeout(timer);`,
+    `    if (error.name === 'AbortError') {`,
+    `      throw new Error(method + ' ' + url + ' timed out after ' + timeoutMs + 'ms.');`,
+    `    }`,
+    `    throw new Error(method + ' ' + url + ' failed: ' + error.message);`,
+    `  }`,
+    `  clearTimeout(timer);`,
+    `  const text = await response.text();`,
+    `  let data = text;`,
+    `  const contentType = response.headers.get('content-type') || '';`,
+    `  if (contentType.includes('json')) {`,
+    `    try { data = JSON.parse(text); } catch (_) {}`,
+    `  }`,
+    `  return { ok: response.ok, status: response.status, headers: Object.fromEntries(response.headers.entries()), data };`,
+    `}`,
+  ].join('\n'),
+  // v2.1.1 — file upload runtime (multer behind "accept uploads"). Files are
+  // held in memory by default or written to disk when a folder is given.
+  // Normalised records expose: name, type, size, data (buffer) and path.
+  uploads: [
+    `function __uploads(options = {}) {`,
+    `  const multer = require('multer');`,
+    `  if (options.folder) require('fs').mkdirSync(options.folder, { recursive: true });`,
+    `  const config = {`,
+    `    storage: options.folder`,
+    `      ? multer.diskStorage({ destination: (_req, _file, cb) => cb(null, options.folder) })`,
+    `      : multer.memoryStorage(),`,
+    `  };`,
+    `  if (options.limitBytes != null) config.limits = { fileSize: options.limitBytes };`,
+    `  if (options.mimes && options.mimes.length) {`,
+    `    config.fileFilter = (_req, file, cb) => {`,
+    `      if (options.mimes.includes(file.mimetype)) return cb(null, true);`,
+    `      const error = new Error('Upload rejected: "' + file.originalname + '" has type "' + file.mimetype + '". Allowed types: ' + options.mimes.join(', '));`,
+    `      error.statusCode = 415;`,
+    `      return cb(error);`,
+    `    };`,
+    `  }`,
+    `  const handler = multer(config).any();`,
+    `  return (req, res, next) => {`,
+    `    handler(req, res, (error) => {`,
+    `      if (!error) return next();`,
+    `      const status = error.statusCode || (error.code === 'LIMIT_FILE_SIZE' ? 413 : 400);`,
+    `      const message = error.code === 'LIMIT_FILE_SIZE'`,
+    `        ? 'Upload rejected: file exceeds the size limit (' + options.limitBytes + ' bytes).'`,
+    `        : error.message;`,
+    `      res.status(status).json({ error: message });`,
+    `    });`,
+    `  };`,
+    `}`,
+    `function __normalizeUpload(file) {`,
+    `  if (!file) return null;`,
+    `  return { name: file.originalname, type: file.mimetype, size: file.size, data: file.buffer || null, path: file.path || null };`,
+    `}`,
+    `function __uploadedFile(req, field) {`,
+    `  return __normalizeUpload((req.files || []).find((f) => f.fieldname === field) || null);`,
+    `}`,
+    `function __uploadedFiles(req, field) {`,
+    `  return (req.files || []).filter((f) => f.fieldname === field).map(__normalizeUpload);`,
+    `}`,
+  ].join('\n'),
+  // v2.1.1 — cookie helpers shared by the cookie() accessor and the session
+  // runtime.
+  cookies: [
+    `function __parseCookies(header) {`,
+    `  const jar = {};`,
+    `  for (const part of String(header || '').split(';')) {`,
+    `    const index = part.indexOf('=');`,
+    `    if (index === -1) continue;`,
+    `    try {`,
+    `      jar[part.slice(0, index).trim()] = decodeURIComponent(part.slice(index + 1).trim());`,
+    `    } catch (_) {`,
+    `      jar[part.slice(0, index).trim()] = part.slice(index + 1).trim();`,
+    `    }`,
+    `  }`,
+    `  return jar;`,
+    `}`,
+    `function __cookieValue(req, name) {`,
+    `  const value = __parseCookies(req.headers.cookie)[String(name)];`,
+    `  return value === undefined ? null : value;`,
+    `}`,
+  ].join('\n'),
+  // v2.1.1 — session runtime. Cookie-signed session ids backed by an
+  // in-memory store (sessions reset when the server restarts).
+  sessions: [
+    `const __sessionStore = new Map();`,
+    `const __sessionsCrypto = require('crypto');`,
+    `function __enableSessions(secret) {`,
+    `  return (req, res, next) => {`,
+    `    const cookies = __parseCookies(req.headers.cookie);`,
+    `    req.__session = null;`,
+    `    const sid = cookies['plain.sid'];`,
+    `    if (sid && sid.startsWith('s:') && sid.indexOf('.', 2) !== -1) {`,
+    `      const dot = sid.indexOf('.', 2);`,
+    `      const id = sid.slice(2, dot);`,
+    `      const expected = __sessionsCrypto.createHmac('sha256', String(secret)).update(id).digest('base64url');`,
+    `      if (__sessionStore.has(id) && sid.slice(dot + 1) === expected) {`,
+    `        req.__session = __sessionStore.get(id);`,
+    `      }`,
+    `    }`,
+    `    if (!req.__session) {`,
+    `      const id = __sessionsCrypto.randomUUID();`,
+    `      req.__session = {};`,
+    `      __sessionStore.set(id, req.__session);`,
+    `      const signature = __sessionsCrypto.createHmac('sha256', String(secret)).update(id).digest('base64url');`,
+    `      res.setHeader('Set-Cookie', 'plain.sid=s:' + id + '.' + signature + '; Path=/; HttpOnly; SameSite=Lax');`,
+    `    }`,
+    `    next();`,
+    `  };`,
+    `}`,
+    `function __sessionOf(request) {`,
+    `  if (!request.__session) throw new Error('Sessions are not enabled. Add "enable sessions <secret>" before reading "session of request".');`,
+    `  return request.__session;`,
+    `}`,
+    `function __userOf(request) {`,
+    `  return request.__oauthUser || (request.__session && request.__session.user) || null;`,
+    `}`,
+    `function __destroySession(request, response) {`,
+    `  const sid = __parseCookies(request.headers.cookie)['plain.sid'];`,
+    `  if (sid && sid.startsWith('s:') && sid.indexOf('.', 2) !== -1) {`,
+    `    __sessionStore.delete(sid.slice(2, sid.indexOf('.', 2)));`,
+    `  }`,
+    `  response.setHeader('Set-Cookie', 'plain.sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');`,
+    `}`,
+  ].join('\n'),
+  // v2.1.1 — authentication runtime: scrypt password hashing and signed
+  // tokens (HS256 format), both zero-dependency.
+  auth: [
+    `const __authCrypto = require('crypto');`,
+    `function hashPassword(password) {`,
+    `  const salt = __authCrypto.randomBytes(16).toString('hex');`,
+    `  const hash = __authCrypto.scryptSync(String(password), salt, 64).toString('hex');`,
+    `  return 'scrypt$' + salt + '$' + hash;`,
+    `}`,
+    `function checkPassword(password, stored) {`,
+    `  try {`,
+    `    const [scheme, salt, hash] = String(stored).split('$');`,
+    `    if (scheme !== 'scrypt' || !salt || !hash) return false;`,
+    `    const candidate = __authCrypto.scryptSync(String(password), salt, 64);`,
+    `    const expected = Buffer.from(hash, 'hex');`,
+    `    return candidate.length === expected.length && __authCrypto.timingSafeEqual(candidate, expected);`,
+    `  } catch (_) {`,
+    `    return false;`,
+    `  }`,
+    `}`,
+    `function createToken(payload, secret, expiresInSeconds) {`,
+    `  const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');`,
+    `  const now = Math.floor(Date.now() / 1000);`,
+    `  const claims = Object.assign({}, payload, { iat: now, exp: now + Math.floor(Number(expiresInSeconds == null ? 3600 : expiresInSeconds)) });`,
+    `  const header = encode({ alg: 'HS256', typ: 'JWT' });`,
+    `  const body = encode(claims);`,
+    `  const signature = __authCrypto.createHmac('sha256', String(secret)).update(header + '.' + body).digest('base64url');`,
+    `  return header + '.' + body + '.' + signature;`,
+    `}`,
+    `function readToken(token, secret) {`,
+    `  try {`,
+    `    const parts = String(token).split('.');`,
+    `    if (parts.length !== 3) return null;`,
+    `    const [header, body, signature] = parts;`,
+    `    const want = Buffer.from(__authCrypto.createHmac('sha256', String(secret)).update(header + '.' + body).digest('base64url'));`,
+    `    const given = Buffer.from(signature);`,
+    `    if (given.length !== want.length || !__authCrypto.timingSafeEqual(given, want)) return null;`,
+    `    const claims = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));`,
+    `    if (claims.exp != null && Math.floor(Date.now() / 1000) >= claims.exp) return null;`,
+    `    return claims;`,
+    `  } catch (_) {`,
+    `    return null;`,
+    `  }`,
+    `}`,
+  ].join('\n'),
+  // v2.1.1 — Google sign-in (OAuth 2.0 authorization code flow). Registers
+  // two endpoints: /auth/google (redirect) and the configured callback URL
+  // (token exchange + profile fetch), then redirects to the landing page.
+  oauth: [
+    `const __oauthCrypto = require('crypto');`,
+    `function __googleOAuth(app, options) {`,
+    `  const pendingStates = new Set();`,
+    `  app.get('/auth/google', (req, res) => {`,
+    `    const state = __oauthCrypto.randomUUID();`,
+    `    pendingStates.add(state);`,
+    `    const params = new URLSearchParams({`,
+    `      client_id: options.clientId,`,
+    `      redirect_uri: options.callbackUrl,`,
+    `      response_type: 'code',`,
+    `      scope: 'openid email profile',`,
+    `      state,`,
+    `    });`,
+    `    res.redirect('https://accounts.google.com/o/oauth2/v2/auth?' + params.toString());`,
+    `  });`,
+    `  app.get(new URL(options.callbackUrl).pathname, async (req, res) => {`,
+    `    try {`,
+    `      if (req.query.error) {`,
+    `        return res.status(401).json({ error: 'Google sign-in was cancelled.', detail: req.query.error });`,
+    `      }`,
+    `      if (!pendingStates.delete(req.query.state)) {`,
+    `        return res.status(400).json({ error: 'Sign-in link expired or state mismatch. Start again at /auth/google.' });`,
+    `      }`,
+    `      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {`,
+    `        method: 'POST',`,
+    `        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },`,
+    `        body: new URLSearchParams({`,
+    `          code: req.query.code,`,
+    `          client_id: options.clientId,`,
+    `          client_secret: options.clientSecret,`,
+    `          redirect_uri: options.callbackUrl,`,
+    `          grant_type: 'authorization_code',`,
+    `        }),`,
+    `      });`,
+    `      const tokens = await tokenResponse.json();`,
+    `      if (!tokens.access_token) {`,
+    `        return res.status(401).json({ error: 'Google token exchange failed.', detail: tokens.error_description || tokens.error });`,
+    `      }`,
+    `      const profileResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {`,
+    `        headers: { Authorization: 'Bearer ' + tokens.access_token },`,
+    `      });`,
+    `      const profile = await profileResponse.json();`,
+    `      req.__oauthUser = { email: profile.email, name: profile.name, picture: profile.picture, role: 'user' };`,
+    `      if (req.__session) req.__session.user = req.__oauthUser;`,
+    `      res.redirect(options.afterLogin || '/');`,
+    `    } catch (error) {`,
+    `      res.status(500).json({ error: 'Google sign-in failed: ' + error.message });`,
+    `    }`,
+    `  });`,
+    `}`,
+  ].join('\n'),
+  // v2.1.1 — per-IP request rate limiting with an in-memory sliding window.
+  ratelimit: [
+    `function __rateLimit(options) {`,
+    `  const hits = new Map();`,
+    `  const sweeper = setInterval(() => {`,
+    `    const cutoff = Date.now() - options.windowMs;`,
+    `    for (const [key, times] of hits) {`,
+    `      const recent = times.filter((t) => t > cutoff);`,
+    `      if (recent.length === 0) hits.delete(key); else hits.set(key, recent);`,
+    `    }`,
+    `  }, Math.min(options.windowMs, 60000));`,
+    `  if (sweeper.unref) sweeper.unref();`,
+    `  return (req, res, next) => {`,
+    `    const key = req.ip || (req.socket && req.socket.remoteAddress) || 'unknown';`,
+    `    const now = Date.now();`,
+    `    const times = (hits.get(key) || []).filter((t) => now - t < options.windowMs);`,
+    `    if (times.length >= options.max) {`,
+    `      return res.status(429).json({ error: 'Too many requests. Limit: ' + options.max + ' per ' + Math.round(options.windowMs / 1000) + ' seconds.' });`,
+    `    }`,
+    `    times.push(now);`,
+    `    hits.set(key, times);`,
+    `    next();`,
+    `  };`,
+    `}`,
+  ].join('\n'),
+  // v2.1.1 — pause helper for "retry N times every N seconds".
+  retry: [
+    `const __retrySleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));`,
+  ].join('\n'),
+  // v2.1.1 — SQLite runtime with a portable engine chain. Default order:
+  // better-sqlite3 (native binding) first, sql.js (WebAssembly) as fallback.
+  // Both engines are wrapped in the same tiny synchronous surface that Plain
+  // generates (prepare().all()/.run(), exec(), transaction()), so compiled
+  // database code is identical either way. The WebAssembly engine persists
+  // the whole database back to disk after every write.
+  sqlite: [
+    `let __sqliteNative = null;`,
+    `let __sqliteNativeReason = '';`,
+    `async function __dbOpen(file, mode) {`,
+    `  if (mode !== 'wasm') {`,
+    `    const native = __sqliteLoadNative();`,
+    `    if (native) return __sqliteWrapNative(new native(file));`,
+    `    if (mode === 'native') {`,
+    `      throw new Error('Database: the native SQLite engine is not usable on this machine (' + __sqliteNativeReason + ').\\nFix the better-sqlite3 build, or run anywhere with:\\n  database "' + file + '" using "wasm"');`,
+    `    }`,
+    `    console.error('Plain: native SQLite unavailable (' + __sqliteNativeReason + '); using the WebAssembly engine instead.');`,
+    `  }`,
+    `  const initSqlJs = require('sql.js');`,
+    `  const SQL = await initSqlJs();`,
+    `  let raw;`,
+    `  try {`,
+    `    raw = new SQL.Database(require('fs').readFileSync(file));`,
+    `  } catch (_) {`,
+    `    raw = new SQL.Database();`,
+    `  }`,
+    `  return __sqliteWrapWasm(raw, file);`,
+    `}`,
+    `function __sqliteLoadNative() {`,
+    `  if (__sqliteNative !== null) return __sqliteNative;`,
+    `  try {`,
+    `    const Database = require('better-sqlite3');`,
+    `    const probe = new Database(':memory:');`,
+    `    probe.close();`,
+    `    __sqliteNative = Database;`,
+    `  } catch (error) {`,
+    `    __sqliteNative = false;`,
+    `    __sqliteNativeReason = error.message;`,
+    `  }`,
+    `  return __sqliteNative;`,
+    `}`,
+    `function __sqliteWrapNative(db) {`,
+    `  return {`,
+    `    prepare: (sql) => db.prepare(sql),`,
+    `    exec: (sql) => db.exec(sql),`,
+    // Pass through better-sqlite3 semantics: transaction(fn) returns a
+    // callable that runs fn inside BEGIN/COMMIT (the generated code invokes
+    // it once).
+    `    transaction: (fn) => db.transaction(fn),`,
+    `  };`,
+    `}`,
+    `function __sqliteWrapWasm(db, file) {`,
+    `  const persist = () => {`,
+    `    if (file === ':memory:') return;`,
+    `    try {`,
+    `      require('fs').writeFileSync(file, Buffer.from(db.export()));`,
+    `    } catch (error) {`,
+    `      console.error('Plain: could not save the database to ' + file + ': ' + error.message);`,
+    `    }`,
+    `  };`,
+    `  return {`,
+    `    prepare(sql) {`,
+    `      return {`,
+    `        all(...params) {`,
+    `          const stmt = db.prepare(sql);`,
+    `          try {`,
+    `            stmt.bind(params);`,
+    `            const rows = [];`,
+    `            while (stmt.step()) rows.push(stmt.getAsObject());`,
+    `            return rows;`,
+    `          } finally {`,
+    `            stmt.free();`,
+    `          }`,
+    `        },`,
+    `        run(...params) {`,
+    `          db.run(sql, params);`,
+    `          const result = { changes: db.getRowsModified(), lastInsertRowid: null };`,
+    `          try {`,
+    `            const ids = db.exec('SELECT last_insert_rowid()');`,
+    `            if (ids.length && ids[0].values.length) result.lastInsertRowid = ids[0].values[0][0];`,
+    `          } catch (_) {}`,
+    `          if (/^\\s*(insert|update|delete|replace)/i.test(sql)) persist();`,
+    `          return result;`,
+    `        },`,
+    `      };`,
+    `    },`,
+    `    exec(sql) {`,
+    `      db.run(sql);`,
+    `      if (!/^\\s*select/i.test(sql)) persist();`,
+    `    },`,
+    `    transaction(fn) {`,
+    `      return () => {`,
+    `        db.run('BEGIN');`,
+    `        try {`,
+    `          const out = fn();`,
+    `          db.run('COMMIT');`,
+    `          persist();`,
+    `          return out;`,
+    `        } catch (error) {`,
+    `          try { db.run('ROLLBACK'); } catch (_) {}`,
+    `          throw error;`,
+    `        }`,
+    `      };`,
+    `    },`,
+    `  };`,
     `}`,
   ].join('\n'),
   // v1.2 — Telegram runtime. Polling-based: no webhook endpoint needed.
@@ -378,6 +763,49 @@ const STDLIB = {
     markAsync(context);
     return `__mailSend(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
   },
+
+  // ── v2.1.1 — uploads, cookies, passwords and tokens
+
+  // upload("field") / uploads("field") read files registered by
+  // "accept uploads". Single file → record or null; plural → array.
+  upload: (args, context) => {
+    routeOnly('upload', 'route post "/upload"\n    accept uploads\n    show upload("doc")');
+    requireOneArg('upload', args);
+    ensureBuiltin(context, 'uploads');
+    return `__uploadedFile(req, ${generateExpr(args[0], context)})`;
+  },
+  uploads: (args, context) => {
+    routeOnly('uploads', 'route post "/upload"\n    accept uploads\n    show uploads("docs")');
+    requireOneArg('uploads', args);
+    ensureBuiltin(context, 'uploads');
+    return `__uploadedFiles(req, ${generateExpr(args[0], context)})`;
+  },
+  // cookie("name") reads a request cookie.
+  cookie: (args, context) => {
+    routeOnly('cookie', 'route get "/me"\n    show cookie("theme")');
+    requireOneArg('cookie', args);
+    ensureBuiltin(context, 'cookies');
+    return `__cookieValue(req, ${generateExpr(args[0], context)})`;
+  },
+  // Password hashing (scrypt, salted, constant-time comparison).
+  hashPassword: (args, context) => {
+    ensureBuiltin(context, 'auth');
+    return `hashPassword(${generateExpr(args[0], context)})`;
+  },
+  checkPassword: (args, context) => {
+    ensureBuiltin(context, 'auth');
+    return `checkPassword(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
+  },
+  // Signed tokens in HS256 JWT format; readToken returns null when the
+  // signature is invalid or the token has expired.
+  createToken: (args, context) => {
+    ensureBuiltin(context, 'auth');
+    return `createToken(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
+  },
+  readToken: (args, context) => {
+    ensureBuiltin(context, 'auth');
+    return `readToken(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
+  },
 };
 
 // Mark the enclosing program async when a call awaits at the top level.
@@ -398,6 +826,22 @@ function routeAccessor(name, bucket, args, context) {
     throw new Error(`"${name}" takes exactly one argument: the ${name} name.\n\nExample:\n  ${name}("id")`);
   }
   return `req.${bucket}[${generateExpr(args[0], context)}]`;
+}
+
+// v2.1.1 — compile-time guard shared by request-scoped accessors that do not
+// follow the req.<bucket> shape (upload/uploads/cookie).
+function routeOnly(name, example) {
+  if (!_inRoute) {
+    throw new Error(
+      `"${name}" can only be used inside a route handler.\n\nExample:\n  ${example}\n  done`
+    );
+  }
+}
+
+function requireOneArg(name, args) {
+  if (args.length !== 1) {
+    throw new Error(`"${name}" takes exactly one argument.\n\nExample:\n  ${name}("field")`);
+  }
 }
 
 // Set to true while generating inside a route handler body.
@@ -532,6 +976,10 @@ function findAsyncCalls(node, found) {
   if (node.type === 'CallExpression' && ASYNC_CALL_NAMES.has(node.name)) {
     found.add(node.name);
   }
+  // v2.1.1 — HTTP client calls await; "wait for <expr>" awaits explicitly.
+  if (node.type === 'HttpCall' || node.type === 'AwaitExpression') {
+    found.add(node.type);
+  }
   for (const value of Object.values(node)) {
     if (value && typeof value === 'object') findAsyncCalls(value, found);
   }
@@ -549,6 +997,14 @@ function containsAsyncBlock(statements) {
     // mail sends, cache setup and websocket handlers await.
     if (stmt.type === 'TransactionStatement') return true;
     if (stmt.type === 'SendMailStatement' || stmt.type === 'CacheStatement') return true;
+    // v2.1.1 — opening the database awaits (native/wasm engine probe);
+    // retry loops pause between attempts; try/recover recurse.
+    if (stmt.type === 'DatabaseStatement' || stmt.type === 'RetryStatement') return true;
+    if (stmt.type === 'TryStatement') {
+      if (containsAsyncBlock(stmt.tryBody)) return true;
+      if (stmt.recoverBody && containsAsyncBlock(stmt.recoverBody)) return true;
+      continue;
+    }
     if (_sqlDriver === 'pg' && (
       stmt.type === 'QueryStatement' || stmt.type === 'InsertStatement' ||
       stmt.type === 'UpdateStatement' || stmt.type === 'DeleteStatement' ||
@@ -593,6 +1049,13 @@ function generateCondition(cond, context) {
 
     case 'StringCondition':
       return `(${generateExpr(cond.left, context)}).${cond.method}(${generateExpr(cond.right, context)})`;
+
+    // v2.1.1 — and / or / not combinators.
+    case 'LogicalCondition': {
+      if (cond.op === 'not') return `!(${generateCondition(cond.operand, context)})`;
+      const jsOp = cond.op === 'and' ? '&&' : '||';
+      return `${generateCondition(cond.left, context)} ${jsOp} ${generateCondition(cond.right, context)}`;
+    }
 
     default:
       throw new Error(`Unknown condition type "${cond.type}".`);
@@ -812,6 +1275,132 @@ function generateStatement(node, indent = '', context = createGenerationContext(
         `${indent}});`,
       ].join('\n');
 
+    // ── v2.1.1 — uploads, auth middleware, rate limiting, OAuth ────────────
+    // These register Express middleware in program order; routes declared
+    // after them are protected / wired accordingly.
+
+    case 'AcceptUploadsStatement': {
+      ensureBuiltin(context, 'uploads');
+      const options = [];
+      if (node.limitBytes != null) options.push(`limitBytes: ${node.limitBytes}`);
+      if (node.mimes != null) options.push(`mimes: ${JSON.stringify(node.mimes)}`);
+      if (node.folder != null) options.push(`folder: ${JSON.stringify(node.folder)}`);
+      return `${indent}app.use(__uploads({ ${options.join(', ')} }));`;
+    }
+
+    // require api key from <expr> — rejects requests whose x-api-key header
+    // does not match. The expected key may come from env("...") or anywhere.
+    case 'RequireApiKeyStatement':
+      return [
+        `${indent}app.use((req, res, next) => {`,
+        `${indent}  const provided = req.get('x-api-key');`,
+        `${indent}  const expected = ${generateExpr(node.key, context)};`,
+        `${indent}  if (!expected || provided !== String(expected)) {`,
+        `${indent}    return res.status(401).json({ error: 'Unauthorized: a valid x-api-key header is required.' });`,
+        `${indent}  }`,
+        `${indent}  next();`,
+        `${indent}});`,
+      ].join('\n');
+
+    case 'EnableSessionsStatement':
+      ensureBuiltin(context, 'cookies');
+      ensureBuiltin(context, 'sessions');
+      return `${indent}app.use(__enableSessions(${generateExpr(node.secret, context)}));`;
+
+    case 'RateLimitStatement':
+      ensureBuiltin(context, 'ratelimit');
+      return `${indent}app.use(__rateLimit({ max: ${node.max}, windowMs: ${node.windowMs} }));`;
+
+    case 'GoogleOAuthStatement': {
+      ensureBuiltin(context, 'oauth');
+      const options = {};
+      for (const { key, value } of node.options) {
+        if (key === 'id') options.clientId = generateExpr(value, context);
+        else if (key === 'secret') options.clientSecret = generateExpr(value, context);
+        else if (key === 'callback') options.callbackUrl = generateExpr(value, context);
+        else if (key === 'landing') options.afterLogin = generateExpr(value, context);
+        else throw new Error(`Unknown google oauth option "${key}". Known options: id, secret, callback, landing.`);
+      }
+      for (const [plainKey, jsKey] of [['id', 'clientId'], ['secret', 'clientSecret'], ['callback', 'callbackUrl']]) {
+        if (!options[jsKey]) {
+          throw new Error(`google oauth is missing its "${plainKey}" option.\n\nExample:\n  google oauth\n    id is env("GOOGLE_CLIENT_ID")\n    secret is env("GOOGLE_CLIENT_SECRET")\n    callback is "http://localhost:3000/auth/google/callback"\n  done`);
+        }
+      }
+      const parts = Object.entries(options).map(([k, v]) => `${k}: ${v}`).join(', ');
+      return `${indent}__googleOAuth(app, { ${parts} });`;
+    }
+
+    // ── v2.1.1 — route-scoped state: cookies and sessions
+
+    case 'DestroySessionStatement':
+      if (!_inRoute) {
+        throw new Error('"destroy session" can only be used inside a route handler.\n\nExample:\n  route post "/logout"\n    destroy session\n    reply "Logged out"\n  done');
+      }
+      ensureBuiltin(context, 'cookies');
+      ensureBuiltin(context, 'sessions');
+      return `${indent}__destroySession(req, res);`;
+
+    case 'SetCookieStatement': {
+      if (!_inRoute) {
+        throw new Error('"set cookie" can only be used inside a route handler.\n\nExample:\n  route get "/login"\n    set cookie "theme" to "dark"\n  done');
+      }
+      const options = node.maxAgeSeconds != null
+        ? `{ maxAge: ${node.maxAgeSeconds * 1000}, httpOnly: true, path: '/' }`
+        : `{ httpOnly: true, path: '/' }`;
+      return `${indent}res.cookie(${JSON.stringify(node.name)}, ${generateExpr(node.value, context)}, ${options});`;
+    }
+
+    case 'ClearCookieStatement':
+      if (!_inRoute) {
+        throw new Error('"clear cookie" can only be used inside a route handler.\n\nExample:\n  route post "/logout"\n    clear cookie "theme"\n  done');
+      }
+      return `${indent}res.clearCookie(${JSON.stringify(node.name)}, { path: '/' });`;
+
+    // when nothing matches … done — the 404 catch-all. Registered in source
+    // position, so it must come after every route (Express matches handlers
+    // in registration order).
+    case 'NotFoundStatement': {
+      _inRoute = true;
+      const handlerAsync = containsAsyncBlock(node.body) ? 'async ' : '';
+      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      _inRoute = false;
+      return `${indent}app.use((${handlerAsync}req, res) => {\n${body}\n${indent}});`;
+    }
+
+    // ── v2.1.1 — error handling and retries
+
+    case 'TryStatement': {
+      const tryBody = node.tryBody.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      let out = `${indent}try {\n${tryBody}\n${indent}}`;
+      if (node.recoverBody) {
+        const errorName = node.catchName || '__plainError';
+        const recoverBody = node.recoverBody.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+        out += ` catch (${errorName}) {\n${recoverBody}\n${indent}}`;
+      } else {
+        // A bare try {} is invalid JavaScript: without "recover", errors are
+        // swallowed through an empty catch block.
+        out += ' catch (__plainError) {}';
+      }
+      return out;
+    }
+
+    case 'RetryStatement': {
+      ensureBuiltin(context, 'retry');
+      markAsync(context);
+      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      return [
+        `${indent}for (let __plainAttempt = 1; __plainAttempt <= ${node.attempts}; __plainAttempt++) {`,
+        `${indent}  try {`,
+        body,
+        `${indent}    break;`,
+        `${indent}  } catch (__plainRetryError) {`,
+        `${indent}    if (__plainAttempt >= ${node.attempts}) console.error(__plainRetryError);`,
+        `${indent}    else await __retrySleep(${Math.round(node.delaySeconds * 1000)});`,
+        `${indent}  }`,
+        `${indent}}`,
+      ].join('\n');
+    }
+
     case 'StartStatement':
       return `${indent}app.listen(${generateExpr(node.port, context)});`;
 
@@ -819,13 +1408,19 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // transactions; the driver switches to PostgreSQL when a "postgres"
     // declaration is active.
 
-    case 'DatabaseStatement':
+    // database "<file>" [using "<driver>"] — v2.1.1 opens through the
+    // portable engine chain: better-sqlite3 when its native binding works on
+    // this machine, sql.js otherwise ("using" forces one engine). The opened
+    // handle exposes the same prepare/exec/transaction surface either way,
+    // so every generated SQL statement below is unchanged.
+    case 'DatabaseStatement': {
       _sqlDriver = 'sqlite';
       _sqlClientVar = 'db';
-      return [
-        emitRequire(context, 'sqlite'),
-        `${indent}const db = new Database(${JSON.stringify(node.file)});`,
-      ].filter(Boolean).map(line => line.startsWith('const ') ? `${indent}${line}` : line).join('\n');
+      ensureBuiltin(context, 'sqlite');
+      markAsync(context);
+      const driverArg = node.driver ? JSON.stringify(node.driver) : 'null';
+      return `${indent}const db = await __dbOpen(${JSON.stringify(node.file)}, ${driverArg});`;
+    }
 
     // v2.1.0 — postgres "<connection>": node-postgres pool bound to "db".
     // Every SQL statement afterwards compiles to async pool queries.
@@ -1055,6 +1650,32 @@ function generateExpr(node, context = createGenerationContext()) {
   switch (node.type) {
     case 'StringLiteral':    return JSON.stringify(node.value);
     case 'NumberLiteral':    return String(node.value);
+    // v2.1.1 — boolean and null literals are Plain keywords.
+    case 'BooleanLiteral':   return String(node.value);
+    case 'NullLiteral':      return 'null';
+    // v2.1.1 — arithmetic: unary minus (binary + - * / % reuse
+    // BinaryExpression). Binary operands need parentheses so that
+    // -(2 + 3) does not flatten to -2 + 3.
+    case 'UnaryExpression':
+      return `${node.operator}${node.operand.type === 'BinaryExpression'
+        ? `(${generateExpr(node.operand, context)})`
+        : generateExpr(node.operand, context)}`;
+    // v2.1.1 — wait for <expr>: awaits an async value (fetch promises,
+    // async functions called from Plain, etc.).
+    case 'AwaitExpression': {
+      markAsync(context);
+      return `(await ${generateExpr(node.value, context)})`;
+    }
+    // v2.1.1 — HTTP client: get/post/put/patch/delete "<url>" with clauses.
+    case 'HttpCall': {
+      ensureBuiltin(context, 'http');
+      markAsync(context);
+      const options = [];
+      if (node.body != null) options.push(`body: ${generateExpr(node.body, context)}`);
+      if (node.headers != null) options.push(`headers: ${generateExpr(node.headers, context)}`);
+      if (node.timeout != null) options.push(`timeoutMs: ${generateExpr(node.timeout, context)}`);
+      return `await __httpRequest('${node.method.toUpperCase()}', ${generateExpr(node.url, context)}, { ${options.join(', ')} })`;
+    }
 
     // Backtick template literal: emit as a JavaScript template literal.
     // Content is preserved verbatim (interpolation, whitespace, line breaks).
@@ -1071,7 +1692,17 @@ function generateExpr(node, context = createGenerationContext()) {
       return node.name;
     }
 
-    case 'BinaryExpression': return `${generateExpr(node.left, context)} ${node.operator} ${generateExpr(node.right, context)}`;
+    // Nested binary operands get parentheses so (2 + 3) * 4 keeps its
+    // grouping instead of flattening to 2 + 3 * 4.
+    case 'BinaryExpression': {
+      const left = node.left.type === 'BinaryExpression'
+        ? `(${generateExpr(node.left, context)})`
+        : generateExpr(node.left, context);
+      const right = node.right.type === 'BinaryExpression'
+        ? `(${generateExpr(node.right, context)})`
+        : generateExpr(node.right, context);
+      return `${left} ${node.operator} ${right}`;
+    }
 
     case 'ArrayLiteral':
       return `[${node.elements.map(element => generateExpr(element, context)).join(', ')}]`;
@@ -1124,8 +1755,24 @@ function generateExpr(node, context = createGenerationContext()) {
       return `${generateExpr(node.object, context)}.length`;
 
     // v1.1 — Property access
-    case 'OfExpression':
+    case 'OfExpression': {
+      // v2.1.1 — "session of request" / "user of request" read server-side
+      // state managed by the session and OAuth runtimes.
+      if (node.object.type === 'Identifier' && node.object.name === 'request' &&
+          node.property.type === 'Identifier') {
+        if (node.property.name === 'session') {
+          routeOnly('session of request', 'route get "/me"\n    show session of request');
+          ensureBuiltin(context, 'sessions');
+          return '__sessionOf(req)';
+        }
+        if (node.property.name === 'user') {
+          routeOnly('user of request', 'route get "/me"\n    show user of request');
+          ensureBuiltin(context, 'sessions');
+          return '__userOf(req)';
+        }
+      }
       return `${generateExpr(node.object, context)}.${generateExpr(node.property, context)}`;
+    }
 
     // v1.1 — Collection operations
     case 'AddCall':

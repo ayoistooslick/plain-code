@@ -1,10 +1,11 @@
-# Upgrade Guide — v1.1 → v2.0.0-latest
+# Upgrade Guide — v1.1 → v2.1.1
 
 ## Overview
 
-Plain 2.0.0-latest adds a Complex Compilation layer (RFC-0020) on top of the
-existing deterministic compiler. **No Plain language syntax was removed or
-changed.**
+Plain 2.1.1 turns the compiler into a complete backend platform: portable
+databases, an HTTP client, auth, sessions, uploads, cookies, rate limiting,
+OAuth and error handling are all first-class deterministic language features.
+**No Plain language syntax was removed or changed.**
 
 All programs written for v1.0/v1.1 continue to compile and run without
 modification.
@@ -21,43 +22,58 @@ Verify the version:
 
 ```bash
 plain version
-# Plain v2.0.0-latest
+# Plain v2.1.1
 ```
 
 ---
 
-## Step 2 — Optional: configure the provider
+## Step 2 — What changed
 
-The Complex Compilation layer is used only when the deterministic compiler
-cannot compile a supported construct and a matching rule exists. Deterministic
-programs need no configuration.
-
-To enable Complex Compilation, copy `.env.example` to `.env` and set:
-
-```bash
-MISTRAL_API_KEY=...
-PLAIN_AI_BASE_URL=https://api.mistral.ai
-PLAIN_AI_MODEL=mistral-small-latest
-```
-
-Check the layer with `plain cc status`.
+- `plain install` now verifies that the native SQLite driver actually loads.
+  When it cannot (missing build tools, unsupported platform), Plain warns and
+  falls back to the pure-WebAssembly engine — your program still runs.
+- `database "app.db"` gains an optional engine clause:
+  `using "native"` / `using "wasm"`. Programs that never specify an engine
+  behave exactly as before, with automatic fallback as a safety net.
+- New backend statements (`enable sessions`, `accept uploads`,
+  `require api key`, `rate limit`, `google oauth`, `when nothing matches`,
+  `try`/`recover`/`retry`, HTTP client calls) are recognised by the lexer,
+  parser and formatter.
+- Boolean/null literals and full arithmetic operators (`+ - * / %`, unary
+  minus, parentheses) are now part of the language.
 
 ---
 
-## Step 3 — What changed
+## Step 3 — Adopt what you need
 
-- The `plain` command is now exposed alongside `plain-code`.
-- `plain cc` is the primary Complex Compilation interface; `plain ai` is
-  accepted as an alias for backward compatibility.
-- `compile()` is now deterministic-first with a Complex Compilation fallback;
-  command output is unchanged for deterministic programs.
-- New diagnostics commands: `plain cc status`, `plain cc rules`,
-  `plain cc cache [clear]`.
-- `plain doctor` additionally reports the Complex Compilation layer.
-- Rule system hardened with narrower triggers and most-specific-first
-  precedence.
-- Expanded rules: WebSocket, Cron, HTTP, REST, Telegram.
-- New rule: email (`communication/email`).
+Nothing below is mandatory; each feature stands alone.
+
+```plain
+database "app.db"
+
+web app
+enable sessions "a-long-random-secret"
+require api key from env("API_KEY")
+
+route get "/teams"
+    remember rows as query
+        select id, name from teams order by name
+    done
+    reply json
+        teams is rows
+    done
+done
+
+when nothing matches
+    status 404
+    reply "not found"
+done
+
+start 3000
+```
+
+See the README's "Backend Services (v2.1.1)" section for every new feature
+with examples.
 
 ---
 

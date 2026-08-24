@@ -1,6 +1,6 @@
-# Plain Language Specification (v1.0.1)
+# Plain Language Specification (v2.1.1)
 
-Version: 1.0.1
+Version: 2.1.1
 Status: Stable
 File Extension: .pln
 
@@ -601,6 +601,177 @@ All three are async and require a configured cache first.
 
 ---
 
+## Backend Services (v2.1.1)
+
+All statements below compile deterministically. Implementation packages
+(`better-sqlite3`, `sql.js`, `multer`) are detected and installed
+automatically; they never appear in Plain source.
+
+### Portable databases
+
+    database "app.db"                    // probe native, fall back to WebAssembly
+    database "app.db" using "native"     // require better-sqlite3
+    database "app.db" using "wasm"       // require sql.js
+
+- The default probes the native driver (`better-sqlite3`) by opening an
+  in-memory database; if that fails, the program continues on the pure-
+  JavaScript WebAssembly engine (`sql.js`).
+- `using "native"` / `using "wasm"` pin the engine; anything else fails at
+  compile time.
+- The WebAssembly engine writes the whole database file after every mutating
+  statement, so data survives restarts. In-memory databases (`":memory:"`)
+  are never persisted.
+- Transactions run their body exactly once on both engines.
+
+### HTTP client
+
+    get "<url>"
+    post <url> with <body>
+    put <url> with <body>
+    patch <url> with <body>
+    delete "<url>"
+
+Optional clauses on any method: `headers { key is "value" ... }` (inline
+object or block form) and `timeout <milliseconds>`. Requests are values, so
+they compose:
+
+    remember r as get "https://api.example.com/users"
+
+The response is a record:
+
+| Field      | Meaning                                              |
+|------------|------------------------------------------------------|
+| `ok of r`  | `true` for 2xx status codes                          |
+| `status`   | HTTP status number                                   |
+| `headers`  | response headers as a record                         |
+| `data`     | parsed JSON body when the content type says `json`, otherwise the raw text |
+
+Bodies sent to `post`/`put`/`patch`: records and arrays are serialised as
+JSON; strings and buffers are sent verbatim. The default timeout is 30
+seconds; a timeout aborts the request and rejects. `wait for fetch(...)`
+awaits a raw promise.
+
+### Passwords and tokens
+
+| Plain                                  | Behaviour                                    |
+|----------------------------------------|----------------------------------------------|
+| `hashPassword(pw)`                     | scrypt hash with per-password salt           |
+| `checkPassword(pw, storedHash)`        | constant-time verification, returns boolean  |
+| `createToken(payload, secret [, ttl])` | HMAC-signed token, default TTL 3600 seconds  |
+| `readToken(token, secret)`             | verified payload or null (tamper/expiry)     |
+
+### Sessions
+
+    web app
+    enable sessions "a-long-random-secret"
+    route post "/login"
+        user of session of request becomes username of body of request
+        reply "welcome"
+    done
+    route post "/logout"
+        destroy session
+        reply "bye"
+    done
+
+- The session rides an HMAC-signed cookie named `plain.sid`
+  (`HttpOnly`, `SameSite=Lax`).
+- `session of request` is the session record; assign fields onto it with
+  `becomes`.
+- Reading `session of request` outside a route, or without
+  `enable sessions`, is a teaching error.
+- The store lives in memory: restarting the process signs everyone out.
+
+### File uploads
+
+    accept uploads limit "5 MB" allow ["image/png", "image/jpeg"] folder "uploads"
+
+All clauses are optional; the statement must appear before the routes it
+protects. Inside routes:
+
+| Plain               | Result                                                |
+|---------------------|-------------------------------------------------------|
+| `upload("field")`   | first file under the field, or null                   |
+| `uploads("field")`  | array of files under the field                        |
+
+Each file is a record: `name` (original name), `type` (MIME), `size` (bytes),
+`data` (buffer, memory storage) and `path` (string, folder storage). A file
+over the limit is rejected with HTTP **413**; a disallowed MIME type with
+HTTP **415**. With `folder`, uploaded files are written to disk (the folder
+is created if needed).
+
+### Cookies
+
+    set cookie "theme" to "dark" expires in 7 days
+    show cookie("theme")
+    clear cookie "theme"
+
+`expires in` accepts seconds/minutes/hours/days. Cookie accessors are
+route-only.
+
+### Rate limiting
+
+    limit requests to 100 per minute
+
+Sliding window keyed by client IP; requests past the quota receive HTTP 429.
+Units: seconds, minutes, hours.
+
+### API-key protection
+
+    require api key from env("API_KEY")
+
+Requests must carry the expected value in the `x-api-key` header; everything
+else receives HTTP 401. When the configured key is unset, every request is
+rejected (fail closed). Middleware applies to routes registered after it.
+
+### Google OAuth
+
+    google oauth
+        id is env("GOOGLE_ID")
+        secret is env("GOOGLE_SECRET")
+        callback is "https://myapp.dev/auth/google/callback"
+        landing is "/dashboard"
+    done
+
+Registers two endpoints: `/auth/google` redirects to Google's consent screen
+with a signed `state`; `/auth/google/callback` validates the state, swaps the
+code for tokens, fetches the profile and stores the user on the session
+before redirecting to `landing`.
+
+### Custom 404
+
+    when nothing matches
+        status 404
+        reply json
+            error is "No such road"
+        done
+    done
+
+Registers the final handler at its source position — place it after your
+routes.
+
+### Error handling
+
+    try
+        remember data as jsonDecode(raw)
+    recover as err
+        show "bad json: " + message of err
+    done
+
+`recover` is optional; without it errors are swallowed. `err` is the thrown
+value (use `message of err` for Error objects).
+
+### Retries
+
+    retry 3 times every 5 seconds
+        wait for fetch("https://flaky.api")
+    done
+
+`every` is optional (default delay one second); zero seconds retries
+immediately. The body runs until it succeeds or attempts run out; failures
+are logged with the last error.
+
+---
+
 ## OCR (v2.0.1)
 
 Extract text from an image file with Tesseract.js:
@@ -737,10 +908,6 @@ Plain manages project configuration through `plain.json`.
 | `plain add <pkg>`       | Installs package, adds it to `plain.json`            |
 | `plain remove <pkg>`    | Uninstalls package, removes it from `plain.json`     |
 | `plain update`          | Runs `npm update` for all installed packages         |
-| `plain cc status`       | Show the Complex Compilation layer status            |
-| `plain cc rules`        | List the installed Plain rules                       |
-| `plain cc cache`        | List the local Complex Compilation cache             |
-| `plain cc cache clear`  | Clear the local Complex Compilation cache            |
 | `plain version`         | Print the compiler version                           |
 | `plain help`            | Print help text                                      |
 
@@ -774,10 +941,15 @@ If a package is missing, the compiler prints a friendly error and stops:
     web       route      start
     database  query      insert  update  delete  execute
     ask       ocr        using
-    true      false
+    true      false      null
+    try       recover    retry   times   wait
+    accept    uploads    session sessions destroy
+    cookie    expires    limit   allow   folder
+    rate      requests   enable  oauth   google
+    require   api        key     matches nothing
     note
 
 ---
 
-This document is the single source of truth for Plain v1.0.1.
+This document is the single source of truth for Plain v2.1.1.
 Every compiler implementation must follow this specification.

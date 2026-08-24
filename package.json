@@ -1,6 +1,6 @@
 {
   "name": "@ayoxx/plain-code",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Plain — an Intent-Oriented Programming Language. When even a simple sentence can be code.",
   "main": "compiler/cli.js",
   "preferGlobal": true,
@@ -9,9 +9,7 @@
     "plain": "./compiler/cli.js"
   },
   "scripts": {
-    "test": "node tests/compiler.test.js && node tests/telegram.test.js && node tests/ocr.test.js && node tests/ai.test.js && node tests/backend.test.js",
-    "start": "node compiler/ai/server.js",
-    "cc:serve": "node compiler/ai/server.js"
+    "test": "node tests/compiler.test.js && node tests/telegram.test.js && node tests/ocr.test.js && node tests/backend.test.js && node tests/v211.test.js && node tests/acceptance.test.js"
   },
   "files": [
     "compiler",
@@ -31,14 +29,16 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   },
   "devDependencies": {
     "better-sqlite3": "^13.0.3",
     "croner": "^10.0.1",
     "express": "^5.2.1",
+    "multer": "^2.0.2",
     "nodemailer": "^9.0.5",
     "redis": "^6.2.1",
+    "sql.js": "^1.13.0",
     "ws": "^8.21.3"
   }
 }

@@ -1,73 +1,69 @@
-# Plain v2.0.0-latest — Release Notes
+# Plain v2.1.1 — Release Notes
 
 **Release date:** 2026
 
 ---
 
-## What is Plain 2.0.0-latest?
+## What is Plain 2.1.1?
 
-Plain 2.0.0-latest is an Intent-Oriented Programming Language (IOPL) with a
-**Complex Compilation layer**. The deterministic compiler remains
-authoritative: it compiles everything it understands, offline and for free.
-When it cannot compile a supported Plain construct, versioned rule files and a
-Complex Compilation provider translate it into validated JavaScript that flows
-through the normal bundler/runtime path (RFC-0020).
+Plain is an Intent-Oriented Programming Language (IOPL) with a fully
+deterministic compiler: everything compiles offline, for free, with no
+hidden codegen. You describe **what** you want; the compiler decides **how**
+to implement it in JavaScript.
 
-> An Intent-Oriented Programming Language with a deterministic compiler, a
-> growing rule system, and a Complex Compilation translation layer for
-> capabilities that have not yet been hard-coded into the compiler.
+> An Intent-Oriented Programming Language where backend services — databases,
+> HTTP clients, auth, sessions, uploads, rate limiting, OAuth — are
+> first-class language features.
 
-## What's in v2.0.0-latest?
+## What's in v2.1.1?
 
-### Rule system hardening
+### Portable databases (SQLite native or WebAssembly)
 
-- **Narrower triggers** — rule matching now requires an explicit trigger match
-  before invoking the Complex Compilation layer, reducing false positives
-- **Most-specific-first precedence** — a broad generic rule never overrides an
-  exact Plain language rule
+- `database "app.db"` probes for the native `better-sqlite3` driver and falls
+  back to pure-WebAssembly SQLite (`sql.js`) when it cannot load.
+- `plain install` verifies the native driver actually opens a database.
+- Explicit engines: `using "native"` or `using "wasm"`; unknown drivers fail
+  at compile time. The WebAssembly engine persists to disk after every write.
+- Fixed: transactions run their body exactly once on both engines.
 
-### Expanded rules
+### HTTP client
 
-- **WebSocket** (`websocket/ws`) — WebSocket client support
-- **Cron scheduling** (`automation/cron`) — scheduled task syntax
-- **HTTP** (`http/fetch`) — expanded coverage
-- **REST** (`web/rest-api`) — expanded coverage
-- **Telegram** (`bots/telegram`) — expanded coverage
+- `get "…"` / `post url with body` / `put` / `patch` / `delete "<url>"`,
+  with optional `headers { … }` and `timeout <ms>` clauses.
+- Responses are records (`ok`, `status`, `headers`, `data`); JSON parses
+  automatically; 30-second default timeout.
 
-### New rule: Email
+### Auth, sessions and web middleware
 
-- **Email** (`communication/email`) — email sending via SMTP
+- scrypt passwords: `hashPassword`, `checkPassword`.
+- HMAC tokens: `createToken(payload, secret [, ttl])`, `readToken(token, secret)`.
+- Signed-cookie sessions: `enable sessions "<secret>"`,
+  `session of request`, `destroy session`.
+- Uploads: `accept uploads limit "5 MB" allow […] folder "…"`,
+  `upload("field")` / `uploads("field")` (HTTP 413/415 enforced).
+- Cookies: `set cookie … [expires in …]`, `cookie("name")`, `clear cookie`.
+- `require api key from env("…")`, `rate limit 100 requests per minute`.
+- Google OAuth: `google oauth` blocks with `id` / `secret` / `callback` /
+  `landing`.
+- Custom 404: `when nothing matches ... done`.
+- Error handling: `try ... recover ... done`, `retry N times every M seconds`.
 
-### Complex Compilation (RFC-0020)
+### Language core additions
 
-- **Rule system** — versioned rule pairs (Markdown + JSON) shipped inside the
-  package (`compiler/rules/`)
-- **Complex Compilation layer** — rule resolver, translator, provider agent,
-  OpenAI-compatible client, strict prompt contract, and a validation gate
-  (`compiler/ai/`)
-- **Deterministic first** — existing Plain syntax never calls the Complex
-  Compilation layer
-- **Caching** — successful translations cached locally; stale rule versions are
-  never reused
-- **Validation** — output is syntax-checked and scanned for forbidden patterns
-  and undeclared requires before it can run
-- **Diagnostics** — `plain cc status`, `plain cc rules`, `plain cc cache
-  [clear]`; layer-specific error messages
+- Boolean/null literals: `true`, `false`, `null`.
+- Arithmetic operators `+ - * / %`, unary minus, parenthesised grouping with
+  standard precedence.
 
-### CLI
+### Examples and tests
 
-- `plain cc` is the primary Complex Compilation interface
-- `plain ai` is retained as an alias for backward compatibility
-
-### Branding
-
-- "AI-Assisted Compilation" renamed to "Complex Compilation" across all
-  documentation and public-facing text
-- Version updated to 2.0.0-latest
+- New acceptance examples: `examples/football-backend/` and
+  `examples/id-verification/`, booted over live HTTP by
+  `tests/acceptance.test.js`.
+- New feature suite `tests/v211.test.js`; full suite now 557 tests.
 
 ### Breaking changes
 
-- No Plain language syntax was removed or changed.
+- No existing Plain syntax was removed or changed.
 
 ---
 
@@ -77,88 +73,13 @@ through the normal bundler/runtime path (RFC-0020).
 npm install -g @ayoxx/plain-code
 ```
 
-## Upgrade from v1.1
+## Upgrade
 
-See `UPGRADE_GUIDE.md`. Existing Plain programs and the JavaScript Gateway
-continue to work unchanged.
-
----
-
-# Previous release — v2.0.0
-
-See the [CHANGELOG](CHANGELOG.md) for the original v2.0.0 release details.
+See `UPGRADE_GUIDE.md`. Existing Plain programs continue to work unchanged.
 
 ---
 
-# Previous release — v1.0.0
+# Previous releases
 
-**Release date:** 2026
-
----
-
-## What is Plain?
-
-Plain is an Intent-Oriented Programming Language (IOPL) that compiles to JavaScript.
-
-You describe **what** you want. The compiler decides **how** to implement it.
-
-```plain
-remember name as "Ayokunle"
-remember age as 17
-
-if age is at least 18
-    show "Adult"
-otherwise
-    show "Teenager"
-done
-```
-
----
-
-## What's in v1.0.0?
-
-This is the first **stable release** of Plain.
-
-The language syntax is now frozen. No new syntax changes are planned before v1.1.
-
-### Quality improvements
-
-- Compiler audit: dead code removed, comments improved, naming clarified
-- CLI: `plain run` now uses `execFileSync` (no shell interpolation)
-- 250+ tests passing across all language features
-- Documentation updated throughout
-
-### Language features (all stable)
-
-- Variables: `remember` / `becomes`
-- Printing: `show`
-- Conditions: `if` / `otherwise` / `done` with all comparison operators
-- Functions: `make` / `give`
-- Loops: `for each` / `for every` / `while`
-- Arrays and objects
-- Imports: `import "./file.pln"`
-- Runtime packages: `use express` / `use sqlite` / `use fs` / `use path`
-- Express server (classic and shorthand)
-- SQLite database (classic and shorthand)
-- Standard library: `print`, `readFile`, `writeFile`, `fileExists`, `sleep`, `time`, `date`, `jsonEncode`, `jsonDecode`, `env`, `exit`, `uuid`
-- Developer tools: `plain check`, `plain fmt`, `plain new`, `plain init`, `plain add`, `plain remove`, `plain install`, `plain update`
-
----
-
-## Installation
-
-```bash
-npm install -g @ayoxx/plain-code
-```
-
----
-
-## Upgrade guide
-
-See `UPGRADE_GUIDE.md` for instructions on upgrading from v0.6 to v1.0.
-
----
-
-## What's next?
-
-The language is frozen for v1.0. Future improvements will be proposed via RFC and released as v1.1+.
+See the [CHANGELOG](CHANGELOG.md) for v2.1.0 (backend capabilities), v2.0.0
+(Telegram deterministic syntax) and earlier release details.

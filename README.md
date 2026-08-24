@@ -9,7 +9,7 @@
 
 Plain is an Intent-Oriented Programming Language (IOPL). You describe **what** you want; the compiler decides **how** to implement it in JavaScript.
 
-**Current version:** v2.1.0 — Backend capabilities as first-class language features.
+**Current version:** v2.1.1 — Portable databases, HTTP client, auth, sessions, uploads, rate limiting and OAuth as first-class language features.
 
 ---
 
@@ -40,15 +40,9 @@ plain doctor             Check the Plain project environment
 plain add    <package>   Install a package and add it to plain.json
 plain remove <package>   Remove a package from plain.json and uninstall it
 plain update             Update all installed npm packages
-plain cc status          Show the Complex Compilation layer status
-plain cc rules           List the installed Plain rules
-plain cc cache           List / clear the local Complex Compilation cache
-plain cc cache clear     Clear the local Complex Compilation cache
 plain version            Print the compiler version
 plain help               Print help text
 ```
-
-`plain ai` is accepted as an alias for `plain cc`.
 
 ---
 
@@ -233,102 +227,158 @@ use @scope/package-name
 
 ---
 
-## Complex Compilation (v2.0)
+## Backend Services (v2.1.1)
 
-Plain 2.0 keeps the deterministic compiler authoritative and adds a
-**Complex Compilation layer** for capabilities that are not yet hard-coded
-into the compiler. This is a compiler extension, not a chatbot and not a
-replacement for the deterministic path (RFC-0020).
+Everything below is compiled by the deterministic compiler — no rules, no AI,
+no hidden codegen.
 
-### How it works
-
-```text
-app.pln
-   │
-   ▼
-Existing Plain Lexer/Parser
-   │
-   deterministic support?
-   │          │
-   yes        no
-   │          ▼
-   ▼      Rule resolver
-Existing     │
-compiler     ▼
-        Complex translation
-             │
-             ▼
-        validated JS/IR
-             │
-             ▼
-   Existing generator/bundler/runtime
-             │
-             ▼
-        executable JS
-```
-
-1. The deterministic compiler compiles everything it understands — always,
-   first, offline, for free.
-2. When it cannot compile a construct, the **rule resolver** matches the source
-   against versioned rule files in `compiler/rules/`.
-3. If a rule matches, a translation step turns the Plain construct into
-   JavaScript following that rule exactly. Plain ships with a **hosted compiler
-   service** (`https://plain-code-compiler.onrender.com`) that performs this
-   step for you, so most users need no configuration or API key.
-4. The generated JavaScript is **validated** (syntax check, forbidden patterns,
-   require() allowlist) — locally as well as on the service — and flows
-   through the normal bundler/runtime and dependency system.
-5. Successful translations are cached locally; a cached result from an older
-   rule version is never silently reused.
-
-### Rules
-
-Each rule is a versioned pair: a human-readable Markdown file (syntax, meaning,
-JavaScript target, examples, security notes) and machine-readable JSON metadata
-(name, category, version, keywords, triggers, dependencies) used for
-deterministic matching and cache keys.
-
-Shipped rules: Telegram bots (`bots/telegram`), HTTP fetch (`http/fetch`),
-REST APIs (`web/rest-api`), WebSocket (`websocket/ws`),
-Cron scheduling (`automation/cron`), and Email (`communication/email`).
-
-**Telegram example**
+### Portable databases (SQLite native or WebAssembly)
 
 ```plain
-remember token as env("BOT_TOKEN")
+database "app.db"                  // probes better-sqlite3, falls back to sql.js
+```
 
-remember bot as telegram bot with token
+`plain install` verifies that `better-sqlite3` actually loads; if the native
+module cannot be used, Plain warns and continues on the pure-JavaScript
+WebAssembly engine (`sql.js`) — the same program runs unchanged. Force an
+engine explicitly:
 
-when someone sends "/start"
-  reply "Hello from Plain!"
+```plain
+database "app.db" using "native"   // hard requirement: better-sqlite3
+database "app.db" using "wasm"     // hard requirement: sql.js
+```
+
+The WebAssembly engine persists the whole database to disk after every write,
+so data survives restarts either way.
+
+### HTTP client
+
+```plain
+remember r as get "https://api.example.com/users"
+if ok of r
+    show status of r
+    show data of r
+done
+
+remember created as post url with body
+    headers { accept: "application/json" }
+    timeout 5000
+```
+
+Methods: `get`, `post … with <body>`, `put`, `patch`, `delete "<url>"`.
+Responses are records: `ok`, `status`, `headers`, `data` (JSON is parsed
+automatically). The default timeout is 30 seconds. `wait for fetch(...)`
+awaits raw promises when you need it.
+
+### Passwords and tokens (built-in auth)
+
+```plain
+remember hash as hashPassword("correct horse")
+if checkPassword(password of body of request, hash)
+    remember token as createToken(user, env("TOKEN_SECRET"), 3600)
+done
+
+remember payload as readToken(token, env("TOKEN_SECRET"))
+```
+
+`hashPassword`/`checkPassword` use scrypt; tokens are HMAC-signed with an
+expiry and fail closed on tampering or timeout.
+
+### Sessions
+
+```plain
+web app
+enable sessions "a-long-random-secret"
+
+route post "/login"
+    user of session of request becomes username of body of request
+    reply "welcome"
+done
+
+route get "/me"
+    reply user of session of request
+done
+
+route post "/logout"
+    destroy session
+    reply "bye"
 done
 ```
 
-**HTTP example**
+Sessions ride an HMAC-signed `HttpOnly` cookie (`plain.sid`). The store is
+in-memory: restarting the server signs everyone out.
+
+### File uploads
 
 ```plain
-remember response as await fetch "https://facts.com"
+accept uploads limit "5 MB" allow ["image/png", "image/jpeg"] folder "uploads"
 
-if response is ok
-  remember data as response.json()
-  show data
-otherwise
-  show "api failed"
+route post "/scan"
+    remember file as upload("doc")
+    ocr path of file as text
+    reply "scanned: " + text
 done
 ```
 
-### Configuration
+Files arrive as records with `name`, `type`, `size`, `data` (buffer) and
+`path` (string, when a folder is set). Oversized files get HTTP 413, wrong
+types 415. `uploads("docs")` returns every file under a field name.
 
-**Plain users do not need an API key.** By default, unsupported Plain syntax is
-sent to the hosted compiler service at `https://plain-code-compiler.onrender.com`,
-which owns the provider credential.
+### Cookies
 
-```bash
-plain cc status     # shows the active Complex Compilation path
+```plain
+set cookie "theme" to "dark" expires in 7 days
+show cookie("theme")
+clear cookie "theme"
 ```
 
-Provider-specific configuration (API keys, model selection) is optional and
-environment-based only — see `docs/AI_COMPILATION.md` for details.
+### Rate limiting
+
+```plain
+rate limit 100 requests per minute
+```
+
+Sliding window per client IP; the quota-exceeded response is HTTP 429.
+
+### Google OAuth
+
+```plain
+google oauth
+    id is env("GOOGLE_ID")
+    secret is env("GOOGLE_SECRET")
+    callback is "https://myapp.dev/auth/google/callback"
+    landing is "/dashboard"
+done
+```
+
+Registers `/auth/google` (redirect) and `/auth/google/callback`
+(code-for-token exchange + profile fetch); after login the session holds the
+user and the browser lands on `landing`.
+
+### Custom 404
+
+```plain
+when nothing matches
+    status 404
+    reply json
+        error is "No such road"
+    done
+done
+```
+
+### Error handling and retries
+
+```plain
+try
+    remember data as jsonDecode(raw)
+recover as err
+    show "bad json: " + message of err
+done
+
+retry 3 times every 5 seconds
+    wait for fetch("https://flaky.api")
+done
+```
 
 ---
 
@@ -597,25 +647,6 @@ Plain/
 │   ├── formatter.js          — normalises Plain source style
 │   ├── dependency-detector.js— detects npm packages from source
 │   ├── version.js            — single compiler version constant
-│   ├── ai/                   — Complex Compilation layer (RFC-0020)
-│   │   ├── resolver.js       — deterministic rule matching
-│   │   ├── translator.js     — rule → cache → provider → validation
-│   │   ├── validator.js      — Complex output validation
-│   │   ├── agent.js          — provider-facing translate() interface
-│   │   ├── client.js         — OpenAI-compatible HTTP client
-│   │   ├── prompt.js         — strict compile prompt builder
-│   │   ├── cache.js          — local translation cache
-│   │   ├── remote.js         — hosted service client
-│   │   ├── server.js         — hosted compiler HTTP service
-│   │   └── index.js          — public API + diagnostics
-│   ├── rules/                — versioned capability rules
-│   │   ├── README.md         — rule authoring specification
-│   │   ├── bots/telegram.*   — Telegram bot rule
-│   │   ├── http/fetch.*      — HTTP fetch rule
-│   │   ├── web/rest-api.*    — REST API rule
-│   │   ├── websocket/ws.*    — WebSocket rule
-│   │   ├── automation/cron.* — Cron scheduling rule
-│   │   └── communication/email.* — Email rule
 │   └── cli.js                — command-line entry point
 │
 ├── examples/
@@ -631,19 +662,25 @@ Plain/
 │   ├── web-app.pln
 │   ├── start.pln
 │   ├── database.pln
-│   └── deployment.pln
+│   ├── deployment.pln
+│   ├── football-backend/     — v2.1.1 acceptance example (SQLite + auth + sessions)
+│   │   └── app.pln
+│   └── id-verification/      — v2.1.1 acceptance example (uploads + OCR matching)
+│       ├── app.pln
+│       └── make-sample-id.js
 │
 ├── tests/
-│   ├── compiler.test.js
-│   ├── telegram.test.js
-│   └── ai.test.js
+│   ├── compiler.test.js      — language, CLI and formatter coverage
+│   ├── backend.test.js       — web/database/email/cache runtime tests
+│   ├── telegram.test.js      — Telegram bot runtime tests
+│   ├── ocr.test.js           — OCR statement tests
+│   ├── v211.test.js          — v2.1.1 feature suite
+│   └── acceptance.test.js    — boots the example projects over live HTTP
 │
 ├── docs/
 │   ├── PLAIN_SPEC.md
-│   └── AI_COMPILATION.md
+│   └── index.html
 │
-├── .env.example
-├── render.yaml
 ├── package.json
 └── README.md
 ```

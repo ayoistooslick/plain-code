@@ -42,7 +42,7 @@
       <li><a href="#web">Web</a></li>
       <li><a href="#ocr">OCR</a></li>
       <li><a href="#examples">Examples</a></li>
-      <li><a href="#complex-compilation">Complex Compilation</a></li>
+      <li><a href="#backend-services">Backend Services</a></li>
       <li><a href="#cli">CLI</a></li>
       <li><a href="#security">Security</a></li>
     </ul>
@@ -78,7 +78,7 @@
   <a href="#examples">Examples</a>
   <a href="#packages">Packages</a>
   <a href="#cli">CLI Reference</a>
-  <a href="#complex-compilation">Complex Compilation</a>
+  <a href="#backend-services">Backend Services</a>
   <a href="#security">Security</a>
   <a href="#roadmap">Roadmap</a>
   <a href="https://github.com/ayoistooslick/plain-code" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a>
@@ -1505,45 +1505,11 @@ console.<span class="fn">log</span>(text);</code></pre>
         </div>
       </div>
 
-      <div>
-        <h3 class="sub-heading" style="margin-top:0"><i class="fa-solid fa-wand-magic-sparkles"></i> Complex Compilation</h3>
-        <p style="color:var(--muted);margin-bottom:.75rem"><code>plain cc</code> is the preferred alias. <code>plain ai</code> also works.</p>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Command</th><th>Description</th></tr></thead>
-            <tbody>
-              <tr><td><code>plain cc status</code></td><td>Show Complex Compilation status and configuration</td></tr>
-              <tr><td><code>plain cc rules</code></td><td>List all installed Complex Compilation rules</td></tr>
-              <tr><td><code>plain cc cache</code></td><td>Show cached translations</td></tr>
-              <tr><td><code>plain cc cache clear</code></td><td>Clear the translation cache</td></tr>
-              <tr><td><code>plain ai status</code></td><td>Alias for <code>plain cc status</code></td></tr>
-              <tr><td><code>plain ai rules</code></td><td>Alias for <code>plain cc rules</code></td></tr>
-              <tr><td><code>plain ai cache</code></td><td>Alias for <code>plain cc cache</code></td></tr>
+              <tr><td><code>plain add &lt;pkg&gt;</code></td><td>Install a package and record it</td></tr>
+              <tr><td><code>plain remove &lt;pkg&gt;</code></td><td>Uninstall a package</td></tr>
+              <tr><td><code>plain update</code></td><td>Update all installed packages</td></tr>
             </tbody>
           </table>
-        </div>
-
-        <h3 class="sub-heading" style="margin-top:1.5rem"><i class="fa-solid fa-rectangle-terminal"></i> CLI output</h3>
-        <div class="code-block">
-          <div class="code-block-header">
-            <div class="code-block-dots"><span></span><span></span><span></span></div>
-            <span class="code-block-title">Terminal</span>
-            <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-          </div>
-          <pre><code><span class="prm">$</span> plain run app.pln
-<span class="ok">✓</span> Checking runtime dependencies
-<span class="ok">✓</span> Resolving imports
-<span class="ok">✓</span> Generating JavaScript
-<span class="ok">✓</span> run
-Done.
-
-<span class="prm">$</span> plain check app.pln
-<span class="ok">✓</span> app.pln — no errors found. (3ms)
-
-<span class="prm">$</span> plain cc status
-<span class="ok">✓</span> Complex Compilation active
-<span class="ok">✓</span> 3 rules loaded
-<span class="ok">✓</span> Cache: 12 entries</code></pre>
         </div>
       </div>
     </div>
@@ -1551,76 +1517,81 @@ Done.
 </section>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- COMPLEX COMPILATION                                                     -->
+<!-- BACKEND SERVICES                                                        -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="complex-compilation">
+<section class="section" id="backend-services">
   <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> v2.0</div>
-    <h2 class="section-title">Complex Compilation</h2>
+    <div class="section-tag"><i class="fa-solid fa-server"></i> v2.1.1</div>
+    <h2 class="section-title">Backend Services</h2>
     <p class="section-lead">
-      Complex Compilation extends Plain&rsquo;s compiler for capabilities that would otherwise require large amounts of handwritten compiler machinery. It does not turn Plain into a natural-language prompt system. Every complex capability is defined by a versioned Plain rule with explicit syntax and semantics.
+      Everything a backend needs, compiled deterministically — portable databases, an HTTP client, passwords and tokens, sessions, uploads, cookies, rate limiting, Google OAuth, custom 404s, error handling and retries. No rules, no AI, no hidden codegen.
     </p>
 
     <div class="compare" style="margin-bottom:2rem">
       <div class="code-block">
         <div class="code-block-header">
           <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">telegram.pln</span>
+          <span class="code-block-title">sessions.pln</span>
           <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
-        <pre><code><span class="kw">remember</span> token <span class="kw">as</span> <span class="fn">env</span>(<span class="str">"BOT_TOKEN"</span>)
+        <pre><code><span class="kw">web app</span>
+<span class="kw">enable sessions</span> <span class="str">"a-long-random-secret"</span>
 
-<span class="kw">remember</span> bot <span class="kw">as</span> telegram bot with token
+<span class="kw">route post</span> <span class="str">"/login"</span>
+    user <span class="kw">of session of request becomes</span> username <span class="kw">of body of request</span>
+    <span class="kw">reply</span> <span class="str">"welcome"</span>
+<span class="kw">done</span>
 
-<span class="kw">when someone sends</span> <span class="str">"/start"</span>
-    <span class="kw">reply</span> <span class="str">"Hello from Plain!"</span>
+<span class="kw">route post</span> <span class="str">"/logout"</span>
+    <span class="kw">destroy session</span>
+    <span class="kw">reply</span> <span class="str">"bye"</span>
 <span class="kw">done</span></code></pre>
       </div>
       <div class="code-block">
         <div class="code-block-header">
           <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">http.pln</span>
+          <span class="code-block-title">client.pln</span>
           <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
-        <pre><code><span class="kw">remember</span> response <span class="kw">as</span> <span class="kw">await</span> <span class="fn">fetch</span> <span class="str">"https://facts.com"</span>
+        <pre><code><span class="kw">remember</span> r <span class="kw">as get</span> <span class="str">"https://api.example.com/users"</span>
 
-<span class="kw">if</span> response <span class="kw">is</span> ok
-    <span class="kw">remember</span> data <span class="kw">as</span> response.<span class="fn">json</span>()
-    <span class="kw">show</span> data
-<span class="kw">otherwise</span>
-    <span class="kw">show</span> <span class="str">"api failed"</span>
+<span class="kw">if</span> ok <span class="kw">of</span> r
+    <span class="kw">show</span> status <span class="kw">of</span> r
+    <span class="kw">show</span> data <span class="kw">of</span> r
 <span class="kw">done</span></code></pre>
       </div>
     </div>
 
     <div class="feature-grid" style="margin-bottom:2rem">
       <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-list-check"></i></div>
-        <h4>Rule system</h4>
-        <p>Versioned rule pairs (Markdown + JSON) for Telegram bots, HTTP fetch, REST APIs, WebSocket, scheduling, and email live in <code>compiler/rules/</code> and ship with the package.</p>
+        <div class="feature-card-icon"><i class="fa-solid fa-database"></i></div>
+        <h4>Portable databases</h4>
+        <p><code>database "app.db"</code> probes the native driver and falls back to WebAssembly SQLite (<code>sql.js</code>). Pin it with <code>using "native"</code> or <code>using "wasm"</code>.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-shield-halved"></i></div>
-        <h4>Validated output</h4>
-        <p>Complex Compilation provider output is syntax-checked and scanned for forbidden patterns and undeclared requires before it can run.</p>
+        <div class="feature-card-icon"><i class="fa-solid fa-lock"></i></div>
+        <h4>Passwords and tokens</h4>
+        <p>scrypt hashing with <code>hashPassword</code>/<code>checkPassword</code>; HMAC-signed tokens with expiry via <code>createToken</code>/<code>readToken</code>.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-vault"></i></div>
-        <h4>Secrets protected</h4>
-        <p>Configuration is environment-based. Secret values are never sent to the Complex Compilation provider.</p>
+        <div class="feature-card-icon"><i class="fa-solid fa-file-arrow-up"></i></div>
+        <h4>File uploads</h4>
+        <p><code>accept uploads limit "5 MB" allow [...] folder "..."</code>; files surface as records with name, type, size, data and path (HTTP 413/415 enforced).</p>
       </div>
       <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-memory"></i></div>
-        <h4>Local cache</h4>
-        <p>Successful translations are cached locally, keyed by rule version + compiler version + source. Stale rules are never reused.</p>
+        <div class="feature-card-icon"><i class="fa-solid fa-gauge-high"></i></div>
+        <h4>Rate limiting and API keys</h4>
+        <p><code>limit requests to 100 per minute</code> per-IP sliding window; <code>require api key from env("API_KEY")</code> fails closed.</p>
       </div>
-    </div>
-
-    <div class="callout callout-info">
-      <i class="fa-solid fa-circle-info"></i>
-      <div class="callout-body">
-        <strong>How it works</strong>
-        <p>The deterministic compiler stays authoritative. When it encounters a construct that is defined by a Complex Compilation rule, it delegates translation to the provider. The result is validated JavaScript that flows through the normal bundler/runtime path. The <code>plain cc</code> command (or <code>plain ai</code>) manages status, rules, and cache.</p>
+      <div class="feature-card">
+        <div class="feature-card-icon"><i class="fa-brands fa-google"></i></div>
+        <h4>Google OAuth</h4>
+        <p>A <code>google oauth</code> block registers redirect and callback endpoints and stores the signed-in user on the session.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon"><i class="fa-solid fa-rotate-left"></i></div>
+        <h4>Error handling and retries</h4>
+        <p><code>try ... recover ... done</code> catches failures; <code>retry 3 times every 5 seconds</code> re-runs flaky operations until they succeed.</p>
       </div>
     </div>
   </div>
@@ -1634,29 +1605,29 @@ Done.
     <div class="section-tag"><i class="fa-solid fa-shield-halved"></i> Security</div>
     <h2 class="section-title">Security Model</h2>
     <p class="section-lead">
-      Plain&rsquo;s Complex Compilation layer includes multiple layers of validation to ensure generated code is safe to run.
+      Plain compiles deterministically — the JavaScript you run is the JavaScript you can read. The compiler adds multiple layers of validation so projects stay safe and predictable.
     </p>
 
     <div class="feature-grid" style="margin-bottom:2rem">
       <div class="feature-card">
         <div class="feature-card-icon"><i class="fa-solid fa-code"></i></div>
-        <h4>Generated code validation</h4>
-        <p>Every JavaScript output from the Complex Compilation provider is syntax-checked with <code>new Function()</code> and scanned for forbidden patterns before it enters the runtime pipeline.</p>
+        <h4>Readable output</h4>
+        <p>Every construct compiles to plain, inspectable JavaScript. Nothing hidden, nothing generated behind your back — <code>plain build</code> shows you exactly what will run.</p>
       </div>
       <div class="feature-card">
         <div class="feature-card-icon"><i class="fa-solid fa-ban"></i></div>
         <h4>Dependency restrictions</h4>
-        <p>Complex Compilation output may only require packages that are explicitly declared in <code>plain.json</code>. Undeclared <code>require()</code> calls are rejected at compile time.</p>
+        <p>Packages referenced by <code>use</code> must be declared and installed. Missing dependencies stop compilation with a friendly error instead of failing at runtime.</p>
       </div>
       <div class="feature-card">
         <div class="feature-card-icon"><i class="fa-solid fa-bug-slash"></i></div>
-        <h4>Forbidden patterns</h4>
-        <p>Patterns like <code>eval()</code>, <code>child_process</code>, <code>fs.writeFile</code> to system paths, and other dangerous constructs are blocked in Complex Compilation output.</p>
+        <h4>Teaching errors</h4>
+        <p>The compiler rejects ambiguous or invalid programs at compile time with clear messages — including route-only features used outside routes and sessions used without <code>enable sessions</code>.</p>
       </div>
       <div class="feature-card">
         <div class="feature-card-icon"><i class="fa-solid fa-key"></i></div>
         <h4>Environment secrets</h4>
-        <p>API keys and tokens are read from environment variables via <code>env()</code> at runtime. Secret values are never sent to the Complex Compilation provider as part of the source code.</p>
+        <p>API keys and tokens are read from environment variables via <code>env()</code> at runtime. Secret values never live in Plain source code.</p>
       </div>
       <div class="feature-card">
         <div class="feature-card-icon"><i class="fa-solid fa-file-shield"></i></div>
@@ -1664,9 +1635,9 @@ Done.
         <p>Plain loads <code>.env</code> files automatically via <code>dotenv</code>. Environment variables are available through <code>env("KEY")</code> in Plain code.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-clipboard-check"></i></div>
-        <h4>Rule validation</h4>
-        <p>Complex Compilation rules are versioned, checksummed, and validated on load. Tampered or outdated rules are rejected with clear error messages.</p>
+        <div class="feature-card-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h4>Hardened web primitives</h4>
+        <p>Passwords use salted scrypt with constant-time verification, tokens are HMAC-signed with expiry, API-key checks fail closed, and sessions ride HttpOnly cookies.</p>
       </div>
     </div>
   </div>
@@ -1946,7 +1917,7 @@ Hello, World!</code></pre>
     <div class="section-tag"><i class="fa-solid fa-map"></i> Roadmap</div>
     <h2 class="section-title">What&rsquo;s next</h2>
     <p class="section-lead">
-      Plain 1.0 is stable, v1.1 added Plain Expressions, v1.1.1 brought the JavaScript Gateway, v2.0.0-latest added Complex Compilation, and v2.0.1 ships OCR plus first-class npm aliases and version ranges. Here&rsquo;s what&rsquo;s planned next.
+      Plain 1.0 is stable, v1.1 added Plain Expressions, v1.1.1 brought the JavaScript Gateway, v2.0 rebuilt the compiler platform and added Telegram bots, v2.0.1 shipped OCR plus first-class npm aliases and version ranges, and v2.1.1 completes the backend services. Here&rsquo;s what&rsquo;s planned next.
     </p>
 
     <div class="roadmap">
@@ -2028,12 +1999,13 @@ Hello, World!</code></pre>
           <div class="roadmap-connector"></div>
         </div>
         <div class="roadmap-content">
-          <h4>v2.0 &mdash; Complex Compilation <span class="badge badge-green" style="margin-left:.5rem"><i class="fa-solid fa-check"></i> Released</span></h4>
+          <h4>v2.0 &mdash; Compiler platform &amp; Telegram <span class="badge badge-green" style="margin-left:.5rem"><i class="fa-solid fa-check"></i> Released</span></h4>
           <ul>
-            <li>Rule system &mdash; Telegram, HTTP fetch, REST APIs, WebSocket, scheduling, email</li>
-            <li>Complex Compilation provider with validated output</li>
-            <li>Deterministic compiler stays authoritative</li>
-            <li>Generated code validation, dependency restrictions, forbidden patterns</li>
+            <li>Deterministic-first compile pipeline &mdash; lexer, parser, generator, bundler</li>
+            <li><code>plain</code> exposed as a CLI executable alongside <code>plain-code</code></li>
+            <li><code>plain doctor</code> checks the project environment</li>
+            <li>Telegram bots &mdash; <code>telegram bot with token</code>, command and callback handlers, inline keyboards</li>
+            <li>Inline <code>{ key: value }</code> object literals and statement-level JavaScript blocks</li>
           </ul>
         </div>
       </div>
@@ -2073,6 +2045,23 @@ Hello, World!</code></pre>
         </div>
       </div>
 
+      <div class="roadmap-item">
+        <div class="roadmap-version">v2.1.1</div>
+        <div class="roadmap-line-wrap">
+          <div class="roadmap-dot done"></div>
+        </div>
+        <div class="roadmap-content">
+          <h4>v2.1.1 &mdash; Backend Services <span class="badge badge-green" style="margin-left:.5rem"><i class="fa-solid fa-check"></i> Shipped</span></h4>
+          <ul>
+            <li>Portable SQLite &mdash; native driver with WebAssembly fallback (<code>using "native"</code> / <code>using "wasm"</code>)</li>
+            <li>HTTP client &mdash; <code>get</code>, <code>post ... with ...</code>, headers and timeouts, response records</li>
+            <li>Passwords, tokens and sessions &mdash; scrypt hashing, HMAC tokens, signed cookies</li>
+            <li>Uploads, cookies, rate limiting, API keys and Google OAuth</li>
+            <li><code>try/recover</code>, retries, and custom 404 handlers</li>
+          </ul>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -2097,7 +2086,7 @@ Hello, World!</code></pre>
       <div class="faq-item">
         <button class="faq-question">Is Plain production-ready? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Plain 2.0.1 includes runtime dependency detection, automatic installation, Complex Compilation, OCR, npm aliases and version ranges, and deployment-oriented CLI commands &mdash; backed by a test suite of 560+ checks. It compiles to standard Node.js-compatible JavaScript and remains well-suited for personal projects, tooling, and learning.
+          Plain 2.1.1 includes runtime dependency detection, automatic installation, OCR, npm aliases and version ranges, portable databases, an HTTP client, sessions, uploads, rate limiting, and deployment-oriented CLI commands &mdash; backed by a test suite of 560+ checks. It compiles to standard Node.js-compatible JavaScript and remains well-suited for personal projects, tooling, and learning.
         </div>
       </div>
 
@@ -2144,9 +2133,16 @@ Hello, World!</code></pre>
       </div>
 
       <div class="faq-item">
-        <button class="faq-question">Is Complex Compilation an AI chatbot? <i class="fa-solid fa-chevron-down"></i></button>
+        <button class="faq-question">How do portable databases work? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          No. Complex Compilation is a compiler extension that translates versioned, formally defined Plain rules into JavaScript. It does not interpret free-form English. Every construct has explicit syntax and semantics. The compiler stays deterministic and authoritative &mdash; Complex Compilation only handles the specific capabilities defined by its rules.
+          Write <code>database "app.db"</code>. Plain probes the native driver (<code>better-sqlite3</code>) at startup and silently falls back to a pure-JavaScript WebAssembly engine (<code>sql.js</code>) if it is unavailable &mdash; same statements, same transactions, no code changes. Pin an engine explicitly with <code>using "native"</code> or <code>using "wasm"</code>; the WebAssembly engine persists the database file after every write so data survives restarts.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">Is Plain&rsquo;s compiler deterministic? <i class="fa-solid fa-chevron-down"></i></button>
+        <div class="faq-answer">
+          Yes. Every construct &mdash; including backend services like sessions, uploads, and OAuth &mdash; has explicit syntax and compiles to readable JavaScript through the fixed pipeline. No rules, no providers, no hidden code generation: what you read in <code>plain build</code> output is exactly what runs.
         </div>
       </div>
 
@@ -2275,7 +2271,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.</code></pre>
     <div class="footer-col">
       <h5>Project</h5>
       <ul>
-        <li><a href="#complex-compilation">Complex Compilation</a></li>
+        <li><a href="#backend-services">Backend Services</a></li>
         <li><a href="#security">Security</a></li>
         <li><a href="#roadmap">Roadmap</a></li>
         <li><a href="#faq">FAQ</a></li>
@@ -2287,7 +2283,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.</code></pre>
   <div class="footer-bottom">
     <p>Copyright &copy; 2026 Ayokunle. Released under the MIT License.</p>
     <span class="badge badge-blue version-badge">
-      <i class="fa-solid fa-bolt"></i> Plain v2.1.0
+      <i class="fa-solid fa-bolt"></i> Plain v2.1.1
     </span>
   </div>
 </footer>

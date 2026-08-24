@@ -3,7 +3,7 @@
 > **Purpose:** Plain is a small language, but it has sharp edges that trip up
 > code generators (LLMs included). This file is the fastest way to teach an AI
 > — ChatGPT, Claude, Cursor, Copilot — to write Plain code that actually
-> compiles with `@ayoxx/plain-code` v2.1.0.
+> compiles with `@ayoxx/plain-code` v2.1.1.
 >
 > **How to use:**
 > 1. Paste this entire file into your AI chat before asking it to write Plain.
@@ -23,9 +23,9 @@ Plain source files (`.pln`) compile to readable Node.js JavaScript.
 - Indentation is optional but recommended (4 spaces).
 - The compiler auto-wraps programs in an async runtime when needed, so
   top-level async statements just work.
-- Backend plumbing (express, pg, nodemailer, croner, ws, redis) is generated
-  for you — implementation packages never appear in your source and are
-  installed automatically on `plain run`.
+- Backend plumbing (express, pg, better-sqlite3, sql.js, nodemailer, croner,
+  ws, redis, multer) is generated for you — implementation packages never
+  appear in your source and are installed automatically on `plain run`.
 
 ```plain
 // app.pln
@@ -47,29 +47,34 @@ These are verified compiler behaviors. Do not generate code that violates them.
 
 1. **Blocks close with `done`.** `if`, `for`, `while`, `make`, route, group,
    transaction, mail, schedule and handler bodies, object literals, SQL blocks,
-   JavaScript blocks — all end with `done`.
+   JavaScript blocks, `try`, `retry`, `google oauth`, `when nothing matches`
+   — all end with `done`.
 
-2. **Only `+` exists as an arithmetic operator.** `*`, `/`, `-`, parentheses
-   grouping are lexer errors. There are no negative number literals.
-   Need more math? Use a JavaScript block:
+2. **Arithmetic uses `+ - * / %` with standard precedence.** Parenthesised
+   groups and unary minus work: `(a + b) * -c`, `n % 2`. There is no exponent
+   operator and no `Math.*` surface — need more math? Use a JavaScript block:
 
    ```plain
    remember total as javascript
-       return price * quantity - discount
+       return Math.sqrt(price * quantity - discount)
    done
    ```
 
-3. **Conditions must use a comparison operator.** `if x is 1` works;
-   `if running()` does not compile. There is no truthy check.
+3. **Conditions must contain a comparison.** `if x is 1`, `if list contains
+   item`, `if name starts with "A"` work; `if running()` does not compile.
+   There is no truthy check — compare booleans explicitly with
+   `if ready is true`.
 
-4. **No `and` / `or` in conditions.** One comparison per condition. Nest `if`s
-   to combine:
+4. **Combine comparisons with `and` / `or` / `not`.** `and` binds tighter than
+   `or`; `not` negates one comparison:
 
    ```plain
-   if age is at least 13
-       if age is at most 19
-           show "teenager"
-       done
+   if age is at least 13 and age is at most 19
+       show "teenager"
+   done
+
+   if not name is empty and logged in is true
+       show name
    done
    ```
 
@@ -90,23 +95,40 @@ These are verified compiler behaviors. Do not generate code that violates them.
 
 6. **No method calls on values.** `list.push(x)`, `text.trim()`,
    `response.json()` do not compile. Calls only work as bare identifiers:
-   builtins (`length(x)`), user functions (`add(1, 2)`), and known packages
-   (`sqlite("app.db")`). Anything else → JavaScript block.
+   builtins (`length(x)`), user functions (`add(1, 2)`), known packages
+   (`sqlite("app.db")`), and the route-only web accessors (`param("id")`,
+   `cookie("theme")`, `upload("file")`). Record fields use `of` or a dot:
+   `data of response`, `response.status`. Anything else → JavaScript block.
 
-7. **No `await` prefix in expressions.** `remember r as await fetch("...")`
-   silently produces broken JavaScript (`let r = await;`). Async work comes
-   from dedicated statements (`ask`, `ocr`, email sends, database queries,
-   cache reads, telegram handlers) or JavaScript blocks, which handle
-   awaiting for you.
+7. **No `await` prefix in expressions.** Use **`wait for`** instead — it
+   awaits a single operation and binds tighter than binary operators:
 
-8. **No try/catch statement.** Wrap risky code in a JavaScript block if you
-   need error handling.
+   ```plain
+   remember user as wait for loadUser(id)      // (await loadUser(id))
+   wait for saveUser(record)                   // statement form
+   remember stats as wait for get "https://api.example.com/stats"
+   ```
+
+8. **Error handling is `try` / `recover`.** `try ... done` swallows errors;
+   `recover [as err]` handles them:
+
+   ```plain
+   try
+       remember data as jsonDecode(raw)
+   recover as err
+       show "bad json: " + message of err
+   done
+   ```
+
+   There is no `finally`. For try/finally patterns, use a JavaScript block.
 
 9. **Comments start with `//`.** There is no `note` keyword in the current
    deterministic parser.
 
 10. **Keywords are reserved.** Don't name variables `show`, `is`, `make`,
-    `use`, `when`, `start`, `bot`, `ocr`, `route`, `database`, etc.
+    `use`, `when`, `start`, `bot`, `ocr`, `route`, `database`, `try`,
+    `recover`, `retry`, `wait`, `accept`, `session`, `cookie`, etc. The
+    literals `true`, `false`, and `null` are keywords too — don't shadow them.
     Contextual words (`status`, `query`, `send`, `broadcast`, `cache`) keep
     their ordinary meaning when followed by `becomes` or `(...)`.
 
@@ -139,11 +161,20 @@ show players[0]           // indexing works everywhere
 show user.name            // dot access
 ```
 
+### Arithmetic (v2.1.1)
+
+```plain
+remember price as 3 + 4 * 2          // 11 — * binds tighter than +
+remember half as (price - 1) / 2     // parentheses group
+remember odd as count % 2            // remainder
+remember down as 0 - adjustment      // unary minus also works: -adjustment
+```
+
 ### Conditions
 
 | Plain | JavaScript |
 |---|---|
-| `is` / `is equal to` | `===` |
+| `is` | `===` |
 | `is not` | `!==` |
 | `is greater than` / `is above` | `>` |
 | `is less than` / `is below` | `<` |
@@ -153,6 +184,9 @@ show user.name            // dot access
 | `contains "x"` (bare form also valid) | `.includes("x")` |
 | `starts with "x"` | `.startsWith("x")` |
 | `ends with "x"` | `.endsWith("x")` |
+
+Combine any of these with `and`, `or`, `not` (rule 4 above). `between`
+already implies `and`: `if age between 13 and 19`.
 
 ### Loops
 
@@ -170,7 +204,7 @@ done
 
 There are no numeric range loops — build a list and loop over it, or count
 with `while` and `x becomes x + 1`.
-(`every 5 minutes … done` is scheduling, not a loop — see §9.)
+(`every 5 minutes … done` is scheduling, not a loop — see §11.)
 
 ### Functions
 
@@ -295,9 +329,9 @@ Rules:
   binds as `Database` (better-sqlite3). Aliasing these is a friendly error.
 - Version ranges install via npm; `require()` always uses the bare name.
 - Missing packages are installed automatically by `plain run`, `plain build`,
-  and `plain install` — including the packages behind v2.1 features
-  (`pg`, `nodemailer`, `croner`, `ws`, `redis`), which you never `use`
-  yourself.
+  and `plain install` — including the packages behind v2.1/v2.1.1 features
+  (`pg`, `better-sqlite3`, `sql.js`, `nodemailer`, `croner`, `ws`, `redis`,
+  `multer`), which you never `use` yourself.
 - Built-in Node modules (`fs`, `path`) are detected and never installed.
 
 ---
@@ -390,10 +424,30 @@ Sharp edges:
 - Route bodies are JSON-parsed automatically (`express.json()`).
 - `validate(data, fields)` returns the list of missing field names.
 - Reply objects/arrays become `res.json`; strings become `res.send`.
+- Middleware statements (`allow cors`, `enable sessions`, `accept uploads`,
+  `limit requests to`, `require api key from`) apply to the routes registered
+  **after** them — put them before your routes.
 
 ---
 
 ## 7. Databases
+
+### Portable engines (v2.1.1)
+
+```plain
+database "app.db"                    // probe native driver, fall back to WebAssembly
+database "app.db" using "native"     // require better-sqlite3
+database "app.db" using "wasm"       // require sql.js
+database ":memory:"                  // in-memory, never persisted
+```
+
+- The default probes the native driver (`better-sqlite3`) by opening an
+  in-memory database; if that fails, the program continues on the pure-
+  JavaScript WebAssembly engine (`sql.js`). Same statements either way.
+- The WebAssembly engine writes the whole database file after every mutating
+  statement, so data survives restarts. In-memory databases never persist.
+- An unknown driver string fails at compile time.
+- PostgreSQL is separate: `postgres env("DATABASE_URL")` (below).
 
 ### SQLite
 
@@ -453,7 +507,7 @@ transaction
 done
 ```
 
-All enclosed writes commit together or roll back entirely.
+All enclosed writes commit together or roll back entirely — on both engines.
 
 ### PostgreSQL (v2.1)
 
@@ -473,7 +527,178 @@ placeholders; `query` captures `.rows`. Transactions use `BEGIN`/`COMMIT`/
 
 ---
 
-## 8. Input, raw JS, and the escape hatch
+## 8. HTTP client (v2.1.1)
+
+Requests are statements **and values**, built on global `fetch`
+(Node.js 18+):
+
+```plain
+get "https://api.example.com/users"
+post "https://api.example.com/users" with { name: "Ada", role: "admin" }
+put url with payload
+patch url with payload
+delete "https://api.example.com/users/7"     // an HTTP request, not SQL
+```
+
+Optional clauses on any method — inline object or block form for headers:
+
+```plain
+remember r as post apiurl with payload headers { token: env("API_TOKEN") } timeout 5000
+
+remember r as get "https://slow.api" headers
+    accept is "application/json"
+done timeout 10000
+```
+
+The response is a record:
+
+| Field | Meaning |
+|---|---|
+| `ok of r` | `true` for 2xx status codes |
+| `status of r` | HTTP status number |
+| `headers of r` | response headers as a record |
+| `data of r` | parsed JSON when the content type says `json`, otherwise the raw text |
+
+```plain
+remember r as get "https://api.example.com/users"
+if ok of r is true
+    show data of r
+otherwise
+    show status of r
+done
+```
+
+Sharp edges:
+
+- `get(...)`, `post(...)` **with parentheses are ordinary function calls** —
+  the request form is the word followed directly by a URL value.
+- Records and arrays sent with `with` are serialised as JSON; strings and
+  buffers go verbatim.
+- Default timeout is 30 seconds; timing out aborts the request and raises
+  (catch it with `try`/`recover`).
+- `get`/`post`/`put`/`patch`/`delete` requests are awaited automatically in
+  assignments. To fire one as a statement or await a raw promise, use
+  `wait for fetch(...)`.
+
+---
+
+## 9. Passwords, tokens, sessions, uploads, cookies (v2.1.1)
+
+### Passwords and tokens
+
+| Call | Behaviour |
+|---|---|
+| `hashPassword(pw)` | scrypt hash with a per-password salt |
+| `checkPassword(pw, storedHash)` | constant-time verification, gives `true`/`false` |
+| `createToken(payload, secret)` | HMAC-signed token, expires after 3600 s |
+| `createToken(payload, secret, ttlSeconds)` | custom time-to-live |
+| `readToken(token, secret)` | verified payload record, or `null` (tampered/expired) |
+
+### Sessions
+
+```plain
+web app
+enable sessions "a-long-random-secret"
+
+route post "/login"
+    user of session of request becomes username of body of request
+    reply "welcome"
+done
+
+route post "/logout"
+    destroy session
+    reply "bye"
+done
+```
+
+- The session rides an HMAC-signed cookie named `plain.sid`
+  (`HttpOnly`, `SameSite=Lax`).
+- `session of request` is the session record — assign fields onto it with
+  `becomes`.
+- Reading `session of request` outside a route, or without
+  `enable sessions`, is a compile-time teaching error.
+- The store lives in memory: restarting the process signs everyone out.
+
+### File uploads
+
+```plain
+accept uploads limit "5 MB" allow ["image/png", "image/jpeg"] folder "uploads"
+```
+
+All clauses optional; the statement must appear **before** the routes it
+protects. Inside routes:
+
+| Call | Result |
+|---|---|
+| `upload("field")` | first file under the field, or `null` |
+| `uploads("field")` | array of files under the field |
+
+Each file is a record: `name` (original name), `type` (MIME), `size` (bytes),
+`data` (buffer, memory storage), `path` (string, folder storage).
+
+```plain
+route post "/verify"
+    remember file as upload("id")
+    if file is null
+        status 400
+        reply "attach the id image"
+    otherwise
+        ocr path of file as scanned
+        reply scanned
+    done
+done
+```
+
+A file over the limit is rejected with HTTP 413; a disallowed MIME type with
+HTTP 415. With `folder`, files are written to disk (the folder is created).
+
+### Cookies
+
+All three are **route-only** — using them outside a route handler is a
+compile-time teaching error.
+
+```plain
+route get "/theme"
+    set cookie "theme" to "dark" expires in 7 days   // seconds|minutes|hours|days
+    reply cookie("theme")
+done
+
+route get "/reset"
+    clear cookie "theme"
+    reply "cleared"
+done
+```
+
+### Rate limiting, API keys, OAuth, 404s
+
+```plain
+limit requests to 100 per minute           // per-IP sliding window; unit:
+                                           // second(s)|minute(s)|hour(s); over quota → 429
+
+require api key from env("API_KEY")        // clients send header x-api-key;
+                                           // wrong/missing key → 401; unset
+                                           // configured key rejects everyone
+
+google oauth
+    id is env("GOOGLE_ID")
+    secret is env("GOOGLE_SECRET")
+    callback is "https://myapp.dev/auth/google/callback"
+    landing is "/dashboard"
+done                                       // registers /auth/google (redirect)
+                                           // and the callback (signs the user
+                                           // onto the session, then redirects)
+
+when nothing matches                       // custom 404 — place AFTER your routes
+    status 404
+    reply json
+        error is "No such road"
+    done
+done
+```
+
+---
+
+## 10. Input, raw JS, and the escape hatch
 
 `ask` reads a line from the terminal (async handled for you):
 
@@ -482,9 +707,10 @@ ask "What is your name?" as who
 show `Hey ${who}`
 ```
 
-JavaScript Gateway blocks are the pressure valve. When Plain's surface doesn't
-cover something (math beyond `+`, try/catch, method chains, HTTP with await),
-drop to real JS — everything else around it stays Plain:
+JavaScript Gateway blocks remain the pressure valve for what Plain's surface
+doesn't cover — method chains, `Math.*`, streams, `finally`. Since v2.1.1,
+error handling (`try`/`recover`) and awaiting (`wait for`) are native, so you
+should rarely need a block just for those:
 
 ```plain
 // Named block: binds a value (always wrapped in async IIFE)
@@ -503,11 +729,14 @@ done
 ```
 
 Inside a named block, plain JavaScript applies — including `try`, `catch`,
-arithmetic operators, and `await`.
+`finally`, all arithmetic operators, and `await`.
+
+Prefer Plain statements when they exist: `try ... recover ... done` reads
+better and formats itself.
 
 ---
 
-## 9. Email, schedules, background jobs, WebSocket, cache (v2.1)
+## 11. Email, schedules, background jobs, WebSocket, cache (v2.1)
 
 ### Email (nodemailer under the hood)
 
@@ -584,7 +813,27 @@ statement ran first.
 
 ---
 
-## 10. Telegram bots
+## 12. Retries (v2.1.1)
+
+Wrap flaky operations in `retry <n> times` — optionally with a delay between
+attempts (default 1 second; `every 0 seconds` retries immediately). The body
+runs until it succeeds or attempts run out; failures are logged with the last
+error and the program continues:
+
+```plain
+retry 3 times every 5 seconds
+    remember r as get "https://flaky.api/health"
+    if ok of r is not true
+        javascript
+            throw new Error("health check failed")
+        done
+    done
+done
+```
+
+---
+
+## 13. Telegram bots
 
 Zero dependencies — the generated runtime polls the Bot API with `fetch`.
 
@@ -614,7 +863,7 @@ given to `bot "…"` drives every API call.
 
 ---
 
-## 11. OCR
+## 14. OCR
 
 Extract text from images with Tesseract.js — the package never appears in
 your source; dependency detection installs it automatically.
@@ -632,7 +881,7 @@ automatically.
 
 ---
 
-## 12. Multi-file projects
+## 15. Multi-file projects
 
 ```plain
 // app.pln
@@ -648,7 +897,7 @@ show add(3, 4)
 
 ---
 
-## 13. CLI cheat sheet
+## 16. CLI cheat sheet
 
 | Command | What it does |
 |---|---|
@@ -663,7 +912,7 @@ show add(3, 4)
 
 ---
 
-## 14. Verification workflow (do this after generating code)
+## 17. Verification workflow (do this after generating code)
 
 ```bash
 plain check app.pln     # fast syntax gate — run this before anything else
@@ -675,7 +924,7 @@ include suggestions ("Did you mean ...") — trust them.
 
 ---
 
-## 15. Copy-paste prompt for your AI
+## 18. Copy-paste prompt for your AI
 
 > You are writing Plain (`.pln`) source that compiles with
 > `@ayoxx/plain-code`. Follow these rules strictly:
@@ -683,38 +932,60 @@ include suggestions ("Did you mean ...") — trust them.
 > - Every block ends with `done`. No braces anywhere.
 > - Variables: `remember x as V`, reassign `x becomes V`.
 > - Print with `show X`.
+> - Arithmetic: `+ - * / %` with standard precedence, parentheses and unary
+>   minus allowed. No `**`.
 > - Conditions MUST contain a comparison (`is`, `is not`, `is greater than`,
->   `is at least`, `contains`, `starts with`, `is empty`, ...). No `and`,
->   no `or`, no `otherwise if` — nest `if` inside `otherwise` with its own
+>   `is at least`, `contains`, `starts with`, `is empty`, ...). Combine with
+>   `and` / `or` / `not`. No truthy checks; compare with `is true` /
+>   `is false`. No `otherwise if` — nest `if` inside `otherwise` with its own
 >   `done`.
-> - Only arithmetic operator is `+`. No `*`, `/`, `-`, no negative literals,
->   no parenthesized math groups.
 > - No method calls on values (`list.push(1)` is invalid). Use builtins like
->   `length(x)`, user functions, or a JavaScript block.
-> - No `await` prefix in expressions. No try/catch. Comments are `//`.
-> - For anything beyond the surface (HTTP with await, complex math, error
->   handling), use:
->   `remember result as javascript ... return value ... done`
+>   `length(x)`, user functions, or a JavaScript block. Record fields:
+>   `data of response` or `response.data`.
+> - Never write `await`. Use `wait for <expr>` to await, or statements that
+>   await themselves (requests, `ask`, `ocr`, queries, mail).
+> - Errors: `try ... recover as err ... done` (`recover` optional).
+> - Retries: `retry 3 times every 5 seconds ... done`.
 > - Packages: `use pkg`, `use pkg as alias`, `use pkg@^1.2.0`.
-> - Web: `web app` + `route get|post "<path>" ... done` + `group "/api"` +
->   `param()/query()/header()` inside routes + `status 404` +
->   `allow cors` + `validate(body of request, ["f"])`.
-> - Database: `database "app.db"` or `postgres env("URL")`. SQL placeholders
->   are `{varName}` bound to Plain variables; `remember rows as query ... done`
->   captures results; `transaction ... done` wraps writes atomically.
+> - Web: `web app` + `route get|post|put|patch|delete "<path>" ... done` +
+>   `group "/api"` + `param()/query()/header()` inside routes + `status 404` +
+>   `allow cors` + `validate(body of request, ["f"])` + `when nothing matches
+>   ... done` (place last).
+> - HTTP client: `get "<url>"`, `post <url> with <body>`, optional
+>   `headers {...}` and `timeout <ms>`; response record
+>   `ok/status/headers/data` (read with `of`). `get(...)` with parens is a
+>   normal function call, not a request.
+> - Database: `database "app.db"` (auto native/wasm fallback; pin with
+>   `using "native"` or `using "wasm"`) or `postgres env("URL")`. SQL
+>   placeholders are `{varName}` bound to Plain variables;
+>   `remember rows as query ... done` captures results;
+>   `transaction ... done` wraps writes atomically.
+> - Auth: `hashPassword(pw)`, `checkPassword(pw, hash)`,
+>   `createToken(payload, secret)`, `readToken(token, secret)`.
+> - Sessions: `enable sessions "<secret>"` before routes;
+>   `session of request` / `destroy session` inside routes.
+> - Uploads: `accept uploads limit "5 MB" allow [...] folder "..."` before
+>   routes; `upload("field")` / `uploads("field")` inside routes.
+> - Cookies: `set cookie "t" to "dark" expires in 7 days`, `cookie("t")`,
+>   `clear cookie "t"` (route-only).
+> - Middleware: `limit requests to 100 per minute`,
+>   `require api key from env("API_KEY")`, `google oauth ... done` — register
+>   before the routes they protect.
 > - Email: `mail transport ... done` then `send mail ... done`.
 > - Schedules: `every 5 minutes ... done`, `schedule "* * * * *" ... done`,
 >   `run background someFn(args)`.
 > - Realtime: `websocket server on 8080` with `when socket connects /
 >   sends message / disconnects ... done`, `send socket x`, `broadcast x`.
 > - Cache: `cache "redis://..."` then `cacheGet/cacheSet/cacheDelete`.
-> - Never import or require express/pg/nodemailer/croner/ws/redis — the
->   compiler generates and installs them.
+> - Escape hatch: `remember result as javascript ... return value ... done`.
+> - Never import or require express/pg/better-sqlite3/sql.js/nodemailer/
+>   croner/ws/redis/multer/tesseract.js — the compiler generates and installs
+>   them.
 > - After writing code, run `plain check app.pln` and fix reported lines.
 >
 > Full reference follows in knowledge.md.
 
 ---
 
-*Every claim in this file reflects the deterministic compiler as of v2.1.0.
+*Every claim in this file reflects the deterministic compiler as of v2.1.1.
 When in doubt: `plain check` is ground truth.*

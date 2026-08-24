@@ -7,7 +7,7 @@ const STATEMENT_KEYWORDS = [
   'remember', 'show', 'if', 'make', 'give',
   'for', 'while', 'use', 'import', 'when', 'listen', 'reply', 'serve',
   'web', 'route', 'start', 'database', 'query', 'insert', 'update', 'delete', 'execute',
-  'ask', 'javascript', 'bot', 'ocr',
+  'ask', 'javascript', 'bot', 'ocr', 'try', 'recover', 'retry',
 ];
 
 // Number words used by the numbered item expression (v1.1):
@@ -44,6 +44,15 @@ function extractSqlParams(rawSql) {
     return '?';
   });
   return { sql, params };
+}
+
+// v2.1.1 — parse an upload size limit such as "5 MB", "512 KB", "1GB" or
+// "100B" into a byte count. Returns null when the text is not a valid size.
+const UPLOAD_SIZE_UNITS = { b: 1, kb: 1024, mb: 1024 * 1024, gb: 1024 * 1024 * 1024 };
+function parseUploadSize(text) {
+  const match = /^(\d+(?:\.\d+)?)\s*(b|kb|mb|gb)$/i.exec(String(text).trim());
+  if (!match) return null;
+  return Math.round(parseFloat(match[1]) * UPLOAD_SIZE_UNITS[match[2].toLowerCase()]);
 }
 
 // Returns the Levenshtein edit distance between two strings.
@@ -99,13 +108,50 @@ function parse(tokens) {
 
   // ── Condition parsing ───────────────────────────────────────────────────────
   //
-  // Returns a condition node (used by if and while):
+  // v2.1.1 grammar (outermost first):
+  //   condition   := andCondition ("or" andCondition)*
+  //   andCondition:= notCondition ("and" notCondition)*
+  //   notCondition:= "not" notCondition | comparison
+  //   comparison  := the single-comparison forms below
+  //
+  // Node shapes produced by the comparison level:
   //   BinaryCondition  { type, left, op, right }      — left op right
   //   UnaryCondition   { type, left, op }              — left is empty / is not empty
   //   BetweenCondition { type, left, low, high }       — left between low and high
   //   StringCondition  { type, left, method, right }   — left contains/startsWith/endsWith right
+  // plus LogicalCondition { type, op: "and"|"or", left, right } and
+  //                      { type, op: "not", operand } from the combinator levels.
 
+  // Entry point used by if/while.
   function parseCondition() {
+    let left = parseAndCondition();
+    while (peek().type === TOKEN.OR) {
+      advance();
+      const right = parseAndCondition();
+      left = { type: 'LogicalCondition', op: 'or', left, right };
+    }
+    return left;
+  }
+
+  function parseAndCondition() {
+    let left = parseNotCondition();
+    while (peek().type === TOKEN.AND) {
+      advance();
+      const right = parseNotCondition();
+      left = { type: 'LogicalCondition', op: 'and', left, right };
+    }
+    return left;
+  }
+
+  function parseNotCondition() {
+    if (peek().type === TOKEN.NOT) {
+      advance();
+      return { type: 'LogicalCondition', op: 'not', operand: parseNotCondition() };
+    }
+    return parseComparisonCondition();
+  }
+
+  function parseComparisonCondition() {
     const left = parseExpression();
 
     // ── Non-"is" operators ──────────────────────────────────────────────────
@@ -256,6 +302,11 @@ function parse(tokens) {
     if (token.type === TOKEN.QUERY_KW)    return parseSqlBlock('query',   'QueryStatement');
     if (token.type === TOKEN.INSERT_KW)   return parseSqlBlock('insert',  'InsertStatement');
     if (token.type === TOKEN.UPDATE_KW)   return parseSqlBlock('update',  'UpdateStatement');
+    // v2.1.1 — delete "<url>" is an HTTP DELETE request; a bare "delete"
+    // starting a raw block keeps its SQL meaning.
+    if (token.type === TOKEN.DELETE_KW && tokenStartsValue(peekAt(1))) {
+      return { type: 'ExpressionStatement', expression: parseHttpCall('delete') };
+    }
     if (token.type === TOKEN.DELETE_KW)   return parseSqlBlock('delete',  'DeleteStatement');
     if (token.type === TOKEN.EXECUTE_KW)  return parseSqlBlock('execute', 'ExecuteStatement');
 
@@ -405,6 +456,83 @@ function parse(tokens) {
         return { type: 'StatusStatement', value };
       }
 
+      // ── v2.1.1 statements (all contextual, following the v2.1.0 pattern) ──
+
+      // try … [recover [as <name>]] … done: deterministic error handling.
+      // "try(...)" calls and "try becomes x" keep their ordinary meaning.
+      if (token.value === 'try' &&
+          peekAt(1).type !== TOKEN.LPAREN && peekAt(1).type !== TOKEN.BECOMES) {
+        return parseTryStatement();
+      }
+
+      // wait for <value>: await an async operation as a statement.
+      if (token.value === 'wait' && peekAt(1).type === TOKEN.FOR) {
+        advance(); // wait
+        advance(); // for
+        return { type: 'ExpressionStatement', expression: { type: 'AwaitExpression', value: parseUnary() } };
+      }
+
+      // retry <n> times [every <n> seconds] … done
+      if (token.value === 'retry' && peekAt(1).type === TOKEN.NUMBER) {
+        return parseRetry();
+      }
+
+      // accept uploads [limit "<size>"] [allow ["mime", ...]] [folder "<dir>"]
+      if (token.value === 'accept' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'uploads') {
+        return parseAcceptUploads();
+      }
+
+      // require api key from <expr>: rejects requests without a valid key.
+      if (token.value === 'require' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'api') {
+        return parseRequireApiKey();
+      }
+
+      // enable sessions <secret>: signed-cookie sessions on the current app.
+      if (token.value === 'enable' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'sessions') {
+        advance(); // enable
+        advance(); // sessions
+        return { type: 'EnableSessionsStatement', secret: parseExpression() };
+      }
+
+      // destroy session: clears the current session (inside a route).
+      if (token.value === 'destroy' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'session') {
+        advance(); // destroy
+        advance(); // session
+        return { type: 'DestroySessionStatement' };
+      }
+
+      // set cookie "<name>" to <expr> [expires in <n> <unit>] / clear cookie "<name>"
+      if (token.value === 'set' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'cookie') {
+        return parseSetCookie();
+      }
+      if (token.value === 'clear' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'cookie') {
+        advance(); // clear
+        advance(); // cookie
+        const name = consume(TOKEN.STRING,
+          'Expected a cookie name string after "clear cookie".\n\nExample:\n  clear cookie "theme"').value;
+        return { type: 'ClearCookieStatement', name };
+      }
+
+      // limit requests to <n> per <unit>: rate limiting middleware.
+      if (token.value === 'limit' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'requests') {
+        return parseRateLimit();
+      }
+
+      // google oauth … done: explicit Google OAuth 2.0 semantics.
+      if (token.value === 'google' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'oauth') {
+        advance(); // google
+        advance(); // oauth
+        return { type: 'GoogleOAuthStatement', options: parsePropertyList('"google oauth" block') };
+      }
+
       const expr = parsePrimary();
 
       if (peek().type === TOKEN.BECOMES) {
@@ -416,7 +544,9 @@ function parse(tokens) {
       if (expr.type === 'CallExpression' ||
           expr.type === 'AddCall' ||
           expr.type === 'RemoveCall' ||
-          expr.type === 'WriteCall') {
+          expr.type === 'WriteCall' ||
+          expr.type === 'HttpCall' ||
+          expr.type === 'AwaitExpression') {
         return { type: 'ExpressionStatement', expression: expr };
       }
 
@@ -553,7 +683,9 @@ function parse(tokens) {
   function parseShow() {
     consume(TOKEN.SHOW);
     // Support both keyword form (show "text") and call form (show("text")).
-    if (peek().type === TOKEN.LPAREN) {
+    // A "(" after "show" only means a call when the matching ")" ends the
+    // expression; otherwise it is a grouped value like show (2 + 3) * 4.
+    if (peek().type === TOKEN.LPAREN && !groupContinuesAfterMatch()) {
       advance(); // consume (
       const value = parseExpression();
       consume(TOKEN.RPAREN, 'Expected ")" to close "show" call.');
@@ -561,6 +693,33 @@ function parse(tokens) {
     }
     const value = parseExpression();
     return { type: 'ShowStatement', value };
+  }
+
+  // From the current "(" token, find its matching ")". Returns true when the
+  // expression continues after the match (operator or postfix), meaning the
+  // parenthesised group is part of a larger expression.
+  function groupContinuesAfterMatch() {
+    let depth = 0;
+    for (let i = pos; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (t.type === TOKEN.LPAREN) depth++;
+      else if (t.type === TOKEN.RPAREN) {
+        depth--;
+        if (depth === 0) {
+          const after = tokens[i + 1];
+          if (!after || after.type === TOKEN.EOF) return false;
+          return (
+            after.type === TOKEN.STAR || after.type === TOKEN.SLASH ||
+            after.type === TOKEN.PERCENT || after.type === TOKEN.PLUS ||
+            after.type === TOKEN.MINUS || after.type === TOKEN.LBRACKET ||
+            after.type === TOKEN.DOT ||
+            (after.type === TOKEN.IDENTIFIER &&
+              ['of', 'length', 'above', 'below', 'contains', 'matches', 'becomes'].includes(after.value))
+          );
+        }
+      }
+    }
+    return false;
   }
 
   // make name(params) ... done
@@ -655,6 +814,23 @@ function parse(tokens) {
   // when socket connects|sends message|disconnects   → v2.1.0 websocket handlers
   function parseWhen() {
     consume(TOKEN.WHEN);
+
+    // v2.1.1 — "when nothing matches … done" registers the 404 catch-all.
+    // It must appear after every route in the source; the generated handler
+    // keeps that position.
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'nothing') {
+      advance(); // nothing
+      const matchesToken = peek();
+      if (matchesToken.type !== TOKEN.IDENTIFIER || matchesToken.value !== 'matches') {
+        throw new Error(makeError(
+          'Expected "matches" after "when nothing".\n\nExample:\n  when nothing matches\n    status 404\n    reply "Not found"\n  done',
+          matchesToken
+        ));
+      }
+      advance(); // matches
+      const body = parseBody('"when nothing matches" block');
+      return { type: 'NotFoundStatement', body };
+    }
 
     // v2.1.0 — socket handlers inside a "websocket server" block come first:
     // they read "when socket …", not "when someone …".
@@ -920,12 +1096,31 @@ function parse(tokens) {
 
   // ── v0.6 — SQLite DX ───────────────────────────────────────────────────────
 
-  // database "<file>"
+  // database "<file>" [using "<driver>"]
+  //
+  // v2.1.1 — the optional driver selects the SQLite engine without changing
+  // any other Plain database semantics:
+  //   "native" — better-sqlite3 (requires a working native binding)
+  //   "wasm"   — sql.js WebAssembly build (runs anywhere Node runs)
+  // The default ("auto") tries native first and falls back to the wasm
+  // engine when the native binding is unavailable on this platform.
   function parseDatabase() {
     consume(TOKEN.DATABASE_KW);
     const file = consume(TOKEN.STRING,
       'Expected a database file path after "database".\n\nExample:\n  database "app.db"').value;
-    return { type: 'DatabaseStatement', file };
+    let driver = null;
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'using') {
+      advance(); // using
+      driver = consume(TOKEN.STRING,
+        'Expected a driver name after "using".\n\nDrivers: "native", "wasm"\n\nExample:\n  database "app.db" using "wasm"').value;
+      if (!['native', 'wasm'].includes(driver)) {
+        throw new Error(makeError(
+          `Unknown SQLite driver "${driver}". Available drivers: "native", "wasm".`,
+          peek()
+        ));
+      }
+    }
+    return { type: 'DatabaseStatement', file, driver };
   }
 
   // v2.1.0 — postgres "<connection-string>": binds the PostgreSQL pool to
@@ -956,6 +1151,253 @@ function parse(tokens) {
     const rawSql = advance().value; // consume SQL_BODY
     consume(TOKEN.DONE, `Expected "done" to close the "${keyword}" block.`);
     return { type: nodeType, ...extractSqlParams(rawSql) };
+  }
+
+  // ── v2.1.1 — error handling, retries and backend middleware ───────────────
+
+  // try … [recover [as <name>]] … done
+  function parseTryStatement() {
+    advance(); // try
+    const tryBody = [];
+    while (!(peek().type === TOKEN.DONE ||
+             (peek().type === TOKEN.IDENTIFIER && peek().value === 'recover'))) {
+      if (peek().type === TOKEN.EOF) {
+        throw new Error(makeError(
+          'Expected keyword "done" to close the "try" block before end of file.',
+          peek()
+        ));
+      }
+      const stmt = parseStatement();
+      if (stmt) tryBody.push(stmt);
+    }
+    let catchName = null;
+    let recoverBody = null;
+    if (peek().type !== TOKEN.DONE) {
+      advance(); // recover
+      if (peek().type === TOKEN.AS) {
+        advance();
+        catchName = consume(TOKEN.IDENTIFIER,
+          'Expected a variable name after "recover as".\n\nExample:\n  recover as error').value;
+      }
+      recoverBody = [];
+      while (peek().type !== TOKEN.DONE) {
+        if (peek().type === TOKEN.EOF) {
+          throw new Error(makeError(
+            'Expected keyword "done" to close the "recover" block before end of file.',
+            peek()
+          ));
+        }
+        const stmt = parseStatement();
+        if (stmt) recoverBody.push(stmt);
+      }
+    }
+    advance(); // done
+    return { type: 'TryStatement', tryBody, catchName, recoverBody };
+  }
+
+  // retry <n> times [every <n> seconds] … done
+  function parseRetry() {
+    advance(); // retry
+    const attemptsToken = advance(); // NUMBER
+    if (attemptsToken.type !== TOKEN.NUMBER || attemptsToken.value < 1) {
+      throw new Error(makeError(
+        'The number of retries must be a number of at least 1.\n\nExample:\n  retry 3 times',
+        attemptsToken
+      ));
+    }
+    const timesToken = peek();
+    if (timesToken.type !== TOKEN.IDENTIFIER || timesToken.value !== 'times') {
+      throw new Error(makeError(
+        'Expected "times" after the number of retries.\n\nExample:\n  retry 3 times',
+        timesToken
+      ));
+    }
+    advance(); // times
+    let delaySeconds = 1;
+    // ("every" lexes as the EACH keyword.)
+    if ((peek().type === TOKEN.IDENTIFIER && peek().value === 'every') ||
+        (peek().type === TOKEN.EACH && peek().value === 'every')) {
+      advance(); // every
+      const count = advance();
+      // 0 seconds is allowed: it means "retry immediately".
+      if (count.type !== TOKEN.NUMBER || count.value < 0) {
+        throw new Error(makeError(
+          'Expected a number of seconds (0 or more) after "every".\n\nExample:\n  retry 3 times every 5 seconds',
+          count
+        ));
+      }
+      const unit = peek();
+      if (unit.type !== TOKEN.IDENTIFIER || !/^seconds?$/.test(unit.value)) {
+        throw new Error(makeError(
+          'Expected "seconds" or "second" after the delay in "retry".\n\nExample:\n  retry 3 times every 5 seconds',
+          unit
+        ));
+      }
+      advance(); // unit
+      delaySeconds = count.value;
+    }
+    const body = parseBody('"retry" block');
+    return { type: 'RetryStatement', attempts: attemptsToken.value, delaySeconds, body };
+  }
+
+  // accept uploads [limit "<size>"] [allow ["mime", ...]] [folder "<dir>"]
+  function parseAcceptUploads() {
+    advance(); // accept
+    advance(); // uploads
+    let limitBytes = null;
+    let mimes = null;
+    let folder = null;
+    while (true) {
+      if (peek().type === TOKEN.IDENTIFIER && peek().value === 'limit' && limitBytes === null) {
+        advance(); // limit
+        const sizeToken = consume(TOKEN.STRING,
+          'Expected a size limit string after "limit".\n\nExamples:\n  accept uploads limit "5 MB"\n  accept uploads limit "512 KB"');
+        limitBytes = parseUploadSize(sizeToken.value);
+        if (limitBytes === null) {
+          throw new Error(makeError(
+            `Invalid upload size ${JSON.stringify(sizeToken.value)}. Use a number with a unit: B, KB, MB or GB.\n\nExample:\n  accept uploads limit "5 MB"`,
+            sizeToken
+          ));
+        }
+        continue;
+      }
+      if (peek().type === TOKEN.IDENTIFIER && peek().value === 'allow' && mimes === null) {
+        advance(); // allow
+        const list = parseArrayLiteral();
+        for (const element of list.elements) {
+          if (element.type !== 'StringLiteral') {
+            throw new Error(makeError(
+              'MIME types in "accept uploads allow [...]" must be strings.\n\nExample:\n  accept uploads allow ["image/png", "image/jpeg"]',
+              peek()
+            ));
+          }
+        }
+        mimes = list.elements.map(element => element.value);
+        continue;
+      }
+      // ("folder" lexes as the FOLDER keyword, so both token shapes count.)
+      if ((peek().type === TOKEN.FOLDER ||
+           (peek().type === TOKEN.IDENTIFIER && peek().value === 'folder')) && folder === null) {
+        advance(); // folder
+        folder = consume(TOKEN.STRING,
+          'Expected a folder path string after "folder".\n\nExample:\n  accept uploads folder "uploads"').value;
+        continue;
+      }
+      break;
+    }
+    return { type: 'AcceptUploadsStatement', limitBytes, mimes, folder };
+  }
+
+  // require api key from <expr>
+  function parseRequireApiKey() {
+    const startToken = advance(); // require
+    const apiToken = advance();
+    if (apiToken.type !== TOKEN.IDENTIFIER || apiToken.value !== 'api') {
+      throw new Error(makeError('Expected "api key from <key>" after "require".', apiToken));
+    }
+    const keyToken = peek();
+    if (keyToken.type !== TOKEN.IDENTIFIER || keyToken.value !== 'key') {
+      throw new Error(makeError(
+        'Expected "key" after "require api".\n\nExample:\n  require api key from env("API_KEY")',
+        keyToken
+      ));
+    }
+    advance(); // key
+    const fromToken = peek();
+    if (fromToken.type !== TOKEN.IDENTIFIER || fromToken.value !== 'from') {
+      throw new Error(makeError(
+        'Expected "from" before the key value.\n\nExample:\n  require api key from env("API_KEY")',
+        fromToken
+      ));
+    }
+    advance(); // from
+    const key = parseExpression();
+    return { type: 'RequireApiKeyStatement', key };
+  }
+
+  // set cookie "<name>" to <expr> [expires in <n> seconds|minutes|hours|days]
+  function parseSetCookie() {
+    advance(); // set
+    advance(); // cookie
+    const name = consume(TOKEN.STRING,
+      'Expected a cookie name string after "set cookie".\n\nExample:\n  set cookie "theme" to "dark"').value;
+    const toToken = peek();
+    if (toToken.type !== TOKEN.IDENTIFIER || toToken.value !== 'to') {
+      throw new Error(makeError(
+        'Expected "to" after the cookie name.\n\nExample:\n  set cookie "theme" to "dark"',
+        toToken
+      ));
+    }
+    advance(); // to
+    const value = parseExpression();
+    let maxAgeSeconds = null;
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'expires') {
+      advance(); // expires
+      // ("in" lexes as the IN keyword.)
+      const inToken = peek();
+      if (inToken.type !== TOKEN.IN) {
+        throw new Error(makeError(
+          'Expected "in" after "expires".\n\nExample:\n  set cookie "theme" to "dark" expires in 7 days',
+          inToken
+        ));
+      }
+      advance(); // in
+      const count = advance();
+      if (count.type !== TOKEN.NUMBER || count.value <= 0) {
+        throw new Error(makeError(
+          'Expected a positive number after "expires in".\n\nExample:\n  set cookie "theme" to "dark" expires in 7 days',
+          count
+        ));
+      }
+      const unit = peek();
+      if (unit.type !== TOKEN.IDENTIFIER || !TIME_UNITS[unit.value]) {
+        throw new Error(makeError(
+          'Expected a time unit after the number in "expires in".\n\nUnits: seconds, minutes, hours, days\n\nExample:\n  set cookie "theme" to "dark" expires in 7 days',
+          unit
+        ));
+      }
+      advance(); // unit
+      maxAgeSeconds = Math.round(count.value * TIME_UNITS[unit.value] / 1000);
+    }
+    return { type: 'SetCookieStatement', name, value, maxAgeSeconds };
+  }
+
+  // limit requests to <n> per seconds|minutes|hours
+  function parseRateLimit() {
+    advance(); // limit
+    advance(); // requests
+    const toToken = peek();
+    if (toToken.type !== TOKEN.IDENTIFIER || toToken.value !== 'to') {
+      throw new Error(makeError(
+        'Expected "to" after "limit requests".\n\nExample:\n  limit requests to 100 per minute',
+        toToken
+      ));
+    }
+    advance(); // to
+    const maxToken = advance();
+    if (maxToken.type !== TOKEN.NUMBER || maxToken.value < 1) {
+      throw new Error(makeError(
+        'Expected a positive number of requests.\n\nExample:\n  limit requests to 100 per minute',
+        maxToken
+      ));
+    }
+    const perToken = peek();
+    if (perToken.type !== TOKEN.IDENTIFIER || perToken.value !== 'per') {
+      throw new Error(makeError(
+        'Expected "per" before the time window.\n\nExample:\n  limit requests to 100 per minute',
+        perToken
+      ));
+    }
+    advance(); // per
+    const unit = advance();
+    if (unit.type !== TOKEN.IDENTIFIER ||
+        !['second', 'seconds', 'minute', 'minutes', 'hour', 'hours'].includes(unit.value)) {
+      throw new Error(makeError(
+        'Expected a time unit after "per".\n\nUnits: second(s), minute(s), hour(s)\n\nExample:\n  limit requests to 100 per minute',
+        unit
+      ));
+    }
+    return { type: 'RateLimitStatement', max: maxToken.value, windowMs: TIME_UNITS[unit.value] };
   }
 
   // ── Conditions ─────────────────────────────────────────────────────────────
@@ -1016,15 +1458,51 @@ function parse(tokens) {
 
   // ── Expressions ────────────────────────────────────────────────────────────
 
-  // expression → primary ('+' primary)*
+  // v2.1.1 — full arithmetic precedence:
+  //   additive     := term (("+" | "-") term)*
+  //   multiplicative ("term") := unary (("*" | "/" | "%") unary)*
+  //   unary        := "-" unary | "wait for" unary | primary
+  //   primary      := atom with postfix chains (indexing, members, of, length)
   function parseExpression() {
-    let left = parsePrimary();
-    while (peek().type === TOKEN.PLUS) {
-      advance();
-      const right = parsePrimary();
-      left = { type: 'BinaryExpression', operator: '+', left, right };
+    let left = parseTerm();
+    while (peek().type === TOKEN.PLUS || peek().type === TOKEN.MINUS) {
+      const operator = advance().value;
+      const right = parseTerm();
+      left = { type: 'BinaryExpression', operator, left, right };
     }
     return left;
+  }
+
+  function parseTerm() {
+    let left = parseUnary();
+    while (
+      peek().type === TOKEN.STAR ||
+      peek().type === TOKEN.SLASH ||
+      peek().type === TOKEN.PERCENT
+    ) {
+      const operator = advance().value;
+      const right = parseUnary();
+      left = { type: 'BinaryExpression', operator, left, right };
+    }
+    return left;
+  }
+
+  function parseUnary() {
+    if (peek().type === TOKEN.MINUS) {
+      advance();
+      return { type: 'UnaryExpression', operator: '-', operand: parseUnary() };
+    }
+    // v2.1.1 — await semantics: "wait for <value>" awaits an async operation.
+    // The operand binds tightly (a full postfix chain), so
+    // "wait for loadUser(id) + 1" means "(await loadUser(id)) + 1".
+    // ("for" lexes as the FOR keyword, not an identifier.)
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'wait' &&
+        peekAt(1).type === TOKEN.FOR) {
+      advance(); // wait
+      advance(); // for
+      return { type: 'AwaitExpression', value: parseUnary() };
+    }
+    return parsePrimary();
   }
 
   // primary → itemExpr | atom (postfix)*
@@ -1116,15 +1594,36 @@ function parse(tokens) {
     ));
   }
 
-  // atom → STRING | NUMBER | '[' ... ']' | IDENTIFIER '(' args ')' | IDENTIFIER
+  // atom → STRING | NUMBER | true | false | null | '(' expr ')' |
+  //        '[' ... ']' | '{' ... '}' | httpCall | IDENTIFIER '(' args ')' | IDENTIFIER
   function parseAtom() {
     const token = peek();
 
     if (token.type === TOKEN.STRING)   { advance(); return { type: 'StringLiteral',  value: token.value }; }
     if (token.type === TOKEN.TEMPLATE_STRING) { advance(); return { type: 'TemplateLiteral',  value: token.value }; }
     if (token.type === TOKEN.NUMBER)   { advance(); return { type: 'NumberLiteral',  value: token.value }; }
+    // v2.1.1 — boolean and null literals
+    if (token.type === TOKEN.TRUE_KW)  { advance(); return { type: 'BooleanLiteral', value: true }; }
+    if (token.type === TOKEN.FALSE_KW) { advance(); return { type: 'BooleanLiteral', value: false }; }
+    if (token.type === TOKEN.NULL_KW)  { advance(); return { type: 'NullLiteral' }; }
+    // v2.1.1 — parenthesised grouping: (a + b) * c
+    if (token.type === TOKEN.LPAREN) {
+      advance();
+      const inner = parseExpression();
+      consume(TOKEN.RPAREN, 'Expected ")" to close the grouped expression.');
+      return inner;
+    }
     if (token.type === TOKEN.LBRACKET) { return parseArrayLiteral(); }
     if (token.type === TOKEN.LBRACE)   { return parseInlineObjectLiteral(); }
+
+    // v2.1.1 — HTTP client prefix form:
+    //   get "<url>"            post urlExpr with <body>
+    //   put/patch/delete …     optional "headers { … }" and "timeout <ms>" clauses
+    // The call form get(...) stays an ordinary user/builtin call.
+    const httpMethod = httpMethodWord(token);
+    if (httpMethod && peekAt(1).type !== TOKEN.LPAREN && tokenStartsValue(peekAt(1))) {
+      return parseHttpCall(httpMethod);
+    }
 
     if (token.type === TOKEN.IDENTIFIER) {
       if (peekAt(1).type === TOKEN.LPAREN) return parseCallExpression();
@@ -1142,6 +1641,66 @@ function parse(tokens) {
       `Expected a value (a word, number, string, or array) but got "${token.value || token.type}".`,
       token
     ));
+  }
+
+  // v2.1.1 — "get", "post", "put", "patch" lex as identifiers; "delete" lexes
+  // as the SQL keyword token. All five introduce an HTTP request when followed
+  // by a URL value instead of "(".
+  function httpMethodWord(token) {
+    if (token.type === TOKEN.IDENTIFIER &&
+        ['get', 'post', 'put', 'patch'].includes(token.value)) return token.value;
+    if (token.type === TOKEN.DELETE_KW) return 'delete';
+    return null;
+  }
+
+  // True when a token can begin a value expression.
+  function tokenStartsValue(token) {
+    return [
+      TOKEN.STRING, TOKEN.TEMPLATE_STRING, TOKEN.NUMBER,
+      TOKEN.IDENTIFIER, TOKEN.LBRACKET, TOKEN.LBRACE,
+      TOKEN.TRUE_KW, TOKEN.FALSE_KW, TOKEN.NULL_KW,
+    ].includes(token.type);
+  }
+
+  // v2.1.1 — parse one HTTP request expression after its method word.
+  //
+  //   get <url> [headers <object>] [timeout <ms>]
+  //   post|put|patch|delete <url> [with <body>] [headers <object>] [timeout <ms>]
+  //
+  // The response is a record: ok, status, headers, data (JSON-parsed when the
+  // server sends JSON, otherwise the response text).
+  function parseHttpCall(method) {
+    advance(); // consume the method word (get/post/put/patch/delete)
+    const urlToken = peek();
+    if (!tokenStartsValue(urlToken)) {
+      throw new Error(makeError(
+        `Expected a URL after "${method}".\n\nExample:\n  ${method} "https://api.example.com/items"`,
+        urlToken
+      ));
+    }
+    const url = parsePrimary();
+    let body = null;
+    let headers = null;
+    let timeout = null;
+    while (true) {
+      if (peek().type === TOKEN.WITH && body === null) {
+        advance();
+        body = parseExpression();
+        continue;
+      }
+      if (peek().type === TOKEN.IDENTIFIER && peek().value === 'headers' && headers === null) {
+        advance();
+        headers = parseExpression();
+        continue;
+      }
+      if (peek().type === TOKEN.IDENTIFIER && peek().value === 'timeout' && timeout === null) {
+        advance();
+        timeout = parseExpression();
+        continue;
+      }
+      break;
+    }
+    return { type: 'HttpCall', method, url, body, headers, timeout };
   }
 
   // [ expr, expr, ... ]

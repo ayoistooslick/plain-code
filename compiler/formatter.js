@@ -10,7 +10,7 @@
 const INDENT = '    '; // 4 spaces
 
 // Keywords whose line CLOSES a block (printed at depth - 1).
-const DEDENT_WORDS = new Set(['done', 'otherwise']);
+const DEDENT_WORDS = new Set(['done', 'otherwise', 'recover']);
 
 // Patterns whose line OPENS a new block (next line indented).
 const INDENT_STARTERS = [
@@ -22,6 +22,7 @@ const INDENT_STARTERS = [
   /^when\s+someone\s+visits/,  // when someone visits ...
   /^when\s+someone\s+(sends|clicks)\b/, // when someone sends / clicks (Telegram)
   /^when\s+socket\b/,          // when socket connects / sends message / disconnects (v2.1)
+  /^when\s+nothing\s+matches\b/, // when nothing matches ... done (v2.1.1 404 handler)
   /^javascript\b/,             // javascript raw JS block (v1.2)
   /^reply\b.*\bwith\s+buttons\s*$/, // reply ... with buttons ... done (v1.2)
   /^listen\s+on\s+/,           // listen on ...
@@ -32,15 +33,20 @@ const INDENT_STARTERS = [
   /^route\s+(get|post|put|patch|delete)\s+"/, // route <method> "..." (v2.1)
   /^group\s+"/,                // group "..."       (v2.1 route composition)
   /^transaction\s*$/,          // transaction       (v2.1 atomic DB block)
+  /^try\s*$/,                  // try               (v2.1.1 error handling)
+  /^recover\b/,                // recover [as name] (v2.1.1 error handling)
+  /^retry\s+\d+\s+times\b/,    // retry N times ... (v2.1.1 retries)
   /^every\s+\d+\s+(seconds?|minutes?|hours?|days?)\b/, // every 5 minutes (v2.1)
   /^schedule\s+"/,             // schedule "..."    (v2.1 cron)
   /^websocket\s+server\b/,     // websocket server  (v2.1)
   /^mail\s+transport\s*$/,     // mail transport    (v2.1)
   /^send\s+mail\s*$/,          // send mail         (v2.1)
+  /^google\s+oauth\s*$/,       // google oauth      (v2.1.1 Google sign-in)
   /^query\b/,                  // query SQL block   (v0.6 SQLite DX)
   /^insert\b/,                 // insert SQL block
   /^update\b/,                 // update SQL block
-  /^delete\b/,                 // delete SQL block
+  /^delete\b(?!\s*["'])/,      // delete SQL block (v2.1.1: NOT `delete "<url>"`,
+                               // which is an HTTP DELETE statement)
   /^execute\b/,                // execute SQL block
 ];
 

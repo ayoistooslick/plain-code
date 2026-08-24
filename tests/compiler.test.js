@@ -1,4 +1,4 @@
-// Tests for the Plain compiler
+﻿// Tests for the Plain compiler
 
 const fs   = require('fs');
 const path = require('path');
@@ -55,7 +55,7 @@ function compile(source) {
   return generate(parse(tokenize(source)));
 }
 
-// ── Runtime dependency detection ────────────────────────────────────────────
+// â”€â”€ Runtime dependency detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nRuntime dependency detection');
 
@@ -83,7 +83,20 @@ test('returns an empty list for a project without use statements', () => {
 });
 
 test('detects better-sqlite3 from database shorthand', () => {
-  assert(JSON.stringify(detectDependencies('database "app.db"')), '["better-sqlite3"]');
+  // v2.1.1 — the portable engine chain installs both engines: native first,
+  // WebAssembly fallback second.
+  assert(JSON.stringify(detectDependencies('database "app.db"')),
+    '["better-sqlite3","sql.js"]');
+});
+
+test('database using "wasm" detects only sql.js', () => {
+  assert(JSON.stringify(detectDependencies('database "app.db" using "wasm"')),
+    '["sql.js"]');
+});
+
+test('database using "native" detects only better-sqlite3', () => {
+  assert(JSON.stringify(detectDependencies('database "app.db" using "native"')),
+    '["better-sqlite3"]');
 });
 
 test('detects Express from web app shorthand', () => {
@@ -92,10 +105,10 @@ test('detects Express from web app shorthand', () => {
 
 test('deduplicates shorthand and explicit runtime dependencies', () => {
   assert(JSON.stringify(detectDependencies('web app\nuse express\ndatabase "app.db"\nuse sqlite')),
-    '["express","better-sqlite3"]');
+    '["express","better-sqlite3","sql.js"]');
 });
 
-// ── Lexer ────────────────────────────────────────────────────────────────────
+// â”€â”€ Lexer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nLexer');
 
@@ -150,9 +163,9 @@ test('skips single-line comments', () => {
   if (tokens[0].type !== TOKEN.SHOW) throw new Error('wrong token after comment');
 });
 
-// ── Day 1: remember + show ───────────────────────────────────────────────────
+// â”€â”€ Day 1: remember + show â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nDay 1 — remember + show');
+console.log('\nDay 1 â€” remember + show');
 
 test('remember string compiles to let', () => {
   assert(compile('remember name as "Ayokunle"'), 'let name = "Ayokunle";');
@@ -188,9 +201,9 @@ test('remember then show (day1 example)', () => {
   );
 });
 
-// ── Day 2: if / otherwise / done ─────────────────────────────────────────────
+// â”€â”€ Day 2: if / otherwise / done â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nDay 2 — if / otherwise / done');
+console.log('\nDay 2 â€” if / otherwise / done');
 
 test('"is" compiles to ===', () => {
   const src = 'remember x as "a"\nif x is "a"\n  show "yes"\ndone';
@@ -242,9 +255,9 @@ test('throws on missing done', () => {
   }
 });
 
-// ── Day 3: make / give / function calls ──────────────────────────────────────
+// â”€â”€ Day 3: make / give / function calls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nDay 3 — make / give / function calls');
+console.log('\nDay 3 â€” make / give / function calls');
 
 test('tokenizes make and give keywords', () => {
   const tokens = tokenize('make give');
@@ -324,9 +337,9 @@ test('throws on missing done in function', () => {
   }
 });
 
-// ── Error messages (Phase 2) ──────────────────────────────────────────────────
+// â”€â”€ Error messages (Phase 2) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nPhase 2 — Error messages');
+console.log('\nPhase 2 â€” Error messages');
 
 function throws(name, src, expectedFragment) {
   test(name, () => {
@@ -417,30 +430,30 @@ throws(
   'value'
 );
 
-// Invalid function declaration — missing name
+// Invalid function declaration â€” missing name
 throws(
   'missing function name after "make"',
   'make ()\n  show "hi"\ndone',
   'function name'
 );
 
-// Invalid function call — missing closing paren
+// Invalid function call â€” missing closing paren
 throws(
   'missing closing paren in function call',
   'make greet()\n  show "hi"\ndone\ngreet(',
   '")"'
 );
 
-// Invalid return (give) — missing value
+// Invalid return (give) â€” missing value
 throws(
   'give with no value',
   'make f()\n  give\ndone',
   'value'
 );
 
-// ── v0.2 — Arrays ────────────────────────────────────────────────────────────
+// â”€â”€ v0.2 â€” Arrays â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.2 — Arrays');
+console.log('\nv0.2 â€” Arrays');
 
 test('tokenizes [ and ]', () => {
   const tokens = tokenize('[ ]');
@@ -481,9 +494,9 @@ test('throws on unclosed array bracket', () => {
   }
 });
 
-// ── v0.2 — Objects ───────────────────────────────────────────────────────────
+// â”€â”€ v0.2 â€” Objects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.2 — Objects');
+console.log('\nv0.2 â€” Objects');
 
 test('tokenizes dot', () => {
   const tokens = tokenize('user.name');
@@ -518,9 +531,9 @@ test('throws on unclosed object literal', () => {
   }
 });
 
-// ── v0.2 — becomes (reassignment) ────────────────────────────────────────────
+// â”€â”€ v0.2 â€” becomes (reassignment) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.2 — becomes');
+console.log('\nv0.2 â€” becomes');
 
 test('simple becomes compiles to assignment', () => {
   const src = 'remember age as 16\nage becomes 17';
@@ -534,9 +547,9 @@ test('remember compiles to let (supports reassignment)', () => {
   if (!js.includes('let x = 1')) throw new Error('expected let');
 });
 
-// ── v0.2 — Loops ─────────────────────────────────────────────────────────────
+// â”€â”€ v0.2 â€” Loops â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.2 — Loops');
+console.log('\nv0.2 â€” Loops');
 
 test('tokenizes for / each / in keywords', () => {
   const tokens = tokenize('for each item in players');
@@ -562,9 +575,9 @@ test('throws on missing done in for each', () => {
   }
 });
 
-// ── v0.2 — While ─────────────────────────────────────────────────────────────
+// â”€â”€ v0.2 â€” While â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.2 — While');
+console.log('\nv0.2 â€” While');
 
 test('tokenizes while keyword', () => {
   const tokens = tokenize('while');
@@ -593,9 +606,9 @@ test('throws on missing done in while', () => {
   }
 });
 
-// ── v0.2 — Standard library ───────────────────────────────────────────────────
+// â”€â”€ v0.2 â€” Standard library â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.2 — Standard library');
+console.log('\nv0.2 â€” Standard library');
 
 test('uppercase() compiles to toUpperCase()', () => {
   const js = compile('show uppercase("hello")');
@@ -617,9 +630,9 @@ test('round() compiles to Math.round()', () => {
   if (!js.includes('Math.round(3)')) throw new Error('missing Math.round');
 });
 
-// ── v0.2 — Imports ────────────────────────────────────────────────────────────
+// â”€â”€ v0.2 â€” Imports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.2 — Imports');
+console.log('\nv0.2 â€” Imports');
 
 test('tokenizes use keyword', () => {
   const tokens = tokenize('use express');
@@ -642,9 +655,9 @@ test('multiple known imports compile', () => {
   if (!js.includes("require('fs')"))      throw new Error('missing fs');
 });
 
-// ── v0.3 — Runtime package system ────────────────────────────────────────────
+// â”€â”€ v0.3 â€” Runtime package system â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.3 — Runtime packages');
+console.log('\nv0.3 â€” Runtime packages');
 
 test('use sqlite compiles to require better-sqlite3', () => {
   const js = compile('use sqlite');
@@ -667,9 +680,9 @@ test('use node-fetch compiles to a bare require (not a valid identifier)', () =>
   if (js.includes('const node-fetch')) throw new Error('node-fetch must not become a const binding');
 });
 
-// ── v0.3 — Express runtime ───────────────────────────────────────────────────
+// â”€â”€ v0.3 â€” Express runtime â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.3 — Express runtime');
+console.log('\nv0.3 â€” Express runtime');
 
 test('tokenizes when / someone / visits keywords', () => {
   const tokens = tokenize('when someone visits "/"');
@@ -765,9 +778,9 @@ test('throws on missing done in route', () => {
   }
 });
 
-// ── v0.3 — SQLite runtime ────────────────────────────────────────────────────
+// â”€â”€ v0.3 â€” SQLite runtime â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.3 — SQLite runtime');
+console.log('\nv0.3 â€” SQLite runtime');
 
 test('sqlite() call compiles to new Database()', () => {
   const src = 'use sqlite\nremember db as sqlite("app.db")';
@@ -775,11 +788,11 @@ test('sqlite() call compiles to new Database()', () => {
   if (!js.includes('new Database("app.db")')) throw new Error('missing new Database');
 });
 
-// ── Summary ──────────────────────────────────────────────────────────────────
+// â”€â”€ Summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// ── v0.4.1 — Multi-file Package System ───────────────────────────────────────
+// â”€â”€ v0.4.1 â€” Multi-file Package System â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.4.1 — Multi-file imports');
+console.log('\nv0.4.1 â€” Multi-file imports');
 
 test('tokenizes import keyword', () => {
   const tokens = tokenize('import "./math.pln"');
@@ -801,29 +814,29 @@ test('ImportStatement generates no output', () => {
   if (js.trim() !== '') throw new Error('import should generate empty string');
 });
 
-test('simple import — imported file compiles first', () => {
+test('simple import â€” imported file compiles first', () => {
   const js = bundleFixture('uses_math.pln');
   // PI must be declared before it is used in show
   const piIdx   = js.indexOf('let PI');
   const showIdx = js.indexOf('console.log(PI)');
   if (piIdx === -1)     throw new Error('PI not declared');
   if (showIdx === -1)   throw new Error('show PI missing');
-  if (piIdx > showIdx)  throw new Error('PI declared after show — wrong order');
+  if (piIdx > showIdx)  throw new Error('PI declared after show â€” wrong order');
 });
 
-test('simple import — output contains imported code', () => {
+test('simple import â€” output contains imported code', () => {
   const js = bundleFixture('uses_math.pln');
   if (!js.includes('let PI = 3.14'))  throw new Error('PI missing');
   if (!js.includes('let TAU = 6.28')) throw new Error('TAU missing');
 });
 
-test('two imports — both files included in output', () => {
+test('two imports â€” both files included in output', () => {
   const js = bundleFixture('uses_both.pln');
   if (!js.includes('let PI'))        throw new Error('PI missing');
   if (!js.includes('function double')) throw new Error('double missing');
 });
 
-test('nested imports — deepest dependency compiled first', () => {
+test('nested imports â€” deepest dependency compiled first', () => {
   const js = bundleFixture('nested_a.pln');
   // nested_c defines deepValue, must appear before nested_b and nested_a output
   const deepIdx = js.indexOf('let deepValue');
@@ -836,21 +849,21 @@ test('nested imports — deepest dependency compiled first', () => {
   if (bIdx > aIdx)    throw new Error('b should come before a');
 });
 
-test('duplicate imports — code included exactly once', () => {
+test('duplicate imports â€” code included exactly once', () => {
   const js = bundleFixture('duplicate_a.pln');
   // PI should appear only once in the output
   const firstIdx  = js.indexOf('let PI');
   const secondIdx = js.indexOf('let PI', firstIdx + 1);
   if (firstIdx === -1)  throw new Error('PI not declared at all');
-  if (secondIdx !== -1) throw new Error('PI declared more than once — duplicate import not de-duped');
+  if (secondIdx !== -1) throw new Error('PI declared more than once â€” duplicate import not de-duped');
 });
 
-test('diamond imports — shared file included exactly once', () => {
+test('diamond imports â€” shared file included exactly once', () => {
   const js = bundleFixture('diamond_top.pln');
   const firstIdx  = js.indexOf('let sharedValue');
   const secondIdx = js.indexOf('let sharedValue', firstIdx + 1);
   if (firstIdx === -1)  throw new Error('sharedValue missing');
-  if (secondIdx !== -1) throw new Error('sharedValue declared twice — diamond not handled');
+  if (secondIdx !== -1) throw new Error('sharedValue declared twice â€” diamond not handled');
   if (!js.includes('"left"'))  throw new Error('left missing');
   if (!js.includes('"right"')) throw new Error('right missing');
   if (!js.includes('"top"'))   throw new Error('top missing');
@@ -891,9 +904,9 @@ test('import path preserved correctly in AST', () => {
   if (ast.body[0].path !== './sub/module.pln') throw new Error('wrong path');
 });
 
-// ── v0.4.2 — Package Manager & Project Management ────────────────────────────
+// â”€â”€ v0.4.2 â€” Package Manager & Project Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.4.2 — plain init');
+console.log('\nv0.4.2 â€” plain init');
 
 const os  = require('os');
 const { execFileSync: _execFileSync } = require('child_process');
@@ -959,7 +972,7 @@ test('plain init plain.json is valid JSON with name, version, entry', () => {
   if (typeof data.entry   !== 'string') throw new Error('entry must be a string');
 });
 
-console.log('\nv0.4.2 — plain add / remove');
+console.log('\nv0.4.2 â€” plain add / remove');
 
 test('plain add errors without plain.json', () => {
   const dir = tmpDir();
@@ -1014,7 +1027,7 @@ test('plain remove rejects invalid package name', () => {
   }
 });
 
-console.log('\nv0.4.2 — plain install (RFC-0009.2)');
+console.log('\nv0.4.2 â€” plain install (RFC-0009.2)');
 
 test('plain install errors without plain.json', () => {
   const dir = tmpDir();
@@ -1121,9 +1134,9 @@ test('plain install shows friendly error on resolver failure (circular import)',
   }
 });
 
-// ── End of install tests ────────────────────────────────────────────────────
+// â”€â”€ End of install tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.4.2 — CLI help');
+console.log('\nv0.4.2 â€” CLI help');
 
 test('plain help includes "plain init"', () => {
   const out = runCli(['help'], process.cwd());
@@ -1150,14 +1163,15 @@ test('plain help includes "plain update"', () => {
   if (!out.includes('plain update')) throw new Error(`"plain update" missing from help. Got:\n${out}`);
 });
 
-test('plain version shows 2.1.0', () => {
+test('plain version shows the compiler version', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.1.0')) throw new Error(`Expected version 2.1.0 but got: ${out}`);
+  const { VERSION } = require('../compiler/version');
+  if (!out.includes(VERSION)) throw new Error(`Expected version ${VERSION} but got: ${out}`);
 });
 
-// ── v0.5 — Formatter ─────────────────────────────────────────────────────────
+// â”€â”€ v0.5 â€” Formatter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.5 — Formatter');
+console.log('\nv0.5 â€” Formatter');
 
 test('format: removes trailing whitespace', () => {
   const result = format('remember x as 1   \nshow x   ');
@@ -1212,7 +1226,7 @@ test('format: strips leading blank lines', () => {
   if (result.startsWith('\n')) throw new Error('leading blank lines not stripped');
 });
 
-test('format: idempotent — formatting twice gives the same result', () => {
+test('format: idempotent â€” formatting twice gives the same result', () => {
   const src = 'make add(a, b)\ngive a + b\ndone\nremember x as 1\nshow x';
   const once  = format(src);
   const twice = format(once);
@@ -1255,9 +1269,9 @@ test('format: no blank lines between array elements', () => {
   }
 });
 
-// ── v0.5 — plain check ───────────────────────────────────────────────────────
+// â”€â”€ v0.5 â€” plain check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.5 — plain check');
+console.log('\nv0.5 â€” plain check');
 
 test('plain check exits 0 on valid file', () => {
   const dir = tmpDir();
@@ -1315,9 +1329,9 @@ test('plain check errors on missing file', () => {
   }
 });
 
-// ── v0.5 — plain fmt ─────────────────────────────────────────────────────────
+// â”€â”€ v0.5 â€” plain fmt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.5 — plain fmt');
+console.log('\nv0.5 â€” plain fmt');
 
 test('plain fmt formats file in-place', () => {
   const dir = tmpDir();
@@ -1356,9 +1370,9 @@ test('plain fmt errors on missing file', () => {
   }
 });
 
-// ── v0.5 — Diagnostics (line + column in errors) ─────────────────────────────
+// â”€â”€ v0.5 â€” Diagnostics (line + column in errors) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.5 — Diagnostics');
+console.log('\nv0.5 â€” Diagnostics');
 
 test('parse error includes Line N', () => {
   try {
@@ -1404,9 +1418,9 @@ test('unknown keyword suggestion includes "Did you mean"', () => {
   }
 });
 
-// ── v0.5 — CLI help & version ─────────────────────────────────────────────────
+// â”€â”€ v0.5 â€” CLI help & version â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.5 — CLI help & version');
+console.log('\nv0.5 â€” CLI help & version');
 
 test('plain help includes "plain check"', () => {
   const out = runCli(['help'], process.cwd());
@@ -1418,9 +1432,10 @@ test('plain help includes "plain fmt"', () => {
   if (!out.includes('plain fmt')) throw new Error(`"plain fmt" missing from help. Got:\n${out}`);
 });
 
-test('plain version shows 2.1.0', () => {
+test('plain version shows the compiler version', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.1.0')) throw new Error(`Expected version 2.1.0 but got: ${out}`);
+  const { VERSION } = require('../compiler/version');
+  if (!out.includes(VERSION)) throw new Error(`Expected version ${VERSION} but got: ${out}`);
 });
 
 test('package.json exposes a global plain bin with a node shebang', () => {
@@ -1434,9 +1449,9 @@ test('package.json exposes a global plain bin with a node shebang', () => {
   }
 });
 
-// ── v0.6 — Extended comparisons ──────────────────────────────────────────────
+// â”€â”€ v0.6 â€” Extended comparisons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.6 — Extended comparisons (lexer)');
+console.log('\nv0.6 â€” Extended comparisons (lexer)');
 
 test('tokenizes "above" keyword', () => {
   const tokens = tokenize('is above');
@@ -1478,7 +1493,7 @@ test('tokenizes "empty" keyword', () => {
   if (tokens[0].type !== TOKEN.EMPTY) throw new Error('empty wrong');
 });
 
-console.log('\nv0.6 — Extended comparisons (compiler)');
+console.log('\nv0.6 â€” Extended comparisons (compiler)');
 
 test('"is above" compiles to >', () => {
   const src = 'remember age as 20\nif age is above 18\n  show "adult"\ndone';
@@ -1583,9 +1598,9 @@ test('error: "is at" without least/most gives helpful message', () => {
   }
 });
 
-// ── v0.6 — Runtime Standard Library ──────────────────────────────────────────
+// â”€â”€ v0.6 â€” Runtime Standard Library â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.6 — Runtime stdlib');
+console.log('\nv0.6 â€” Runtime stdlib');
 
 test('print() compiles to console.log', () => {
   const js = compile('print("hello")');
@@ -1660,9 +1675,9 @@ test('uuid() uses require("crypto")', () => {
   if (!js.includes("require('crypto')")) throw new Error('missing require crypto');
 });
 
-// ── v0.6 — Express DX ────────────────────────────────────────────────────────
+// â”€â”€ v0.6 â€” Express DX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.6 — Express DX');
+console.log('\nv0.6 â€” Express DX');
 
 test('tokenizes "web" as WEB', () => {
   const tokens = tokenize('web');
@@ -1723,9 +1738,9 @@ test('"start" works with a variable port', () => {
   if (!js.includes('app.listen(port)')) throw new Error('missing app.listen(port)');
 });
 
-// ── v0.6 — SQLite DX ─────────────────────────────────────────────────────────
+// â”€â”€ v0.6 â€” SQLite DX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.6 — SQLite DX');
+console.log('\nv0.6 â€” SQLite DX');
 
 test('tokenizes "database" as DATABASE_KW', () => {
   const tokens = tokenize('database');
@@ -1744,14 +1759,28 @@ test('"query" SQL_BODY contains the SQL text', () => {
   if (!tokens[1].value.includes('SELECT 1')) throw new Error('SQL content missing');
 });
 
-test('"database" compiles to new Database()', () => {
+test('"database" compiles to the portable engine chain', () => {
+  // v2.1.1 — opening a database awaits __dbOpen, which probes better-sqlite3
+  // and falls back to sql.js when the native binding is unusable.
   const js = compile('database "app.db"');
-  if (!js.includes('new Database("app.db")')) throw new Error('missing new Database');
+  if (!js.includes('await __dbOpen("app.db", null)')) throw new Error('missing await __dbOpen');
 });
 
-test('"database" generates require better-sqlite3', () => {
-  const js = compile('database "app.db"');
-  if (!js.includes("require('better-sqlite3')")) throw new Error('missing require better-sqlite3');
+test('"database using wasm" forces the WebAssembly engine', () => {
+  const js = compile('database "app.db" using "wasm"');
+  if (!js.includes('await __dbOpen("app.db", "wasm")')) throw new Error('missing wasm driver');
+  if (!js.includes("require('sql.js')")) throw new Error('missing sql.js require');
+});
+
+test('"database using native" forbids the wasm fallback', () => {
+  const js = compile('database "app.db" using "native"');
+  if (!js.includes('await __dbOpen("app.db", "native")')) throw new Error('missing native driver');
+});
+
+test('unknown database driver fails at compile time', () => {
+  let threw = false;
+  try { compile('database "app.db" using "oracle"'); } catch (_) { threw = true; }
+  if (!threw) throw new Error('expected unknown-driver error');
 });
 
 test('"database" generates const db', () => {
@@ -1792,13 +1821,14 @@ test('"execute" block compiles to db.exec()', () => {
   if (!js.includes('db.exec(')) throw new Error('missing db.exec');
 });
 
-// ── v0.6 — CLI updates ────────────────────────────────────────────────────────
+// â”€â”€ v0.6 â€” CLI updates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.6 — CLI updates');
+console.log('\nv0.6 â€” CLI updates');
 
-test('plain version shows 2.1.0 (CLI)', () => {
+test('plain version shows the compiler version (CLI)', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.1.0')) throw new Error(`Expected 2.1.0 but got: ${out}`);
+  const { VERSION } = require('../compiler/version');
+  if (!out.includes(VERSION)) throw new Error(`Expected ${VERSION} but got: ${out}`);
 });
 
 test('plain help mentions v1.0 features', () => {
@@ -1816,9 +1846,9 @@ test('plain help includes "route"', () => {
   if (!out.includes('route')) throw new Error('"route" missing from help');
 });
 
-// ── v1.0.0 — Lexer edge cases ────────────────────────────────────────────────
+// â”€â”€ v1.0.0 â€” Lexer edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv1.0 — Lexer edge cases');
+console.log('\nv1.0 â€” Lexer edge cases');
 
 test('token carries line number', () => {
   const tokens = tokenize('remember\nshow');
@@ -1858,9 +1888,9 @@ test('throws on unexpected character', () => {
   }
 });
 
-// ── v1.0.0 — Compiler expression edge cases ───────────────────────────────────
+// â”€â”€ v1.0.0 â€” Compiler expression edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv1.0 — Expression edge cases');
+console.log('\nv1.0 â€” Expression edge cases');
 
 test('empty array literal compiles to []', () => {
   const js = compile('remember items as []');
@@ -1889,7 +1919,7 @@ test('member access becomes compiles to assignment', () => {
 
 test('addition expression with strings compiles correctly', () => {
   const js = compile('remember greeting as "Hello" + " " + "World"');
-  if (!js.includes('"Hello" + " " + "World"')) throw new Error('missing string concat');
+  if (!js.includes('("Hello" + " ") + "World"')) throw new Error('missing string concat');
 });
 
 test('function call result used in expression', () => {
@@ -1897,9 +1927,9 @@ test('function call result used in expression', () => {
   if (!js.includes('add(1, 2) + 3')) throw new Error('missing expression with call');
 });
 
-// ── v1.0.0 — Error message quality ───────────────────────────────────────────
+// â”€â”€ v1.0.0 â€” Error message quality â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv1.0 — Error message quality');
+console.log('\nv1.0 â€” Error message quality');
 
 test('misspelled "mke" suggests "make"', () => {
   try {
@@ -1951,9 +1981,9 @@ test('missing "as" in remember gives helpful message', () => {
   }
 });
 
-// ── v1.0.0 — Formatter additional coverage ────────────────────────────────────
+// â”€â”€ v1.0.0 â€” Formatter additional coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv1.0 — Formatter additional coverage');
+console.log('\nv1.0 â€” Formatter additional coverage');
 
 test('format: for each block body is indented', () => {
   const src = 'for each item in list\nshow item\ndone';
@@ -1985,9 +2015,9 @@ test('format: object literal body is indented', () => {
   if (!result.includes('    name is "Ayokunle"')) throw new Error('object body not indented');
 });
 
-// ── v1.0.0 — CLI additional coverage ─────────────────────────────────────────
+// â”€â”€ v1.0.0 â€” CLI additional coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv1.0 — CLI additional coverage');
+console.log('\nv1.0 â€” CLI additional coverage');
 
 test('plain new creates the project directory', () => {
   const dir = tmpDir();
@@ -2054,14 +2084,14 @@ test('plain run on a nonexistent file exits with a friendly error', () => {
   if (!out.includes('File not found')) {
     throw new Error(`Expected "File not found" error but got: ${out}`);
   }
-  if (out.includes('Complex Compilation') && !out.includes('trying Complex Compilation')) {
-    throw new Error(`Complex Compilation must not be invoked for a missing file. Output:\n${out}`);
+  if (out.includes('Complex Compilation')) {
+    throw new Error(`There is no Complex Compilation layer anymore. Output:\n${out}`);
   }
 });
 
-// ── v1.0.0 — Compiler regression tests ───────────────────────────────────────
+// â”€â”€ v1.0.0 â€” Compiler regression tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv1.0 — Regression tests');
+console.log('\nv1.0 â€” Regression tests');
 
 test('remember with array index read compiles correctly', () => {
   const js = compile('remember players as ["a", "b"]\nremember first as players[0]');
@@ -2125,9 +2155,9 @@ test('between condition in while loop', () => {
   if (!js.includes('x >= 1 && x <= 10')) throw new Error('expected between range');
 });
 
-// ── RFC-0010 — Plain Expressions (v1.1) ─────────────────────────────────────
+// â”€â”€ RFC-0010 â€” Plain Expressions (v1.1) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nRFC-0010 — Plain Expressions (v1.1)');
+console.log('\nRFC-0010 â€” Plain Expressions (v1.1)');
 
 test('first player from players compiles to index 0', () => {
   assert(compile('show first player from players'), 'console.log(players[0]);');
@@ -2434,11 +2464,11 @@ test('format: preserves plain expressions', () => {
   if (!result.includes('name of user')) throw new Error('of-expression changed');
 });
 
-// ── RFC-0011 — JavaScript Gateway (v1.1.1-beta) ─────────────────────────────
+// â”€â”€ RFC-0011 â€” JavaScript Gateway (v1.1.1-beta) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nRFC-0011 — JavaScript Gateway (v1.1.1-beta)');
+console.log('\nRFC-0011 â€” JavaScript Gateway (v1.1.1-beta)');
 
-// ── Lexer ───────────────────────────────────────────────────────────────────
+// â”€â”€ Lexer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('tokenizes "javascript" as a block keyword', () => {
   const tokens = tokenize('remember x as javascript');
@@ -2471,7 +2501,7 @@ test('tokenizes a scoped package name as a PACKAGE token', () => {
   if (tokens[1].value !== '@scope/package-name') throw new Error('wrong package value');
 });
 
-// ── Parser ──────────────────────────────────────────────────────────────────
+// â”€â”€ Parser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('parses a JavaScript block to a JavaScriptBlock node', () => {
   const ast = parse(tokenize('remember result as javascript\n  await axios.get(url)\ndone'));
@@ -2504,7 +2534,7 @@ test('ask with a prompt requires "as"', () => {
   }
 });
 
-// ── Dependency detection (RFC-0011 §21) ────────────────────────────────────
+// â”€â”€ Dependency detection (RFC-0011 Â§21) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('detects arbitrary npm packages', () => {
   assert(JSON.stringify(detectDependencies('use axios')), '["axios"]');
@@ -2538,7 +2568,7 @@ test('generic packages imported from other files are deduplicated at bundle time
   if (!js.includes('"gateway loaded"')) throw new Error('entry output missing');
 });
 
-// ── JavaScript blocks ───────────────────────────────────────────────────────
+// â”€â”€ JavaScript blocks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('basic JavaScript block compiles to an async IIFE assignment', () => {
   assert(compile('remember result as javascript\n  const value = await something()\n  return value\ndone'),
@@ -2607,7 +2637,7 @@ test('JavaScript block inside a while loop compiles inside the loop', () => {
   if (!js.includes('await (async () => {')) throw new Error('missing JS block in loop');
 });
 
-// ── ask ─────────────────────────────────────────────────────────────────────
+// â”€â”€ ask â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('ask variable compiles to a readline prompt', () => {
   const js = compile('ask name');
@@ -2643,7 +2673,7 @@ test('ask result used in expressions', () => {
   if (!js.includes('console.log(age + 1)')) throw new Error('ask result not usable in expression');
 });
 
-// ── Async runtime wrapper ───────────────────────────────────────────────────
+// â”€â”€ Async runtime wrapper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('bundle wraps programs containing JavaScript blocks in an async runtime', () => {
   const js = bundleFixture('gateway_js.pln');
@@ -2663,7 +2693,7 @@ test('bundle does not wrap programs without async features', () => {
   if (js.includes('(async () => {')) throw new Error('unexpected async wrapper');
 });
 
-// ── Formatter ───────────────────────────────────────────────────────────────
+// â”€â”€ Formatter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('format: preserves JavaScript block lines verbatim', () => {
   const src = 'remember result as javascript\n        const x = 1\n    return x\ndone';
@@ -2688,7 +2718,7 @@ test('format: idempotent with JavaScript blocks', () => {
   if (once !== twice) throw new Error('format not idempotent with JS blocks');
 });
 
-// ── Generic npm packages ────────────────────────────────────────────────────
+// â”€â”€ Generic npm packages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('use axios compiles to a require binding', () => {
   assert(compile('use axios'), 'const axios = require(\'axios\');');
@@ -2759,7 +2789,7 @@ test('use node-fetch inside an if body works', () => {
   if (!js.includes("require('node-fetch');")) throw new Error('missing node-fetch in if');
 });
 
-// ── Generic npm packages: aliases and version specs (v2.0.1) ───────────────
+// â”€â”€ Generic npm packages: aliases and version specs (v2.0.1) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('splitPackageSpec splits name and version range', () => {
   assert(JSON.stringify(splitPackageSpec('express')), JSON.stringify({ name: 'express', spec: null }));
@@ -2831,7 +2861,7 @@ test('hyphenated package require inside a JavaScript block is preserved verbatim
   if (!js.includes('require("node-fetch")')) throw new Error('JS block content changed');
 });
 
-// ── CLI ─────────────────────────────────────────────────────────────────────
+// â”€â”€ CLI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('plain help includes the JavaScript Gateway', () => {
   const out = runCli(['help'], process.cwd());
@@ -2839,9 +2869,10 @@ test('plain help includes the JavaScript Gateway', () => {
   if (!out.includes('ask')) throw new Error('"ask" missing from help');
 });
 
-test('plain version shows 2.1.0', () => {
+test('plain version shows the compiler version', () => {
   const out = runCli(['version'], process.cwd());
-  if (!out.includes('2.1.0')) throw new Error(`Expected 2.1.0 but got: ${out}`);
+  const { VERSION } = require('../compiler/version');
+  if (!out.includes(VERSION)) throw new Error(`Expected ${VERSION} but got: ${out}`);
 });
 
 test('plain build produces executable async output for a JavaScript block', () => {
@@ -2860,12 +2891,12 @@ test('plain run on a nonexistent file reports a friendly error and does not invo
   if (!out.includes('File not found')) {
     throw new Error(`Expected a "File not found" error but got: ${out}`);
   }
-  if (out.includes('Complex Compilation') && !out.includes('trying Complex Compilation')) {
-    throw new Error(`Complex Compilation must not be invoked for a missing file. Output:\n${out}`);
+  if (out.includes('Complex Compilation')) {
+    throw new Error(`There is no Complex Compilation layer anymore. Output:\n${out}`);
   }
 });
 
-// ── Regression: project-local dependency resolution ────────────────────────
+// â”€â”€ Regression: project-local dependency resolution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Fabricate an "installed" package inside a project's node_modules without
 // hitting the network, so isInstalled() (require.resolve) treats it as present.
@@ -2959,9 +2990,9 @@ test('built-in modules still execute after the dependency-resolution fix', () =>
   if (!out.includes('hello-builtin')) throw new Error(`built-in fs failed. Output:\n${out}`);
 });
 
-// ── CLI: doctor, update, start, cc commands ──────────────────────────────────
+// â”€â”€ CLI: doctor, update, start, cc commands â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nCLI — plain doctor');
+console.log('\nCLI â€” plain doctor');
 
 test('plain doctor exits 0 and prints environment checks', () => {
   const dir = tmpDir();
@@ -2973,9 +3004,12 @@ test('plain doctor exits 0 and prints environment checks', () => {
   if (!out.includes('Compiler')) throw new Error('Expected Compiler check');
   if (!out.includes('Formatter')) throw new Error('Expected Formatter check');
   if (!out.includes('Runtime')) throw new Error('Expected Runtime check');
-  if (!out.includes('Rules')) throw new Error('Expected Rules check');
-  if (!out.includes('Complex Compilation provider')) throw new Error('Expected CC provider check');
-  if (!out.includes('Translation cache')) throw new Error('Expected cache check');
+});
+
+test('plain doctor does not report a Complex Compilation layer', () => {
+  const dir = tmpDir();
+  const out = runCli(['doctor'], dir);
+  if (out.includes('Complex Compilation')) throw new Error(`Complex Compilation must be gone. Output:\n${out}`);
 });
 
 test('plain doctor reports project configuration when plain.json exists', () => {
@@ -3013,7 +3047,7 @@ test('plain help includes "plain doctor"', () => {
   if (!out.includes('plain doctor')) throw new Error('"plain doctor" missing from help');
 });
 
-console.log('\nCLI — plain start');
+console.log('\nCLI â€” plain start');
 
 test('plain start errors without plain.json', () => {
   const dir = tmpDir();
@@ -3054,7 +3088,7 @@ test('plain start defaults to app.pln when entry is not set', () => {
   }
 });
 
-console.log('\nCLI — plain update');
+console.log('\nCLI â€” plain update');
 
 test('plain update runs npm update', () => {
   const dir = tmpDir();
@@ -3069,63 +3103,21 @@ test('plain help includes "plain update"', () => {
   if (!out.includes('plain update')) throw new Error('"plain update" missing from help');
 });
 
-console.log('\nCLI — plain cc / ai commands');
+console.log('\nCLI â€” one compiler only');
 
-test('plain cc status shows Complex Compilation status', () => {
+test('plain cc is no longer a command', () => {
   const out = runCli(['cc', 'status'], process.cwd());
-  if (!out.includes('Complex Compilation')) throw new Error(`Expected "Complex Compilation" but got: ${out}`);
-  if (!out.includes('Compilation path')) throw new Error('Expected "Compilation path" check');
-  if (!out.includes('Rules')) throw new Error('Expected Rules check');
-  if (!out.includes('Cache')) throw new Error('Expected Cache check');
+  if (!out.toLowerCase().includes('unknown command')) throw new Error(`Expected "Unknown command" but got: ${out}`);
 });
 
-test('plain ai status is an alias for plain cc status', () => {
+test('plain ai is no longer a command', () => {
   const out = runCli(['ai', 'status'], process.cwd());
-  if (!out.includes('Complex Compilation')) throw new Error(`Expected "Complex Compilation" from ai alias but got: ${out}`);
+  if (!out.toLowerCase().includes('unknown command')) throw new Error(`Expected "Unknown command" but got: ${out}`);
 });
 
-test('plain cc rules lists installed rules', () => {
-  const out = runCli(['cc', 'rules'], process.cwd());
-  if (!out.includes('Plain rules')) throw new Error(`Expected "Plain rules" header but got: ${out}`);
-  // Should list at least one rule
-  if (out.includes('No rules found') && !out.includes('rules')) {
-    throw new Error('Expected at least one rule listed');
-  }
-});
-
-test('plain ai rules is an alias for plain cc rules', () => {
-  const out = runCli(['ai', 'rules'], process.cwd());
-  if (!out.includes('Plain rules')) throw new Error(`Expected "Plain rules" from ai alias but got: ${out}`);
-});
-
-test('plain cc cache lists or reports empty cache', () => {
-  const out = runCli(['cc', 'cache'], process.cwd());
-  if (!out.includes('AI translation cache')) throw new Error(`Expected "AI translation cache" but got: ${out}`);
-});
-
-test('plain cc cache clear clears the cache', () => {
-  const out = runCli(['cc', 'cache', 'clear'], process.cwd());
-  if (!out.includes('Cleared')) throw new Error(`Expected "Cleared" confirmation but got: ${out}`);
-});
-
-test('plain ai cache is an alias for plain cc cache', () => {
-  const out = runCli(['ai', 'cache'], process.cwd());
-  if (!out.includes('AI translation cache')) throw new Error(`Expected "AI translation cache" from ai alias but got: ${out}`);
-});
-
-test('plain cc with invalid subcommand shows usage', () => {
-  const out = runCli(['cc', 'invalid'], process.cwd());
-  if (!out.toLowerCase().includes('usage')) throw new Error(`Expected usage message but got: ${out}`);
-});
-
-test('plain help includes "plain cc status"', () => {
+test('plain help does not mention Complex Compilation', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plain cc status')) throw new Error('"plain cc status" missing from help');
-});
-
-test('plain help includes "plain cc cache clear"', () => {
-  const out = runCli(['help'], process.cwd());
-  if (!out.includes('plain cc cache clear')) throw new Error('"plain cc cache clear" missing from help');
+  if (out.includes('Complex Compilation')) throw new Error(`Help must not mention Complex Compilation. Output:\n${out}`);
 });
 
 test('plain help includes "plain start"', () => {
@@ -3133,7 +3125,7 @@ test('plain help includes "plain start"', () => {
   if (!out.includes('plain start')) throw new Error('"plain start" missing from help');
 });
 
-// ── Acode syntax highlighting (stream spec) ─────────────────────────────────
+// â”€â”€ Acode syntax highlighting (stream spec) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // The Acode plugin wraps plain-acode/stream-spec.js in CodeMirror's
 // StreamLanguage. That spec is pure CommonJS, so we can exercise the exact
@@ -3477,7 +3469,7 @@ test('highlight: template strings (backtick) are string-2', () => {
 test('highlight: template strings with interpolation', () => {
   const src = 'remember msg as `Hello ${name}!`';
   const tokens = highlight(src);
-  // The `${` triggers an interpolation — it should appear in an operator token
+  // The `${` triggers an interpolation â€” it should appear in an operator token
   const opToken = tokens.find(t => t.type === 'operator' && t.text.includes('${'));
   if (!opToken) throw new Error('${} interpolation not in operator token');
   // The closing `}` is punctuation
@@ -3535,7 +3527,7 @@ test('highlight: every emitted token type is a known legacy token', () => {
   }
 });
 
-// ── Acode plugin loading (editorLanguages / aceModes) ────────────────────────
+// â”€â”€ Acode plugin loading (editorLanguages / aceModes) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const {
   PlainLanguagePlugin,
@@ -3701,7 +3693,7 @@ testAsync('plugin: main.js wires init/unmount on the acode global', async () => 
   if (typeof unmountFn !== 'function') throw new Error('main.js did not call acode.setPluginUnmount');
 });
 
-// ── String Templates (backtick strings) ─────────────────────────────────────
+// â”€â”€ String Templates (backtick strings) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('string template: lexer produces TEMPLATE_STRING token', () => {
   const tokens = tokenize('remember msg as `Hello World`');
@@ -3786,7 +3778,7 @@ test('string template: plain dollar sign without interpolation', () => {
   if (code.includes('${')) throw new Error('Should not contain interpolation syntax');
 });
 
-// ── Summary ──────────────────────────────────────────────────────────────────
+// â”€â”€ Summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 Promise.all(pendingPluginTests).then(() => {
   console.log(`\n${passed + failed} tests: ${passed} passed, ${failed} failed`);

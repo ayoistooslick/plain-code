@@ -393,7 +393,9 @@ for each row in adults
 show row.name
 done
 `);
-  const logs = runGenerated(js);
+  // v2.1.1 — opening a database is async (native probe with wasm fallback),
+  // so the generated program runs inside the async wrapper.
+  const logs = await runGeneratedAsync(js);
   assert(JSON.stringify(logs), JSON.stringify(['bo', 'cy']));
 });
 

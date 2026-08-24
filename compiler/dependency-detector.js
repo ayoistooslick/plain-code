@@ -25,6 +25,10 @@ const PACKAGE_MAP = Object.freeze({
   scheduler: 'croner',
   websocket: 'ws',
   cache: 'redis',
+  // v2.1.1 — "accept uploads" is backed by multer; the WebAssembly SQLite
+  // engine used by the `database` statement's fallback chain is sql.js.
+  uploads: 'multer',
+  'wasm-sqlite': 'sql.js',
 });
 
 const BUILTIN_MODULES = new Set(builtinModules);
@@ -62,8 +66,20 @@ function visit(node, onUse) {
     // The `web app` shorthand creates an Express application.
     onUse('express');
   } else if (node.type === 'DatabaseStatement') {
-    // The `database` shorthand uses `better-sqlite3` under the hood.
-    onUse('sqlite');
+    // v2.1.1 — `database` runs SQLite through a portable engine chain:
+    // better-sqlite3 (native) first, sql.js (WebAssembly) as the fallback.
+    // "using" picks one engine explicitly.
+    if (node.driver === 'wasm') {
+      onUse('wasm-sqlite');
+    } else if (node.driver === 'native') {
+      onUse('sqlite');
+    } else {
+      onUse('sqlite');
+      onUse('wasm-sqlite');
+    }
+  } else if (node.type === 'AcceptUploadsStatement') {
+    // v2.1.1 — `accept uploads` is backed by multer under the hood.
+    onUse('uploads');
   } else if (node.type === 'PostgresStatement') {
     // v2.1.0 — `postgres "<url>"` uses node-postgres under the hood.
     onUse('postgres');
@@ -122,9 +138,18 @@ function detectDependencies(source) {
   // This ensures detection even if the parser does not produce a DatabaseStatement node.
   if (typeof source === 'string') {
     // Look for patterns like: database "file.db" or database 'file.db'
-    // We use a simple regex to catch the shorthand.
-    if (/database\s+["']/.test(source)) {
-      addPackage('sqlite');
+    // We use a simple regex to catch the shorthand, honouring an explicit
+    // engine choice so the result always matches the AST path above.
+    const dbMatch = /database\s+["'][^"']*["'](\s+using\s+["'](\w+)["'])?/.exec(source);
+    if (dbMatch) {
+      if (dbMatch[2] === 'wasm') {
+        addPackage('wasm-sqlite');
+      } else if (dbMatch[2] === 'native') {
+        addPackage('sqlite');
+      } else {
+        addPackage('sqlite');
+        addPackage('wasm-sqlite');
+      }
     }
   }
 

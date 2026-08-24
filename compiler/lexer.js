@@ -46,6 +46,7 @@ const TOKEN = {
   WITH:        'WITH',
   BETWEEN:     'BETWEEN',
   AND:         'AND',
+  OR:          'OR',      // v2.1.1 — logical or in conditions
   // v0.6 — Express DX
   WEB:         'WEB',
   ROUTE_KW:    'ROUTE_KW',
@@ -76,10 +77,17 @@ const TOKEN = {
   COMMA:       'COMMA',
   DOT:         'DOT',
   PLUS:        'PLUS',
+  MINUS:       'MINUS',    // v2.1.1 — subtraction / unary minus
+  STAR:        'STAR',     // v2.1.1 — multiplication
+  SLASH:       'SLASH',    // v2.1.1 — division
+  PERCENT:     'PERCENT',  // v2.1.1 — remainder (modulo)
   // Literals & identifiers
   IDENTIFIER:  'IDENTIFIER',
   STRING:      'STRING',
   NUMBER:      'NUMBER',
+  TRUE_KW:     'TRUE_KW',   // v2.1.1 — boolean literal true
+  FALSE_KW:    'FALSE_KW',  // v2.1.1 — boolean literal false
+  NULL_KW:     'NULL_KW',   // v2.1.1 — null literal
   TEMPLATE_STRING: 'TEMPLATE_STRING', // backtick-delimited string with interpolation
   // End of input
   EOF:         'EOF',
@@ -131,6 +139,13 @@ const KEYWORDS = {
   with:      TOKEN.WITH,
   between:   TOKEN.BETWEEN,
   and:       TOKEN.AND,
+  or:        TOKEN.OR,
+  // v2.1.1 — literal keywords. These were previously plain identifiers that
+  // passed through to generated JavaScript; making them explicit tokens gives
+  // them first-class AST nodes and deterministic diagnostics.
+  true:      TOKEN.TRUE_KW,
+  false:     TOKEN.FALSE_KW,
+  null:      TOKEN.NULL_KW,
   // v0.6 — Express DX
   web:       TOKEN.WEB,
   route:     TOKEN.ROUTE_KW,
@@ -333,7 +348,6 @@ function tokenize(source) {
     if (source[i] === '{') { tokens.push({ type: TOKEN.LBRACE, value: '{', line: tokenLine, col: tokenCol }); i++; continue; }
     if (source[i] === '}') { tokens.push({ type: TOKEN.RBRACE, value: '}', line: tokenLine, col: tokenCol }); i++; continue; }
     if (source[i] === ':') { tokens.push({ type: TOKEN.COLON, value: ':', line: tokenLine, col: tokenCol }); i++; continue; }
-    if (source[i] === '-' && source[i + 1] === '>') { tokens.push({ type: TOKEN.ARROW, value: '->', line: tokenLine, col: tokenCol }); i += 2; continue; }
     if (source[i] === '(') { tokens.push({ type: TOKEN.LPAREN,   value: '(', line: tokenLine, col: tokenCol }); i++; continue; }
     if (source[i] === ')') { tokens.push({ type: TOKEN.RPAREN,   value: ')', line: tokenLine, col: tokenCol }); i++; continue; }
     if (source[i] === '[') { tokens.push({ type: TOKEN.LBRACKET, value: '[', line: tokenLine, col: tokenCol }); i++; continue; }
@@ -341,6 +355,12 @@ function tokenize(source) {
     if (source[i] === ',') { tokens.push({ type: TOKEN.COMMA,    value: ',', line: tokenLine, col: tokenCol }); i++; continue; }
     if (source[i] === '.') { tokens.push({ type: TOKEN.DOT,      value: '.', line: tokenLine, col: tokenCol }); i++; continue; }
     if (source[i] === '+') { tokens.push({ type: TOKEN.PLUS,     value: '+', line: tokenLine, col: tokenCol }); i++; continue; }
+    // v2.1.1 — arithmetic. "->" is matched first so it never becomes MINUS.
+    if (source[i] === '-' && source[i + 1] === '>') { tokens.push({ type: TOKEN.ARROW,  value: '->', line: tokenLine, col: tokenCol }); i += 2; continue; }
+    if (source[i] === '-') { tokens.push({ type: TOKEN.MINUS,    value: '-', line: tokenLine, col: tokenCol }); i++; continue; }
+    if (source[i] === '*') { tokens.push({ type: TOKEN.STAR,     value: '*', line: tokenLine, col: tokenCol }); i++; continue; }
+    if (source[i] === '/') { tokens.push({ type: TOKEN.SLASH,    value: '/', line: tokenLine, col: tokenCol }); i++; continue; }
+    if (source[i] === '%') { tokens.push({ type: TOKEN.PERCENT,  value: '%', line: tokenLine, col: tokenCol }); i++; continue; }
 
     throw new Error(
       `Line ${line}, Column ${col()}: Unexpected character "${source[i]}". Plain only uses letters, numbers, strings, and known symbols.`

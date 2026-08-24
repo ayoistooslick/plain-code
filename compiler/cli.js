@@ -14,9 +14,6 @@
 //   plain add    <package>   install a package and add it to plain.json
 //   plain remove <package>   uninstall a package and remove it from plain.json
 //   plain update             update all installed packages
-//   plain cc     status      show the Complex Compilation layer status
-//   plain cc     rules       list the installed Plain rules
-//   plain cc     cache       list / clear the local Complex Compilation cache
 //   plain version            print the compiler version
 //   plain help               print this help text
 
@@ -29,7 +26,6 @@ const { generate, createGenerationContext, wrapAsync } = require('./generator');
 const { bundle, resolveDependencies } = require('./bundler');
 const { format }   = require('./formatter');
 const { detectDependencies, PACKAGE_MAP, isBuiltinModule, splitPackageSpec } = require('./dependency-detector');
-const ai = require('./ai');
 
 const { VERSION } = require('./version');
 
@@ -65,26 +61,14 @@ Commands
   plain add    <package>   Install a package and add it to plain.json
   plain remove <package>   Remove a package from plain.json and uninstall it
   plain update             Update all installed npm packages
-  plain cc status          Show the Complex Compilation layer status
-  plain cc rules           List the installed Plain rules
-  plain cc cache           List the local Complex Compilation cache
-  plain cc cache clear     Clear the local Complex Compilation cache
   plain version            Print the compiler version
   plain help               Print this help text
 
-v2.0 Complex Compilation
+One compiler
 
-  The deterministic compiler stays authoritative. When it cannot compile a
-  valid Plain construct, versioned rules (compiler/rules/) and the Complex
-  Compilation layer translate it into validated JavaScript that flows through
-  the normal bundler/runtime path (RFC-0020).
-
-  Plain ships with a hosted compiler service so complex constructs compile
-  with no setup and no API key. To self-host instead, configure:
-
-  MISTRAL_API_KEY, PLAIN_AI_BASE_URL, PLAIN_AI_MODEL
-  Override the hosted endpoint with: PLAIN_AI_REMOTE_URL
-  Example:    plain cc status
+  Plain has exactly one authoritative deterministic compiler. Unsupported
+  syntax is a precise, deterministic compile error — there is no fallback
+  translator and no second compilation path (removed in v2.1.1).
 
 v1.0 Language Features
 
@@ -184,27 +168,10 @@ function writePlainJson(data) {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function stage(label, fn, fallback) {
+function stage(label, fn) {
   const t0 = Date.now();
   try {
     const result = fn();
-    const ms = Date.now() - t0;
-    console.log(`${clrGreen('✓')} ${label}${ms > 50 ? clrDim(` (${ms}ms)`) : ''}`);
-    return result;
-  } catch (err) {
-    // With `fallback` set, the caller handles the error (e.g. the AI layer
-    // takes over). Otherwise fail fast with a clear diagnostic.
-    if (fallback) throw err;
-    console.error(`${clrRed('✗')} ${label} failed\n`);
-    console.error(err.message);
-    process.exit(1);
-  }
-}
-
-async function stageAsync(label, fn) {
-  const t0 = Date.now();
-  try {
-    const result = await fn();
     const ms = Date.now() - t0;
     console.log(`${clrGreen('✓')} ${label}${ms > 50 ? clrDim(` (${ms}ms)`) : ''}`);
     return result;
@@ -276,6 +243,29 @@ function ensurePackageJson(cwd = process.cwd()) {
   }, null, 2) + '\n', 'utf8');
 }
 
+// v2.1.1 — verify that a freshly installed package actually LOADS on this
+// machine. "better-sqlite3 present in node_modules" does not imply usable:
+// its native binding may be missing for this platform or Node ABI (the
+// Termux failure mode). The check runs in a child process so a hard crash
+// inside the package cannot take the CLI down.
+function verifyPackageUsable(npmPkg, cwd = process.cwd()) {
+  const probe =
+    `try {` +
+    `  const mod = require(${JSON.stringify(npmPkg)});` +
+    `  if (${JSON.stringify(npmPkg)} === 'better-sqlite3') {` +
+    `    const db = new mod(':memory:');` +
+    `    db.close();` +
+    `  }` +
+    `  process.exit(0);` +
+    `} catch (_) { process.exit(1); }`;
+  try {
+    execFileSync(process.execPath, ['-e', probe], { cwd, stdio: 'ignore' });
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 function installPackages(packages, cwd = process.cwd()) {
   ensurePackageJson(cwd);
   for (const pkg of packages) {
@@ -287,8 +277,27 @@ function installPackages(packages, cwd = process.cwd()) {
         stdio: 'ignore',
       });
       dependencyCache.set(`${cwd}\0${bareName}`, true);
-      console.log(`${clrGreen('✓')} ${pkg} installed`);
+      // v2.1.1 — "downloaded" and "usable" are different facts. Report both.
+      if (verifyPackageUsable(bareName, cwd)) {
+        console.log(`${clrGreen('✓')} ${pkg} installed`);
+      } else {
+        console.log(
+          `${clrYellow('⚠')} ${pkg} downloaded but NOT usable on this platform ` +
+          `(its native code could not be loaded). Programs that can fall back ` +
+          `(like SQLite) will still work; otherwise fix this package before running.`
+        );
+      }
     } catch (_) {
+      // v2.1.1 — better-sqlite3 is optional at install time: programs opened
+      // through the portable engine chain fall back to sql.js, so a native
+      // build failure must not abort setup.
+      if (bareName === 'better-sqlite3') {
+        console.log(
+          `${clrYellow('⚠')} ${pkg} could not be installed on this platform. ` +
+          `Plain will use its WebAssembly SQLite engine instead.`
+        );
+        continue;
+      }
       throw new Error(
         `Could not install "${pkg}". The package may be unavailable or the machine may be offline.\n` +
         `Run manually: npm install ${pkg}`
@@ -311,12 +320,10 @@ function ensureDependencies(files, config, install = true) {
 
 // Compile a Plain program to JavaScript.
 //
-// Deterministic first: the existing lexer/parser/generator pipeline compiles
-// everything it understands (RFC-0020 §14). When the deterministic path fails,
-// the AI layer kicks in — rule resolution, optional AI translation, validation —
-// and the result flows through the same bundler/runtime path (RFC-0020 §24).
-async function compile(filePath, options) {
-  const opts = options || {};
+// Deterministic only: the lexer/parser/generator pipeline is the single
+// authoritative compiler. Unsupported syntax produces a precise compiler
+// error — there is no second compilation path (v2.1.1).
+function compile(filePath) {
   const absPath = path.resolve(filePath);
   if (!fs.existsSync(absPath)) {
     console.error(`File not found: ${filePath}`);
@@ -324,34 +331,14 @@ async function compile(filePath, options) {
   }
   const generationContext = createGenerationContext();
 
-  // Deterministic attempt. stage(..., true) rethrows so the AI fallback below
-  // can take over instead of exiting the process.
-  try {
-    let files;
-    stage('Resolving imports', () => {
-      files = resolveDependencies(absPath);
-    }, true);
-    stage('Building dependency graph', () => files, true);
-    stage('Checking runtime dependencies', () => ensureDependencies(files, readPlainJson(), true), true);
-    const js = stage('Generating JavaScript', () =>
-      files.map(({ ast }) => generate(ast, generationContext)).filter(s => s.trim()).join('\n'), true);
-    return generationContext.needsAsync ? wrapAsync(js) : js;
-  } catch (err) {
-    console.log(clrYellow('·') + ` Deterministic compiler could not compile "${path.basename(absPath)}" — trying Complex Compilation.`);
-  }
-
-  // Complex Compilation fallback (RFC-0020 §5, §17).
-  const compiled = await stageAsync('Complex Compilation', async () => {
-    const result = await ai.compileFile(absPath, opts);
-    const extra = (result.dependencies || []).filter(pkg => !isBuiltinModule(pkg));
-    if (extra.length) {
-      ensureDependencies([], { dependencies: Object.fromEntries(extra.map(p => [p, '*'])) }, true);
-    }
-    return result;
+  let files;
+  stage('Resolving imports', () => {
+    files = resolveDependencies(absPath);
   });
-
-  generationContext.needsAsync = generationContext.needsAsync || Boolean(compiled.async);
-  const js = compiled.javascript;
+  stage('Building dependency graph', () => files);
+  stage('Checking runtime dependencies', () => ensureDependencies(files, readPlainJson(), true));
+  const js = stage('Generating JavaScript', () =>
+    files.map(({ ast }) => generate(ast, generationContext)).filter(s => s.trim()).join('\n'));
   return generationContext.needsAsync ? wrapAsync(js) : js;
 }
 
@@ -362,7 +349,7 @@ async function cmdRun(filePath, extraArgs = []) {
     console.error('Usage: plain run <file.pln>');
     process.exit(1);
   }
-  const js = await compile(filePath);
+  const js = compile(filePath);
   console.log('');
   // Execute the generated file from the entry file's directory so Node
   // resolves require(...) against the project's local node_modules instead
@@ -386,7 +373,7 @@ async function cmdBuild(filePath) {
     console.error('Usage: plain build <file.pln>');
     process.exit(1);
   }
-  const js = await compile(filePath);
+  const js = compile(filePath);
   const outPath = filePath.replace(/\.pln$/, '.js');
   fs.writeFileSync(path.resolve(outPath), js, 'utf8');
   console.log(`\nOutput written to ${outPath}`);
@@ -573,14 +560,6 @@ function cmdDoctor() {
   check('Compiler', fs.existsSync(path.join(__dirname, 'parser.js')));
   check('Formatter', fs.existsSync(path.join(__dirname, 'formatter.js')));
   check('Runtime', fs.existsSync(path.join(__dirname, 'generator.js')));
-
-  // Complex Compilation layer (RFC-0020)
-  const aiRulesDir = path.join(__dirname, 'rules');
-  const aiConfig   = ai.aiStatus();
-  check('Rules', fs.existsSync(aiRulesDir), aiRulesDir);
-  check('Complex Compilation provider', true,
-    aiConfig.enabled ? `${aiConfig.baseUrl} (${aiConfig.model})` : `hosted service — ${aiConfig.hosted}`);
-  check('Translation cache', true, `${aiConfig.cacheEntries} entries`);
   console.log('');
 
   const config = readPlainJson();
@@ -748,58 +727,6 @@ function cmdHelp() {
   console.log(HELP);
 }
 
-// ── AI commands (RFC-0020 §19) ───────────────────────────────────────────────
-
-function cmdAiStatus() {
-  const s = ai.aiStatus();
-  const check = (label, ok, detail = '') => {
-    const suffix = detail ? ` — ${detail}` : '';
-    console.log(`${ok ? clrGreen('✓') : clrRed('✗')} ${label}${suffix}`);
-  };
-  console.log('Plain Complex Compilation\n');
-  check('Compilation path', true,
-    s.enabled ? `local provider — ${s.provider} (${s.model})` : `hosted service — ${s.hosted}`);
-  check('API key', s.enabled, s.enabled ? s.apiKey : 'owned by the hosted service');
-  check('Compiler', true, `v${s.compilerVersion}`);
-  check('Rules', s.ruleCount > 0, `${s.ruleCount} loaded`);
-  check('Cache', true, `${s.cacheEntries} entries (${s.cacheSizeBytes} bytes)`);
-}
-
-function cmdAiRules() {
-  const rules = ai.aiRules();
-  console.log(`Plain rules (${rules.length})\n`);
-  if (rules.length === 0) {
-    console.log('No rules found. Add .json + .md files under compiler/rules/.');
-    return;
-  }
-  for (const r of rules) {
-    const line = r.error
-      ? `  ${clrRed('✗')} ${r.file} — ${r.error}`
-      : `  ${clrGreen('✓')} ${r.id} v${r.version} — ${r.title}${r.async ? clrDim(' (async)') : ''}`;
-    console.log(line);
-    if (!r.error) {
-      console.log(clrDim(`       deps: ${(r.dependencies || []).join(', ') || 'none'}`));
-    }
-  }
-}
-
-function cmdAiCache(clearFlag) {
-  if (clearFlag) {
-    const { removed } = ai.aiClearCache();
-    console.log(`${clrGreen('✓')} Cleared ${removed} cached translation(s).`);
-    return;
-  }
-  const cache = ai.aiCache();
-  console.log(`AI translation cache (${cache.entries.length})\n`);
-  if (cache.entries.length === 0) {
-    console.log(`No cached translations in ${cache.dir}`);
-    return;
-  }
-  for (const e of cache.entries) {
-    console.log(`  ${e.key.slice(0, 16)}…  rule=${e.rule || '?'} v${e.ruleVersion || '?'}  model=${e.model || '?'}  ${clrDim(e.mtime)}`);
-  }
-}
-
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 async function main() {
@@ -820,20 +747,6 @@ async function main() {
     case 'update':  cmdUpdate();                  break;
     case 'version': cmdVersion();                 break;
     case 'help':    cmdHelp();                    break;
-    case 'ai':
-    case 'cc':
-      switch (fileArg) {
-        case 'status': cmdAiStatus(); break;
-        case 'rules':  cmdAiRules();  break;
-        case 'cache':
-          cmdAiCache(process.argv[4] === 'clear');
-          break;
-        default:
-          console.error('Usage: plain cc status|rules|cache [clear]');
-          console.error('       (alias: plain ai status|rules|cache [clear])');
-          process.exit(1);
-      }
-      break;
     default:
       // Backwards-compatible: treat the first arg as a file to run directly
       if (command && command.endsWith('.pln')) {

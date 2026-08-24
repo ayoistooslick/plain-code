@@ -4,14 +4,72 @@ All notable changes to Plain are documented here.
 
 ---
 
+## [2.1.1] — 2026
+
+### Portable databases (SQLite native or WebAssembly)
+
+- `database "app.db"` now probes for the native `better-sqlite3` driver and,
+  when it cannot load, transparently falls back to pure-WebAssembly SQLite
+  (`sql.js`) — the same program runs on machines where native builds fail.
+- `plain install` verifies that `better-sqlite3` actually opens a database;
+  a broken native install is reported as a warning, not an error.
+- Explicit engine selection: `database "app.db" using "native"` or
+  `using "wasm"`; unknown drivers fail at compile time.
+- The WebAssembly engine persists the whole database to disk after every
+  write, so data survives restarts.
+- Fixed: transactions now run their body exactly once on both engines.
+
+### HTTP client
+
+- `get "<url>"`, `post <url> with <body>`, `put`, `patch`,
+  `delete "<url>"` — optional `headers { … }` and `timeout <ms>` clauses.
+- Responses are records: `ok`, `status`, `headers`, `data`; JSON bodies are
+  parsed automatically. Default timeout 30 seconds (`AbortController`).
+- `wait for fetch(...)` awaits raw promises from Plain source.
+
+### Auth, sessions and web middleware
+
+- `hashPassword(pw)` / `checkPassword(pw, hash)` — scrypt password hashing.
+- `createToken(payload, secret [, ttlSeconds])` / `readToken(token, secret)`
+  — HMAC-signed tokens with expiry.
+- `enable sessions "<secret>"`, `session of request`, `user of session of
+  request becomes …`, `destroy session` — HMAC-signed `HttpOnly` cookie
+  sessions with an in-memory store.
+- `accept uploads [limit "…"] [allow […]] [folder "…"]` backed by multer;
+  `upload("field")` / `uploads("field")` expose normalised file records
+  (`name`, `type`, `size`, `data`, `path`). Oversize → HTTP 413, bad type → 415.
+- `set cookie "name" to value [expires in <n> <unit>s]`,
+  `cookie("name")`, `clear cookie "name"`.
+- `require api key from env("…")` — route protection via `x-api-key`
+  (fails closed when the key is unset).
+- `rate limit <n> requests per <unit>` — sliding-window limiter per IP,
+  HTTP 429 when exceeded.
+- `google oauth` blocks register `/auth/google` and
+  `/auth/google/callback` with `id` / `secret` / `callback` / `landing`.
+- `when nothing matches ... done` registers a custom final 404 handler.
+- `try ... [recover [as name]] ... done`, `retry <n> times [every <n>
+  <unit>s]` — error handling and retries.
+- Boolean/null literals: `true`, `false`, `null`; arithmetic operators
+  `+ - * / %`, unary minus, parenthesised grouping with standard precedence.
+- Formatter understands every new block form; `delete "<url>"` is an HTTP
+  request, never a SQL block.
+
+### Examples and tests
+
+- New acceptance examples: `examples/football-backend/` (SQLite + sessions +
+  API keys + custom 404) and `examples/id-verification/` (uploads + OCR +
+  matching) — both booted over live HTTP by `tests/acceptance.test.js`.
+- New feature suite `tests/v211.test.js`; full suite now 557 tests.
+
+---
+
 ## [2.1.0] — 2026
 
 ### Backend capabilities as first-class language features
 
-Everything below compiles deterministically — no rules, no Complex
-Compilation, no hidden codegen. Implementation packages (`pg`, `nodemailer`,
-`croner`, `ws`, `redis`) are detected and installed automatically; they never
-appear in source.
+Everything below compiles deterministically with no hidden codegen.
+Implementation packages (`pg`, `nodemailer`, `croner`, `ws`, `redis`) are
+detected and installed automatically; they never appear in source.
 
 - **HTTP routing**: `route get|post|put|patch|delete "<path>"`, nestable
   `group "<prefix>"` blocks, `param()` / `query()` / `header()` accessors
@@ -45,82 +103,14 @@ appear in source.
 
 ---
 
-## [2.0.0-latest] — 2026
-
-### Rule system hardening
-
-- Narrower triggers: rule matching now requires an explicit trigger match
-  before invoking the Complex Compilation layer, reducing false positives
-- Rules are evaluated most-specific-first; a broad generic rule never overrides
-  an exact Plain language rule
-
-### Expanded rules
-
-- **WebSocket** (`websocket/ws`) — WebSocket client support
-- **Cron scheduling** (`automation/cron`) — scheduled task syntax
-- **HTTP** (`http/fetch`) — expanded coverage
-- **REST** (`web/rest-api`) — expanded coverage
-- **Telegram** (`bots/telegram`) — expanded coverage
-
-### New rule
-
-- **Email** (`communication/email`) — email sending via SMTP
-
-### Documentation
-
-- Updated `compiler/rules/README.md` as the rule-authoring specification
-- Complex Compilation branding update across all documentation
-- Version updated to 2.0.0-latest
-
-### CLI
-
-- `plain cc` command added as the primary Complex Compilation interface
-- `plain ai` retained as an alias for backward compatibility
-
----
-
 ## [2.0.0] — 2026
 
-### Complex Compilation (RFC-0020)
+### Compiler platform
 
-Plain gains a Complex Compilation layer **without replacing the existing
-deterministic compiler**. The deterministic compiler stays authoritative;
-versioned rules and an AI provider translate supported constructs that the
-compiler does not yet understand into validated JavaScript that flows through
-the normal bundler/runtime path.
-
-**Rule system** (`compiler/rules/`)
-- Versioned rule pairs (Markdown + JSON metadata) for Telegram bots, HTTP
-  fetch, and REST APIs
-- Rule metadata: name, category, version, keywords, triggers, dependencies,
-  async, compilerMin — used for deterministic matching and cache keys
-- Rule authoring guide in `compiler/rules/README.md`
-
-**Complex Compilation layer** (`compiler/ai/`)
-- `resolver.js` — deterministic rule matching (RFC-0020 §8, §37)
-- `translator.js` — rule → cache → provider → validation orchestration
-- `agent.js` — provider-facing `translate()` interface (RFC-0020 §10)
-- `client.js` — OpenAI-compatible chat completions client, Agent Router +
-  Claude Opus defaults, environment-based configuration only
-- `prompt.js` — strict compile prompt contract (RFC-0020 §11)
-- `validator.js` — structure/field checks, `vm.Script` syntax check, forbidden
-  patterns, `require()` allowlist (RFC-0020 §13)
-- `cache.js` — local translation cache keyed by rule version + compiler
-  version + model + normalized source (RFC-0020 §15)
-
-**CLI**
-- Deterministic-first compile path with Complex Compilation fallback (`compile()` in `cli.js`)
-- New commands: `plain cc status`, `plain cc rules`, `plain cc cache [clear]`
-- `plain doctor` reports the Complex Compilation layer
+- Deterministic-first compile pipeline (lexer → parser → generator → bundler)
 - `plain` exposed as a CLI executable alongside `plain-code`
-- Layer-specific diagnostics (RFC-0020 §39): Plain rule error, Complex Compilation
-  error, generated JavaScript validation error
-
-**Configuration & security**
-- `.env.example` added (`MISTRAL_API_KEY`, `PLAIN_AI_BASE_URL`,
-  `PLAIN_AI_MODEL`, optional `PLAIN_AI_CACHE_DIR`)
-- `.gitignore` added (`.env`, Complex Compilation cache, build output)
-- Secrets are never hard-coded or sent to the provider (RFC-0020 §16, §44)
+- `plain doctor` checks the project environment
+- `.gitignore` added; secrets are never hard-coded
 
 ### Language — Telegram (v1.2 deterministic syntax)
 
@@ -136,8 +126,7 @@ the normal bundler/runtime path.
 
 ### Documentation
 
-- README updated for 2.0.0 (Complex Compilation, rules, Telegram, configuration)
-- `docs/AI_COMPILATION.md` added
+- README updated for 2.0.0 (Telegram, configuration)
 - `compiler/version.js` centralizes the version constant
 
 ---
