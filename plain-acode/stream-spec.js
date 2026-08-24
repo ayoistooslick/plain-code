@@ -9,8 +9,8 @@
 //   compiler/parser.js    — statement keywords, comparisons, v1.1 expressions,
 //                           NUMBER_WORDS, special calls (add/remove/write)
 //   compiler/generator.js — STDLIB runtime function names
-// Where the older VS Code/mt2 grammars drift from the compiler (e.g. `equal`,
-// `or`, `-`/`*`/`/`/`%` operators), this spec follows the compiler.
+// The VS Code and mt2 grammars track the same keyword sets so all three
+// editors highlight identical v2.1.1 syntax.
 
 // Structural keywords — statements, control flow, web and database.
 // (Comparison/expression words live in OPERATOR_WORDS so they highlight as
@@ -20,9 +20,20 @@ const KEYWORDS = new Set([
   'remember', 'show', 'make', 'give', 'use', 'import',
   // control flow
   'if', 'otherwise', 'done', 'for', 'each', 'every', 'in', 'while',
+  // v2.1.1 — error handling and retries
+  'try', 'recover', 'retry', 'times', 'wait',
   // web (Express)
   'when', 'someone', 'visits', 'listen', 'on', 'reply', 'json', 'serve',
   'folder', 'web', 'route', 'start',
+  // v2.1 — routing helpers and middleware
+  'group', 'allow', 'cors', 'validate', 'status', 'param',
+  // v2.1.1 — sessions, uploads, auth middleware
+  'enable', 'sessions', 'session', 'destroy', 'accept', 'uploads',
+  'limit', 'requests', 'require', 'google', 'oauth', 'cookie', 'expires',
+  'using', 'native', 'wasm', 'nothing', 'matches',
+  // v2.1 — email, schedules, realtime, databases
+  'mail', 'transport', 'schedule', 'background', 'postgres',
+  'websocket', 'socket', 'connects', 'disconnects', 'headers', 'timeout',
   // v1.2 Telegram
   'sends', 'clicks', 'matching',
   // database (SQLite)
@@ -43,6 +54,8 @@ const OPERATOR_WORDS = new Set([
   'is', 'not', 'empty', 'above', 'below', 'at', 'least', 'most',
   'greater', 'less', 'than', 'contains', 'starts', 'ends', 'with',
   'between', 'and',
+  // v2.1.1 — logical or in conditions
+  'or',
   // assignment
   'becomes', 'as',
   // v1.1 expressions: first/last <noun> from <list>, <prop> of <obj>,
@@ -68,6 +81,17 @@ const STDLIB_FUNCTIONS = new Set([
   'length', 'uppercase', 'lowercase', 'random', 'round', 'sqlite',
   'print', 'readFile', 'writeFile', 'fileExists', 'read', 'write',
   'sleep', 'time', 'date', 'jsonEncode', 'jsonDecode', 'env', 'exit', 'uuid',
+  // text, numbers and collections
+  'trim', 'replace', 'split', 'join', 'number', 'text',
+  'floor', 'ceiling', 'sort', 'reverse', 'unique', 'sum',
+  'smallest', 'largest', 'keys', 'values', 'hasKey', 'merge',
+  // filesystem helpers
+  'appendFile', 'copyFile', 'moveFile', 'deleteFile',
+  'makeFolder', 'deleteFolder', 'listFolder', 'readBytes', 'writeBytes',
+  // v2.1 — cache; v2.1.1 — auth and route accessors
+  'cacheGet', 'cacheSet', 'cacheDelete',
+  'hashPassword', 'checkPassword', 'createToken', 'readToken',
+  'validate', 'param', 'query', 'header', 'upload', 'uploads', 'cookie',
   // v1.2 Telegram
   'bot', 'sendMessage', 'sendPhoto', 'getChat', 'getMyChats', 'editMessage',
 ]);
@@ -157,7 +181,7 @@ function token(stream, state) {
     return tokenTemplate(stream, state);
   }
 
-  // Numbers (Plain has no negative-number literal syntax).
+  // Numbers (a leading `-` highlights as the unary-minus operator).
   if (stream.match(/^\d+(\.\d+)?/)) return 'number';
 
   // Punctuation — exactly the set the compiler lexer accepts.
@@ -171,12 +195,11 @@ function token(stream, state) {
   if (stream.eat('}')) return 'punctuation';
   if (stream.eat(':')) return 'punctuation';
 
-  // Operators: `.` accessor, `+` arithmetic and `->` button arrow (the only
-  // ones the compiler tokenizes; `-`, `*`, `/`, `%` are NOT Plain and fall
-  // through to invalid).
+  // Operators: `.` accessor, arithmetic (`+ - * / %` since v2.1.1) and
+  // `->` button arrow. `->` is matched first so it never becomes `-`.
   if (stream.match('->')) return 'operator';
   if (stream.eat('.')) return 'operator';
-  if (stream.eat('+')) return 'operator';
+  if (stream.match(/^[+\-*/%]/)) return 'operator';
 
   // Words.
   const match = stream.match(/^[A-Za-z_][A-Za-z0-9_]*/);

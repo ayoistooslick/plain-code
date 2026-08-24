@@ -44,71 +44,55 @@ function warn(message) {
   console.warn(clrYellow(`⚠  Warning: ${message}`));
 }
 
+// Help text is built once at startup. Colours resolve to empty wrappers when
+// stdout is not a TTY, so piped output (and the test suite) always sees plain
+// text.
+const section = (title) => `\n${clrCyan(clrBold(title))}`;
+
 const HELP = `
-Plain v${VERSION} — Intent-Oriented Programming Language
+${clrBold(`Plain v${VERSION}`)} ${clrDim('· .pln compiles to readable Node.js')}
 
-Commands
+${section('START')}
+  plain new [name]        Scaffold a new project with a working app.pln
+  plain init              Create plain.json in the current folder
+  plain run <file.pln>    Install missing deps, compile, execute
+  plain start             Run the entry file from plain.json
 
-  plain run    <file.pln>   Install dependencies, compile and execute
-  plain build  <file.pln>   Install dependencies and compile to JavaScript
-  plain check  <file.pln>   Check syntax only (no output, no execution)
-  plain fmt    <file.pln>   Format a Plain file in-place
-  plain new    [name]       Create a new Plain project
-  plain init               Create a plain.json in the current directory
-  plain install            Install dependencies required by the project's source files
-  plain start              Start the entry file from plain.json
-  plain doctor             Check the Plain project environment
-  plain add    <package>   Install a package and add it to plain.json
-  plain remove <package>   Remove a package from plain.json and uninstall it
-  plain update             Update all installed npm packages
-  plain version            Print the compiler version
-  plain help               Print this help text
+${section('BUILD & CHECK')}
+  plain build <file.pln>  Compile to readable JavaScript (app.js)
+  plain check <file.pln>  Syntax-check only — fastest feedback loop
+  plain fmt <file.pln>    Format a file in place
 
-One compiler
+${section('PACKAGES')}
+  plain install           Install everything your source needs
+  plain add <package>     Install a package and record it
+  plain remove <package>  Uninstall a package and remove it
+  plain update            Update all installed packages
 
-  Plain has exactly one authoritative deterministic compiler. Unsupported
-  syntax is a precise, deterministic compile error — there is no fallback
-  translator and no second compilation path (removed in v2.1.1).
+${section('TOOLS')}
+  plain doctor            Check the project environment
+  plain version           Print the compiler version
+  plain help              Print this text
 
-v1.0 Language Features
+${section('THE LANGUAGE IN EIGHT LINES')}
+  remember name as "Ada"          show \`Hi \${name}\`         variables, printing
+  if age is at least 13 ... done  and · or · not               conditions
+  for each p in players ... done  while lives is above 0       loops
+  make add(a, b) / give a + b / done                           functions
+  web app / route get "/users" ... done / start 3000           web servers
+  database "app.db" / query ... done   postgres env("URL")     databases
+  get "<url>" / post "<url>" with body                         HTTP client
+  try ... recover as err ... done      retry 3 times every 5s  errors
 
-  Comparisons:  is above, is below, is at least, is at most,
-                is not, is empty, is not empty, contains,
-                starts with, ends with, between … and
-  Alias:        for every … in …  (same as for each)
-  Web:          web app / route "…" … done / start <port>
-  Database:     database "…" / query … done / insert … done
-  Stdlib:       print, readFile, writeFile, fileExists, sleep,
-                time, date, jsonEncode, jsonDecode, env, exit, uuid
+${section('ALSO SHIPPED')}
+  Comparisons and stdlib (v1.0) · Plain Expressions (v1.1) ·
+  JavaScript gateway with ask (v1.1.1) · OCR · Telegram bots ·
+  email · schedules · WebSocket · cache (v2.1) ·
+  sessions · uploads · cookies · rate limits · api keys · OAuth (v2.1.1)
 
-v1.1 Plain Expressions
-
-  Items:        first player from players / last player from players
-                player one from players (up to twenty)
-  Collections:  players length / add(item to players) /
-                remove(item from players) / players contains item
-  Properties:   name of user / city of address of customer /
-                name of user becomes "Ayo"
-  Files:        read("users.txt") / write(data to "users.txt")
-
-v1.1.1 JavaScript Gateway (beta)
-
-  JavaScript:   remember result as javascript
-                    await axios.get(url)
-                done
-  Input:        ask name / ask "What is your name?" as name
-  Packages:     use axios / use dotenv / use node-fetch — any npm package
-  Async:        JavaScript blocks and ask run in an async runtime
-
-Examples:
-  plain run hello.pln
-  plain build app.pln
-  plain check app.pln
-  plain fmt app.pln
-  plain new myapp
-  plain init
-  plain add express
-  plain remove express
+${section('FIRST RUN')}
+  plain new hello              scaffolds hello/ with a live web app
+  plain run hello/app.pln      serves it at http://localhost:3000
 `.trim();
 
 // ── npm invocation ────────────────────────────────────────────────────────────

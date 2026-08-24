@@ -135,6 +135,21 @@
         }
 
         // ------------------------------------------------------------
+        // Operators (arithmetic since v2.1.1; "->" first so it never
+        // becomes a minus)
+        // ------------------------------------------------------------
+
+        {
+            match: /->/
+            0: "operator"
+        }
+
+        {
+            match: /[+\-*\/%]/
+            0: "operator"
+        }
+
+        // ------------------------------------------------------------
         // Plain declarations
         // ------------------------------------------------------------
 
@@ -144,11 +159,11 @@
         }
 
         // ------------------------------------------------------------
-        // Control flow
+        // Control flow and error handling (v2.1.1)
         // ------------------------------------------------------------
 
         {
-            match: /\b(if|otherwise|done|while)\b/
+            match: /\b(if|otherwise|done|while|try|recover|retry|times|wait|enable|destroy|accept|require|using|ask|ocr|javascript)\b/
             0: "keyword"
         }
 
@@ -167,7 +182,7 @@
         // ------------------------------------------------------------
 
         {
-            match: /\b(is|above|below|at|least|most|not|empty)\b/
+            match: /\b(is|above|below|at|least|most|not|empty|or)\b/
             0: "operator"
         }
 
@@ -210,11 +225,20 @@
         }
 
         // ------------------------------------------------------------
-        // Web / Express
+        // Web / Express (incl. v2.1 routing helpers and middleware)
         // ------------------------------------------------------------
 
         {
-            match: /\b(web|app|route|when|someone|visits|listen|on|reply|json|serve|folder|start)\b/
+            match: /\b(web|app|route|when|someone|visits|listen|on|reply|json|serve|folder|start|group|allow|cors|validate|status|param|nothing|matches)\b/
+            0: "keyword2"
+        }
+
+        // ------------------------------------------------------------
+        // Sessions, uploads, auth, realtime (v2.1 / v2.1.1)
+        // ------------------------------------------------------------
+
+        {
+            match: /\b(sessions|session|uploads|limit|requests|api|key|google|oauth|cookie|expires|native|wasm|postgres|schedule|background|websocket|socket|connects|disconnects|mail|transport|headers|timeout|broadcast)\b/
             0: "keyword2"
         }
 
@@ -241,7 +265,7 @@
         // ------------------------------------------------------------
 
         {
-            match: /\b(print|show|read|write|readFile|writeFile|fileExists|sleep|time|date|jsonEncode|jsonDecode|env|exit|uuid|uppercase|lowercase|random|round|bot|sendMessage|sendPhoto|getChat|getMyChats|editMessage)\b/
+            match: /\b(print|show|read|write|readFile|writeFile|appendFile|fileExists|copyFile|moveFile|deleteFile|makeFolder|deleteFolder|listFolder|readBytes|writeBytes|sleep|time|date|jsonEncode|jsonDecode|env|exit|uuid|uppercase|lowercase|trim|replace|split|join|number|text|floor|ceiling|random|round|sort|reverse|unique|sum|smallest|largest|keys|values|hasKey|merge|sqlite|length|cacheGet|cacheSet|cacheDelete|hashPassword|checkPassword|createToken|readToken|validate|param|query|header|upload|uploads|cookie|bot|sendMessage|sendPhoto|getChat|getMyChats|editMessage)\b/
             0: "builtin"
         }
 

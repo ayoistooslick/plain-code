@@ -64,7 +64,7 @@
             "patterns": [
                 {
                     "name": "keyword.control.plain",
-                    "match": "\\b(if|otherwise|done|for|each|every|in|while|when|listen|javascript)\\b"
+                    "match": "\\b(if|otherwise|done|for|each|every|in|while|when|listen|javascript|ask|ocr|try|recover|retry|times|wait|enable|destroy|accept|require|using)\\b"
                 },
                 {
                     "name": "keyword.declaration.plain",
@@ -72,19 +72,23 @@
                 },
                 {
                     "name": "keyword.operator.plain",
-                    "match": "\\b(becomes|as|give|show|reply|serve|note|print)\\b"
+                    "match": "\\b(becomes|as|give|show|reply|serve|note|print|broadcast)\\b"
                 },
                 {
                     "name": "keyword.operator.comparison.plain",
-                    "match": "\\b(is|greater|less|than|to|above|below|at|least|most|not|empty|contains|starts|ends|with|between|and)\\b"
+                    "match": "\\b(is|greater|less|than|to|above|below|at|least|most|not|empty|contains|starts|ends|with|between|and|or)\\b"
                 },
                 {
                     "name": "keyword.other.web.plain",
-                    "match": "\\b(web|app|route|start)\\b"
+                    "match": "\\b(web|app|route|start|group|allow|cors|validate|status|param|nothing|matches)\\b"
                 },
                 {
                     "name": "keyword.other.database.plain",
                     "match": "\\b(database|query|insert|update|delete|execute)\\b"
+                },
+                {
+                    "name": "keyword.other.backend.plain",
+                    "match": "\\b(sessions|session|uploads|limit|requests|api|key|google|oauth|cookie|expires|native|wasm|postgres|schedule|background|websocket|socket|connects|disconnects|mail|transport|headers|timeout)\\b"
                 },
                 {
                     "name": "keyword.other.plain",
@@ -92,7 +96,7 @@
                 },
                 {
                     "name": "support.function.stdlib.plain",
-                    "match": "\\b(uppercase|lowercase|random|round|readFile|writeFile|fileExists|sleep|time|date|jsonEncode|jsonDecode|env|exit|uuid|bot|sendMessage|sendPhoto|getChat|getMyChats|editMessage)(?=\\s*\\()"
+                    "match": "\\b(length|uppercase|lowercase|trim|replace|split|join|number|text|floor|ceiling|random|round|sort|reverse|unique|sum|smallest|largest|keys|values|hasKey|merge|sqlite|print|readFile|writeFile|appendFile|fileExists|copyFile|moveFile|deleteFile|makeFolder|deleteFolder|listFolder|readBytes|writeBytes|read|write|sleep|time|date|jsonEncode|jsonDecode|env|exit|uuid|cacheGet|cacheSet|cacheDelete|hashPassword|checkPassword|createToken|readToken|validate|param|query|header|upload|uploads|cookie|bot|sendMessage|sendPhoto|getChat|getMyChats|editMessage)(?=\\s*\\()"
                 },
                 {
                     "name": "constant.language.plain",
@@ -108,7 +112,7 @@
                 },
                 {
                     "name": "keyword.operator.arithmetic.plain",
-                    "match": "[+]"
+                    "match": "[+\\-*/%]"
                 },
                 {
                     "name": "punctuation.accessor.plain",
