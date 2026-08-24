@@ -2,22 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
   <title>Plain — The programming language that reads like English</title>
-  <meta name="description" content="Plain is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v2.1.0 — HTTP routing, databases, email, cron, WebSocket &amp; cache.">
+  <meta name="description" content="Plain is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v2.1.1 — WhatsApp bots, backend services, portable databases.">
   <meta name="keywords" content="Plain, IOPL, intent-oriented programming, programming language, JavaScript, Plain language, plain-code, beginner programming language">
   <link rel="canonical" href="https://github.com/ayoistooslick/plain-code">
 
   <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://ayoistooslick.github.io/plain-code/">
   <meta property="og:title"       content="Plain — The programming language that reads like English">
-  <meta property="og:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.0 — HTTP routing, databases, email, cron, WebSocket &amp; cache.">
+  <meta property="og:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.1 — WhatsApp bots, backend services, portable databases.">
   <meta property="og:image"       content="https://ayoistooslick.github.io/plain-code/og.png">
 
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="Plain — The programming language that reads like English">
-  <meta name="twitter:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.0 — HTTP routing, databases, email, cron, WebSocket &amp; cache.">
+  <meta name="twitter:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.1 — WhatsApp bots, backend services, portable databases.">
   <meta name="twitter:image"       content="https://ayoistooslick.github.io/plain-code/og.png">
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -33,7 +33,7 @@
   <div class="nav-inner">
     <a class="nav-logo" href="#top">
       <span class="logo-word">Plain</span>
-      <span class="logo-ver">v2.1.0</span>
+      <span class="logo-ver">v2.1.1</span>
     </a>
 
     <ul class="nav-links" role="list">
@@ -70,6 +70,7 @@
   <a href="#web">Web Development</a>
   <a href="#http">HTTP</a>
   <a href="#telegram">Telegram</a>
+  <a href="#whatsapp">WhatsApp</a>
   <a href="#ocr">OCR</a>
   <a href="#websocket">WebSocket</a>
   <a href="#scheduling">Scheduling</a>
@@ -95,7 +96,7 @@
       <div class="hero-copy">
         <div class="hero-badge">
           <i class="fa-solid fa-bolt"></i>
-          v2.1.0 &mdash; HTTP routing &middot; databases &middot; email &middot; cron &middot; WebSocket &middot; cache
+          v2.1.1 &mdash; WhatsApp bots &middot; backend services &middot; portable databases
         </div>
         <h1 class="hero-title">
           The language<br>
@@ -164,7 +165,7 @@
       <div class="stat-label">Keywords</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value">381</div>
+      <div class="stat-value">595</div>
       <div class="stat-label">Tests Passing</div>
     </div>
     <div class="stat-item">
@@ -1000,9 +1001,108 @@ BOT.<span class="fn">onCallback</span>(<span class="str">"about"</span>, <span c
 </section>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- WHATSAPP                                                                -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<section class="section section--alt" id="whatsapp">
+  <div class="container">
+    <div class="section-tag"><i class="fa-brands fa-whatsapp"></i> WhatsApp <span class="tag-new">New in v2.1.1</span></div>
+    <h2 class="section-title">WhatsApp Bots</h2>
+    <p class="section-lead">
+      Link a real WhatsApp account by QR scan or pairing code and answer messages in near-English. Baileys powers it behind the scenes &mdash; detected and installed automatically, never imported in your source.
+    </p>
+
+    <div class="compare" style="margin-bottom:2rem">
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-title">bot.pln</span>
+          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+        </div>
+        <pre><code><span class="kw">whatsapp bot</span>
+    <span class="kw">auth</span> <span class="str">"session"</span>
+    <span class="kw">login pairing</span> <span class="str">"2348012345678"</span>
+
+    <span class="kw">on message</span>
+        <span class="kw">log message</span>
+
+        <span class="kw">if</span> message.text <span class="kw">is</span> <span class="str">"/start"</span>
+            <span class="kw">reply</span> <span class="str">"Welcome! Send /help for commands."</span>
+        <span class="kw">done</span>
+
+        <span class="cmt">// Backtick strings keep line breaks…</span>
+        <span class="kw">if</span> message.text <span class="kw">is</span> <span class="str">"/help"</span>
+            <span class="kw">reply</span> <span class="str">`Available commands:
+/start - greet you
+/help - this message`</span>
+        <span class="kw">done</span>
+    <span class="kw">done</span>
+<span class="kw">done</span></code></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="code-block-dots"><span></span><span></span><span></span></div>
+          <span class="code-block-title">Generated JavaScript (excerpt)</span>
+          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+        </div>
+        <pre><code><span class="cmt">// Baileys runtime emitted by the compiler;</span>
+<span class="cmt">// the package is installed for you at build time.</span>
+<span class="kw">const</span> { __whatsappStart,
+        __whatsappOnMessage,
+        __whatsappReply } = (() =&gt; {
+  <span class="cmt">/* makeWASocket, useMultiFileAuthState … */</span>
+})();
+
+<span class="kw">await</span> __whatsappStart({
+    folder: <span class="str">"session"</span>,
+    login: { mode: <span class="str">'pairing'</span>, phone: <span class="str">"2348012345678"</span> }
+});
+
+__whatsappOnMessage(<span class="kw">async</span> (__waCtx) =&gt; {
+    console.<span class="fn">log</span>(__waCtx.message);
+    <span class="kw">if</span> (__waCtx.message.text === <span class="str">"/start"</span>) {
+        <span class="kw">await</span> __whatsappReply(__waCtx.chat,
+            <span class="str">"Welcome! Send /help for commands."</span>);
+    }
+});</code></pre>
+      </div>
+    </div>
+
+    <h3 class="sub-heading"><i class="fa-solid fa-link"></i> Linking a device</h3>
+    <p>
+      The first run prints either a QR code to render in your terminal or a pairing code like <code>D4PN-RX5C</code> to type into <em>WhatsApp &rarr; Settings &rarr; Linked Devices &rarr; Link with phone number instead</em>. Credentials are saved to your <code>auth</code> folder, so every later run reconnects silently until the device is unlinked.
+    </p>
+
+    <div class="callout callout-info">
+      <i class="fa-solid fa-circle-info"></i>
+      <div class="callout-body">
+        <strong>Lifecycle details</strong>
+        <p>Your own outgoing messages and status broadcasts are filtered out of handlers. Unexpected disconnects auto-reconnect after ~3 seconds; a deliberately logged-out device stops cleanly with a clear error. Phone numbers are validated at compile time (8&ndash;15 digits).</p>
+      </div>
+    </div>
+
+    <h3 class="sub-heading"><i class="fa-solid fa-table-list"></i> WhatsApp syntax reference</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Plain</th><th>Behavior</th></tr></thead>
+        <tbody>
+          <tr><td><code>whatsapp bot ... done</code></td><td>Declare one bot and its handlers; it starts when the program runs.</td></tr>
+          <tr><td><code>auth "&lt;folder&gt;"</code></td><td>Credential folder persisted across restarts (default <code>plain-whatsapp-auth</code>).</td></tr>
+          <tr><td><code>login qr</code></td><td>Render a QR code in the terminal to link a device.</td></tr>
+          <tr><td><code>login pairing "&lt;number&gt;"</code></td><td>Print an 8-character pairing code for the given phone number.</td></tr>
+          <tr><td><code>on message ... done</code></td><td>Handler for every incoming text message.</td></tr>
+          <tr><td><code>log message</code></td><td>Print the normalized message record.</td></tr>
+          <tr><td><code>message.text &middot; chat &middot; sender &middot; name &middot; id &middot; time &middot; isGroup</code></td><td>Fields available inside the handler.</td></tr>
+          <tr><td><code>reply "&lt;value&gt;"</code></td><td>Answer the current chat; non-string values are sent as JSON.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- WEBSOCKET                                                               -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="websocket">
+<section class="section" id="websocket">
   <div class="container">
     <div class="section-tag"><i class="fa-solid fa-plug"></i> WebSocket</div>
     <h2 class="section-title">WebSocket Server</h2>
@@ -1064,7 +1164,7 @@ server.<span class="fn">on</span>(<span class="str">'connection'</span>, (ws) =&
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- SCHEDULING                                                              -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="scheduling">
+<section class="section section--alt" id="scheduling">
   <div class="container">
     <div class="section-tag"><i class="fa-solid fa-clock"></i> Scheduling</div>
     <h2 class="section-title">Cron Scheduling</h2>
@@ -1112,7 +1212,7 @@ cron.<span class="fn">schedule</span>(<span class="str">"*/5 * * * *"</span>, ()
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- EMAIL                                                                   -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="email">
+<section class="section" id="email">
   <div class="container">
     <div class="section-tag"><i class="fa-solid fa-envelope"></i> Email</div>
     <h2 class="section-title">Send Email</h2>
@@ -1170,7 +1270,7 @@ cron.<span class="fn">schedule</span>(<span class="str">"*/5 * * * *"</span>, ()
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- DATABASE                                                                -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="database">
+<section class="section section--alt" id="database">
   <div class="container">
     <div class="section-tag"><i class="fa-solid fa-database"></i> Database</div>
     <h2 class="section-title">SQLite Developer Experience</h2>
@@ -1380,6 +1480,7 @@ console.<span class="fn">log</span>(text);</code></pre>
               <tr><td><code>use path</code></td><td><code>const path = require('path')</code></td></tr>
               <tr><td><code>web app</code></td><td><code>express</code> (automatic)</td></tr>
               <tr><td><code>ocr &hellip;</code></td><td><code>tesseract.js</code> (automatic)</td></tr>
+              <tr><td><code>whatsapp bot</code> <span class="tag-new">v2.1.1</span></td><td><code>@whiskeysockets/baileys</code> + <code>qrcode-terminal</code> (automatic)</td></tr>
               <tr><td><code>use axios</code></td><td><code>const axios = require('axios')</code></td></tr>
               <tr><td><code>use node-fetch</code></td><td><code>require('node-fetch')</code></td></tr>
               <tr><td><code>use @scope/package</code></td><td><code>require('@scope/package')</code></td></tr>
@@ -1497,14 +1598,6 @@ console.<span class="fn">log</span>(text);</code></pre>
             <thead><tr><th>Command</th><th>Description</th></tr></thead>
             <tbody>
               <tr><td><code>plain install</code></td><td>Detect and install missing runtime dependencies</td></tr>
-              <tr><td><code>plain add &lt;pkg&gt;</code></td><td>Install a package and record it</td></tr>
-              <tr><td><code>plain remove &lt;pkg&gt;</code></td><td>Uninstall a package</td></tr>
-              <tr><td><code>plain update</code></td><td>Update all installed packages</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
               <tr><td><code>plain add &lt;pkg&gt;</code></td><td>Install a package and record it</td></tr>
               <tr><td><code>plain remove &lt;pkg&gt;</code></td><td>Uninstall a package</td></tr>
               <tr><td><code>plain update</code></td><td>Update all installed packages</td></tr>
@@ -2058,6 +2151,7 @@ Hello, World!</code></pre>
             <li>Passwords, tokens and sessions &mdash; scrypt hashing, HMAC tokens, signed cookies</li>
             <li>Uploads, cookies, rate limiting, API keys and Google OAuth</li>
             <li><code>try/recover</code>, retries, and custom 404 handlers</li>
+            <li>WhatsApp bots &mdash; QR + pairing-code linking, message handlers via Baileys</li>
           </ul>
         </div>
       </div>
@@ -2086,7 +2180,7 @@ Hello, World!</code></pre>
       <div class="faq-item">
         <button class="faq-question">Is Plain production-ready? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Plain 2.1.1 includes runtime dependency detection, automatic installation, OCR, npm aliases and version ranges, portable databases, an HTTP client, sessions, uploads, rate limiting, and deployment-oriented CLI commands &mdash; backed by a test suite of 560+ checks. It compiles to standard Node.js-compatible JavaScript and remains well-suited for personal projects, tooling, and learning.
+          Plain 2.1.1 includes runtime dependency detection, automatic installation, OCR, npm aliases and version ranges, portable databases, an HTTP client, sessions, uploads, rate limiting, deployment-oriented CLI commands, and WhatsApp bots &mdash; backed by a test suite of 595 checks. It compiles to standard Node.js-compatible JavaScript and remains well-suited for personal projects, tooling, and learning.
         </div>
       </div>
 
@@ -2108,6 +2202,13 @@ Hello, World!</code></pre>
         <button class="faq-question">How does OCR work? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
           Write <code>ocr "scan.png" as text</code>. The statement is backed by Tesseract.js &mdash; an implementation detail that never appears in your source. <code>plain install</code>, <code>plain run</code>, and <code>plain build</code> detect <code>ocr</code> statements and fetch the package automatically. An optional <code>using "&lt;lang&gt;"</code> clause selects a language pack (<code>"deu"</code>, <code>"deu+eng"</code>, &hellip;); extraction defaults to English.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">Can Plain build WhatsApp bots? <i class="fa-solid fa-chevron-down"></i></button>
+        <div class="faq-answer">
+          Yes, as of v2.1.1. Write a <code>whatsapp bot</code> block with an <code>auth</code> folder and either <code>login qr</code> or <code>login pairing "&lt;number&gt;"</code>. The first run links a real WhatsApp account by scanning the printed QR code or typing the pairing code into Linked Devices; later runs reconnect from saved credentials. Incoming messages flow through <code>on message ... done</code> handlers, and <code>reply</code> answers the current chat. Baileys is installed automatically &mdash; it never appears in your source.
         </div>
       </div>
 
@@ -2262,6 +2363,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.</code></pre>
           <li><a href="#web">Web Development</a></li>
           <li><a href="#http">HTTP</a></li>
           <li><a href="#telegram">Telegram</a></li>
+          <li><a href="#whatsapp">WhatsApp</a></li>
           <li><a href="#ocr">OCR</a></li>
           <li><a href="#database">Database</a></li>
           <li><a href="#cli">CLI Reference</a></li>

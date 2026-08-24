@@ -1,4 +1,4 @@
-/* Plain v1.0.0 — Documentation Website JS */
+/* Plain v2.1.1 — Documentation Website JS */
 
 /* ── Copy buttons ────────────────────────────────────────────────────────── */
 function initCopyButtons() {
@@ -45,21 +45,31 @@ function initMobileMenu() {
   const menu   = document.getElementById('mobile-menu');
   if (!toggle || !menu) return;
 
-  toggle.addEventListener('click', () => {
-    const open = menu.classList.toggle('open');
+  const setOpen = open => {
+    menu.classList.toggle('open', open);
     toggle.setAttribute('aria-expanded', open);
     toggle.querySelector('i').className = open
       ? 'fa-solid fa-xmark'
       : 'fa-solid fa-bars';
-  });
+    document.body.classList.toggle('menu-open', open);
+  };
+  const isOpen = () => menu.classList.contains('open');
+
+  toggle.addEventListener('click', () => setOpen(!isOpen()));
 
   /* close on link click */
   menu.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', () => {
-      menu.classList.remove('open');
-      toggle.setAttribute('aria-expanded', false);
-      toggle.querySelector('i').className = 'fa-solid fa-bars';
-    });
+    a.addEventListener('click', () => setOpen(false));
+  });
+
+  /* close with Escape */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && isOpen()) setOpen(false);
+  });
+
+  /* close if the viewport grows past the breakpoint */
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 800 && isOpen()) setOpen(false);
   });
 }
 

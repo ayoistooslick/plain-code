@@ -996,3 +996,122 @@ button:focus-visible,
   border-color: var(--border-2);
   box-shadow: var(--shadow-lg);
 }
+
+/* ============================================================
+   v2.1.1 — Mobile experience refinements
+   ============================================================ */
+
+/* ── Touch feel ──────────────────────────────────────────────────────────── */
+html {
+  -webkit-tap-highlight-color: rgba(79,127,255,.16);
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+a, button,
+.faq-question, .code-copy, .to-top {
+  touch-action: manipulation;
+}
+
+/* ── Hamburger: a comfortable tap target ─────────────────────────────────── */
+.nav-hamburger {
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  margin-left: .25rem;
+}
+
+/* ── Mobile menu: animated, scrollable, notch-aware ─────────────────────── */
+.mobile-menu {
+  display: block;
+  position: fixed;
+  top: var(--nav-h);
+  left: 0; right: 0;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+  z-index: 199;
+  padding: .5rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  max-height: calc(100vh - var(--nav-h));
+  max-height: calc(100dvh - var(--nav-h));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: transform .22s ease, opacity .22s ease, visibility 0s linear .22s;
+  box-shadow: var(--shadow-lg);
+}
+.mobile-menu.open {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition: transform .22s ease, opacity .22s ease, visibility 0s;
+}
+.mobile-menu a { padding: .8rem 0; }
+.mobile-menu a:last-child { border-bottom: none; }
+
+/* Lock page scroll while the menu is open (toggled by script.js) */
+body.menu-open { overflow: hidden; }
+
+@media (max-width: 800px) and (min-width: 481px) {
+  /* Room for the longer feature list on large phones / small tablets */
+  .mobile-menu { column-count: 2; column-gap: 2rem; }
+  .mobile-menu a { break-inside: avoid; }
+}
+
+/* ── Code blocks on phones ──────────────────────────────────────────────── */
+.code-block pre,
+.table-wrap {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.table-wrap table { min-width: 560px; }
+
+@media (max-width: 600px) {
+  .section { padding: 3rem 0; }
+  .hero { padding: 3.5rem 0 2.5rem; }
+
+  .code-block { font-size: .82rem; }
+  .code-block pre { padding: 1rem; line-height: 1.6; }
+  .code-block-header { padding: .55rem .75rem .55rem 1rem; gap: .5rem; }
+  .code-copy {
+    font-size: .7rem;
+    padding: .38rem .6rem;
+    min-height: 34px;
+    align-items: center;
+  }
+  .code-block-dots span { width: 8px; height: 8px; }
+
+  .table-wrap table { min-width: 480px; }
+  thead th, tbody td { padding: .6rem .85rem; }
+
+  .callout { padding: .9rem 1rem; }
+}
+
+@media (max-width: 400px) {
+  .code-block-dots { display: none; }
+  .code-block-title { font-size: .72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* Long inline code must never blow out narrow viewports */
+p code, li code, td code, .faq-answer code {
+  overflow-wrap: anywhere;
+}
+
+/* ── Hero & install strips on small screens ─────────────────────────────── */
+@media (max-width: 480px) {
+  .hero-actions { flex-direction: column; align-items: stretch; }
+  .hero-actions .btn { justify-content: center; }
+  .install-strip { flex-direction: column; align-items: stretch; }
+  .install-cmd { justify-content: space-between; }
+  .cmd-strip { font-size: .78rem; }
+}
+
+/* ── Safe-area aware floating button ────────────────────────────────────── */
+.to-top {
+  right: calc(1.25rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+}
