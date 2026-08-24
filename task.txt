@@ -1,623 +1,84 @@
-Implement Plain v2.1.1.
+Implement the finalized WhatsApp Bot MVP in Plain v2.1.1 using the deterministic compiler only.
 
-This release is a corrective/stabilization release after v2.1.0.
+FINAL USER SYNTAX:
 
-The goal is NOT to add another AI compilation layer. The goal is to make the deterministic compiler itself capable of handling the backend features we previously attempted through Complex Compilation, while fixing the real runtime issues discovered through testing.
+whatsapp bot
+    auth "session"
+    login pairing "2348012345678"
 
-IMPORTANT ARCHITECTURAL DECISION:
+    on message
+        log message
 
-DELETE COMPLEX COMPILATION COMPLETELY.
+        if message.text is "/start"
+            reply "Welcome!"
+        done
 
-Treat it as if it never existed.
+        if message.text is "/help"
+            reply "Available commands: /start /help"
+        done
+    done
+done
 
-Do not replace it with another AI fallback.
-Do not add more AI compiler rules.
-Do not make unsupported Plain syntax silently enter an AI compiler.
+Also support:
 
-Plain must have ONE authoritative deterministic compiler.
+whatsapp bot
+    auth "session"
+    login qr
 
-If syntax is unsupported, `plain check` must give a deterministic compiler error explaining exactly what is wrong and, where practical, showing the expected syntax.
+    on message
+        log message
+    done
+done
 
-Do not guess syntax during implementation or testing. Every new language feature must have one explicit, documented, deterministic syntax.
-
-==================================================
-PART 1 — REMOVE COMPLEX COMPILATION
-==================================================
-
-Remove the entire Complex Compilation pipeline:
-
-- AI compilation fallback
-- fallback invocation from deterministic compilation
-- compiler/rules dependency that only existed for Complex Compilation
-- AI compilation error paths
-- "trying Complex Compilation" messages
-- dead configuration
-- dead resolver/rule code
-- tests that only verify AI fallback behavior
-
-`plain run` should behave as:
-
-deterministic compile
-        ↓
-success → generate/run
-failure → precise compiler error
-
-There must be no second compiler.
-
-Do not break the existing deterministic compiler.
-
-==================================================
-PART 2 — MOVE THE USEFUL COMPLEX-COMPILATION CAPABILITIES INTO THE DETERMINISTIC COMPILER
-==================================================
-
-The features we previously needed Complex Compilation to handle must become proper deterministic compiler capabilities.
-
-Inspect the existing compiler architecture first.
-
-Do not invent syntax based on JavaScript.
-Do not invent syntax based on English guesses.
-Follow existing Plain conventions and extend them consistently.
-
-The language must have explicit grammar/AST/compiler support for the capabilities necessary to build real backends.
-
-At minimum, make the deterministic compiler capable of:
-
-- robust variables
-- reassignment
-- strings
-- numbers
-- booleans
-- null
-- arrays
-- objects
-- nested objects
-- nested arrays
-- property access
-- array indexing
-- functions
-- function parameters
-- function return values
-- function calls
-- conditions
-- else/otherwise behavior
-- nested conditions
-- loops
-- comparisons
-- arithmetic
-- logical expressions
-- string operations
-- array operations
-- JSON construction
-- JSON parsing/serialization
-- async operations
-- await semantics
-- error handling
-- reusable application logic
-
-Preserve existing valid syntax.
+Implementation requirements:
+- Use @whiskeysockets/baileys.
+- `whatsapp bot` must deterministically compile to the Baileys runtime.
+- Internally create the Baileys socket with `makeWASocket()`.
+- Implement auth/session persistence.
+- Implement QR login.
+- Implement pairing-code login.
+- Pairing phone numbers must be validated according to Baileys requirements.
+- Handle connection lifecycle/reconnection appropriately.
+- Persist credential updates.
+- Handle `messages.upsert`.
+- Process only appropriate new-message notifications and prevent the bot from responding to its own messages.
+- Normalize the incoming message into Plain's `message` object.
+- Support `log message`.
+- Support `message.text`.
+- Support `reply "..."` inside `on message`, replying to the current WhatsApp chat.
+- Support the `/start` and `/help` conditional examples exactly.
+- Keep the Baileys API completely hidden from Plain users.
 
 IMPORTANT:
-Use the ACTUAL existing Plain grammar as the source of truth.
+Do not expose `makeWASocket()`, `sock.ev`, `messages.upsert`, `remoteJid`, or Baileys auth APIs in Plain syntax. They are runtime implementation details.
 
-For example, if Plain currently uses:
+Also implement proper multiline backtick strings in the GENERAL Plain lexer/parser:
 
-{ id: 1, name: "Manchester City" }
+reply `heyy
+how you dey?`
 
-then that is the syntax.
+must preserve the newline.
 
-Do NOT change it to:
+Backtick strings must support normal multiline content without being a WhatsApp-specific feature. Preserve existing quoted-string behavior and support normal escapes such as \n, \t, \\, and escaped quotes where applicable.
 
-{ id is 1, name is "Manchester City" }
+Do not invent alternative WhatsApp syntax.
 
-Do not invent syntax merely because it looks natural.
+Test everything yourself using shell commands:
+1. compiler/check tests
+2. generated JavaScript
+3. runtime startup
+4. pairing-code flow as far as the environment permits
+5. QR flow as far as the environment permits
+6. simulated/mock message event
+7. `log message`
+8. `message.text`
+9. `/start` reply
+10. `/help` reply
+11. multiline backtick strings
+12. regression suite
 
-Every newly supported construct must have:
-- parser support
-- AST representation where appropriate
-- deterministic compilation
-- runtime generation
-- compiler diagnostics
-- tests
-- documentation
+Add deterministic compiler and runtime integration tests.
 
-==================================================
-PART 3 — `use` MUST BE A REAL DEPENDENCY FEATURE
-==================================================
+Do not use Complex Compilation. It no longer exists.
 
-Keep and strengthen the v2.0.1/v2.1.0 `use` system.
-
-Plain must support explicit dependency declarations such as:
-
-use "express"
-use "express" as exp
-use "tesseract.js" as tssc
-use "@ayoxx/plain-code"
-use "some-package@^2.0.0"
-
-Requirements:
-
-- validate package names
-- support scoped packages
-- support aliases
-- support versions/version ranges
-- resolve/install dependencies deterministically
-- distinguish built-in Node modules from npm packages
-- support CommonJS packages
-- support ESM packages where practical
-- expose imported dependencies to generated/runtime code
-- allow aliases to actually be used
-- produce deterministic errors for invalid dependencies
-
-`use` must not merely install packages.
-
-If a programmer writes:
-
-use "express" as exp
-
-the `exp` binding must genuinely exist and be usable by Plain's supported dependency-interoperability mechanism.
-
-==================================================
-PART 4 — WEB BACKEND CAPABILITIES
-==================================================
-
-Make the deterministic compiler capable of real backend development.
-
-Support and test:
-
-- HTTP server
-- GET
-- POST
-- PUT
-- PATCH
-- DELETE
-- route parameters
-- query parameters
-- headers
-- request bodies
-- JSON responses
-- text responses
-- status codes
-- route groups
-- middleware
-- CORS
-- 404 handling
-- structured error handling
-- validation
-- rate limiting
-- cookies where practical
-- authentication middleware
-
-Preserve existing v2.1.0 syntax.
-
-A real program must be able to express:
-
-HTTP request
-→ validate
-→ process
-→ database/OCR/external API
-→ JSON response
-
-without Complex Compilation.
-
-==================================================
-PART 5 — FILE UPLOADS
-==================================================
-
-Add deterministic support for real backend uploads.
-
-Support:
-
-- multipart/form-data
-- uploaded files
-- file name
-- MIME type
-- file size
-- buffers
-- memory storage
-- disk storage
-- upload limits
-- MIME validation
-- multiple files
-- temporary files
-- safe file handling
-
-This must be sufficient to rebuild the existing ID-verification backend's upload endpoints.
-
-Do not require users to manually write Multer/Express JavaScript for ordinary upload behavior.
-
-==================================================
-PART 6 — BUILT-IN OCR
-==================================================
-
-Preserve the already-tested built-in Plain OCR feature.
-
-Examples:
-
-ocr "scan.png" as text
-
-ocr "brief.png" as inhalt using "deu"
-
-ocr imageExpression as result using "deu+eng"
-
-OCR must be deterministic and composable with:
-
-- uploaded files
-- HTTP routes
-- functions
-- conditions
-- validation
-- database operations
-- external API calls
-
-Tesseract.js remains an implementation detail.
-
-Do not require users to know Tesseract.js APIs for normal Plain OCR.
-
-==================================================
-PART 7 — DATABASE BUG AND ARCHITECTURE
-==================================================
-
-Fix the v2.1.0 database capability exposed by the real Termux test.
-
-The Plain program compiled successfully and deterministically:
-
-- database syntax was recognized
-- better-sqlite3 was resolved/installed
-- Express was resolved/installed
-- runtime dependencies passed
-- JavaScript was generated
-
-But execution failed because better-sqlite3's native binding was unavailable:
-
-Cannot find module .../better-sqlite3/build/Release/better_sqlite3.node
-
-This is a runtime/dependency portability problem, not a Plain syntax problem.
-
-Investigate the existing database implementation and make the database capability genuinely portable and production-usable.
-
-Requirements:
-
-1. Do NOT remove or weaken Plain's deterministic database syntax.
-
-2. Do NOT make Complex Compilation responsible for database programs.
-
-3. Do NOT simply tell users to manually install better-sqlite3.
-
-4. Separate Plain's database abstraction from one hardcoded native SQLite implementation.
-
-5. Determine what database backends are realistically usable across:
-   - Linux x64
-   - Linux ARM64
-   - Termux/Android ARM64
-   - Windows
-   - macOS
-
-6. For SQLite, investigate a portable implementation where possible, including WASM/pure-JS options or another runtime that does not require an unavailable native `.node` binary on Android.
-
-7. If multiple database drivers are supported, make the backend selectable without changing high-level Plain database semantics.
-
-8. Preserve:
-
-database "..."
-
-query
-
-insert
-
-execute
-
-transaction
-
-parameterized queries
-
-result handling
-
-existing SQL behavior
-
-9. Database support must handle real applications, not toy examples.
-
-10. Add runtime capability detection.
-
-11. If a backend genuinely cannot run on a platform, produce a clear deterministic diagnostic.
-
-12. Add deterministic compiler tests.
-
-13. Add actual runtime integration tests.
-
-14. Add a Termux/Android-compatible database test if the environment permits it.
-
-The test must EXECUTE a database operation. Installing an npm package is not enough.
-
-15. Test:
-
-HTTP route
-→ database query
-→ JSON response
-
-16. Do not break existing v2.1.0 database programs.
-
-17. Investigate why the dependency installer reported:
-
-"✓ better-sqlite3 installed"
-
-while the native runtime binding was unavailable.
-
-Plain must distinguish:
-
-package downloaded
-
-from:
-
-runtime dependency installed and usable.
-
-18. After fixing the implementation, rerun the football backend test.
-
-==================================================
-PART 8 — EXTERNAL HTTP APIs
-==================================================
-
-Add deterministic HTTP client support.
-
-Support:
-
-- GET
-- POST
-- PUT
-- PATCH
-- DELETE
-- headers
-- query parameters
-- JSON bodies
-- JSON responses
-- text responses
-- status codes
-- timeouts
-- errors
-
-This must allow a football backend to consume a football-data provider without JavaScript.
-
-==================================================
-PART 9 — AUTHENTICATION
-==================================================
-
-Move authentication capabilities into deterministic compiler support.
-
-Support, where appropriate:
-
-- API keys
-- sessions
-- cookies
-- password hashing
-- JWT
-- Google OAuth
-- OAuth authorization routes
-- OAuth callbacks
-- authentication middleware
-- authorization
-- environment secrets
-- rate limiting
-
-Google OAuth must have explicit Plain semantics.
-
-Do not allow an AI compiler to invent authentication architecture.
-
-==================================================
-PART 10 — EMAIL / JOBS / WEBHOOKS
-==================================================
-
-Add deterministic support for:
-
-- email
-- SMTP/provider integrations
-- webhooks
-- cron/scheduled jobs
-- background tasks where practical
-- retry/error behavior
-
-Keep these capabilities independent and composable.
-
-==================================================
-PART 11 — REALTIME
-==================================================
-
-Add deterministic support for WebSockets/realtime backend functionality where the existing runtime architecture permits it.
-
-The goal is for Plain to eventually support applications such as:
-
-- live football scores
-- chat
-- notifications
-- realtime dashboards
-
-without JavaScript escape hatches.
-
-==================================================
-PART 12 — FOOTBALL BACKEND ACCEPTANCE TEST
-==================================================
-
-Create a complete deterministic Plain acceptance test representing a real football backend.
-
-It must include at least:
-
-- teams
-- fixtures
-- standings
-- users
-- REST routes
-- route parameters
-- validation
-- database operations
-- JSON responses
-- external API request
-- scheduled data refresh
-- authentication or API-key protection
-
-Do not create a special football rule.
-
-This must work because Plain is capable of expressing the underlying generic capabilities.
-
-==================================================
-PART 13 — ID VERIFICATION ACCEPTANCE TEST
-==================================================
-
-Use the uploaded TypeScript ID verification backend as another acceptance test.
-
-The Plain implementation should be able to express:
-
-- HTTP server
-- image upload
-- MIME validation
-- upload size limit
-- OCR using Plain's built-in `ocr`
-- verification logic
-- JSON response
-- error handling
-
-Do not merely wrap the original TypeScript implementation.
-
-The goal is to prove that Plain itself can express the backend.
-
-==================================================
-PART 14 — STRICT LANGUAGE DESIGN
-==================================================
-
-This is critical.
-
-STOP GUESSING SYNTAX.
-
-Before implementing a feature:
-
-1. Define the exact Plain syntax.
-2. Add lexer/parser support.
-3. Add AST/compiler support.
-4. Add runtime generation.
-5. Add positive tests.
-6. Add invalid-syntax tests.
-7. Document the syntax.
-8. Use that exact syntax in all examples.
-
-Do not create multiple competing syntaxes for the same concept.
-
-Do not silently reinterpret invalid syntax.
-
-Plain should feel like a real programming language, not an English prompt parser.
-
-==================================================
-PART 15 — TESTING
-==================================================
-
-Build a comprehensive deterministic test suite.
-
-Include:
-
-- lexer tests
-- parser tests
-- compiler tests
-- invalid syntax tests
-- generated JavaScript tests
-- runtime tests
-- dependency tests
-- HTTP integration tests
-- upload tests
-- OCR integration tests
-- database integration tests
-- authentication tests
-- external HTTP tests
-- regression tests
-
-Every capability must be tested in isolation AND in composition.
-
-At minimum test:
-
-1. Hello/backend health endpoint
-2. REST CRUD API
-3. route parameters
-4. request validation
-5. file upload
-6. OCR
-7. arbitrary npm dependency + alias
-8. version-ranged dependency
-9. database CRUD
-10. HTTP API + database
-11. HTTP API + OCR
-12. authentication
-13. OAuth
-14. webhook
-15. scheduled job
-16. external API
-17. realtime
-18. composed football backend
-19. composed ID verification backend
-
-==================================================
-PART 16 — DOCUMENTATION
-==================================================
-
-Update:
-
-- knowledge.md
-- language specification
-- compiler documentation
-- examples
-- website documentation
-
-ONLY after features are actually implemented and tested.
-
-Documentation must describe the exact deterministic syntax.
-
-Do not document hypothetical syntax.
-
-==================================================
-PART 17 — COMPATIBILITY
-==================================================
-
-This is Plain v2.1.1.
-
-Treat it as a stabilization/bug-fix and architectural-correction release.
-
-Preserve valid v2.1.0 programs.
-
-Do not introduce unnecessary breaking syntax changes.
-
-Do not randomly rename existing constructs.
-
-Where v2.1.0 behavior is genuinely broken, fix it while preserving the intended language semantics.
-
-==================================================
-FINAL REQUIREMENT
-==================================================
-
-Do not stop after adding rules or parser entries.
-
-For every feature, verify the complete pipeline:
-
-Plain source
-→ lexer
-→ parser
-→ AST
-→ deterministic compiler
-→ dependency resolution
-→ generated JavaScript
-→ runtime
-→ actual behavior
-
-There must be NO Complex Compilation stage.
-
-Do not commit.
-Do not push.
-
-At the end, report:
-
-- Complex Compilation completely removed
-- deterministic compiler capabilities added
-- database backend and portability solution
-- dependency/runtime changes
-- syntax additions
-- tests added/passed
-- runtime integration results
-- football backend result
-- ID verification backend result
-- documentation updated
-- any remaining limitations
-
-Do not claim a feature is implemented unless it has actually passed its relevant tests.
+Do not commit or push.
