@@ -599,6 +599,44 @@ done
 
 ---
 
+## WhatsApp Bots (v2.1.1)
+
+Full WhatsApp connectivity through Baileys — the implementation package is
+installed automatically and never appears in your source:
+
+```plain
+whatsapp bot
+    auth "session"                          // credential folder, persists
+                                            // across restarts
+    login qr                                // or: login pairing "2348012345678"
+
+    on message
+        log message                         // print the normalized record
+
+        if message.text is "/start"
+            reply "Welcome!"
+        done
+
+        if message.text is "/help"
+            reply `Available commands:
+/start /help`
+        done
+    done
+done
+```
+
+- `login qr` prints a scannable QR code; `login pairing "<number>"` prints an
+  enter-on-phone code instead. Pairing numbers are validated at compile time
+  (digits only after normalization, 8–15).
+- Inside `on message`, `message` holds `{ text, chat, sender, name, id,
+  time, isGroup }`; `reply` answers the current chat.
+- The bot ignores its own messages and status broadcasts and keeps working in
+  groups; transient disconnects reconnect after 3 seconds.
+
+See `examples/whatsapp-bot/` for ready-to-link programs.
+
+---
+
 ## Project management (v0.4.2)
 
 ```bash
@@ -665,9 +703,12 @@ Plain/
 │   ├── deployment.pln
 │   ├── football-backend/     — v2.1.1 acceptance example (SQLite + auth + sessions)
 │   │   └── app.pln
-│   └── id-verification/      — v2.1.1 acceptance example (uploads + OCR matching)
-│       ├── app.pln
-│       └── make-sample-id.js
+│   ├── id-verification/      — v2.1.1 acceptance example (uploads + OCR matching)
+│   │   ├── app.pln
+│   │   └── make-sample-id.js
+│   └── whatsapp-bot/         — v2.1.1 WhatsApp bots (QR and pairing linking)
+│       ├── qr.pln
+│       └── pairing.pln
 │
 ├── tests/
 │   ├── compiler.test.js      — language, CLI and formatter coverage
@@ -675,6 +716,7 @@ Plain/
 │   ├── telegram.test.js      — Telegram bot runtime tests
 │   ├── ocr.test.js           — OCR statement tests
 │   ├── v211.test.js          — v2.1.1 feature suite
+│   ├── whatsapp.test.js      — WhatsApp bot runtime tests
 │   └── acceptance.test.js    — boots the example projects over live HTTP
 │
 ├── docs/

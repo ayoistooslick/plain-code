@@ -132,10 +132,12 @@ These are verified compiler behaviors. Do not generate code that violates them.
     Contextual words (`status`, `query`, `send`, `broadcast`, `cache`) keep
     their ordinary meaning when followed by `becomes` or `(...)`.
 
-11. **Strings use double quotes or backticks.** Backticks support `${expr}`
-    interpolation and multiline text. Single quotes are not string delimiters
-    in Plain source — except inside raw SQL blocks, where `'text literals'`
-    are allowed and pass through verbatim.
+11. **Strings use double quotes or backticks.** Double-quoted strings decode
+    the usual escapes: `\n`, `\t`, `\\`, `\"`. Backticks support `${expr}`
+    interpolation and multiline text, and an escaped backtick inside them
+    stays literal instead of closing the string. Single quotes are not string
+    delimiters in Plain source — except inside raw SQL blocks, where
+    `'text literals'` are allowed and pass through verbatim.
 
 12. **Reassignment uses `becomes`,** not `=`:
 
@@ -863,7 +865,53 @@ given to `bot "…"` drives every API call.
 
 ---
 
-## 14. OCR
+## 14. WhatsApp bots
+
+Full WhatsApp connectivity through Baileys — the package never appears in
+your source and installs automatically.
+
+```plain
+whatsapp bot
+    auth "session"                          // credential folder; created and
+                                            // reused across restarts
+
+    login qr                                // scan the printed QR code, or:
+    // login pairing "2348012345678"        // type the printed XXXX-XXXX code
+                                            // on the phone instead
+
+    on message                              // every incoming text lands here
+        log message                         // prints the normalized record
+
+        if message.text is "/start"
+            reply "Welcome!"
+        done
+
+        if message.text is "/help"
+            reply `Available commands:
+/start /help`
+        done
+    done
+done
+```
+
+Sharp edges:
+
+- One bot per program. Omit `auth` to use the default folder
+  (`plain-whatsapp-auth`), omit `login` for QR linking. Pairing numbers are
+  digits only after normalization (`+234 801-234-5678` works) and must be
+  8–15 of them — anything else fails at compile time.
+- Inside `on message`, `message` holds `{ text, chat, sender, name, id,
+  time, isGroup }` (times in milliseconds). `reply "<value>"` answers the
+  current chat; non-string values are sent as JSON.
+- The bot never reacts to its own messages or to status broadcasts, and it
+  keeps working in groups (the participant becomes the sender).
+- Transient disconnects reconnect after 3 seconds; if the session is signed
+  out from the phone, the runtime stops cleanly instead of looping.
+- Link once per auth folder — sessions persist on disk.
+
+---
+
+## 15. OCR
 
 Extract text from images with Tesseract.js — the package never appears in
 your source; dependency detection installs it automatically.
@@ -881,7 +929,7 @@ automatically.
 
 ---
 
-## 15. Multi-file projects
+## 16. Multi-file projects
 
 ```plain
 // app.pln
@@ -897,7 +945,7 @@ show add(3, 4)
 
 ---
 
-## 16. CLI cheat sheet
+## 17. CLI cheat sheet
 
 | Command | What it does |
 |---|---|
@@ -912,7 +960,7 @@ show add(3, 4)
 
 ---
 
-## 17. Verification workflow (do this after generating code)
+## 18. Verification workflow (do this after generating code)
 
 ```bash
 plain check app.pln     # fast syntax gate — run this before anything else
@@ -924,7 +972,7 @@ include suggestions ("Did you mean ...") — trust them.
 
 ---
 
-## 18. Copy-paste prompt for your AI
+## 19. Copy-paste prompt for your AI
 
 > You are writing Plain (`.pln`) source that compiles with
 > `@ayoxx/plain-code`. Follow these rules strictly:
@@ -977,10 +1025,14 @@ include suggestions ("Did you mean ...") — trust them.
 > - Realtime: `websocket server on 8080` with `when socket connects /
 >   sends message / disconnects ... done`, `send socket x`, `broadcast x`.
 > - Cache: `cache "redis://..."` then `cacheGet/cacheSet/cacheDelete`.
+> - WhatsApp: `whatsapp bot ... done` with `auth "<folder>"`, `login qr` or
+>   `login pairing "<digits>"` (8–15 digits), and `on message ... done`
+>   handlers using `message.text`, `reply "..."`
+>   (also `log message`). One bot per program.
 > - Escape hatch: `remember result as javascript ... return value ... done`.
 > - Never import or require express/pg/better-sqlite3/sql.js/nodemailer/
->   croner/ws/redis/multer/tesseract.js — the compiler generates and installs
->   them.
+>   croner/ws/redis/multer/tesseract.js/@whiskeysockets/baileys/
+>   qrcode-terminal — the compiler generates and installs them.
 > - After writing code, run `plain check app.pln` and fix reported lines.
 >
 > Full reference follows in knowledge.md.

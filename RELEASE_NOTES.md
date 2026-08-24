@@ -48,18 +48,33 @@ to implement it in JavaScript.
 - Custom 404: `when nothing matches ... done`.
 - Error handling: `try ... recover ... done`, `retry N times every M seconds`.
 
+### WhatsApp bots
+
+- `whatsapp bot ... done` with `auth "<folder>"`, `login qr` or
+  `login pairing "<number>"` (compile-time E.164 validation), and
+  `on message ... done` handlers.
+- Handlers read the normalized record via `message.text`, answer with
+  `reply`, and can dump everything with `log message`.
+- Baileys (`@whiskeysockets/baileys`) powers it behind the scenes: QR +
+  pairing linking, credential persistence, reconnects — installed and hidden
+  by the compiler.
+
 ### Language core additions
 
 - Boolean/null literals: `true`, `false`, `null`.
 - Arithmetic operators `+ - * / %`, unary minus, parenthesised grouping with
   standard precedence.
+- String escapes: double-quoted strings decode `\n`, `\t`, `\\`, `\"`;
+  multiline backtick strings survive escaped backticks.
 
 ### Examples and tests
 
 - New acceptance examples: `examples/football-backend/` and
   `examples/id-verification/`, booted over live HTTP by
   `tests/acceptance.test.js`.
-- New feature suite `tests/v211.test.js`; full suite now 557 tests.
+- New example `examples/whatsapp-bot/` (`qr.pln`, `pairing.pln`).
+- New feature suites `tests/v211.test.js` and `tests/whatsapp.test.js`; full
+  suite now 595 tests.
 
 ### Breaking changes
 

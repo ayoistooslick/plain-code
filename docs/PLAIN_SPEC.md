@@ -196,6 +196,7 @@ Multiline templates preserve line breaks:
 Notes:
 - Interpolation `${expr}` compiles directly to JavaScript `${expr}` — it is not evaluated at compile time.
 - Literal dollar signs that are not followed by `{` are preserved as-is (e.g. `` `$5` ``).
+- Escape sequences work in both string forms: double-quoted strings decode `\n`, `\t`, `\r`, `\0`, `\\`, `\"`, and `\'` (an unknown escape keeps the escaped character itself); inside backtick templates an escaped backtick stays literal instead of closing the string.
 - Embedded backtick characters within the template content are escaped in the output.
 
 ### I/O & Files
@@ -813,6 +814,83 @@ async function __ocr(imagePath, lang) {
 }
 
 let text = await __ocr("scan.png");
+```
+
+---
+
+## WhatsApp Bots (v2.1.1)
+
+A `whatsapp bot` block declares one WhatsApp connection and its message
+handlers. The implementation package (`@whiskeysockets/baileys`, with
+`qrcode-terminal` for QR rendering) is detected, installed, and hidden —
+it never appears in Plain source.
+
+    whatsapp bot
+        auth "session"                      // credential folder
+        login pairing "2348012345678"       // or: login qr
+
+        on message
+            log message
+
+            if message.text is "/start"
+                reply "Welcome!"
+            done
+
+            if message.text is "/help"
+                reply `Available commands:
+/start /help`
+            done
+        done
+    done
+
+Syntax:
+
+- The block opens with `whatsapp bot` and closes with `done`. It may contain
+  at most one `auth`, one `login`, and any number of `on message` handlers;
+  anything else is a teaching error.
+- `auth "<folder>"` selects the credential folder created by
+  `useMultiFileAuthState` and reused across restarts. Optional; defaults to
+  `"plain-whatsapp-auth"`.
+- `login qr` links by scanning a terminal QR code; it is the default when the
+  clause is omitted. `login pairing "<number>"` requests an enter-on-phone
+  pairing code instead. Pairing numbers are validated at compile time: after
+  stripping separators and a leading plus (`+234 801-234-5678`) they must be
+  8–15 digits.
+- `on message ... done` registers one handler for incoming messages. Inside:
+  - `message` refers to the normalized record `{ text, chat, sender, name,
+    id, time, isGroup }` of the current delivery.
+  - `log message` prints the record to the console; using it outside an
+    `on message` body is a compile-time teaching error.
+  - `reply <value>` answers the current chat — strings verbatim, other values
+    as JSON.
+
+Runtime semantics:
+
+- Only `messages.upsert` events of type `notify` are delivered; the bot's own
+  outgoing messages (`fromMe`) and `status@broadcast` are filtered out before
+  handlers run.
+- Ephemeral and view-once wrappers are unwrapped; text falls back through
+  caption fields for media messages.
+- Group chats set `sender` to the participant JID and `isGroup` to true;
+  replies go to the group chat.
+- Handler errors are logged and never crash the process.
+- On transient disconnects the socket reconnects after 3 seconds; a remote
+  sign-out stops cleanly instead of looping.
+
+Generated JavaScript shape (abridged):
+
+```js
+const { __whatsappStart, __whatsappOnMessage, __whatsappReply } = (() => {
+  // makeWASocket + useMultiFileAuthState + fetchLatestBaileysVersion live in
+  // here, behind require('@whiskeysockets/baileys')
+})();
+await __whatsappStart({ folder: "session", login: { mode: 'pairing', phone: "2348012345678" } });
+__whatsappOnMessage(async (__waCtx) => {
+  console.log(__waCtx.message);
+  if (__waCtx.message.text === "/start") {
+    await __whatsappReply(__waCtx.chat, "Welcome!");
+  }
+});
 ```
 
 ---

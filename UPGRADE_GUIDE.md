@@ -41,6 +41,10 @@ plain version
   parser and formatter.
 - Boolean/null literals and full arithmetic operators (`+ - * / %`, unary
   minus, parentheses) are now part of the language.
+- Double-quoted strings now decode escape sequences (`\n`, `\t`, `\\`,
+  `\"`). Source that never used a backslash in a string is unaffected;
+  backtick strings keep their previous multiline/interpolation behaviour and
+  additionally survive escaped backticks.
 
 ---
 
@@ -71,6 +75,10 @@ done
 
 start 3000
 ```
+
+New in this line: WhatsApp bots. A `whatsapp bot ... done` block links a real
+WhatsApp account (QR scan or pairing code) and answers messages — see the
+README's "WhatsApp Bots (v2.1.1)" section and `examples/whatsapp-bot/`.
 
 See the README's "Backend Services (v2.1.1)" section for every new feature
 with examples.

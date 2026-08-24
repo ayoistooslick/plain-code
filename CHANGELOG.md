@@ -27,6 +27,27 @@ All notable changes to Plain are documented here.
   parsed automatically. Default timeout 30 seconds (`AbortController`).
 - `wait for fetch(...)` awaits raw promises from Plain source.
 
+### WhatsApp bots
+
+- `whatsapp bot ... done` blocks configure a complete WhatsApp connection
+  through Baileys (`@whiskeysockets/baileys`) — nothing Baileys-shaped ever
+  appears in Plain source.
+- `auth "<folder>"` persists credentials across restarts (default folder
+  `plain-whatsapp-auth`). `login qr` prints a scannable QR code;
+  `login pairing "<number>"` requests an enter-on-phone code instead.
+  Pairing numbers are validated at compile time: digits only after
+  normalization (`+234 801-234-5678` is accepted), 8–15 of them.
+- `on message ... done` handlers receive normalized records (`text`, `chat`,
+  `sender`, `name`, `id`, `time`, `isGroup`); `log message` prints the
+  record, conditions read `message.text`, and `reply` answers the current
+  chat (non-string values are sent as JSON).
+- Self-messages and status broadcasts are ignored; groups keep the sender as
+  the participant; transient disconnects reconnect after 3 seconds; remote
+  sign-outs stop cleanly with guidance.
+- General strings upgrade: double-quoted strings decode `\n`, `\t`, `\r`,
+  `\0`, `\\`, `\"`, and `\'`; multiline backtick strings survive escaped
+  backticks, and `\$` guards `${}` interpolation.
+
 ### Auth, sessions and web middleware
 
 - `hashPassword(pw)` / `checkPassword(pw, hash)` — scrypt password hashing.
@@ -59,7 +80,10 @@ All notable changes to Plain are documented here.
 - New acceptance examples: `examples/football-backend/` (SQLite + sessions +
   API keys + custom 404) and `examples/id-verification/` (uploads + OCR +
   matching) — both booted over live HTTP by `tests/acceptance.test.js`.
-- New feature suite `tests/v211.test.js`; full suite now 557 tests.
+- New example `examples/whatsapp-bot/` (`qr.pln` and `pairing.pln` — the
+  finalized `/start` + `/help` bot with a multiline backtick reply).
+- New feature suites `tests/v211.test.js` and `tests/whatsapp.test.js`
+  (38 tests); full suite now 595 tests.
 
 ---
 
