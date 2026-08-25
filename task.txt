@@ -1,84 +1,112 @@
-Implement the finalized WhatsApp Bot MVP in Plain v2.1.1 using the deterministic compiler only.
+Transform Plain-Code into its new compiler identity: PLIN.
 
-FINAL USER SYNTAX:
+This is NOT a cosmetic rename. Treat PLIN as a new npm package/project identity while preserving the .pln language extension and existing language semantics.
 
-whatsapp bot
-    auth "session"
-    login pairing "2348012345678"
+VERSION
+- New npm package name: plin
+- Start the new package at 0.1.7 using SemVer.
+- Remove @ayoxx/plain-code as the package identity throughout the project.
+- Update package metadata, CLI output, imports, documentation, tests, examples, release metadata, and all user-facing branding from Plain-Code/plain-code to PLIN where appropriate.
+- Do not rewrite historical changelog entries unnecessarily; preserve history where it is explicitly historical.
 
-    on message
-        log message
+COMPILER / BUILD MODEL
+Replace the old temporary-output model with a TypeScript-style production build model.
 
-        if message.text is "/start"
-            reply "Welcome!"
-        done
+`plin build` must:
+- deterministically compile .pln source files to JavaScript
+- write output to `dist/` by default
+- preserve source filenames
 
-        if message.text is "/help"
-            reply "Available commands: /start /help"
-        done
-    done
-done
+Example:
+    messi.pln
+    plin build
 
-Also support:
+produces:
+    dist/messi.js
 
-whatsapp bot
-    auth "session"
-    login qr
+NOT:
+    dist/index.js
+    _plain_out.js
 
-    on message
-        log message
-    done
-done
+Remove the `_plain_out.js` runtime/build model entirely.
 
-Implementation requirements:
-- Use @whiskeysockets/baileys.
-- `whatsapp bot` must deterministically compile to the Baileys runtime.
-- Internally create the Baileys socket with `makeWASocket()`.
-- Implement auth/session persistence.
-- Implement QR login.
-- Implement pairing-code login.
-- Pairing phone numbers must be validated according to Baileys requirements.
-- Handle connection lifecycle/reconnection appropriately.
-- Persist credential updates.
-- Handle `messages.upsert`.
-- Process only appropriate new-message notifications and prevent the bot from responding to its own messages.
-- Normalize the incoming message into Plain's `message` object.
-- Support `log message`.
-- Support `message.text`.
-- Support `reply "..."` inside `on message`, replying to the current WhatsApp chat.
-- Support the `/start` and `/help` conditional examples exactly.
-- Keep the Baileys API completely hidden from Plain users.
+PACKAGE.JSON
+Projects should use normal Node package.json.
 
-IMPORTANT:
-Do not expose `makeWASocket()`, `sock.ev`, `messages.upsert`, `remoteJid`, or Baileys auth APIs in Plain syntax. They are runtime implementation details.
+Example:
 
-Also implement proper multiline backtick strings in the GENERAL Plain lexer/parser:
+{
+  "scripts": {
+    "build": "plin build",
+    "start": "node dist/index.js"
+  },
+  "devDependencies": {
+    "plin": "^0.1.7"
+  }
+}
 
-reply `heyy
-how you dey?`
+`plin build` must work when PLIN is installed locally through npm and invoked through npm scripts.
 
-must preserve the newline.
+Do not require users to globally install PLIN for deployment.
 
-Backtick strings must support normal multiline content without being a WhatsApp-specific feature. Preserve existing quoted-string behavior and support normal escapes such as \n, \t, \\, and escaped quotes where applicable.
+CONFIGURATION
+Design and implement a deterministic PLIN project configuration file, preferably `plin.config.json` unless the existing architecture strongly suggests another name.
 
-Do not invent alternative WhatsApp syntax.
+It must allow users to configure at minimum:
+- source location / entry files where appropriate
+- output directory, default `dist`
+- output structure
+- package/build mode where needed
 
-Test everything yourself using shell commands:
-1. compiler/check tests
-2. generated JavaScript
-3. runtime startup
-4. pairing-code flow as far as the environment permits
-5. QR flow as far as the environment permits
-6. simulated/mock message event
-7. `log message`
-8. `message.text`
-9. `/start` reply
-10. `/help` reply
-11. multiline backtick strings
-12. regression suite
+Example:
 
-Add deterministic compiler and runtime integration tests.
+{
+  "outDir": "dist"
+}
 
-Do not use Complex Compilation. It no longer exists.
+and:
+
+{
+  "outDir": "build"
+}
+
+The compiler must preserve source filenames relative to the configured source root.
+
+Do not overengineer the config system yet.
+
+NPM PACKAGE BUILDING
+PLIN must be capable of building npm packages written in .pln.
+
+Support a project structure such as:
+
+package.json
+src/
+    index.pln
+
+and produce a normal Node-compatible package build:
+
+dist/
+    index.js
+
+The resulting package must be usable by npm consumers without requiring them to understand PLIN internals.
+
+Preserve package.json semantics and ensure generated JavaScript, package exports, dependencies, and entry points can work as a normal Node package.
+
+Do not invent a PLIN-specific package registry or package format.
+
+IMPORTANT
+- Keep `.pln` as the source extension.
+- Keep the deterministic compiler as the only compiler.
+- Complex Compilation must remain deleted.
+- Do not reintroduce AI compilation.
+- Do not weaken existing syntax validation.
+- Do not break existing PLIN language features.
+- Do not hardcode `index.js` as the output filename.
+- Do not hardcode `dist` internally where configuration should control it.
+- Add deterministic compiler tests for every new build/configuration behavior.
+- Add integration tests for building a multi-file project and an npm-package-style project.
+- Update documentation only after the implementation and tests pass.
+
+Run the full test suite and relevant real build tests.
 
 Do not commit or push.
