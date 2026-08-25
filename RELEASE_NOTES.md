@@ -1,3 +1,56 @@
+# PLIN v0.1.7 — Release Notes
+
+**Release date:** 2026
+
+---
+
+## What is PLIN 0.1.7?
+
+PLIN is the new name and package for the Intent-Oriented Programming Language
+formerly published as `@ayoxx/plain-code`. Same language, same `.pln` files,
+same deterministic compiler — now with a real production build model and a
+local-devDependency workflow instead of a global install.
+
+## What's new?
+
+### The `plin` npm package (breaking identity change)
+
+- Install per project: `npm install --save-dev plin`. No global install.
+- CLI commands: `plin build | run | start | init | new | install | add |
+  remove | update | check | fmt | doctor`.
+- Old binaries (`plain`, `plain-code`) are removed.
+
+### Production builds (`plin build`)
+
+- Sources compile to `dist/` preserving names and structure:
+  `src/messi.pln` → `dist/messi.js`, nested folders included.
+- Imports are bundled into each output, so every file in `dist/` runs
+  standalone under Node.
+- Deterministic output: rebuilds are byte-identical.
+
+### Project configuration (`plin.config.json`)
+
+- Replaces `plain.json`. Keys: `outDir` (default `"dist"`), `srcDir`
+  (default `"src"` when present, else the project root), optional `entry`,
+  plus `name`/`version`/`dependencies` for dependency management.
+- Discovery never scans `node_modules`, hidden directories, or the output
+  directory itself.
+
+### npm-package building
+
+- A library written in PLIN ships like any Node package: `src/index.pln`
+  builds to `dist/index.js`; consumers `require()` the result through normal
+  `package.json` semantics. Nothing PLIN-specific reaches your users.
+
+### Breaking changes
+
+- Package name, binaries, and config file changed; see UPGRADE_GUIDE.md.
+- `_plain_out.js` no longer exists: `plin run` works from an external scratch
+  directory and leaves your project untouched.
+- Language syntax is unchanged.
+
+---
+
 # Plain v2.1.2 — Release Notes
 
 **Release date:** 2026

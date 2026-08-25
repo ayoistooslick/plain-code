@@ -1,4 +1,118 @@
-# Upgrade Guide — v1.1 → v2.1.2
+# Upgrade Guide — @ayoxx/plain-code → plin 0.1.7
+
+## Overview
+
+PLIN 0.1.7 is an identity and workflow release: the language is unchanged,
+but the package, binaries, config file, and build/run model are new.
+**No `.pln` syntax was removed or changed.**
+
+What moved:
+
+| Old (plain-code ≤ 2.1.2)        | New (plin ≥ 0.1.7)                    |
+|---------------------------------|---------------------------------------|
+| `@ayoxx/plain-code` (global)    | `plin` (local devDependency)          |
+| `plain <cmd>` / `plain-code`    | `plin <cmd>`                          |
+| `plain.json`                    | `plin.config.json`                    |
+| output next to source           | `dist/` build preserving names        |
+| `_plain_out.js` temp execution  | scratch-dir execution, zero artifacts |
+
+---
+
+## Step 1 — Install locally, stop using the global package
+
+```bash
+npm uninstall -g @ayoxx/plain-code
+npm install --save-dev plin
+```
+
+Verify through npm scripts or npx:
+
+```bash
+npx plin version
+# PLIN v0.1.7
+```
+
+---
+
+## Step 2 — Rename the project configuration
+
+Rename `plain.json` to `plin.config.json`:
+
+```bash
+mv plain.json plin.config.json
+```
+
+The existing `name`, `version`, `entry`, and `dependencies` fields keep their
+meaning. Two new optional keys control the build:
+
+```json
+{
+    "name": "my-app",
+    "version": "0.1.0",
+    "entry": "index.pln",
+    "srcDir": "src",
+    "outDir": "dist"
+}
+```
+
+Defaults when omitted: `outDir` is `"dist"`; `srcDir` is `"src"` if that
+folder exists, otherwise the project root.
+
+---
+
+## Step 3 — Switch to npm-script workflows
+
+```json
+{
+    "scripts": {
+        "build": "plin build",
+        "start": "node dist/index.js"
+    },
+    "devDependencies": { "plin": "^0.1.7" }
+}
+```
+
+- `npm run build` compiles every source file into `dist/`, preserving names
+  and structure (`src/messi.pln` → `dist/messi.js`). Imports are bundled into
+  each output, so every built file runs standalone.
+- `npx plin run src/app.pln` executes without writing anything into your
+  project (`_plain_out.js` no longer exists).
+- `npx plin start` builds the configured entry and runs its `dist/` output.
+
+---
+
+## Step 4 — Publishing a library written in PLIN
+
+Build once before publishing; consumers never see PLIN tooling:
+
+```json
+{
+    "name": "my-plin-library",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "plin build",
+        "prepare": "plin build"
+    },
+    "devDependencies": { "plin": "^0.1.7" }
+}
+```
+
+`src/index.pln` → `dist/index.js`. Standard `main`/`exports` semantics apply;
+there is no PLIN-specific registry or format.
+
+---
+
+## Breaking changes
+
+- Package name and binaries changed (`plain`, `plain-code` → `plin`).
+- `plain.json` is no longer read; use `plin.config.json`.
+- Building writes to `dist/` instead of next to sources.
+- Everything else — syntax, formatter, dependency management, runtime
+  packages, WhatsApp/Telegram/OCR/backend features — behaves as in 2.1.2.
+
+---
+
+# Previous guide — v1.1 → v2.1.2
 
 ## Overview
 

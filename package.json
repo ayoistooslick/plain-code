@@ -1,15 +1,13 @@
 {
-  "name": "@ayoxx/plain-code",
-  "version": "2.1.2-test",
-  "description": "Plain — an Intent-Oriented Programming Language. When even a simple sentence can be code.",
+  "name": "plin",
+  "version": "0.1.7",
+  "description": "PLIN — an Intent-Oriented Programming Language. When even a simple sentence can be code.",
   "main": "compiler/cli.js",
-  "preferGlobal": true,
   "bin": {
-    "plain-code": "./compiler/cli.js",
-    "plain": "./compiler/cli.js"
+    "plin": "./compiler/cli.js"
   },
   "scripts": {
-    "test": "node tests/compiler.test.js && node tests/telegram.test.js && node tests/ocr.test.js && node tests/backend.test.js && node tests/v211.test.js && node tests/acceptance.test.js && node tests/whatsapp.test.js"
+    "test": "node tests/compiler.test.js && node tests/build.test.js && node tests/telegram.test.js && node tests/ocr.test.js && node tests/backend.test.js && node tests/v211.test.js && node tests/acceptance.test.js && node tests/whatsapp.test.js"
   },
   "files": [
     "compiler",
@@ -22,6 +20,7 @@
     "access": "public"
   },
   "keywords": [
+    "plin",
     "plain",
     "language",
     "compiler",
@@ -42,5 +41,8 @@
     "redis": "^6.2.1",
     "sql.js": "^1.13.0",
     "ws": "^8.21.3"
+  },
+  "dependencies": {
+    "tesseract.js": "^7.0.0"
   }
 }

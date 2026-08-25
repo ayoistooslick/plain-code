@@ -1,81 +1,94 @@
-// REST API with HTTP fetch — multi-source integration example
+// REST API with upstream fetches — multi-source integration example
 //
-// This example demonstrates a REST API that fetches data from multiple
-// upstream APIs and combines the results. It uses the deterministic compiler
-// for the Express server and the Complex Compilation layer for HTTP fetch
-// and REST API rules.
+// A REST API that calls other APIs with the built-in HTTP client and
+// combines the results. Everything here compiles deterministically:
+// no rules, no AI, no hidden code generation.
 
-use express
-
-remember app as express()
+web app
 
 // Health check
-app get "/health" as
-  reply { "status": "ok", "version": "2.0" }
+route get "/health"
+    reply json
+        status is "ok"
+        version is "0.1.7"
+    done
 done
 
-// Fetch random user from randomuser.me API
-app get "/api/random-user" as
-  remember response as await fetch "https://randomuser.me/api/"
-  if response is ok
-    remember data as await response.json()
-    reply data
-  otherwise
-    reply status 500 with { "error": "Failed to fetch user" }
-  done
+// Fetch a random user from randomuser.me
+route get "/api/random-user"
+    remember response as get "https://randomuser.me/api/"
+    if ok of response is true
+        reply data of response
+    otherwise
+        status 502
+        reply json
+            error is "Failed to fetch user"
+        done
+    done
 done
 
-// Fetch multiple APIs and combine results
-app get "/api/dashboard" as
-  remember userRes as await fetch "https://randomuser.me/api/"
-  remember jokeRes as await fetch "https://official-joke-api.appspot.com/random_joke"
+// Fetch multiple APIs and combine the results
+route get "/api/dashboard"
+    remember userRes as get "https://randomuser.me/api/"
+    remember jokeRes as get "https://official-joke-api.appspot.com/random_joke"
 
-  remember user as null
-  remember joke as null
+    remember user as null
+    remember joke as null
 
-  if userRes is ok
-    remember userData as await userRes.json()
-    user = userData.results[0]
-  done
+    if ok of userRes is true
+        user becomes first person from results of data of userRes
+    done
 
-  if jokeRes is ok
-    joke = await jokeRes.json()
-  done
+    if ok of jokeRes is true
+        joke becomes data of jokeRes
+    done
 
-  reply { "user": user, "joke": joke }
+    reply json
+        user is user
+        joke is joke
+    done
 done
 
 // Search with query parameters
-app get "/api/search" as
-  remember q as request.query("q")
-  remember limit as request.query("limit")
-  reply { "query": q, "limit": limit, "results": [] }
+route get "/api/search"
+    remember q as query("q")
+    remember limit as query("limit")
+    remember results as []
+    reply json
+        q is q
+        limit is limit
+        results is results
+    done
 done
 
-// Create a resource
-app post "/api/items" as
-  remember body as request.json
-  reply { "created": true, "item": body }
+// Create an item
+route post "/api/items"
+    reply json
+        created is true
+        item is body of request
+    done
 done
 
-// Update a resource
-app put "/api/items/:id" as
-  remember id as request.param("id")
-  remember body as request.json
-  reply { "updated": id, "item": body }
+// Update an item
+route put "/api/items/:id"
+    remember id as param("id")
+    reply json
+        updated is id
+        item is body of request
+    done
 done
 
-// Delete a resource
-app delete "/api/items/:id" as
-  remember id as request.param("id")
-  reply { "deleted": id }
+// Delete an item
+route delete "/api/items/:id"
+    remember id as param("id")
+    reply json
+        deleted is id
+    done
 done
 
-// Error handling middleware
-app use error as
-  reply status 500 with { "error": error.message }
+when nothing matches
+    status 404
+    reply "no such road"
 done
 
-listen app on port 3000
-    show "Server running at http://localhost:3000"
-done
+start 3000

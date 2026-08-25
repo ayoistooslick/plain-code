@@ -1189,7 +1189,17 @@ function generate(ast, context = createGenerationContext()) {
   }
   const preludeStart = context.pendingPrelude.length;
   const body = ast.body.map(node => generateStatement(node, '', context)).filter(Boolean).join('\n');
-  return context.pendingPrelude.slice(preludeStart).concat(body).filter(Boolean).join('\n');
+  const lines = context.pendingPrelude.slice(preludeStart).concat(body).filter(Boolean);
+  // Top-level functions are the module's public API: export them so a built
+  // PLIN file works as a normal CommonJS module (npm packages, require()).
+  // Harmless for programs that are only executed.
+  const exported = ast.body
+    .filter(node => node.type === 'FunctionDeclaration')
+    .map(node => node.name);
+  if (exported.length > 0) {
+    lines.push(`if (typeof module !== 'undefined') { module.exports = { ${exported.join(', ')} }; }`);
+  }
+  return lines.join('\n');
 }
 
 // ── Condition generation ────────────────────────────────────────────────────

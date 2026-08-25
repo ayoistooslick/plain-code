@@ -1,48 +1,115 @@
-# Plain
+# PLIN
 
 <p align="center">
-  <img src="docs/og.svg" alt="Plain Logo" width="200" />
+  <img src="docs/og.svg" alt="PLIN Logo" width="200" />
 </p>
 
 > "When even a simple sentence can be code."
 > Don't forget to star the repo
 
-Plain is an Intent-Oriented Programming Language (IOPL). You describe **what** you want; the compiler decides **how** to implement it in JavaScript.
+PLIN is an Intent-Oriented Programming Language (IOPL). You describe **what** you want; the compiler decides **how** to implement it in JavaScript.
 
-**Current version:** v2.1.2 — Interactive console input (`ask`) and WhatsApp pairing numbers from any value.
+**Current version:** v0.1.7 — the `plin` npm package with a TypeScript-style production build (`plin build` → `dist/`, source names preserved).
 
 ---
 
 ## Quick start
 
 ```bash
-npm install -g @ayoxx/plain-code
-plain new myapp
+npx plin new myapp     # scaffolds src/app.pln, plin.config.json, package.json
 cd myapp
-plain install
-plain run app.pln
+npm install            # installs plin as a devDependency plus runtime packages
+npm run build          # compiles src/ -> dist/ (plin build)
+node dist/app.js       # or: npm start
 ```
+
+Adding PLIN to an existing project:
+
+```bash
+npm install --save-dev plin
+npx plin init          # creates plin.config.json (+ index.pln if missing)
+```
+
+No global install is needed anywhere — everything runs through npm scripts
+and `npx`.
 
 ---
 
 ## CLI
 
 ```
-plain run    <file.pln>   Install missing dependencies, compile and execute
-plain build  <file.pln>   Install missing dependencies and compile
-plain check  <file.pln>   Check syntax only (no output, no execution)
-plain fmt    <file.pln>   Format a Plain file in-place
-plain new    [name]       Create a new Plain project
-plain init               Create a plain.json in the current directory
-plain install            Install dependencies required by the project's source files
-plain start              Start the entry file from plain.json
-plain doctor             Check the Plain project environment
-plain add    <package>   Install a package and add it to plain.json
-plain remove <package>   Remove a package from plain.json and uninstall it
-plain update             Update all installed npm packages
-plain version            Print the compiler version
-plain help               Print help text
+plin run    <file.pln>   Install missing dependencies, compile and execute
+                         (executes from a scratch dir — nothing is written
+                         into your project)
+plin build  [file.pln]   Compile to dist/. With no argument, builds every
+                         .pln file under the source root, preserving names
+                         and folder structure
+plin check  <file.pln>   Check syntax only (no output, no execution)
+plin fmt    <file.pln>   Format a PLIN file in-place
+plin new    [name]       Create a new PLIN project (npm-ready)
+plin init                Create a plin.config.json in the current directory
+plin install             Install dependencies required by the project's source files
+plin start               Build the configured entry and run its dist/ output
+plin doctor              Check the PLIN project environment
+plin add    <package>    Install a package and add it to plin.config.json
+plin remove <package>    Remove a package from plin.config.json and uninstall it
+plin update              Update all installed npm packages
+plin version             Print the compiler version
+plin help                Print help text
 ```
+
+---
+
+## Building and configuration
+
+`plin build` is a deterministic production build, TypeScript-style but for
+`.pln` sources:
+
+- Output goes to `dist/` (configurable via `outDir`) and **source file names
+  are preserved**: `src/messi.pln` → `dist/messi.js`,
+  `src/helpers/math.pln` → `dist/helpers/math.js`.
+- Imports are bundled into each output, so every file in `dist/` runs
+  standalone under Node.
+- Rebuilds are byte-identical — safe to commit, diff, and cache.
+
+Configuration lives in `plin.config.json`:
+
+```json
+{
+    "name": "my-app",
+    "version": "1.0.0",
+    "entry": "index.pln",
+    "srcDir": "src",
+    "outDir": "dist"
+}
+```
+
+| Key      | Default                          | Meaning                              |
+|----------|----------------------------------|--------------------------------------|
+| `outDir` | `"dist"`                         | Build output directory               |
+| `srcDir` | `"src"` if it exists, else `"."` | Root that `plin build` scans         |
+| `entry`  | auto-detected                    | File used by `plin start` / `install`|
+
+Source discovery skips `node_modules`, hidden directories, and the output
+directory itself.
+
+### Publishing a library written in PLIN
+
+```json
+{
+    "name": "my-plin-library",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "plin build",
+        "prepare": "plin build"
+    },
+    "devDependencies": { "plin": "^0.1.7" }
+}
+```
+
+`src/index.pln` builds to `dist/index.js`; consumers install and `require()`
+it like any Node package. There is no PLIN-specific registry or format —
+standard `package.json` semantics apply.
 
 ---
 
@@ -238,8 +305,8 @@ no hidden codegen.
 database "app.db"                  // probes better-sqlite3, falls back to sql.js
 ```
 
-`plain install` verifies that `better-sqlite3` actually loads; if the native
-module cannot be used, Plain warns and continues on the pure-JavaScript
+`plin install` verifies that `better-sqlite3` actually loads; if the native
+module cannot be used, PLIN warns and continues on the pure-JavaScript
 WebAssembly engine (`sql.js`) — the same program runs unchanged. Force an
 engine explicitly:
 
@@ -570,6 +637,9 @@ show PI
 show double(5)
 ```
 
+Imports are bundled per entry: `plin build` gives every source file its own
+standalone output under `dist/`, with imported code inlined.
+
 ---
 
 ## Express server (v0.3)
@@ -652,13 +722,13 @@ See `examples/whatsapp-bot/` for ready-to-link programs.
 ## Project management (v0.4.2)
 
 ```bash
-plain init              # Create plain.json
-plain install           # Install all project dependencies
-plain add express       # Add a package
-plain remove express    # Remove a package
-plain update            # Update all packages
-plain start             # Run the entry file from plain.json
-plain doctor            # Check project environment
+plin init              # Create plin.config.json
+plin install           # Install all project dependencies
+plin add express       # Add a package
+plin remove express    # Remove a package
+plin update            # Update all packages
+plin start             # Build the entry and run its dist/ output
+plin doctor            # Check project environment
 ```
 
 ---
@@ -688,13 +758,13 @@ npm test
 ## Project structure
 
 ```
-Plain/
+plin/
 ├── compiler/
-│   ├── lexer.js              — tokenises Plain source into tokens
+│   ├── lexer.js              — tokenises PLIN source into tokens
 │   ├── parser.js             — builds an AST from tokens
 │   ├── generator.js          — generates JavaScript from the AST
 │   ├── bundler.js            — resolves imports and bundles files
-│   ├── formatter.js          — normalises Plain source style
+│   ├── formatter.js          — normalises PLIN source style
 │   ├── dependency-detector.js— detects npm packages from source
 │   ├── version.js            — single compiler version constant
 │   └── cli.js                — command-line entry point
@@ -724,6 +794,7 @@ Plain/
 │
 ├── tests/
 │   ├── compiler.test.js      — language, CLI and formatter coverage
+│   ├── build.test.js         — build model, config and packaging coverage
 │   ├── backend.test.js       — web/database/email/cache runtime tests
 │   ├── telegram.test.js      — Telegram bot runtime tests
 │   ├── ocr.test.js           — OCR statement tests

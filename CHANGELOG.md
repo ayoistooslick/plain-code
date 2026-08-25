@@ -1,6 +1,58 @@
 # Changelog
 
-All notable changes to Plain are documented here.
+All notable changes to PLIN are documented here.
+
+> **Note:** versions up to 2.1.2 were released under the project's former
+> name and npm package (`@ayoxx/plain-code`). That history is preserved
+> verbatim below; starting with 0.1.7 the package is published as `plin`.
+
+---
+
+## [0.1.7] — 2026
+
+### PLIN — new package identity, production build model
+
+**The package is now `plin`**, versioned from 0.1.7. The `@ayoxx/plain-code`
+identity, the global-install model, and the temporary-output runtime are gone.
+The `.pln` extension and the whole language are unchanged.
+
+- **New npm identity.** The package installs locally as a devDependency:
+
+  ```bash
+  npm install --save-dev plin
+  ```
+
+  No global install is required anywhere in the deployment story. Projects
+  use it through npm scripts:
+
+  ```json
+  {
+    "scripts": { "build": "plin build", "start": "node dist/index.js" },
+    "devDependencies": { "plin": "^0.1.7" }
+  }
+  ```
+
+- **`plin build` compiles a real production build.** Sources compile into
+  `dist/`, preserving source file names and directory structure relative to
+  the source root (`src/messi.pln` → `dist/messi.js`,
+  `src/a/b.pln` → `dist/a/b.js`). Every entry is bundled with its imports,
+  so each file in `dist/` runs standalone. Compilation is deterministic:
+  identical sources produce byte-identical output.
+- **The `_plain_out.js` model is deleted.** `plin run` executes from a scratch
+  directory outside your project (dependency resolution still finds your
+  project's `node_modules`), so running a program leaves zero files behind.
+- **`plin.config.json` replaces `plain.json`.** Deterministic project
+  configuration with `outDir` (default `"dist"`), `srcDir` (default: `"src"`
+  when that folder exists, otherwise the project root), optional `entry`,
+  plus the existing `name`/`version`/`dependencies` fields used by
+  `plin install/add/remove`.
+- **Scaffolding updated.** `plin new <name>` creates a ready npm package
+  (`src/app.pln`, `dist/` build script, `plin` devDependency);
+  `plin init` initializes an existing folder with `index.pln`.
+- **npm-package building works out of the box.** A library written in PLIN
+  (`src/index.pln`) builds to `dist/index.js`; consumers install and require
+  it like any Node package. No PLIN-specific registry or format exists —
+  plain `package.json` semantics (`main`/`exports`) rule.
 
 ---
 

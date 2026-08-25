@@ -1,4 +1,4 @@
-# Plain Language Specification (v2.1.2)
+# PLIN Language Specification (v0.1.7)
 
 Version: 2.1.1
 Status: Stable
@@ -303,7 +303,7 @@ Version ranges are part of the specifier and flow through to installation;
     use sqlite@7                 → const Database = require('better-sqlite3');
     use dotenv@16 as env         → const env = require('dotenv');
 
-`plain install`, `plain run`, and `plain build` check installed-ness by bare
+`plin install`, `plin run`, and `plin build` check installed-ness by bare
 package name but install with the full `name@range` specifier.
 
 ### Runtime dependency detection and installation
@@ -332,22 +332,22 @@ Version ranges survive detection: `use left-pad@^1.3.0` is reported as
 is reported as `better-sqlite3@7`).
 
 Built-in modules are never installed. Missing npm packages are installed by
-`plain install`, `plain run`, and `plain build`; package checks are cached for
+`plin install`, `plin run`, and `plin build`; package checks are cached for
 the duration of one CLI command so repeated imports do not rescan the
 filesystem.
 
 ### Deployment workflow
 
 ```bash
-plain init
-plain install
-plain build app.pln
-plain run app.pln
+plin init
+plin install
+plin build app.pln
+plin run app.pln
 ```
 
-`plain start` uses the `entry` value in `plain.json` and performs the complete
-install, compile, and run workflow. `plain doctor` reports missing tools,
-configuration, or dependencies. Generated JavaScript remains standard
+`plin start` builds the `entry` from `plin.config.json` into the output
+directory and runs it. `plin doctor` reports missing tools, configuration,
+or dependencies. Generated JavaScript remains standard
 Node.js-compatible JavaScript and runtime `require()` declarations are emitted
 once in deterministic order.
 
@@ -794,8 +794,8 @@ Semantics:
   combinations like `"deu+eng"` are allowed).
 - The statement is async — top-level use wraps the program in the async
   runtime, and using it inside a function makes that function async.
-- `tesseract.js` is an implementation dependency: it never appears in Plain
-  source, but `plain install`, `plain run`, and `plain build` fetch it
+- `tesseract.js` is an implementation dependency: it never appears in PLIN
+  source, but `plin install`, `plin run`, and `plin build` fetch it
   automatically through dependency detection.
 
 Generated JavaScript shape:
@@ -972,45 +972,52 @@ See `plain-acode/README.md` for details.
 
 ## Project Management
 
-Plain manages project configuration through `plain.json`.
+PLIN manages project configuration through `plin.config.json`.
 
-### plain.json format
+### plin.config.json format
 
     {
         "name": "my-app",
         "version": "0.1.0",
-        "entry": "app.pln",
+        "entry": "index.pln",
+        "srcDir": "src",
+        "outDir": "dist",
         "dependencies": {
             "express": "^4.18.2"
         }
     }
 
+Defaults: `outDir` is `"dist"`; `srcDir` is `"src"` when that folder exists,
+otherwise the project root. `plin build` compiles every source under `srcDir`
+into `outDir`, preserving file names and directory structure; imports are
+bundled into each output so every built file runs standalone.
+
 ### Commands
 
 | Command                 | Behaviour                                            |
 |-------------------------|------------------------------------------------------|
-| `plain run <file.pln>`  | Install dependencies, compile and execute            |
-| `plain build <file.pln>`| Install dependencies and compile to JavaScript       |
-| `plain check <file.pln>`| Check syntax only (no output, no execution)          |
-| `plain fmt <file.pln>`  | Format a Plain file in-place                         |
-| `plain new [name]`      | Create a new Plain project                           |
-| `plain init`            | Creates `plain.json` in the current directory        |
-| `plain install`         | Install dependencies required by source files        |
-| `plain start`           | Start the entry file from plain.json                 |
-| `plain doctor`          | Check the Plain project environment                  |
-| `plain add <pkg>`       | Installs package, adds it to `plain.json`            |
-| `plain remove <pkg>`    | Uninstalls package, removes it from `plain.json`     |
-| `plain update`          | Runs `npm update` for all installed packages         |
-| `plain version`         | Print the compiler version                           |
-| `plain help`            | Print help text                                      |
+| `plin run <file.pln>`   | Install dependencies, compile and execute            |
+| `plin build [file]`     | Compile to outDir preserving names; no arg builds all|
+| `plin check <file.pln>` | Check syntax only (no output, no execution)          |
+| `plin fmt <file.pln>`   | Format a PLIN file in-place                          |
+| `plin new [name]`       | Create a new PLIN project                            |
+| `plin init`             | Creates `plin.config.json` in the current directory  |
+| `plin install`          | Install dependencies required by source files        |
+| `plin start`            | Build the entry and run its outDir output            |
+| `plin doctor`           | Check the PLIN project environment                   |
+| `plin add <pkg>`        | Installs package, adds it to `plin.config.json`      |
+| `plin remove <pkg>`     | Uninstalls package, removes it from `plin.config.json` |
+| `plin update`           | Runs `npm update` for all installed packages         |
+| `plin version`          | Print the compiler version                           |
+| `plin help`             | Print help text                                      |
 
 ### Dependency Validation
 
-Before compiling, Plain checks that every package referenced by `use` is installed.
+Before compiling, PLIN checks that every package referenced by `use` is installed.
 If a package is missing, the compiler prints a friendly error and stops:
 
     Package "express" is not installed.
-    Run: plain add express
+    Run: plin add express
 
 ---
 

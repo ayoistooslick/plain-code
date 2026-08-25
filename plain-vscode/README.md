@@ -1,6 +1,6 @@
-# Plain Language — VS Code Extension
+# PLIN Language — VS Code Extension
 
-Syntax highlighting and language support for the [Plain programming language](https://github.com/ayoxx/plain-code) (`.pln` files).
+Syntax highlighting and language support for the [PLIN programming language](https://github.com/ayoistooslick/plain-code) (`.pln` files).
 
 ---
 

@@ -1,21 +1,21 @@
 #!/usr/bin/env node
-// CLI: compile and run Plain (.pln) files.
+// CLI: compile and run PLIN (.pln) files.
 //
 // Usage:
-//   plain run    <file.pln>   install missing dependencies, compile and execute
-//   plain build  <file.pln>   install missing dependencies and compile
-//   plain check  <file.pln>   check syntax only (no JS generated, no execution)
-//   plain fmt    <file.pln>   format a Plain file in-place
-//   plain new    [name]       scaffold a new Plain project
-//   plain init               create plain.json in the current directory
-//   plain install            install dependencies required by the project's source files
-//   plain start              start the entry file from plain.json
-//   plain doctor             check the Plain project environment
-//   plain add    <package>   install a package and add it to plain.json
-//   plain remove <package>   uninstall a package and remove it from plain.json
-//   plain update             update all installed packages
-//   plain version            print the compiler version
-//   plain help               print this help text
+//   plin run    <file.pln>   install missing dependencies, compile and execute
+//   plin build  [file.pln]   compile to dist/ (or a single file) preserving names
+//   plin check  <file.pln>   check syntax only (no JS generated, no execution)
+//   plin fmt    <file.pln>   format a PLIN file in-place
+//   plin new    [name]       scaffold a new PLIN project
+//   plin init               create plin.config.json in the current directory
+//   plin install            install dependencies required by the project's source files
+//   plin start              build the entry file and run its dist/ output
+//   plin doctor             check the PLIN project environment
+//   plin add    <package>   install a package and add it to plin.config.json
+//   plin remove <package>   uninstall a package and remove it from plin.config.json
+//   plin update             update all installed packages
+//   plin version            print the compiler version
+//   plin help               print this help text
 
 const fs   = require('fs');
 const path = require('path');
@@ -50,29 +50,30 @@ function warn(message) {
 const section = (title) => `\n${clrCyan(clrBold(title))}`;
 
 const HELP = `
-${clrBold(`Plain v${VERSION}`)} ${clrDim('· .pln compiles to readable Node.js')}
+${clrBold(`PLIN v${VERSION}`)} ${clrDim('· .pln compiles to readable Node.js')}
 
 ${section('START')}
-  plain new [name]        Scaffold a new project with a working app.pln
-  plain init              Create plain.json in the current folder
-  plain run <file.pln>    Install missing deps, compile, execute
-  plain start             Run the entry file from plain.json
+  plin new [name]        Scaffold a new project with a working app.pln
+  plin init              Create plin.config.json in the current folder
+  plin run <file.pln>    Install missing deps, compile, execute
+  plin start             Build the entry file and run it from dist/
 
 ${section('BUILD & CHECK')}
-  plain build <file.pln>  Compile to readable JavaScript (app.js)
-  plain check <file.pln>  Syntax-check only — fastest feedback loop
-  plain fmt <file.pln>    Format a file in place
+  plin build             Compile every .pln in the project into dist/
+  plin build <file.pln>  Compile one file into dist/ (name preserved)
+  plin check <file.pln>  Syntax-check only — fastest feedback loop
+  plin fmt <file.pln>    Format a file in place
 
 ${section('PACKAGES')}
-  plain install           Install everything your source needs
-  plain add <package>     Install a package and record it
-  plain remove <package>  Uninstall a package and remove it
-  plain update            Update all installed packages
+  plin install           Install everything your source needs
+  plin add <package>     Install a package and record it
+  plin remove <package>  Uninstall a package and remove it
+  plin update            Update all installed packages
 
 ${section('TOOLS')}
-  plain doctor            Check the project environment
-  plain version           Print the compiler version
-  plain help              Print this text
+  plin doctor            Check the project environment
+  plin version           Print the compiler version
+  plin help              Print this text
 
 ${section('THE LANGUAGE IN EIGHT LINES')}
   remember name as "Ada"          show \`Hi \${name}\`         variables, printing
@@ -92,8 +93,8 @@ ${section('ALSO SHIPPED')}
   sessions · uploads · cookies · rate limits · api keys · OAuth (v2.1.1)
 
 ${section('FIRST RUN')}
-  plain new hello              scaffolds hello/ with a live web app
-  plain run hello/app.pln      serves it at http://localhost:3000
+  plin new hello               scaffolds hello/ with a live web app
+  plin run hello/app.pln       serves it at http://localhost:3000
 `.trim();
 
 // ── npm invocation ────────────────────────────────────────────────────────────
@@ -132,33 +133,118 @@ function isValidPackageName(name) {
   return typeof name === 'string' && /^(@[a-z0-9-_.]+\/)?[a-z0-9-_.]+$/i.test(name);
 }
 
-// ── plain.json helpers ────────────────────────────────────────────────────────
+// ── plin.config.json helpers ─────────────────────────────────────────────────
 
-const PLAIN_JSON = 'plain.json';
+const PLIN_CONFIG = 'plin.config.json';
+const DEFAULT_OUT_DIR = 'dist';
 
-function readPlainJson() {
-  const jsonPath = path.resolve(PLAIN_JSON);
+function readPlinConfig() {
+  const jsonPath = path.resolve(PLIN_CONFIG);
   if (!fs.existsSync(jsonPath)) return null;
   try {
     return JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
   } catch (e) {
-    console.error(`plain.json is not valid JSON: ${e.message}`);
+    console.error(`${PLIN_CONFIG} is not valid JSON: ${e.message}`);
     process.exit(1);
   }
 }
 
-function writePlainJson(data) {
-  fs.writeFileSync(path.resolve(PLAIN_JSON), JSON.stringify(data, null, 4) + '\n', 'utf8');
+function writePlinConfig(data) {
+  fs.writeFileSync(path.resolve(PLIN_CONFIG), JSON.stringify(data, null, 4) + '\n', 'utf8');
+}
+
+// ── Build configuration ──────────────────────────────────────────────────────
+//
+// `plin build` follows a TypeScript-style model: sources compile into an
+// output directory (default "dist") and keep their filenames relative to the
+// source root. Configuration lives in plin.config.json in one of two shapes:
+//
+//   Single project (object):
+//     { "name": "my-app", "outDir": "dist", "srcDir": "src", "entry": "index.pln" }
+//
+//   Multiple projects (array) — each element is its own build target and is
+//   compiled into its own outDir by `plin build`; the first element answers
+//   for commands that work on one program (start/install/doctor):
+//     [ { "name": "test-proj", "outDir": "dist/test" },
+//       { "name": "docs-site", "srcDir": "site-src", "outDir": "public/js" } ]
+//
+// Everything has a deterministic fallback:
+//   - outDir: "dist"
+//   - srcDir: "src" when that folder exists, otherwise the project root
+//   - entry:  config value, else "app.pln", else "index.pln" in the source root
+function normalizeProject(raw, index) {
+  const cfg = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const outDir = typeof cfg.outDir === 'string' && cfg.outDir.trim() !== ''
+    ? cfg.outDir
+    : DEFAULT_OUT_DIR;
+  const srcDir = typeof cfg.srcDir === 'string' && cfg.srcDir.trim() !== ''
+    ? cfg.srcDir
+    : (fs.existsSync(path.resolve('src')) ? 'src' : '.');
+  const entry = typeof cfg.entry === 'string' && cfg.entry.trim() !== ''
+    ? cfg.entry
+    : null;
+  const name = typeof cfg.name === 'string' && cfg.name.trim() !== ''
+    ? cfg.name
+    : `project-${index + 1}`;
+  return { ...cfg, outDir, srcDir, entry, name };
+}
+
+function readRawConfig() {
+  return readPlinConfig() || {};
+}
+
+// All build targets declared by plin.config.json, in declaration order.
+// An object form yields exactly one target.
+function loadProjectConfigs() {
+  const raw = readRawConfig();
+  if (Array.isArray(raw)) {
+    return raw.map((item, i) => normalizeProject(item, i));
+  }
+  return [normalizeProject(raw, 0)];
+}
+
+// The primary build target: the only one for object configs, the first for
+// array configs. Commands that act on a single program use this one.
+function loadBuildConfig() {
+  return loadProjectConfigs()[0];
+}
+
+// Every .pln file under srcDir, recursively, as paths relative to srcDir.
+// Deterministic order (sorted); node_modules, the output directory, hidden
+// directories and non-.pln files are never scanned.
+function discoverSources(srcDir, outDir) {
+  const root = path.resolve(srcDir);
+  const outAbs = path.resolve(outDir);
+  const found = [];
+  (function walk(dir) {
+    for (const name of fs.readdirSync(dir).sort()) {
+      const full = path.join(dir, name);
+      if (full === outAbs) continue;
+      let stat;
+      try { stat = fs.statSync(full); } catch (_) { continue; }
+      if (stat.isDirectory()) {
+        if (name === 'node_modules' || name.startsWith('.')) continue;
+        walk(full);
+      } else if (name.endsWith('.pln')) {
+        found.push(path.relative(root, full));
+      }
+    }
+  })(root);
+  return found;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+// Project builds compile many files in one pass; per-file stage logs would
+// drown the useful output. Set before batch compilation, reset after.
+let QUIET_STAGES = false;
 
 function stage(label, fn) {
   const t0 = Date.now();
   try {
     const result = fn();
     const ms = Date.now() - t0;
-    console.log(`${clrGreen('✓')} ${label}${ms > 50 ? clrDim(` (${ms}ms)`) : ''}`);
+    if (!QUIET_STAGES) console.log(`${clrGreen('✓')} ${label}${ms > 50 ? clrDim(` (${ms}ms)`) : ''}`);
     return result;
   } catch (err) {
     console.error(`${clrRed('✗')} ${label} failed\n`);
@@ -198,7 +284,7 @@ function requiredDependencies(files, config) {
   for (const { ast } of files) {
     for (const npm of detectDependencies(ast)) packages.add(npm);
   }
-  // plain.json dependencies are also valid runtime declarations. They are
+  // plin.config.json dependencies are also valid runtime declarations. They are
   // merged through a Set so source and configuration can never duplicate work.
   for (const npm of Object.keys((config && config.dependencies) || {})) {
     if (!isBuiltinModule(npm)) packages.add(npm);
@@ -220,7 +306,7 @@ function missingDependencies(files, config, cwd = process.cwd()) {
 function ensurePackageJson(cwd = process.cwd()) {
   const pkgPath = path.join(cwd, 'package.json');
   if (fs.existsSync(pkgPath)) return;
-  const config = readPlainJson();
+  const config = readPlinConfig();
   fs.writeFileSync(pkgPath, JSON.stringify({
     name: (config && config.name) || path.basename(cwd),
     version: (config && config.version) || '0.1.0',
@@ -279,7 +365,7 @@ function installPackages(packages, cwd = process.cwd()) {
       if (bareName === 'better-sqlite3') {
         console.log(
           `${clrYellow('⚠')} ${pkg} could not be installed on this platform. ` +
-          `Plain will use its WebAssembly SQLite engine instead.`
+          `PLIN will use its WebAssembly SQLite engine instead.`
         );
         continue;
       }
@@ -321,7 +407,7 @@ function compile(filePath) {
     files = resolveDependencies(absPath);
   });
   stage('Building dependency graph', () => files);
-  stage('Checking runtime dependencies', () => ensureDependencies(files, readPlainJson(), true));
+  stage('Checking runtime dependencies', () => ensureDependencies(files, readPlinConfig(), true));
   const js = stage('Generating JavaScript', () =>
     files.map(({ ast }) => generate(ast, generationContext)).filter(s => s.trim()).join('\n'));
   return generationContext.needsAsync ? wrapAsync(js) : js;
@@ -329,57 +415,146 @@ function compile(filePath) {
 
 // ── Commands ─────────────────────────────────────────────────────────────────
 
+// Node resolves require(...) against the temp file's location, so a scratch
+// file in the OS temp dir could never see the project's node_modules. Passing
+// every node_modules directory between the entry file and the filesystem root
+// through NODE_PATH gives the child the exact same resolution the old
+// project-local temp file had — without ever writing into the project.
+function nodeModulesSearchPaths(entryDir) {
+  const paths = [];
+  let dir = path.resolve(entryDir);
+  while (true) {
+    const candidate = path.join(dir, 'node_modules');
+    if (fs.existsSync(candidate)) paths.push(candidate);
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return paths;
+}
+
 async function cmdRun(filePath, extraArgs = []) {
   if (!filePath) {
-    console.error('Usage: plain run <file.pln>');
+    console.error('Usage: plin run <file.pln>');
     process.exit(1);
   }
   const js = compile(filePath);
   console.log('');
-  // Execute the generated file from the entry file's directory so Node
-  // resolves require(...) against the project's local node_modules instead
-  // of Plain's own (globally installed) package directory.
-  const outputDir = path.dirname(path.resolve(filePath));
-  const tmpFile = path.join(outputDir, '_plain_out.js');
+  // Execute from the entry file's directory so relative assets and CWD-based
+  // behaviour match a direct `node` invocation.
+  const entryDir = path.dirname(path.resolve(filePath));
+  const searchPaths = nodeModulesSearchPaths(entryDir);
+  const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'plin-run-'));
+  const tmpFile = path.join(tmpDir, 'out.js');
   fs.writeFileSync(tmpFile, js, 'utf8');
   try {
-    execFileSync(process.execPath, [tmpFile, ...extraArgs], { stdio: 'inherit' });
+    execFileSync(process.execPath, [tmpFile, ...extraArgs], {
+      stdio: 'inherit',
+      cwd: entryDir,
+      env: { ...process.env, NODE_PATH: searchPaths.join(path.delimiter) },
+    });
   } catch (e) {
-    fs.unlinkSync(tmpFile);
+    fs.rmSync(tmpDir, { recursive: true, force: true });
     console.error('\nThe program exited with an error. See the message above.');
     process.exit(1);
   }
-  fs.unlinkSync(tmpFile);
+  fs.rmSync(tmpDir, { recursive: true, force: true });
   console.log('\nDone.');
 }
 
-async function cmdBuild(filePath) {
-  if (!filePath) {
-    console.error('Usage: plain build <file.pln>');
+// Compile one entry and write it to outDir with its source name preserved,
+// relative to srcDir when the file lives inside it.
+function buildOne(filePath, buildConfig) {
+  const absFile = path.resolve(filePath);
+  if (!fs.existsSync(absFile)) {
+    console.error(`File not found: ${filePath}`);
     process.exit(1);
   }
-  const js = compile(filePath);
-  const outPath = filePath.replace(/\.pln$/, '.js');
-  fs.writeFileSync(path.resolve(outPath), js, 'utf8');
-  console.log(`\nOutput written to ${outPath}`);
+  const js = compile(absFile);
+  const srcRoot = path.resolve(buildConfig.srcDir);
+  let rel = path.relative(srcRoot, absFile).replace(/\.pln$/, '.js');
+  if (rel.startsWith('..') || path.isAbsolute(rel)) rel = path.basename(absFile).replace(/\.pln$/, '.js');
+  const outPath = path.join(path.resolve(buildConfig.outDir), rel);
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, js, 'utf8');
+  return path.relative(process.cwd(), outPath) || outPath;
+}
+
+// `plin build` — TypeScript-style production build:
+//
+//   messi.pln        → dist/messi.js       (project-root sources)
+//   src/index.pln    → dist/index.js       (src/ is the source root)
+//   src/a/b.pln      → dist/a/b.js         (structure preserved)
+//
+// With an explicit file argument only that entry is compiled (into the
+// primary project's outDir); without one, every .pln under each declared
+// project's source root builds to its own dist/ module. An array-shaped
+// plin.config.json compiles every listed project in order.
+async function cmdBuild(filePath) {
+  const projects = loadProjectConfigs();
+  if (projects.length === 0) {
+    console.error(`"${PLIN_CONFIG}" declares no projects (the array is empty).`);
+    process.exit(1);
+  }
+  if (filePath) {
+    const outPath = buildOne(filePath, projects[0]);
+    console.log(`\nOutput written to ${outPath}`);
+    return;
+  }
+  const multi = projects.length > 1;
+  let total = 0;
+  for (const buildConfig of projects) {
+    const sources = discoverSources(buildConfig.srcDir, buildConfig.outDir);
+    if (multi) console.log(`\n${buildConfig.name} -> ${buildConfig.outDir}/`);
+    if (sources.length === 0) {
+      if (multi) {
+        console.log(`${clrYellow('•')} no .pln files under "${buildConfig.srcDir}", skipped`);
+        continue;
+      }
+      console.error(`No .pln files found under "${buildConfig.srcDir}".`);
+      process.exit(1);
+    }
+    QUIET_STAGES = true;
+    let built;
+    try {
+      built = sources.map((rel) => ({
+        source: path.join(buildConfig.srcDir === '.' ? '' : buildConfig.srcDir, rel),
+        outPath: buildOne(path.join(path.resolve(buildConfig.srcDir), rel), buildConfig),
+      }));
+    } finally {
+      QUIET_STAGES = false;
+    }
+    for (const { source, outPath } of built) {
+      console.log(`${clrGreen('✓')} ${source} -> ${outPath}`);
+    }
+    total += built.length;
+  }
+  console.log(`\n${total} file(s) compiled to ${total === 1 && !multi ? projects[0].outDir + '/' : 'their output directories'}.`);
 }
 
 async function cmdStart(extraArgs = []) {
-  const config = readPlainJson();
+  const config = readPlinConfig();
   if (!config) {
-    console.error(`No ${PLAIN_JSON} found. Run "plain init" first.`);
+    console.error(`No ${PLIN_CONFIG} found. Run "plin init" first.`);
     process.exit(1);
   }
-  const entry = config.entry || 'app.pln';
-  if (!fs.existsSync(path.resolve(entry))) {
-    console.error(`Entry file "${entry}" not found.`);
+  const buildConfig = loadBuildConfig();
+  const entryPath = findEntry(config, buildConfig);
+  if (!entryPath) {
+    console.error(`Entry file "${buildConfig.entry || config.entry || 'app.pln'}" not found.`);
     process.exit(1);
   }
-  await cmdRun(entry, extraArgs);
+  const outFile = buildOne(entryPath, buildConfig);
+  const entryDir = path.dirname(path.resolve(entryPath));
+  execFileSync(process.execPath, [path.resolve(outFile), ...extraArgs], {
+    stdio: 'inherit',
+    cwd: entryDir,
+    env: { ...process.env, NODE_PATH: nodeModulesSearchPaths(entryDir).join(path.delimiter) },
+  });
 }
 
 function cmdNew(projectName) {
-  const name = projectName || 'my-plain-app';
+  const name = projectName || 'my-plin-app';
   const dir  = path.resolve(name);
 
   if (fs.existsSync(dir)) {
@@ -389,16 +564,17 @@ function cmdNew(projectName) {
 
   fs.mkdirSync(dir);
   fs.mkdirSync(path.join(dir, 'public'));
+  fs.mkdirSync(path.join(dir, 'src'));
 
-  // app.pln — starter Express app
-  fs.writeFileSync(path.join(dir, 'app.pln'), `use express
+  // src/app.pln — starter Express app
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), `use express
 
 remember app as express()
 
 serve folder "public"
 
 when someone visits "/"
-    reply "Hello from Plain!"
+    reply "Hello from PLIN!"
 done
 
 when someone visits "/api/status"
@@ -413,8 +589,8 @@ listen on 3000
 done
 `);
 
-  // plain.json
-  fs.writeFileSync(path.join(dir, PLAIN_JSON), JSON.stringify({
+  // plin.config.json
+  fs.writeFileSync(path.join(dir, PLIN_CONFIG), JSON.stringify({
     name,
     version: '0.1.0',
     entry: 'app.pln',
@@ -423,15 +599,19 @@ done
     },
   }, null, 4) + '\n');
 
-  // package.json
+  // package.json — plain Node semantics; PLIN itself is a devDependency and
+  // deployment only needs the generated dist/ output.
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
     name,
     version: '1.0.0',
-    description: `A Plain v${VERSION} application`,
-    main: 'app.js',
+    description: `A PLIN v${VERSION} application`,
+    main: 'dist/app.js',
     scripts: {
-      start: 'plain run app.pln',
-      build: 'plain build app.pln && node app.js',
+      build: 'plin build',
+      start: 'node dist/app.js',
+    },
+    devDependencies: {
+      plin: `^${VERSION}`,
     },
     dependencies: {
       express: '^4.18.2',
@@ -441,58 +621,70 @@ done
   // README.md
   fs.writeFileSync(path.join(dir, 'README.md'), `# ${name}
 
-A Plain v${VERSION} application.
+A PLIN v${VERSION} application.
 
 ## Getting started
 
 \`\`\`bash
-plain install
-plain run app.pln
+npm install
+npm run build
+npm start
 \`\`\`
 
 Then open http://localhost:3000 in your browser.
 `);
 
   console.log(`✓ Created project "${name}"`);
-  console.log(`\nNext steps:\n  cd ${name}\n  plain install\n  plain run app.pln`);
+  console.log(`\nNext steps:\n  cd ${name}\n  npm install\n  npx plin run src/app.pln`);
 }
 
 function cmdInit() {
-  const jsonPath = path.resolve(PLAIN_JSON);
+  const jsonPath = path.resolve(PLIN_CONFIG);
   if (fs.existsSync(jsonPath)) {
     console.log('Project already initialized.');
     return;
   }
   const name = path.basename(process.cwd());
-  writePlainJson({
+  writePlinConfig({
     name,
     version: '0.1.0',
-    entry: 'app.pln',
+    entry: 'index.pln',
   });
-  // Keep the default entry discoverable and make `plain install` immediately
+  // Keep the default entry discoverable and make `plin install` immediately
   // actionable after initialization.
-  const entryPath = path.resolve('app.pln');
+  const entryPath = path.resolve('index.pln');
   if (!fs.existsSync(entryPath)) {
-    fs.writeFileSync(entryPath, '// Plain application entry point\nshow "Hello from Plain"\n', 'utf8');
+    fs.writeFileSync(entryPath, '// PLIN application entry point\nshow "Hello from PLIN"\n', 'utf8');
   }
-  console.log(`✓ Created ${PLAIN_JSON}`);
+  console.log(`✓ Created ${PLIN_CONFIG}`);
 }
 
-// ── NEW plain install implementation (RFC-0009.2) ──────────────────────────
+// ── NEW plin install implementation (RFC-0009.2) ────────────────────────────
+
+// Locate the project entry for commands that work on a single program
+// (start, install): the declared entry wins, then conventional defaults.
+function findEntry(config, buildConfig) {
+  const declared = buildConfig.entry || config.entry;
+  const candidates = declared
+    ? [declared, path.join(buildConfig.srcDir, declared)]
+    : ['app.pln', 'index.pln', path.join(buildConfig.srcDir, 'app.pln'), path.join(buildConfig.srcDir, 'index.pln')];
+  return candidates.find((c) => fs.existsSync(path.resolve(c))) || null;
+}
 
 function cmdInstall() {
-  const config = readPlainJson();
+  const config = readPlinConfig();
   if (!config) {
-    console.error(`No ${PLAIN_JSON} found. Run "plain init" first.`);
+    console.error(`No ${PLIN_CONFIG} found. Run "plin init" first.`);
     process.exit(1);
   }
 
-  const entry = config.entry || 'app.pln';
-  const entryPath = path.resolve(entry);
-  if (!fs.existsSync(entryPath)) {
-    console.error(`Entry file "${entry}" not found.`);
+  const buildConfig = loadBuildConfig();
+  const entry = findEntry(config, buildConfig);
+  if (!entry) {
+    console.error(`Entry file "${config.entry || 'app.pln'}" not found.`);
     process.exit(1);
   }
+  const entryPath = path.resolve(entry);
 
   console.log('Checking project...');
   let files;
@@ -532,7 +724,7 @@ function cmdInstall() {
 }
 
 function cmdDoctor() {
-  console.log('Plain doctor\n');
+  console.log('PLIN doctor\n');
   const check = (label, ok, detail = '') => {
     const suffix = detail ? ` — ${detail}` : '';
     console.log(`${ok ? clrGreen('✓') : clrRed('✗')} ${label}${suffix}`);
@@ -541,14 +733,14 @@ function cmdDoctor() {
   let npmVersion = '';
   try { npmVersion = runNpm(['--version'], { encoding: 'utf8' }).trim(); } catch (_) {}
   check('npm', Boolean(npmVersion), npmVersion);
-  check('Plain CLI', true);
+  check('PLIN CLI', true);
   check('Compiler', fs.existsSync(path.join(__dirname, 'parser.js')));
   check('Formatter', fs.existsSync(path.join(__dirname, 'formatter.js')));
   check('Runtime', fs.existsSync(path.join(__dirname, 'generator.js')));
   console.log('');
 
-  const config = readPlainJson();
-  check('Project configuration', Boolean(config), config ? 'plain.json found' : 'run plain init');
+  const config = readPlinConfig();
+  check('Project configuration', Boolean(config), config ? 'plin.config.json found' : 'run plin init');
   if (!config) return;
   const entry = config.entry || 'app.pln';
   if (!fs.existsSync(path.resolve(entry))) {
@@ -570,23 +762,23 @@ function cmdDoctor() {
 
 function cmdAdd(packageName) {
   if (!packageName) {
-    console.error('Usage: plain add <package>');
+    console.error('Usage: plin add <package>');
     process.exit(1);
   }
   if (!isValidPackageName(packageName)) {
     console.error(`Invalid package name: "${packageName}".`);
     process.exit(1);
   }
-  const config = readPlainJson();
+  const config = readPlinConfig();
   if (!config) {
-    console.error(`No ${PLAIN_JSON} found. Run "plain init" first.`);
+    console.error(`No ${PLIN_CONFIG} found. Run "plin init" first.`);
     process.exit(1);
   }
 
   if (!config.dependencies) config.dependencies = {};
 
   if (config.dependencies[packageName]) {
-    console.log(`"${packageName}" is already listed in ${PLAIN_JSON}.`);
+    console.log(`"${packageName}" is already listed in ${PLIN_CONFIG}.`);
   }
 
   console.log(`Installing ${packageName}...`);
@@ -609,30 +801,30 @@ function cmdAdd(packageName) {
   } catch (_) { /* leave '*' if metadata is unreadable */ }
 
   config.dependencies[packageName] = version;
-  writePlainJson(config);
-  console.log(`✓ Added "${packageName}" to ${PLAIN_JSON}.`);
+  writePlinConfig(config);
+  console.log(`✓ Added "${packageName}" to ${PLIN_CONFIG}.`);
 }
 
 function cmdRemove(packageName) {
   if (!packageName) {
-    console.error('Usage: plain remove <package>');
+    console.error('Usage: plin remove <package>');
     process.exit(1);
   }
   if (!isValidPackageName(packageName)) {
     console.error(`Invalid package name: "${packageName}".`);
     process.exit(1);
   }
-  const config = readPlainJson();
+  const config = readPlinConfig();
   if (!config) {
-    console.error(`No ${PLAIN_JSON} found. Run "plain init" first.`);
+    console.error(`No ${PLIN_CONFIG} found. Run "plin init" first.`);
     process.exit(1);
   }
 
   if (!config.dependencies || !config.dependencies[packageName]) {
-    console.log(`"${packageName}" is not listed in ${PLAIN_JSON}.`);
+    console.log(`"${packageName}" is not listed in ${PLIN_CONFIG}.`);
   } else {
     delete config.dependencies[packageName];
-    writePlainJson(config);
+    writePlinConfig(config);
   }
 
   console.log(`Uninstalling ${packageName}...`);
@@ -644,7 +836,7 @@ function cmdRemove(packageName) {
     console.error(`Failed to uninstall "${packageName}".`);
     process.exit(1);
   }
-  console.log(`✓ Removed "${packageName}" from ${PLAIN_JSON}.`);
+  console.log(`✓ Removed "${packageName}" from ${PLIN_CONFIG}.`);
 }
 
 function cmdUpdate() {
@@ -664,7 +856,7 @@ function cmdUpdate() {
 // Check syntax of a Plain file without generating JavaScript or executing.
 function cmdCheck(filePath) {
   if (!filePath) {
-    console.error('Usage: plain check <file.pln>');
+    console.error('Usage: plin check <file.pln>');
     process.exit(1);
   }
   const absPath = path.resolve(filePath);
@@ -686,7 +878,7 @@ function cmdCheck(filePath) {
 // Format a Plain file in-place.
 function cmdFmt(filePath) {
   if (!filePath) {
-    console.error('Usage: plain fmt <file.pln>');
+    console.error('Usage: plin fmt <file.pln>');
     process.exit(1);
   }
   const absPath = path.resolve(filePath);
@@ -705,7 +897,7 @@ function cmdFmt(filePath) {
 }
 
 function cmdVersion() {
-  console.log(`Plain v${VERSION}`);
+  console.log(`PLIN v${VERSION}`);
 }
 
 function cmdHelp() {
@@ -737,7 +929,7 @@ async function main() {
       if (command && command.endsWith('.pln')) {
         await cmdRun(command);
       } else {
-        console.error(`Unknown command: "${command}". Run "plain help" for usage.`);
+        console.error(`Unknown command: "${command}". Run "plin help" for usage.`);
         process.exit(1);
       }
   }

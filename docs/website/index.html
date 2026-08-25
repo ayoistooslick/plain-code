@@ -6,21 +6,21 @@
 
   <!-- SEO -->
   <title>Plain — The programming language that reads like English</title>
-  <meta name="description" content="Plain is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
-  <meta name="keywords" content="Plain, IOPL, intent-oriented programming, programming language, JavaScript, Plain language, plain-code, beginner programming language">
+  <meta name="description" content="PLIN is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
+  <meta name="keywords" content="PLIN, IOPL, intent-oriented programming, programming language, JavaScript, PLIN language, plin, beginner programming language">
   <link rel="canonical" href="https://plain-code.name.ng/">
 
   <!-- OpenGraph -->
   <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://plain-lang.dev/">
   <meta property="og:title"       content="Plain — The programming language that reads like English">
-  <meta property="og:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
+  <meta property="og:description" content="Write programs in near-English sentences. PLIN compiles to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
   <meta property="og:image"       content="https://plain-code.name.ng/og.png">
 
   <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="Plain — The programming language that reads like English">
-  <meta name="twitter:description" content="Write programs in near-English sentences. Plain compiles to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
+  <meta name="twitter:description" content="Write programs in near-English sentences. PLIN compiles to JavaScript. v2.1.2 - Interactive console input and WhatsApp pairing from any value.">
   <meta name="twitter:image"       content="https://plain-code.name.ng/og.png">
 
   <!-- Font Awesome -->
@@ -38,7 +38,7 @@
   <div class="nav-inner">
     <a class="nav-logo" href="#top">
       <span class="logo-word">Plain</span>
-      <span class="logo-ver">v2.1.2</span>
+      <span class="logo-ver">v0.1.7</span>
     </a>
 
     <ul class="nav-links" role="list">
@@ -56,7 +56,7 @@
         <i class="fa-brands fa-github"></i>
         <span>GitHub</span>
       </a>
-      <a class="nav-cta" href="https://www.npmjs.com/package/@ayoxx/plain-code" target="_blank" rel="noopener">
+      <a class="nav-cta" href="https://www.npmjs.com/package/plin" target="_blank" rel="noopener">
         <i class="fa-brands fa-npm"></i>
         <span>npm</span>
       </a>
@@ -83,7 +83,7 @@
   <a href="#roadmap">Roadmap</a>
   <a href="#faq">FAQ</a>
   <a href="https://github.com/ayoistooslick/plain-code" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a>
-  <a href="https://www.npmjs.com/package/@ayoxx/plain-code" target="_blank" rel="noopener"><i class="fa-brands fa-npm"></i> npm</a>
+  <a href="https://www.npmjs.com/package/plin" target="_blank" rel="noopener"><i class="fa-brands fa-npm"></i> npm</a>
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
@@ -97,7 +97,7 @@
       <div class="hero-copy">
         <div class="hero-badge">
           <i class="fa-solid fa-bolt"></i>
-          v2.1.2 &mdash; console input &middot; pairing from any value &middot; WhatsApp bots
+          v0.1.7 &mdash; production builds &middot; dist output &middot; local devDependency
         </div>
         <h1 class="hero-title">
           The language<br>
@@ -105,7 +105,7 @@
           like <span class="accent">English.</span>
         </h1>
         <p class="hero-sub">
-          Plain is an Intent-Oriented Programming Language. Describe <em>what</em> you want in near-English sentences and Plain compiles it to JavaScript. No boilerplate, no ceremony.
+          PLIN is an Intent-Oriented Programming Language. Describe <em>what</em> you want in near-English sentences and Plain compiles it to JavaScript. No boilerplate, no ceremony.
         </p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="#quickstart">
@@ -170,7 +170,7 @@
       <div class="stat-label">Keywords</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value">603<span class="unit">+</span></div>
+      <div class="stat-value">625<span class="unit">+</span></div>
       <div class="stat-label">Tests Passing</div>
     </div>
     <div class="stat-item">
@@ -219,7 +219,7 @@
       <div class="why-item">
         <div class="why-num"><i class="fa-solid fa-puzzle-piece"></i></div>
         <h3>npm-compatible</h3>
-        <p>Any npm package can be declared with <code>use</code> and installed with <code>plain add</code>. The entire Node.js ecosystem is one keyword away.</p>
+        <p>Any npm package can be declared with <code>use</code> and installed with <code>plin add</code>. The entire Node.js ecosystem is one keyword away.</p>
       </div>
       <div class="why-item">
         <div class="why-num"><i class="fa-solid fa-eye"></i></div>
@@ -290,10 +290,10 @@
     <div class="install-strip">
       <div class="install-strip-label">
         <i class="fa-brands fa-npm"></i>
-        Install globally via npm
+        Install locally via npm
       </div>
       <div class="install-cmd">
-        <code>npm install -g @ayoxx/plain-code</code>
+        <code>npm install --save-dev plin</code>
         <button aria-label="Copy install command">
           <i class="fa-regular fa-copy"></i> Copy
         </button>
@@ -364,7 +364,7 @@ console.<span class="fn">log</span>(<span class="str">"Hello, "</span> + name);
       <div class="feature-card">
         <div class="feature-card-icon"><i class="fa-solid fa-cubes"></i></div>
         <h4>plain add</h4>
-        <p>Install an npm package and add it to <code>plain.json</code> automatically. Try <code>plain add express</code>.</p>
+        <p>Install an npm package and add it to <code>plain.json</code> automatically. Try <code>plin add express</code>.</p>
       </div>
       <div class="feature-card">
         <div class="feature-card-icon"><i class="fa-solid fa-hammer"></i></div>
@@ -1065,7 +1065,7 @@ scores[<span class="num">1</span>] = <span class="num">95</span>;</code></pre>
       <i class="fa-solid fa-circle-info"></i>
       <div class="callout-body">
         <strong>tesseract.js stays out of your source</strong>
-        <p><code>plain install</code>, <code>plain run</code>, and <code>plain build</code> detect <code>ocr</code> statements and fetch the package automatically. The statement is async like <code>ask</code> &mdash; top-level use wraps the program in the async runtime, and using it inside a function makes that function async.</p>
+        <p><code>plin install</code>, <code>plin run</code>, and <code>plin build</code> detect <code>ocr</code> statements and fetch the package automatically. The statement is async like <code>ask</code> &mdash; top-level use wraps the program in the async runtime, and using it inside a function makes that function async.</p>
       </div>
     </div>
   </div>
@@ -1088,18 +1088,18 @@ scores[<span class="num">1</span>] = <span class="num">95</span>;</code></pre>
           <table>
             <thead><tr><th>Command</th><th>Description</th></tr></thead>
             <tbody>
-              <tr><td><code>plain run &lt;file.pln&gt;</code></td><td>Compile and execute immediately</td></tr>
-              <tr><td><code>plain build &lt;file.pln&gt;</code></td><td>Compile to <code>.js</code> without running</td></tr>
-              <tr><td><code>plain check &lt;file.pln&gt;</code></td><td>Syntax check — exits 0 or 1</td></tr>
-              <tr><td><code>plain fmt &lt;file.pln&gt;</code></td><td>Format source in-place</td></tr>
-              <tr><td><code>plain new [name]</code></td><td>Scaffold a new project</td></tr>
-              <tr><td><code>plain init</code></td><td>Create <code>plain.json</code> in current directory</td></tr>
-              <tr><td><code>plain install</code></td><td>Install all dependencies from <code>plain.json</code></td></tr>
-              <tr><td><code>plain add &lt;pkg&gt;</code></td><td>Install a package and record it</td></tr>
-              <tr><td><code>plain remove &lt;pkg&gt;</code></td><td>Uninstall a package</td></tr>
-              <tr><td><code>plain update</code></td><td>Update all installed packages</td></tr>
-              <tr><td><code>plain version</code></td><td>Print the compiler version</td></tr>
-              <tr><td><code>plain help</code></td><td>Show help text</td></tr>
+              <tr><td><code>plin run &lt;file.pln&gt;</code></td><td>Compile and execute immediately</td></tr>
+              <tr><td><code>plin build &lt;file.pln&gt;</code></td><td>Compile to <code>.js</code> without running</td></tr>
+              <tr><td><code>plin check &lt;file.pln&gt;</code></td><td>Syntax check — exits 0 or 1</td></tr>
+              <tr><td><code>plin fmt &lt;file.pln&gt;</code></td><td>Format source in-place</td></tr>
+              <tr><td><code>plin new [name]</code></td><td>Scaffold a new project</td></tr>
+              <tr><td><code>plin init</code></td><td>Create <code>plain.json</code> in current directory</td></tr>
+              <tr><td><code>plin install</code></td><td>Install all dependencies from <code>plain.json</code></td></tr>
+              <tr><td><code>plin add &lt;pkg&gt;</code></td><td>Install a package and record it</td></tr>
+              <tr><td><code>plin remove &lt;pkg&gt;</code></td><td>Uninstall a package</td></tr>
+              <tr><td><code>plin update</code></td><td>Update all installed packages</td></tr>
+              <tr><td><code>plin version</code></td><td>Print the compiler version</td></tr>
+              <tr><td><code>plin help</code></td><td>Show help text</td></tr>
             </tbody>
           </table>
         </div>
@@ -1142,7 +1142,7 @@ Plain v1.0.0</code></pre>
     <div class="section-tag"><i class="fa-solid fa-paintbrush"></i> Formatter</div>
     <h2 class="section-title">Automatic Code Formatting</h2>
     <p class="section-lead">
-      <code>plain fmt</code> formats your <code>.pln</code> file in-place. One command, no options — consistent code across every project.
+      <code>plin fmt</code> formats your <code>.pln</code> file in-place. One command, no options — consistent code across every project.
     </p>
 
     <div class="compare" style="margin-bottom:2rem">
@@ -1381,7 +1381,7 @@ Plain v1.0.0</code></pre>
           <h4>Future — Extended Language <span class="badge badge-amber" style="margin-left:.5rem">Planned</span></h4>
           <ul>
             <li>Optional type hints (non-breaking)</li>
-            <li><code>plain watch</code> — recompile on file change</li>
+            <li><code>plin watch</code> — recompile on file change</li>
             <li>Language Server Protocol (LSP) support</li>
             <li>Standard library expansion &amp; module refinements</li>
           </ul>
@@ -1405,14 +1405,14 @@ Plain v1.0.0</code></pre>
       <div class="faq-item">
         <button class="faq-question">What is Plain? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Plain is an Intent-Oriented Programming Language (IOPL). It compiles <code>.pln</code> source files to JavaScript and runs them with Node.js. Plain's design goal is to let developers describe <em>what</em> they want to happen in near-English sentences, while the compiler handles the JavaScript implementation details.
+          PLIN is an Intent-Oriented Programming Language (IOPL). It compiles <code>.pln</code> source files to JavaScript and runs them with Node.js. Plain's design goal is to let developers describe <em>what</em> they want to happen in near-English sentences, while the compiler handles the JavaScript implementation details.
         </div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question">Is Plain production-ready? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Plain 2.1.2 includes runtime dependency detection, automatic installation, OCR, portable databases, an HTTP client, sessions, uploads, rate limiting, deployment-oriented CLI commands, WhatsApp bots, and interactive terminal input — backed by a test suite of 603 checks. It compiles to standard Node.js-compatible JavaScript and is well-suited for personal projects, tooling, and learning. For large production systems, evaluate whether the JavaScript ecosystem's tooling (TypeScript, linters, bundlers) is needed alongside it.
+          PLIN 0.1.7 includes runtime dependency detection, automatic installation, OCR, portable databases, an HTTP client, sessions, uploads, rate limiting, deployment-oriented CLI commands, WhatsApp bots, and interactive terminal input — backed by a test suite of 603 checks. It compiles to standard Node.js-compatible JavaScript and is well-suited for personal projects, tooling, and learning. For large production systems, evaluate whether the JavaScript ecosystem's tooling (TypeScript, linters, bundlers) is needed alongside it.
         </div>
       </div>
 
@@ -1426,14 +1426,14 @@ Plain v1.0.0</code></pre>
       <div class="faq-item">
         <button class="faq-question">Can I use npm packages? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Yes. Any npm package can be declared with <code>use &lt;package&gt;</code> and installed with <code>plain add &lt;package&gt;</code>. Since v2.0.1 you can bind hyphenated or scoped packages to a variable with <code>use node-fetch as fetch</code>, and pin ranges inline with <code>use left-pad@^1.3.0</code>. Plain manages your <code>plain.json</code> and the underlying <code>node_modules</code> automatically, validating that all declared packages are installed before compiling.
+          Yes. Any npm package can be declared with <code>use &lt;package&gt;</code> and installed with <code>plin add &lt;package&gt;</code>. Since v2.0.1 you can bind hyphenated or scoped packages to a variable with <code>use node-fetch as fetch</code>, and pin ranges inline with <code>use left-pad@^1.3.0</code>. Plain manages your <code>plain.json</code> and the underlying <code>node_modules</code> automatically, validating that all declared packages are installed before compiling.
         </div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question">How does OCR work? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Write <code>ocr "scan.png" as text</code>. The statement is backed by Tesseract.js — an implementation detail that never appears in your source. <code>plain install</code>, <code>plain run</code>, and <code>plain build</code> detect <code>ocr</code> statements and fetch the package automatically. An optional <code>using "&lt;lang&gt;"</code> clause selects a language pack; extraction defaults to English.
+          Write <code>ocr "scan.png" as text</code>. The statement is backed by Tesseract.js — an implementation detail that never appears in your source. <code>plin install</code>, <code>plin run</code>, and <code>plin build</code> detect <code>ocr</code> statements and fetch the package automatically. An optional <code>using "&lt;lang&gt;"</code> clause selects a language pack; extraction defaults to English.
         </div>
       </div>
 
@@ -1447,14 +1447,14 @@ Plain v1.0.0</code></pre>
       <div class="faq-item">
         <button class="faq-question">How do I debug Plain code? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Use <code>plain build app.pln</code> to compile to <code>app.js</code> and inspect the generated JavaScript. Since the output is clean, readable JS you can open it in any Node.js debugger, add <code>console.log</code> statements, or run it directly with <code>node app.js</code>. You can also use <code>plain check app.pln</code> to catch syntax errors before running.
+          Use <code>plin build app.pln</code> to compile to <code>app.js</code> and inspect the generated JavaScript. Since the output is clean, readable JS you can open it in any Node.js debugger, add <code>console.log</code> statements, or run it directly with <code>node app.js</code>. You can also use <code>plin check app.pln</code> to catch syntax errors before running.
         </div>
       </div>
 
       <div class="faq-item">
-        <button class="faq-question">Does Plain work on Windows? <i class="fa-solid fa-chevron-down"></i></button>
+        <button class="faq-question">Does PLIN work on Windows? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Yes. Plain is a Node.js package and works wherever Node.js is installed — Windows, macOS, and Linux. Install it with <code>npm install -g @ayoxx/plain-code</code> on any platform.
+          Yes. PLIN is a Node.js package and works wherever Node.js is installed — Windows, macOS, and Linux. Install it with <code>npm install --save-dev plin</code> on any platform.
         </div>
       </div>
 
@@ -1551,7 +1551,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.</code></pre>
         <a href="https://github.com/ayoxx/plain" target="_blank" rel="noopener" aria-label="GitHub">
           <i class="fa-brands fa-github"></i>
         </a>
-        <a href="https://www.npmjs.com/package/@ayoxx/plain-code" target="_blank" rel="noopener" aria-label="npm">
+        <a href="https://www.npmjs.com/package/plin" target="_blank" rel="noopener" aria-label="npm">
           <i class="fa-brands fa-npm"></i>
         </a>
       </div>
@@ -1594,7 +1594,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.</code></pre>
   <div class="footer-bottom">
     <p>Copyright &copy; 2024 Ayokunle. Released under the MIT License.</p>
     <span class="badge badge-blue version-badge">
-      <i class="fa-solid fa-bolt"></i> Plain v2.1.2
+      <i class="fa-solid fa-bolt"></i> PLIN v0.1.7
     </span>
   </div>
 </footer>
