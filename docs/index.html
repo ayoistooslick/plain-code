@@ -1,2287 +1,443 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-
-  <title>PlainScript — The programming language that reads like English</title>
-  <meta name="description" content="PlainScript is an Intent-Oriented Programming Language (IOPL). Write programs in near-English sentences and compile them to JavaScript..">
-  <meta name="keywords" content="PlainScript, IOPL, intent-oriented programming, programming language, JavaScript, PlainScript language, plainscript, beginner programming language">
-  <link rel="canonical" href="https://github.com/ayoistooslick/plain-code">
-
-  <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://ayoistooslick.github.io/plain-code/">
-  <meta property="og:title"       content="PlainScript — The programming language that reads like English">
-  <meta property="og:description" content="Write programs in near-English sentences. PlainScript compiles to JavaScript..">
-  <meta property="og:image"       content="https://ayoistooslick.github.io/plain-code/logo.jpg">
-
-  <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="PlainScript — The programming language that reads like English">
-  <meta name="twitter:description" content="Write programs in near-English sentences. PlainScript compiles to JavaScript..">
-  <meta name="twitter:image"       content="https://ayoistooslick.github.io/plain-code/logo.jpg">
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="website/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PlainScript — When even a simple sentence can be code</title>
+  <meta name="description" content="PlainScript is an Intent-Oriented Programming Language. You describe what you want; the compiler generates JavaScript." />
+  <meta name="keywords" content="PlainScript, programming language, intent-oriented, JavaScript, transpiler, IOPL" />
+  <link rel="canonical" href="https://ayoistooslick.github.io/plain-code/" />
+  <meta property="og:title" content="PlainScript — When even a simple sentence can be code" />
+  <meta property="og:description" content="PlainScript is an Intent-Oriented Programming Language. You describe what you want; the compiler generates JavaScript." />
+  <meta property="og:image" content="https://ayoistooslick.github.io/plain-code/logo.jpg" />
+  <meta property="og:url" content="https://ayoistooslick.github.io/plain-code/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="PlainScript — When even a simple sentence can be code" />
+  <meta name="twitter:description" content="PlainScript is an Intent-Oriented Programming Language. You describe what you want; the compiler generates JavaScript." />
+  <meta name="twitter:image" content="https://ayoistooslick.github.io/plain-code/logo.jpg" />
+  <link rel="stylesheet" href="website/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- NAVIGATION                                                              -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<nav class="site-nav" role="navigation" aria-label="Main navigation">
-  <div class="nav-inner">
-    <a class="nav-logo" href="#top">
-      <span class="logo-word">PlainScript</span>
-      <span class="logo-ver">v0.1.7</span>
-    </a>
-
-    <ul class="nav-links" role="list">
-      <li><a href="#introduction">Introduction</a></li>
-      <li><a href="#language">Language</a></li>
-      <li><a href="#web">Web</a></li>
-      <li><a href="#ocr">OCR</a></li>
-      <li><a href="#examples">Examples</a></li>
-      <li><a href="#backend-services">Backend Services</a></li>
-      <li><a href="#cli">CLI</a></li>
-      <li><a href="#security">Security</a></li>
-    </ul>
-
-    <div class="nav-actions">
-      <a class="nav-cta" href="https://github.com/ayoistooslick/plain-code" target="_blank" rel="noopener">
-        <i class="fa-brands fa-github"></i>
-        <span>GitHub</span>
+  <!-- ═══════════════════════════ NAVIGATION ═══════════════════════════ -->
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand">
+        <img src="logo.jpg" alt="PlainScript" class="nav-logo" />
+        <span class="logo-word">PlainScript</span>
+        <span class="logo-ver">v0.1.7</span>
       </a>
-      <a class="nav-cta" href="https://www.npmjs.com/package/plainscript" target="_blank" rel="noopener">
-        <i class="fa-brands fa-npm"></i>
-        <span>npm</span>
-      </a>
-      <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
-        <i class="fa-solid fa-bars"></i>
+      <ul class="nav-links">
+        <li><a href="#language">Language</a></li>
+        <li><a href="#examples">Examples</a></li>
+        <li><a href="#cli">CLI</a></li>
+        <li><a href="#packages">Packages</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="https://github.com/ayoistooslick/plain-code" class="btn btn-outline" target="_blank" rel="noopener">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+        <a href="https://www.npmjs.com/package/plainscript-lang" class="btn btn-primary" target="_blank" rel="noopener">
+          <i class="fab fa-npm"></i> npm install
+        </a>
+      </div>
+      <button class="nav-hamburger" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
       </button>
     </div>
-  </div>
-</nav>
-
-<div class="mobile-menu" id="mobile-menu" role="dialog" aria-label="Mobile navigation">
-  <a href="#introduction">Introduction</a>
-  <a href="#quickstart">Quick Start</a>
-  <a href="#language">Language Reference</a>
-  <a href="#web">Web Development</a>
-  <a href="#http">HTTP</a>
-  <a href="#telegram">Telegram</a>
-  <a href="#whatsapp">WhatsApp</a>
-  <a href="#ocr">OCR</a>
-  <a href="#websocket">WebSocket</a>
-  <a href="#scheduling">Scheduling</a>
-  <a href="#email">Email</a>
-  <a href="#database">Database</a>
-  <a href="#examples">Examples</a>
-  <a href="#packages">Packages</a>
-  <a href="#cli">CLI Reference</a>
-  <a href="#backend-services">Backend Services</a>
-  <a href="#security">Security</a>
-  <a href="#roadmap">Roadmap</a>
-  <a href="https://github.com/ayoistooslick/plain-code" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a>
-  <a href="https://www.npmjs.com/package/plainscript" target="_blank" rel="noopener"><i class="fa-brands fa-npm"></i> npm</a>
-</div>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- HERO                                                                    -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<header class="hero" id="top">
-  <div class="container">
-    <div class="hero-grid">
-
-      <div class="hero-copy">
-        <div class="hero-badge">
-          <i class="fa-solid fa-bolt"></i>
-          v0.1.7 &mdash; production builds &middot; dist output &middot; local devDependency
-        </div>
-        <h1 class="hero-title">
-          The language<br>
-          that reads<br>
-          like <span class="accent">English.</span>
-        </h1>
-        <p class="hero-sub">
-          PlainScript is an Intent-Oriented Programming Language. Describe <em>what</em> you want in near-English sentences and PlainScript compiles it to JavaScript. No boilerplate, no ceremony.
-        </p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#quickstart">
-            <i class="fa-solid fa-rocket"></i>
-            Get Started
-          </a>
-          <a class="btn btn-outline" href="#language">
-            <i class="fa-solid fa-book"></i>
-            Language Reference
-          </a>
-          <a class="btn btn-outline" href="https://github.com/ayoistooslick/plain-code" target="_blank" rel="noopener">
-            <i class="fa-brands fa-github"></i>
-            GitHub
-          </a>
-        </div>
+    <div class="nav-mobile">
+      <ul class="nav-links">
+        <li><a href="#language">Language</a></li>
+        <li><a href="#examples">Examples</a></li>
+        <li><a href="#cli">CLI</a></li>
+        <li><a href="#packages">Packages</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="https://github.com/ayoistooslick/plain-code" class="btn btn-outline" target="_blank" rel="noopener">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+        <a href="https://www.npmjs.com/package/plainscript-lang" class="btn btn-primary" target="_blank" rel="noopener">
+          <i class="fab fa-npm"></i> npm install
+        </a>
       </div>
+    </div>
+  </nav>
 
+  <!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+  <section class="hero">
+    <div class="container">
+      <span class="hero-badge">v0.1.7 — Now with JavaScript Gateway</span>
+      <h1 class="hero-title">Write code that<br>reads like <span class="green">Plain English</span></h1>
+      <p class="hero-subtitle">PlainScript is an Intent-Oriented Programming Language. You describe what you want; the compiler decides how to implement it in JavaScript.</p>
+      <div class="hero-actions">
+        <a href="#quickstart" class="btn btn-primary btn-lg">Get Started</a>
+        <a href="https://github.com/ayoistooslick/plain-code" class="btn btn-outline btn-lg" target="_blank" rel="noopener">
+          <i class="fab fa-github"></i> View on GitHub
+        </a>
+      </div>
       <div class="hero-code">
         <div class="code-block">
-          <div class="code-block-header">
-            <div class="code-block-dots">
-              <span></span><span></span><span></span>
-            </div>
-            <span class="code-block-title">app.pln</span>
-            <button class="code-copy" aria-label="Copy code">
-              <i class="fa-regular fa-copy"></i> Copy
-            </button>
+          <div class="code-header">
+            <span class="code-lang">PlainScript</span>
           </div>
-          <pre><code><span class="kw">web app</span>
-
-<span class="kw">route</span> <span class="str">"/"</span>
-    <span class="kw">reply json</span>
-        message <span class="kw">is</span> <span class="str">"Hello, World!"</span>
-        version <span class="kw">is</span> <span class="str">"1.0"</span>
-    <span class="kw">done</span>
-<span class="kw">done</span>
-
-<span class="kw">route</span> <span class="str">"/users/:id"</span>
-    <span class="kw">remember</span> id <span class="kw">as</span> request.params.id
-    <span class="kw">reply json</span>
-        user <span class="kw">is</span> id
-        status <span class="kw">is</span> <span class="str">"found"</span>
-    <span class="kw">done</span>
-<span class="kw">done</span>
-
-<span class="kw">start</span> <span class="num">3000</span></code></pre>
+          <pre><code><span class="kw">remember</span> name <span class="kw">as</span> <span class="str">"World"</span>
+<span class="fn">show</span> <span class="str">"Hello, "</span> <span class="op">plus</span> name <span class="op">plus</span> <span class="str">"!"</span></code></pre>
         </div>
-      </div>
-
-    </div>
-  </div>
-</header>
-
-<div class="container">
-  <div class="stats-row">
-    <div class="stat-item">
-      <div class="stat-value">35<span class="unit">+</span></div>
-      <div class="stat-label">Keywords</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-value">625</div>
-      <div class="stat-label">Tests Passing</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-value">0</div>
-      <div class="stat-label">Config Files Needed</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-value">MIT</div>
-      <div class="stat-label">License</div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- INTRODUCTION                                                            -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="introduction">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-lightbulb"></i> Introduction</div>
-    <h2 class="section-title">What is PlainScript?</h2>
-    <p class="section-lead">
-      PlainScript is an Intent-Oriented Programming Language (IOPL). It compiles <code>.pln</code> source files to JavaScript and runs them with Node.js. PlainScript&rsquo;s design goal is to let developers describe <em>what</em> they want to happen in near-English sentences, while the compiler handles the JavaScript implementation details.
-    </p>
-
-    <div class="why-grid">
-      <div class="why-item">
-        <div class="why-num"><i class="fa-solid fa-pen-nib"></i></div>
-        <h3>Intent, not implementation</h3>
-        <p>Write <em>what</em> you want to happen, not <em>how</em> JavaScript should do it. The compiler bridges the gap, generating clean, readable JS output.</p>
-      </div>
-      <div class="why-item">
-        <div class="why-num"><i class="fa-solid fa-gauge-high"></i></div>
-        <h3>Zero configuration</h3>
-        <p>No webpack. No tsconfig. No babel. Drop a <code>.pln</code> file anywhere and run it. Zero configuration required.</p>
-      </div>
-      <div class="why-item">
-        <div class="why-num"><i class="fa-solid fa-ruler"></i></div>
-        <h3>One way to do everything</h3>
-        <p>No decision fatigue. PlainScript has exactly one way to declare a variable, one way to loop, one way to define a function. Less syntax to memorise, more time to build.</p>
-      </div>
-      <div class="why-item">
-        <div class="why-num"><i class="fa-solid fa-comment-dots"></i></div>
-        <h3>Errors that teach</h3>
-        <p>Every error message tells you what went wrong, which line, and &mdash; when possible &mdash; exactly what to type instead. The compiler is a tutor, not a gatekeeper.</p>
-      </div>
-      <div class="why-item">
-        <div class="why-num"><i class="fa-solid fa-puzzle-piece"></i></div>
-        <h3>npm-compatible</h3>
-        <p>Any npm package can be declared with <code>use</code> and installed with <code>plainscript add</code>. The entire Node.js ecosystem is one keyword away.</p>
-      </div>
-      <div class="why-item">
-        <div class="why-num"><i class="fa-solid fa-eye"></i></div>
-        <h3>Code that reads like docs</h3>
-        <p>PlainScript code doubles as documentation. Hand it to a non-programmer and they will understand it. That constraint makes your code better for everyone.</p>
-      </div>
-    </div>
-
-    <div class="callout callout-info" style="margin-top:2rem">
-      <i class="fa-solid fa-circle-info"></i>
-      <div class="callout-body">
-        <strong>What PlainScript is NOT</strong>
-        <p>PlainScript is <strong>not</strong> a natural-language prompt system. You cannot type free-form English and have it compile. Every construct in PlainScript is defined by explicit syntax and precise semantics. The language reads like English because it was designed that way &mdash; not because an AI is interpreting your intent at compile time. PlainScript is a real programming language with a deterministic compiler.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- INSTALLATION                                                            -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="installation">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-download"></i> Installation</div>
-    <h2 class="section-title">Install PlainScript</h2>
-    <p class="section-lead">
-      PlainScript is a Node.js package. Install it globally and you&rsquo;re ready to compile <code>.pln</code> files anywhere on your system.
-    </p>
-
-    <div class="install-strip">
-      <div class="install-strip-label">
-        <i class="fa-brands fa-npm"></i>
-        Install locally via npm
-      </div>
-      <div class="install-cmd">
-        <code>npm install --save-dev plainscript</code>
-        <button aria-label="Copy install command">
-          <i class="fa-regular fa-copy"></i> Copy
-        </button>
-      </div>
-    </div>
-
-    <div class="callout callout-info" style="margin-top:1.5rem">
-      <i class="fa-solid fa-circle-info"></i>
-      <div class="callout-body">
-        <strong>Requirements</strong>
-        <p>Node.js 16+ is required. PlainScript works on Windows, macOS, and Linux. No other dependencies are needed.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- QUICK START                                                             -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="quickstart">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-rocket"></i> Quick Start</div>
-    <h2 class="section-title">Your first PlainScript program</h2>
-    <p class="section-lead">
-      PlainScript compiles <code>.pln</code> files to JavaScript and runs them with Node.js. No bundlers, no transpilers, no configuration required.
-    </p>
-
-    <h3 class="sub-heading"><i class="fa-solid fa-folder-plus"></i> Create a new project</h3>
-
-    <div class="code-block" style="margin-bottom:1.5rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">Terminal</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="prm">$</span> plainscript new myapp
-<span class="prm">$</span> cd myapp
-<span class="prm">$</span> plainscript install
-<span class="prm">$</span> plainscript start</code></pre>
-    </div>
-
-    <h3 class="sub-heading"><i class="fa-solid fa-file-code"></i> Hello World</h3>
-
-    <div class="compare" style="margin-bottom:1.5rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">hello.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">remember</span> name <span class="kw">as</span> <span class="str">"World"</span>
-<span class="kw">show</span> <span class="str">"Hello, "</span> + name
-
-<span class="kw">make</span> <span class="fn">greet</span>(person)
-    <span class="kw">show</span> <span class="str">"Nice to meet you, "</span> + person
-<span class="kw">done</span>
-
-<span class="fn">greet</span>(name)</code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Generated JavaScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">let</span> name = <span class="str">"World"</span>;
-console.<span class="fn">log</span>(<span class="str">"Hello, "</span> + name);
-
-<span class="kw">function</span> <span class="fn">greet</span>(person) {
-    console.<span class="fn">log</span>(<span class="str">"Nice to meet you, "</span> + person);
-}
-
-<span class="fn">greet</span>(name);</code></pre>
-      </div>
-    </div>
-
-    <h3 class="sub-heading"><i class="fa-solid fa-terminal"></i> Run it</h3>
-    <div class="code-block" style="margin-bottom:1.5rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">Terminal</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="prm">$</span> plainscript run hello.pln
-Hello, World!
-Nice to meet you, World!</code></pre>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- LANGUAGE REFERENCE                                                      -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="language">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-book"></i> Language Reference</div>
-    <h2 class="section-title">Language Tour</h2>
-    <p class="section-lead">
-      A complete reference for every PlainScript construct. Every keyword compiles to a direct JavaScript equivalent &mdash; no magic, no hidden behaviour.
-    </p>
-
-    <!-- Variables -->
-    <h3 class="sub-heading"><i class="fa-solid fa-square-root-variable"></i> Variables</h3>
-    <p style="color:var(--muted);margin-bottom:.75rem">Declare with <code>remember &hellip; as</code>. Reassign with <code>becomes</code>.</p>
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">PlainScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">remember</span> name  <span class="kw">as</span> <span class="str">"Ayokunle"</span>
-<span class="kw">remember</span> score <span class="kw">as</span> <span class="num">100</span>
-<span class="kw">remember</span> active <span class="kw">as</span> true
-
-score <span class="kw">becomes</span> score + <span class="num">10</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">JavaScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">let</span> name  = <span class="str">"Ayokunle"</span>;
-<span class="kw">let</span> score = <span class="num">100</span>;
-<span class="kw">let</span> active = <span class="kw">true</span>;
-
-score = score + <span class="num">10</span>;</code></pre>
-      </div>
-    </div>
-
-    <!-- Comparisons -->
-    <h3 class="sub-heading"><i class="fa-solid fa-scale-balanced"></i> Comparisons</h3>
-    <p style="color:var(--muted);margin-bottom:.75rem">PlainScript supports a full set of English comparison operators.</p>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>PlainScript</th><th>JavaScript</th><th>Notes</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><code>is</code> / <code>is equal to</code></td><td><code>===</code></td><td>Strict equality</td></tr>
-          <tr><td><code>is not</code></td><td><code>!==</code></td><td>Strict inequality</td></tr>
-          <tr><td><code>is greater than</code> / <code>is above</code></td><td><code>&gt;</code></td><td></td></tr>
-          <tr><td><code>is less than</code> / <code>is below</code></td><td><code>&lt;</code></td><td></td></tr>
-          <tr><td><code>is at least</code></td><td><code>&gt;=</code></td><td></td></tr>
-          <tr><td><code>is at most</code></td><td><code>&lt;=</code></td><td></td></tr>
-          <tr><td><code>is empty</code></td><td><code>.length === 0</code></td><td>Arrays and strings</td></tr>
-          <tr><td><code>is not empty</code></td><td><code>.length &gt; 0</code></td><td>Arrays and strings</td></tr>
-          <tr><td><code>contains "x"</code></td><td><code>.includes("x")</code></td><td></td></tr>
-          <tr><td><code>starts with "x"</code></td><td><code>.startsWith("x")</code></td><td></td></tr>
-          <tr><td><code>ends with "x"</code></td><td><code>.endsWith("x")</code></td><td></td></tr>
-          <tr><td><code>between A and B</code></td><td><code>&gt;= A &amp;&amp; &lt;= B</code></td><td>Inclusive range</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Conditions -->
-    <h3 class="sub-heading"><i class="fa-solid fa-code-branch"></i> Conditions</h3>
-    <div class="code-block" style="margin-bottom:2rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">conditions.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="cmt">// if / otherwise</span>
-<span class="kw">if</span> age <span class="kw">between</span> <span class="num">13</span> <span class="kw">and</span> <span class="num">19</span>
-    <span class="kw">show</span> <span class="str">"Teenager"</span>
-<span class="kw">otherwise</span>
-    <span class="kw">show</span> <span class="str">"Not a teenager"</span>
-<span class="kw">done</span>
-
-<span class="kw">if</span> score <span class="kw">is at least</span> <span class="num">80</span>
-    <span class="kw">show</span> <span class="str">"Distinction"</span>
-<span class="kw">done</span></code></pre>
-    </div>
-
-    <!-- Loops -->
-    <h3 class="sub-heading"><i class="fa-solid fa-rotate"></i> Loops</h3>
-    <div class="code-block" style="margin-bottom:2rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">loops.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="cmt">// while loop</span>
-<span class="kw">while</span> x <span class="kw">is above</span> <span class="num">0</span>
-    x <span class="kw">becomes</span> x + <span class="num">1</span>
-<span class="kw">done</span>
-
-<span class="cmt">// for each loop</span>
-<span class="kw">for each</span> player <span class="kw">in</span> players
-    <span class="kw">show</span> player
-<span class="kw">done</span>
-
-<span class="cmt">// "for every" is an alias for "for each"</span>
-<span class="kw">for every</span> item <span class="kw">in</span> basket
-    <span class="kw">show</span> item
-<span class="kw">done</span></code></pre>
-    </div>
-
-    <!-- Functions -->
-    <h3 class="sub-heading"><i class="fa-solid fa-f"></i> Functions</h3>
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">PlainScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">make</span> <span class="fn">add</span>(a, b)
-    <span class="kw">give</span> a + b
-<span class="kw">done</span>
-
-<span class="kw">make</span> <span class="fn">greet</span>(name)
-    <span class="kw">show</span> <span class="str">"Hello, "</span> + name
-<span class="kw">done</span>
-
-<span class="kw">show</span> <span class="fn">add</span>(<span class="num">5</span>, <span class="num">7</span>)   <span class="cmt">// 12</span>
-<span class="fn">greet</span>(<span class="str">"World"</span>)</code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">JavaScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">function</span> <span class="fn">add</span>(a, b) {
-    <span class="kw">return</span> a + b;
-}
-
-<span class="kw">function</span> <span class="fn">greet</span>(name) {
-    console.<span class="fn">log</span>(<span class="str">"Hello, "</span> + name);
-}
-
-console.<span class="fn">log</span>(<span class="fn">add</span>(<span class="num">5</span>, <span class="num">7</span>));   <span class="cmt">// 12</span>
-<span class="fn">greet</span>(<span class="str">"World"</span>);</code></pre>
-      </div>
-    </div>
-
-    <!-- Arrays -->
-    <h3 class="sub-heading"><i class="fa-solid fa-layer-group"></i> Arrays</h3>
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">PlainScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">remember</span> scores <span class="kw">as</span> [<span class="num">90</span>, <span class="num">85</span>, <span class="num">92</span>]
-<span class="kw">show</span> scores[<span class="num">0</span>]
-scores[<span class="num">1</span>] <span class="kw">becomes</span> <span class="num">95</span>
-
-<span class="kw">show</span> <span class="kw">first</span> player <span class="kw">from</span> players
-<span class="kw">show</span> <span class="kw">last</span> player <span class="kw">from</span> players
-<span class="kw">show</span> players length
-<span class="kw">add</span>(<span class="str">"Palmer"</span> <span class="kw">to</span> players)
-<span class="kw">remove</span>(<span class="str">"Rodri"</span> <span class="kw">from</span> players)</code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">JavaScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">let</span> scores = [<span class="num">90</span>, <span class="num">85</span>, <span class="num">92</span>];
-console.<span class="fn">log</span>(scores[<span class="num">0</span>]);
-scores[<span class="num">1</span>] = <span class="num">95</span>;
-
-console.<span class="fn">log</span>(players[<span class="num">0</span>]);
-console.<span class="fn">log</span>(players[players.length - <span class="num">1</span>]);
-console.<span class="fn">log</span>(players.length);
-players.<span class="fn">push</span>(<span class="str">"Palmer"</span>);
-players.<span class="fn">splice</span>(players.<span class="fn">indexOf</span>(<span class="str">"Rodri"</span>), <span class="num">1</span>);</code></pre>
-      </div>
-    </div>
-
-    <!-- Objects & Properties -->
-    <h3 class="sub-heading"><i class="fa-solid fa-cube"></i> Objects &amp; Properties</h3>
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">PlainScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">remember</span> user <span class="kw">as</span>
-    name    <span class="kw">is</span> <span class="str">"Ayokunle"</span>
-    age     <span class="kw">is</span> <span class="num">17</span>
-    country <span class="kw">is</span> <span class="str">"Nigeria"</span>
-<span class="kw">done</span>
-
-<span class="kw">show</span> user.name
-user.age <span class="kw">becomes</span> <span class="num">18</span>
-
-<span class="kw">show</span> name <span class="kw">of</span> user
-name <span class="kw">of</span> user <span class="kw">becomes</span> <span class="str">"Ayo"</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">JavaScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">let</span> user = {
-    <span class="str">"name"</span>:    <span class="str">"Ayokunle"</span>,
-    <span class="str">"age"</span>:     <span class="num">17</span>,
-    <span class="str">"country"</span>: <span class="str">"Nigeria"</span>
-};
-
-console.<span class="fn">log</span>(user.name);
-user.age = <span class="num">18</span>;
-
-console.<span class="fn">log</span>(user.name);
-user.name = <span class="str">"Ayo"</span>;</code></pre>
-      </div>
-    </div>
-    <div class="callout callout-info">
-      <i class="fa-solid fa-circle-info"></i>
-      <div class="callout-body">
-        <strong>Property chains</strong>
-        <p><code>of</code> chains right-to-left, so <code>city of address of customer</code> compiles to <code>customer.address.city</code>.</p>
-      </div>
-    </div>
-
-    <!-- Files -->
-    <h3 class="sub-heading" style="margin-top:2rem"><i class="fa-solid fa-file"></i> Files</h3>
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">PlainScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">remember</span> data <span class="kw">as</span> <span class="fn">read</span>(<span class="str">"users.txt"</span>)
-<span class="fn">write</span>(data <span class="kw">to</span> <span class="str">"output.txt"</span>)
-<span class="kw">show</span> <span class="fn">readFile</span>(<span class="str">"./config.json"</span>)</code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">JavaScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">let</span> data = <span class="fn">require</span>(<span class="str">'fs'</span>).<span class="fn">readFileSync</span>(<span class="str">'users.txt'</span>, <span class="str">'utf8'</span>);
-<span class="fn">require</span>(<span class="str">'fs'</span>).<span class="fn">writeFileSync</span>(<span class="str">'output.txt'</span>, data);
-console.<span class="fn">log</span>(<span class="fn">require</span>(<span class="str">'fs'</span>).<span class="fn">readFileSync</span>(<span class="str">'./config.json'</span>, <span class="str">'utf8'</span>));</code></pre>
-      </div>
-    </div>
-
-    <!-- Standard Library -->
-    <h3 class="sub-heading"><i class="fa-solid fa-box"></i> Standard Library</h3>
-    <p style="color:var(--muted);margin-bottom:.75rem">All standard library functions are available without any <code>use</code> or import statement.</p>
-    <div class="two-col-wide" style="margin-bottom:2rem">
-      <div>
-        <h4 style="margin-bottom:.5rem"><i class="fa-solid fa-terminal"></i> I/O &amp; System</h4>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>PlainScript</th><th>Compiles to</th></tr></thead>
-            <tbody>
-              <tr><td><code>print(x)</code></td><td><code>console.log(x)</code></td></tr>
-              <tr><td><code>show x</code></td><td><code>console.log(x)</code></td></tr>
-              <tr><td><code>env("KEY")</code></td><td><code>process.env["KEY"]</code></td></tr>
-              <tr><td><code>exit(code)</code></td><td><code>process.exit(code)</code></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div>
-        <h4 style="margin-bottom:.5rem"><i class="fa-solid fa-clock"></i> Time &amp; Utilities</h4>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>PlainScript</th><th>Compiles to</th></tr></thead>
-            <tbody>
-              <tr><td><code>time()</code></td><td><code>Date.now()</code></td></tr>
-              <tr><td><code>date()</code></td><td><code>new Date().toISOString()</code></td></tr>
-              <tr><td><code>sleep(ms)</code></td><td>Synchronous sleep via <code>Atomics.wait</code></td></tr>
-              <tr><td><code>uuid()</code></td><td><code>require('crypto').randomUUID()</code></td></tr>
-            </tbody>
-          </table>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">Compiled Output (JavaScript)</span>
+          </div>
+          <pre><code><span class="kw">let</span> name = <span class="str">"World"</span>;
+console.log(<span class="str">"Hello, "</span> + name + <span class="str">"!"</span>);</code></pre>
         </div>
       </div>
     </div>
-    <div class="two-col-wide" style="margin-bottom:2rem">
-      <div>
-        <h4 style="margin-bottom:.5rem"><i class="fa-solid fa-code"></i> JSON</h4>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>PlainScript</th><th>Compiles to</th></tr></thead>
-            <tbody>
-              <tr><td><code>jsonEncode(value)</code></td><td><code>JSON.stringify(value)</code></td></tr>
-              <tr><td><code>jsonDecode(string)</code></td><td><code>JSON.parse(string)</code></td></tr>
-            </tbody>
-          </table>
+  </section>
+
+  <!-- ═══════════════════════════ STATS ═══════════════════════════ -->
+  <section class="stats-row">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-number">40+</span>
+          <span class="stat-label">Keywords</span>
         </div>
-      </div>
-      <div>
-        <h4 style="margin-bottom:.5rem"><i class="fa-solid fa-font"></i> Strings &amp; Numbers</h4>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>PlainScript</th><th>Description</th></tr></thead>
-            <tbody>
-              <tr><td><code>length(x)</code></td><td>Length of a string or array</td></tr>
-              <tr><td><code>uppercase(x)</code></td><td>Convert to uppercase</td></tr>
-              <tr><td><code>lowercase(x)</code></td><td>Convert to lowercase</td></tr>
-              <tr><td><code>round(x)</code></td><td>Round to nearest integer</td></tr>
-              <tr><td><code>random()</code></td><td>Random float &mdash; <code>Math.random()</code></td></tr>
-            </tbody>
-          </table>
+        <div class="stat-item">
+          <span class="stat-number">35+</span>
+          <span class="stat-label">Built-in Functions</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">6</span>
+          <span class="stat-label">Versions</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">&lt; 1s</span>
+          <span class="stat-label">Compile Time</span>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- Imports -->
-    <h3 class="sub-heading"><i class="fa-solid fa-arrows-split-up-and-left"></i> Imports</h3>
-    <p style="color:var(--muted);margin-bottom:.75rem">Split a project across multiple <code>.pln</code> files using relative paths.</p>
-    <div class="code-block" style="margin-bottom:1rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">app.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="kw">import</span> <span class="str">"./math.pln"</span>
-<span class="kw">import</span> <span class="str">"./utils.pln"</span>
-
-<span class="kw">show</span> <span class="fn">add</span>(<span class="num">3</span>, <span class="num">4</span>)</code></pre>
-    </div>
-    <div class="callout callout-info">
-      <i class="fa-solid fa-circle-info"></i>
-      <div class="callout-body">
-        <strong>Import rules</strong>
-        <p>Paths must be relative (<code>./</code> or <code>../</code>). Files compile in dependency order &mdash; deepest first. Circular imports produce a friendly compiler error.</p>
-      </div>
-    </div>
-
-    <!-- JavaScript Gateway -->
-    <h3 class="sub-heading"><i class="fa-solid fa-bolt"></i> JavaScript Gateway</h3>
-    <p style="color:var(--muted);margin-bottom:.75rem">Run raw JavaScript blocks, read input with <code>ask</code>, and use any npm package &mdash; including hyphenated and scoped names.</p>
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">PlainScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+  <!-- ═══════════════════════════ FEATURES ═══════════════════════════ -->
+  <section id="language" class="section">
+    <div class="container">
+      <span class="section-tag">Language Features</span>
+      <h2 class="section-title">Built for developer happiness</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🧠</div>
+          <h3>Intent-Oriented</h3>
+          <p>Describe what you want. The compiler figures out the how.</p>
         </div>
-        <pre><code><span class="kw">remember</span> response <span class="kw">as javascript</span>
-    <span class="kw">const</span> res <span class="kw">= await</span> fetch(<span class="str">"https://api.example.com"</span>)
-    <span class="kw">const</span> data <span class="kw">= await</span> res.json()
-    <span class="kw">return</span> data
-<span class="kw">done</span>
-
-<span class="kw">ask</span> <span class="str">"What is your name?"</span> <span class="kw">as</span> name
-<span class="kw">show</span> <span class="str">"Hello, "</span> + name
-
-<span class="kw">use</span> node-fetch
-<span class="kw">use</span> @scope/package-name</code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">How it compiles</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+        <div class="feature-card">
+          <div class="feature-icon">🌐</div>
+          <h3>JavaScript Gateway</h3>
+          <p>Embed raw JS with the <code>javascript</code> keyword when you need low-level control.</p>
         </div>
-        <pre><code><span class="kw">let</span> response <span class="kw">= await</span> (<span class="kw">async</span> () =&gt; {
-    <span class="kw">const</span> res <span class="kw">= await</span> fetch(<span class="str">"https://api.example.com"</span>)
-    <span class="kw">const</span> data <span class="kw">= await</span> res.json()
-    <span class="kw">return</span> data
-})();
-
-<span class="kw">let</span> name <span class="kw">= await</span> __ask(<span class="str">"What is your name?"</span>);
-console.<span class="fn">log</span>(<span class="str">"Hello, "</span> + name);
-
-require(<span class="str">'node-fetch'</span>);
-require(<span class="str">'@scope/package-name'</span>);</code></pre>
+        <div class="feature-card">
+          <div class="feature-icon">📦</div>
+          <h3>Package System</h3>
+          <p><code>use express</code>, <code>use sqlite</code> — one line to import any npm package.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🗃️</div>
+          <h3>Built-in Database</h3>
+          <p><code>database</code>, <code>query</code>, <code>insert</code> — first-class SQLite with native or WebAssembly.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔧</div>
+          <h3>CLI Tools</h3>
+          <p><code>plainscript build</code>, <code>plainscript run</code>, <code>plainscript doctor</code> — everything you need.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📝</div>
+          <h3>Formatter</h3>
+          <p><code>plainscript fmt</code> auto-formats your code consistently.</p>
+        </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- WEB DEVELOPMENT                                                         -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="web">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-globe"></i> Web Development</div>
-    <h2 class="section-title">Express Developer Experience</h2>
-    <p class="section-lead">
-      Two styles of web server &mdash; choose the one that fits your mental model. Both compile to identical Express.js code.
-    </p>
+  <!-- ═══════════════════════════ EXAMPLES ═══════════════════════════ -->
+  <section id="examples" class="section section--alt">
+    <div class="container">
+      <span class="section-tag">See it in action</span>
+      <h2 class="section-title">PlainScript vs JavaScript</h2>
 
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Shorthand style</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+      <div class="compare-pair">
+        <h3 class="compare-title"><i class="fas fa-server"></i> Web Server</h3>
+        <div class="compare-grid">
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">PlainScript</span>
+            </div>
+            <pre><code><span class="kw">use</span> express
+
+<span class="kw">remember</span> app <span class="kw">as</span> <span class="fn">express</span>
+
+<span class="kw">when</span> someone <span class="kw">goes to</span> <span class="str">"/"</span>
+  <span class="fn">send</span> <span class="str">"Hello, World!"</span>
+
+<span class="kw">listen</span> <span class="num">3000</span></code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JavaScript (Express)</span>
+            </div>
+            <pre><code><span class="kw">const</span> express = <span class="fn">require</span>(<span class="str">"express"</span>);
+<span class="kw">const</span> app = <span class="fn">express</span>();
+
+app.<span class="fn">get</span>(<span class="str">"/"</span>, (req, res) =&gt; {
+  res.<span class="fn">send</span>(<span class="str">"Hello, World!"</span>);
+});
+
+app.<span class="fn">listen</span>(<span class="num">3000</span>);</code></pre>
+          </div>
         </div>
-        <pre><code><span class="kw">web app</span>
-
-<span class="kw">serve folder</span> <span class="str">"public"</span>
-
-<span class="kw">route</span> <span class="str">"/"</span>
-    <span class="kw">reply</span> <span class="str">"Hello from PlainScript!"</span>
-<span class="kw">done</span>
-
-<span class="kw">route</span> <span class="str">"/api/status"</span>
-    <span class="kw">reply json</span>
-        status  <span class="kw">is</span> <span class="str">"ok"</span>
-        version <span class="kw">is</span> <span class="str">"1.0"</span>
-    <span class="kw">done</span>
-<span class="kw">done</span>
-
-<span class="kw">start</span> <span class="num">3000</span></code></pre>
       </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Classic style &mdash; still supported</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+
+      <div class="compare-pair">
+        <h3 class="compare-title"><i class="fas fa-database"></i> Database</h3>
+        <div class="compare-grid">
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">PlainScript</span>
+            </div>
+            <pre><code><span class="kw">database</span> users
+
+<span class="kw">insert into</span> users <span class="kw">remember</span>
+  name <span class="kw">as</span> <span class="str">"Alice"</span>
+  age <span class="kw">as</span> <span class="num">30</span>
+
+<span class="kw">remember</span> result <span class="kw">as</span> <span class="fn">query</span> <span class="str">"SELECT * FROM users"</span>
+<span class="fn">show</span> result</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JavaScript (better-sqlite3)</span>
+            </div>
+            <pre><code><span class="kw">const</span> Database = <span class="fn">require</span>(<span class="str">"better-sqlite3"</span>);
+<span class="kw">const</span> db = <span class="kw">new</span> <span class="fn">Database</span>(<span class="str">"users.db"</span>);
+
+db.<span class="fn">prepare</span>(
+  <span class="str">"INSERT INTO users (name, age) VALUES (?, ?)"</span>
+).<span class="fn">run</span>(<span class="str">"Alice"</span>, <span class="num">30</span>);
+
+<span class="kw">const</span> result = db.<span class="fn">prepare</span>(
+  <span class="str">"SELECT * FROM users"</span>
+).<span class="fn">all</span>();
+console.<span class="fn">log</span>(result);</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ QUICKSTART ═══════════════════════════ -->
+  <section id="quickstart" class="section">
+    <div class="container">
+      <span class="section-tag">Get Started</span>
+      <h2 class="section-title">Up and running in 30 seconds</h2>
+      <div class="quickstart-steps">
+        <div class="quickstart-step">
+          <span class="step-number">1</span>
+          <div class="step-content">
+            <h3>Install</h3>
+            <div class="code-block code-block--copy">
+              <pre><code>npm install -g plainscript-lang</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="quickstart-step">
+          <span class="step-number">2</span>
+          <div class="step-content">
+            <h3>Create</h3>
+            <div class="code-block code-block--copy">
+              <pre><code>plainscript new my-app</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="quickstart-step">
+          <span class="step-number">3</span>
+          <div class="step-content">
+            <h3>Run</h3>
+            <div class="code-block code-block--copy">
+              <pre><code>plainscript run</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ CLI ═══════════════════════════ -->
+  <section id="cli" class="section section--alt">
+    <div class="container">
+      <span class="section-tag">Command Line</span>
+      <h2 class="section-title">Your development workflow</h2>
+      <div class="cli-grid">
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript new &lt;name&gt;</code>
+          <p>Scaffold a new PlainScript project.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript build</code>
+          <p>Compile .ps files to JavaScript.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript run</code>
+          <p>Build and execute the project.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript start</code>
+          <p>Start the project with file watching.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript check</code>
+          <p>Type-check without emitting output.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript fmt</code>
+          <p>Auto-format all PlainScript files.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript doctor</code>
+          <p>Diagnose environment and configuration.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript add &lt;pkg&gt;</code>
+          <p>Add a dependency to your project.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript remove &lt;pkg&gt;</code>
+          <p>Remove a dependency from your project.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript install</code>
+          <p>Install all project dependencies.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript update</code>
+          <p>Update dependencies to latest versions.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript help [cmd]</code>
+          <p>Show help for a command or all commands.</p>
+        </div>
+        <div class="cli-item">
+          <code class="cli-cmd">plainscript version</code>
+          <p>Print the installed PlainScript version.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ PACKAGES ═══════════════════════════ -->
+  <section id="packages" class="section">
+    <div class="container">
+      <span class="section-tag">Ecosystem</span>
+      <h2 class="section-title">Works with the npm ecosystem</h2>
+      <div class="code-block code-block--wide">
+        <div class="code-header">
+          <span class="code-lang">PlainScript</span>
         </div>
         <pre><code><span class="kw">use</span> express
+<span class="kw">use</span> better-sqlite3
+<span class="kw">use</span> chalk
+<span class="kw">use</span> lodash
+<span class="kw">use</span> axios
 
-<span class="kw">remember</span> app <span class="kw">as</span> <span class="fn">express</span>()
+<span class="kw">remember</span> app <span class="kw">as</span> <span class="fn">express</span>
+<span class="kw">remember</span> db <span class="kw">as</span> <span class="kw">new</span> <span class="fn">Database</span>(<span class="str">"app.db"</span>)
 
-<span class="kw">serve folder</span> <span class="str">"public"</span>
+<span class="fn">show</span> chalk.<span class="fn">green</span>(<span class="str">"Server starting..."</span>)
+<span class="fn">listen</span> <span class="num">3000</span></code></pre>
+      </div>
+      <p class="packages-note">Any npm package can be imported with the <code>use</code> keyword. PlainScript compiles to standard Node.js, so the entire npm ecosystem is available to you.</p>
+    </div>
+  </section>
 
-<span class="kw">when someone visits</span> <span class="str">"/"</span>
-    <span class="kw">reply</span> <span class="str">"Hello from PlainScript!"</span>
-<span class="kw">done</span>
-
-<span class="kw">when someone visits</span> <span class="str">"/api/status"</span>
-    <span class="kw">reply json</span>
-        status <span class="kw">is</span> <span class="str">"ok"</span>
-    <span class="kw">done</span>
-<span class="kw">done</span>
-
-<span class="kw">listen on</span> <span class="num">3000</span>
-    <span class="kw">show</span> <span class="str">"Server running"</span>
-<span class="kw">done</span></code></pre>
+  <!-- ═══════════════════════════ FAQ ═══════════════════════════ -->
+  <section id="faq" class="section section--alt">
+    <div class="container">
+      <span class="section-tag">FAQ</span>
+      <h2 class="section-title">Frequently asked questions</h2>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>What is PlainScript?</summary>
+          <p>PlainScript is an Intent-Oriented Programming Language (IOPL). Instead of writing imperative step-by-step instructions, you describe what you want to achieve and the compiler generates the equivalent JavaScript for you.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How is PlainScript different from JavaScript?</summary>
+          <p>PlainScript uses human-readable keywords like <code>remember</code>, <code>when</code>, <code>show</code>, and <code>plus</code> instead of traditional syntax. The compiler translates your intent-based code into standard JavaScript, so it runs anywhere JavaScript runs.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Can I use npm packages with PlainScript?</summary>
+          <p>Yes! Use the <code>use</code> keyword to import any npm package. PlainScript compiles to Node.js-compatible JavaScript, so the entire npm ecosystem is available.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Does PlainScript have built-in database support?</summary>
+          <p>Yes. PlainScript includes first-class SQLite support with keywords like <code>database</code>, <code>query</code>, and <code>insert</code>. It can use native SQLite or compile to WebAssembly for browser environments.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Can I mix PlainScript and JavaScript?</summary>
+          <p>Absolutely. Use the <code>javascript</code> keyword to embed raw JavaScript code directly within your PlainScript files when you need low-level control or want to use a specific JS API.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is PlainScript production-ready?</summary>
+          <p>PlainScript is currently in active development (v0.1.7). While it is stable enough for prototyping and small-to-medium projects, we recommend evaluating it carefully before using it in critical production systems.</p>
+        </details>
       </div>
     </div>
+  </section>
 
-    <h3 class="sub-heading"><i class="fa-solid fa-table-list"></i> Route reference</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Construct</th><th>Compiles to</th><th>Notes</th></tr></thead>
-        <tbody>
-          <tr><td><code>web app</code></td><td><code>const app = require('express')()</code></td><td>Shorthand bootstrapper</td></tr>
-          <tr><td><code>route "/"</code></td><td><code>app.get("/", (req, res) =&gt; { ... })</code></td><td>GET route</td></tr>
-          <tr><td><code>when someone visits "/"</code></td><td><code>app.get("/", (req, res) =&gt; { ... })</code></td><td>Classic alias</td></tr>
-          <tr><td><code>reply "Hello"</code></td><td><code>res.send("Hello")</code></td><td></td></tr>
-          <tr><td><code>reply json &hellip; done</code></td><td><code>res.json({ ... })</code></td><td></td></tr>
-          <tr><td><code>serve folder "public"</code></td><td><code>app.use(express.static("public"))</code></td><td></td></tr>
-          <tr><td><code>start 3000</code></td><td><code>app.listen(3000)</code></td><td>Shorthand</td></tr>
-          <tr><td><code>listen on 3000 &hellip; done</code></td><td><code>app.listen(3000, () =&gt; { ... })</code></td><td>Classic with callback</td></tr>
-          <tr><td><code>request</code></td><td><code>req</code></td><td>Inside route bodies</td></tr>
-          <tr><td><code>response</code></td><td><code>res</code></td><td>Inside route bodies</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3 class="sub-heading"><i class="fa-solid fa-route"></i> Routes &amp; REST APIs</h3>
-    <p style="color:var(--muted);margin-bottom:.75rem">Define GET, POST, PUT, and DELETE routes with parameterised paths.</p>
-    <div class="code-block" style="margin-bottom:1.5rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">api.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="kw">web app</span>
-
-<span class="kw">route</span> <span class="str">"/api/users"</span>
-    <span class="kw">reply json</span>
-        users <span class="kw">is</span> [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>]
-    <span class="kw">done</span>
-<span class="kw">done</span>
-
-<span class="kw">route</span> <span class="str">"/api/users/:id"</span>
-    <span class="kw">remember</span> id <span class="kw">as</span> request.params.id
-    <span class="kw">reply json</span>
-        user <span class="kw">is</span> id
-    <span class="kw">done</span>
-<span class="kw">done</span>
-
-<span class="kw">start</span> <span class="num">3000</span></code></pre>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- HTTP                                                                    -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="http">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-globe"></i> HTTP</div>
-    <h2 class="section-title">HTTP Fetch</h2>
-    <p class="section-lead">
-      Make HTTP requests with the <code>fetch</code> keyword. Responses are accessed with dot notation and method calls.
-    </p>
-
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">http.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+  <!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col footer-brand">
+          <a href="#" class="nav-brand">
+            <img src="logo.jpg" alt="PlainScript" class="footer-logo" />
+            <span class="logo-word">PlainScript</span>
+          </a>
+          <p>Write code that reads like plain English.</p>
         </div>
-        <pre><code><span class="kw">remember</span> response <span class="kw">as</span> <span class="kw">await</span> <span class="fn">fetch</span> <span class="str">"https://api.example.com/data"</span>
-
-<span class="kw">if</span> response <span class="kw">is</span> ok
-    <span class="kw">remember</span> data <span class="kw">as</span> response.<span class="fn">json</span>()
-    <span class="kw">show</span> data
-<span class="kw">otherwise</span>
-    <span class="kw">show</span> <span class="str">"Request failed"</span>
-<span class="kw">done</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Generated JavaScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">let</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">"https://api.example.com/data"</span>);
-
-<span class="kw">if</span> (response.ok) {
-    <span class="kw">let</span> data = <span class="kw">await</span> response.<span class="fn">json</span>();
-    console.<span class="fn">log</span>(data);
-} <span class="kw">else</span> {
-    console.<span class="fn">log</span>(<span class="str">"Request failed"</span>);
-}</code></pre>
-      </div>
-    </div>
-
-    <div class="callout callout-info">
-      <i class="fa-solid fa-circle-info"></i>
-      <div class="callout-body">
-        <strong>Response methods</strong>
-        <p>Access <code>response.json()</code>, <code>response.text()</code>, and <code>response.status</code> with dot notation. The <code>is ok</code> comparison checks <code>response.ok</code>.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- TELEGRAM                                                                -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="telegram">
-  <div class="container">
-    <div class="section-tag"><i class="fa-brands fa-telegram"></i> Telegram </div>
-    <h2 class="section-title">Telegram Bot</h2>
-    <p class="section-lead">
-      Declarative bot syntax compiles to a dependency-free, polling-based Telegram runtime &mdash; commands, pattern matching, inline keyboards, and callback buttons.
-    </p>
-
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">bot.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">remember</span> token <span class="kw">as</span> <span class="fn">env</span>(<span class="str">"BOT_TOKEN"</span>)
-
-<span class="kw">bot</span> token
-
-<span class="kw">when someone sends</span> <span class="str">"/start"</span>
-    <span class="kw">reply</span> <span class="str">"Hello from PlainScript!"</span>
-<span class="kw">done</span>
-
-<span class="cmt">// Inline keyboard buttons carry callback_data…</span>
-<span class="kw">when someone sends</span> <span class="str">"/menu"</span>
-    <span class="kw">reply</span> <span class="str">"Choose an option:"</span> <span class="kw">with buttons</span>
-        <span class="str">"About"</span> -&gt; <span class="str">"about"</span>,  <span class="str">"Help"</span> -&gt; <span class="str">"help"</span>
-    <span class="kw">done</span>
-<span class="kw">done</span>
-
-<span class="cmt">// …and pressing one executes its PlainScript handler.</span>
-<span class="kw">when someone clicks</span> <span class="str">"about"</span>
-    <span class="kw">reply</span> <span class="str">"You clicked about!"</span>
-<span class="kw">done</span>
-
-<span class="kw">start telegram bot</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Generated JavaScript (excerpt)</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">const</span> Telegram = (() =&gt; {
-  <span class="cmt">// zero dependencies — plain fetch() against the Bot API</span>
-  <span class="kw">let</span> token = process.env.TELEGRAM_BOT_TOKEN;
-  <span class="kw">const</span> <span class="fn">call</span> = <span class="kw">async</span> (method, params) =&gt; { <span class="cmt">/* … */</span> };
-
-  <span class="kw">async function</span> <span class="fn">createTelegramBot</span>(botToken) {
-    <span class="cmt">// lives inside the module, so the handler</span>
-    <span class="cmt">// registry and transport are in scope; the token you</span>
-    <span class="cmt">// pass is bound to every API call.</span>
-    token = resolved;
-    <span class="kw">return</span> {
-      <span class="fn">onCommand</span>:  (m, h) =&gt; handlers.command.push({ m, h }),
-      <span class="fn">onPattern</span>:  (m, h) =&gt; handlers.pattern.push({ m, h }),
-      <span class="fn">onCallback</span>: (m, h) =&gt; handlers.callback.push({ m, h }),
-      <span class="fn">start</span>: <span class="kw">async</span> () =&gt; { <span class="cmt">/* getUpdates loop */</span> },
-    };
-  }
-})();
-
-BOT = <span class="kw">await</span> Telegram.<span class="fn">createTelegramBot</span>(token);
-
-BOT.<span class="fn">onCommand</span>(<span class="str">"/start"</span>, <span class="kw">async</span> (ctx) =&gt; {
-    <span class="kw">await</span> Telegram.<span class="fn">sendMessage</span>(ctx.chatId, <span class="str">"Hello from PlainScript!"</span>);
-});
-
-BOT.<span class="fn">onCallback</span>(<span class="str">"about"</span>, <span class="kw">async</span> (ctx) =&gt; {
-    <span class="kw">await</span> Telegram.<span class="fn">sendMessage</span>(ctx.chatId, <span class="str">"You clicked about!"</span>);
-});
-
-<span class="kw">await</span> BOT.<span class="fn">start</span>();</code></pre>
-      </div>
-    </div>
-
-    <div class="callout callout-info">
-      <i class="fa-solid fa-circle-info"></i>
-      <div class="callout-body">
-        <strong>Aliases &amp; version ranges</strong>
-        <p>The bot factory now lives inside the generated <code>Telegram</code> module, so rendered inline buttons execute their PlainScript callbacks correctly, and the token passed to <code>bot "&hellip;"</code> is used for every API call even without <code>TELEGRAM_BOT_TOKEN</code>. A regression test runs a real button press through the generated runtime.</p>
-      </div>
-    </div>
-
-    <h3 class="sub-heading"><i class="fa-solid fa-table-list"></i> Telegram syntax reference</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>PlainScript</th><th>Behavior</th></tr></thead>
-        <tbody>
-          <tr><td><code>bot "&lt;token&gt;"</code></td><td>Create the bot; binds <code>BOT</code>. Falls back to <code>TELEGRAM_BOT_TOKEN</code>.</td></tr>
-          <tr><td><code>when someone sends "/cmd" ... done</code></td><td>Exact command handler.</td></tr>
-          <tr><td><code>when someone sends "pattern *x*" ... done</code></td><td>Regex pattern handler with captures.</td></tr>
-          <tr><td><code>when someone clicks "data" ... done</code></td><td>Inline-button callback handler (<code>callback_query</code>).</td></tr>
-          <tr><td><code>reply "&lt;text&gt;" with buttons ... done</code></td><td>Inline keyboard; each row maps <code>"Label" -&gt; "callback_data"</code>.</td></tr>
-          <tr><td><code>reply photo "&lt;url&gt;" [caption "&hellip;"]</code></td><td>Send a photo.</td></tr>
-          <tr><td><code>send message to chat ...</code></td><td>Proactive message to a known chat.</td></tr>
-          <tr><td><code>chats</code></td><td>List of chats seen by this bot.</td></tr>
-          <tr><td><code>start telegram bot</code></td><td>Start the long-polling loop.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- WHATSAPP                                                                -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="whatsapp">
-  <div class="container">
-    <div class="section-tag"><i class="fa-brands fa-whatsapp"></i> WhatsApp </div>
-    <h2 class="section-title">WhatsApp Bots</h2>
-    <p class="section-lead">
-      Link a real WhatsApp account by QR scan or pairing code and answer messages in near-English. Baileys powers it behind the scenes &mdash; detected and installed automatically, never imported in your source.
-    </p>
-
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">bot.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">whatsapp bot</span>
-    <span class="kw">auth</span> <span class="str">"session"</span>
-    <span class="kw">login pairing</span> <span class="str">"2348012345678"</span>
-
-    <span class="kw">on message</span>
-        <span class="kw">log message</span>
-
-        <span class="kw">if</span> message.text <span class="kw">is</span> <span class="str">"/start"</span>
-            <span class="kw">reply</span> <span class="str">"Welcome! Send /help for commands."</span>
-        <span class="kw">done</span>
-
-        <span class="cmt">// Backtick strings keep line breaks…</span>
-        <span class="kw">if</span> message.text <span class="kw">is</span> <span class="str">"/help"</span>
-            <span class="kw">reply</span> <span class="str">`Available commands:
-/start - greet you
-/help - this message`</span>
-        <span class="kw">done</span>
-    <span class="kw">done</span>
-<span class="kw">done</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Generated JavaScript (excerpt)</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="cmt">// Baileys runtime emitted by the compiler;</span>
-<span class="cmt">// the package is installed for you at build time.</span>
-<span class="kw">const</span> { __whatsappStart,
-        __whatsappOnMessage,
-        __whatsappReply } = (() =&gt; {
-  <span class="cmt">/* makeWASocket, useMultiFileAuthState … */</span>
-})();
-
-<span class="kw">await</span> __whatsappStart({
-    folder: <span class="str">"session"</span>,
-    login: { mode: <span class="str">'pairing'</span>, phone: <span class="str">"2348012345678"</span> }
-});
-
-__whatsappOnMessage(<span class="kw">async</span> (__waCtx) =&gt; {
-    console.<span class="fn">log</span>(__waCtx.message);
-    <span class="kw">if</span> (__waCtx.message.text === <span class="str">"/start"</span>) {
-        <span class="kw">await</span> __whatsappReply(__waCtx.chat,
-            <span class="str">"Welcome! Send /help for commands."</span>);
-    }
-});</code></pre>
-      </div>
-    </div>
-
-    <h3 class="sub-heading"><i class="fa-solid fa-link"></i> Linking a device</h3>
-    <p>
-      The first run prints either a QR code to render in your terminal or a pairing code like <code>D4PN-RX5C</code> to type into <em>WhatsApp &rarr; Settings &rarr; Linked Devices &rarr; Link with phone number instead</em>. Credentials are saved to your <code>auth</code> folder, so every later run reconnects silently until the device is unlinked.
-    </p>
-
-    <div class="callout callout-info">
-      <i class="fa-solid fa-circle-info"></i>
-      <div class="callout-body">
-        <strong>Lifecycle details</strong>
-        <p>Your own outgoing messages and status broadcasts are filtered out of handlers. Unexpected disconnects auto-reconnect after ~3 seconds; a deliberately logged-out device stops cleanly with a clear error. Phone numbers are validated at compile time (8&ndash;15 digits).</p>
-      </div>
-    </div>
-
-    <h3 class="sub-heading"><i class="fa-solid fa-table-list"></i> WhatsApp syntax reference</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>PlainScript</th><th>Behavior</th></tr></thead>
-        <tbody>
-          <tr><td><code>whatsapp bot ... done</code></td><td>Declare one bot and its handlers; it starts when the program runs.</td></tr>
-          <tr><td><code>auth "&lt;folder&gt;"</code></td><td>Credential folder persisted across restarts (default <code>plainscript-whatsapp-auth</code>).</td></tr>
-          <tr><td><code>login qr</code></td><td>Render a QR code in the terminal to link a device.</td></tr>
-          <tr><td><code>login pairing "&lt;number&gt;"</code></td><td>Print an 8-character pairing code for the given phone number.</td></tr>
-          <tr><td><code>on message ... done</code></td><td>Handler for every incoming text message.</td></tr>
-          <tr><td><code>log message</code></td><td>Print the normalized message record.</td></tr>
-          <tr><td><code>message.text &middot; chat &middot; sender &middot; name &middot; id &middot; time &middot; isGroup</code></td><td>Fields available inside the handler.</td></tr>
-          <tr><td><code>reply "&lt;value&gt;"</code></td><td>Answer the current chat; non-string values are sent as JSON.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- WEBSOCKET                                                               -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="websocket">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-plug"></i> WebSocket</div>
-    <h2 class="section-title">WebSocket Server</h2>
-    <p class="section-lead">
-      Build real-time WebSocket servers with the <code>websocket</code> keyword.
-    </p>
-
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">ws.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">use</span> ws
-
-<span class="kw">remember</span> server <span class="kw">as</span> <span class="kw">new</span> <span class="fn">WebSocketServer</span>(port: <span class="num">8080</span>)
-
-<span class="kw">when someone connects</span>
-    <span class="kw">show</span> <span class="str">"Client connected"</span>
-
-    <span class="kw">when they send</span> message
-        <span class="kw">show</span> <span class="str">"Received: "</span> + message
-        <span class="kw">send</span> <span class="str">"Echo: "</span> + message
-    <span class="kw">done</span>
-
-    <span class="kw">when they disconnect</span>
-        <span class="kw">show</span> <span class="str">"Client disconnected"</span>
-    <span class="kw">done</span>
-<span class="kw">done</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Generated JavaScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">const</span> { <span class="fn">WebSocketServer</span> } = <span class="fn">require</span>(<span class="str">'ws'</span>);
-
-<span class="kw">let</span> server = <span class="kw">new</span> <span class="fn">WebSocketServer</span>({ port: <span class="num">8080</span> });
-
-server.<span class="fn">on</span>(<span class="str">'connection'</span>, (ws) =&gt; {
-    console.<span class="fn">log</span>(<span class="str">"Client connected"</span>);
-
-    ws.<span class="fn">on</span>(<span class="str">'message'</span>, (message) =&gt; {
-        console.<span class="fn">log</span>(<span class="str">"Received: "</span> + message);
-        ws.<span class="fn">send</span>(<span class="str">"Echo: "</span> + message);
-    });
-
-    ws.<span class="fn">on</span>(<span class="str">'close'</span>, () =&gt; {
-        console.<span class="fn">log</span>(<span class="str">"Client disconnected"</span>);
-    });
-});</code></pre>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- SCHEDULING                                                              -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="scheduling">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-clock"></i> Scheduling</div>
-    <h2 class="section-title">Cron Scheduling</h2>
-    <p class="section-lead">
-      Schedule recurring tasks with cron-style syntax using the <code>schedule</code> keyword.
-    </p>
-
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">cron.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">use</span> node-cron
-
-<span class="kw">schedule</span> <span class="str">"0 * * * *"</span>
-    <span class="kw">show</span> <span class="str">"Hourly task ran at "</span> + <span class="fn">date</span>()
-<span class="kw">done</span>
-
-<span class="kw">schedule</span> <span class="str">"*/5 * * * *"</span>
-    <span class="kw">show</span> <span class="str">"Every 5 minutes"</span>
-<span class="kw">done</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Generated JavaScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">const</span> cron = <span class="fn">require</span>(<span class="str">'node-cron'</span>);
-
-cron.<span class="fn">schedule</span>(<span class="str">"0 * * * *"</span>, () =&gt; {
-    console.<span class="fn">log</span>(<span class="str">"Hourly task ran at "</span> + <span class="kw">new</span> Date().<span class="fn">toISOString</span>());
-});
-
-cron.<span class="fn">schedule</span>(<span class="str">"*/5 * * * *"</span>, () =&gt; {
-    console.<span class="fn">log</span>(<span class="str">"Every 5 minutes"</span>);
-});</code></pre>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- EMAIL                                                                   -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="email">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-envelope"></i> Email</div>
-    <h2 class="section-title">Send Email</h2>
-    <p class="section-lead">
-      Send emails with the <code>send email</code> rule. Configure SMTP credentials through environment variables.
-    </p>
-
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">email.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">remember</span> mailer <span class="kw">as</span> nodemailer
-    host <span class="kw">is</span> <span class="str">"smtp.example.com"</span>
-    port <span class="kw">is</span> <span class="num">587</span>
-    user <span class="kw">is</span> <span class="fn">env</span>(<span class="str">"SMTP_USER"</span>)
-    pass <span class="kw">is</span> <span class="fn">env</span>(<span class="str">"SMTP_PASS"</span>)
-<span class="kw">done</span>
-
-<span class="kw">send email</span>
-    from    <span class="kw">is</span> <span class="str">"bot@example.com"</span>
-    to      <span class="kw">is</span> <span class="str">"user@example.com"</span>
-    subject <span class="kw">is</span> <span class="str">"Hello from PlainScript"</span>
-    body    <span class="kw">is</span> <span class="str">"This email was sent from a PlainScript program."</span>
-<span class="kw">done</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Generated JavaScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">let</span> mailer = <span class="fn">require</span>(<span class="str">'nodemailer'</span>).<span class="fn">createTransport</span>({
-    host: <span class="str">"smtp.example.com"</span>,
-    port: <span class="num">587</span>,
-    auth: {
-        user: process.env[<span class="str">"SMTP_USER"</span>],
-        pass: process.env[<span class="str">"SMTP_PASS"</span>]
-    }
-});
-
-<span class="kw">await</span> mailer.<span class="fn">sendMail</span>({
-    from:    <span class="str">"bot@example.com"</span>,
-    to:      <span class="str">"user@example.com"</span>,
-    subject: <span class="str">"Hello from PlainScript"</span>,
-    text:    <span class="str">"This email was sent from a PlainScript program."</span>
-});</code></pre>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- DATABASE                                                                -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="database">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-database"></i> Database</div>
-    <h2 class="section-title">SQLite Developer Experience</h2>
-    <p class="section-lead">
-      Inline SQL blocks compile directly to <code>better-sqlite3</code> calls. No ORM. No query builder. Just SQL written naturally inside your PlainScript program.
-    </p>
-
-    <div class="two-col-wide" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">database.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">database</span> <span class="str">"app.db"</span>
-
-<span class="kw">execute</span>
-    CREATE TABLE IF NOT EXISTS users (
-        id   INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        age  INTEGER
-    )
-<span class="kw">done</span>
-
-<span class="kw">insert</span>
-    INSERT INTO users (name, age)
-    VALUES ('Alice', 28)
-<span class="kw">done</span>
-
-<span class="kw">query</span>
-    SELECT * FROM users ORDER BY name
-<span class="kw">done</span>
-
-<span class="kw">update</span>
-    UPDATE users SET age = 29
-    WHERE name = 'Alice'
-<span class="kw">done</span>
-
-<span class="kw">delete</span>
-    DELETE FROM users WHERE id = 1
-<span class="kw">done</span></code></pre>
-      </div>
-      <div>
-        <h3 class="sub-heading" style="margin-top:0"><i class="fa-solid fa-table-list"></i> SQL block reference</h3>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>PlainScript</th><th>Compiles to</th></tr></thead>
-            <tbody>
-              <tr><td><code>database "file.db"</code></td><td><code>const db = new Database("file.db")</code></td></tr>
-              <tr><td><code>query &hellip; done</code></td><td><code>db.prepare(`&hellip;`).all()</code></td></tr>
-              <tr><td><code>insert &hellip; done</code></td><td><code>db.prepare(`&hellip;`).run()</code></td></tr>
-              <tr><td><code>update &hellip; done</code></td><td><code>db.prepare(`&hellip;`).run()</code></td></tr>
-              <tr><td><code>delete &hellip; done</code></td><td><code>db.prepare(`&hellip;`).run()</code></td></tr>
-              <tr><td><code>execute &hellip; done</code></td><td><code>db.exec(`&hellip;`)</code></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="callout callout-info" style="margin-top:1.25rem">
-          <i class="fa-solid fa-circle-info"></i>
-          <div class="callout-body">
-            <strong>Classic style also works</strong>
-            <p>You can also <code>use sqlite</code> and call <code>sqlite("database.db")</code> directly if you prefer the classic approach.</p>
-          </div>
-        </div>
-
-        <div class="callout callout-tip" style="margin-top:.75rem">
-          <i class="fa-solid fa-circle-check"></i>
-          <div class="callout-body">
-            <strong>Zero configuration</strong>
-            <p>SQLite files are created automatically if they don&rsquo;t exist. No server to start, no credentials to manage.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- OCR                                                                     -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="ocr">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-eye"></i> Vision </div>
-    <h2 class="section-title">OCR &mdash; read text out of images</h2>
-    <p class="section-lead">
-      One sentence extracts text from scans, screenshots, and photos. Tesseract.js does the work; PlainScript keeps it out of your source.
-    </p>
-
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">ocr.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="cmt">// Extract text — mirrors ask "... as name"</span>
-<span class="kw">ocr</span> <span class="str">"scan.png"</span> <span class="kw">as</span> text
-<span class="kw">show</span> text
-
-<span class="cmt">// Pick a language pack (default: "eng")</span>
-<span class="kw">ocr</span> <span class="str">"brief.png"</span> <span class="kw">as</span> inhalt <span class="kw">using</span> <span class="str">"deu"</span>
-<span class="kw">show</span> inhalt
-
-<span class="cmt">// Combine packs, use any expression as the image</span>
-<span class="kw">remember</span> shot <span class="kw">as</span> <span class="str">"receipts/receipt-01.png"</span>
-<span class="kw">ocr</span> shot <span class="kw">as</span> total <span class="kw">using</span> <span class="str">"deu+eng"</span>
-
-<span class="kw">if</span> total <span class="kw">contains</span> <span class="str">"INVOICE"</span>
-    <span class="kw">show</span> <span class="str">"invoice detected"</span>
-<span class="kw">done</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Generated JavaScript</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">const</span> { <span class="fn">createWorker</span> } = <span class="fn">require</span>(<span class="str">'tesseract.js'</span>);
-
-<span class="kw">async function</span> <span class="fn">__ocr</span>(imagePath, lang) {
-    <span class="kw">const</span> worker = <span class="kw">await</span> <span class="fn">createWorker</span>(lang || <span class="str">'eng'</span>);
-    <span class="kw">try</span> {
-        <span class="kw">const</span> { data } = <span class="kw">await</span> worker.<span class="fn">recognize</span>(imagePath);
-        <span class="kw">return</span> data.text;
-    } <span class="kw">finally</span> {
-        <span class="kw">await</span> worker.<span class="fn">terminate</span>();
-    }
-}
-
-<span class="kw">let</span> text = <span class="kw">await</span> <span class="fn">__ocr</span>(<span class="str">"scan.png"</span>, <span class="str">"eng"</span>);
-console.<span class="fn">log</span>(text);</code></pre>
-      </div>
-    </div>
-
-    <div class="two-col">
-      <div>
-        <h3 class="sub-heading"><i class="fa-solid fa-table-list"></i> Forms</h3>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>PlainScript</th><th>Behavior</th></tr></thead>
-            <tbody>
-              <tr><td><code>ocr "&lt;image&gt;" as &lt;name&gt;</code></td><td>Extract text into <code>&lt;name&gt;</code> (English by default).</td></tr>
-              <tr><td><code>... using "&lt;lang&gt;"</code></td><td>Tesseract language pack: <code>"deu"</code>, <code>"deu+eng"</code>, &hellip;</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div>
-        <div class="callout callout-info" style="margin-top:1.9rem">
-          <i class="fa-solid fa-circle-info"></i>
-          <div class="callout-body">
-            <strong>tesseract.js stays out of your source</strong>
-            <p>The implementation dependency is wired automatically: <code>plainscript install</code>, <code>plainscript run</code>, and <code>plainscript build</code> detect <code>ocr</code> statements and fetch <code>tesseract.js</code> for you. The statement is async like <code>ask</code> — top-level use wraps the program, and using it inside a function makes that function async.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- PACKAGES                                                                -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="packages">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-cubes"></i> Packages</div>
-    <h2 class="section-title">npm, without the boilerplate</h2>
-    <p class="section-lead">
-      PlainScript wraps npm&rsquo;s package manager to keep dependency management natural and minimal. Any npm package can be used in a PlainScript project.
-    </p>
-
-    <div class="two-col" style="margin-bottom:2rem">
-      <div>
-        <h3 class="sub-heading"><i class="fa-solid fa-terminal"></i> Package commands</h3>
-        <div class="cmd-strip"><span class="prm">$</span> <span class="cmd">plainscript add</span> <span class="arg">express</span></div>
-        <div class="cmd-strip"><span class="prm">$</span> <span class="cmd">plainscript remove</span> <span class="arg">express</span></div>
-        <div class="cmd-strip"><span class="prm">$</span> <span class="cmd">plainscript install</span></div>
-        <div class="cmd-strip"><span class="prm">$</span> <span class="cmd">plainscript start</span></div>
-
-        <h3 class="sub-heading" style="margin-top:1.5rem"><i class="fa-solid fa-folder-open"></i> Project layout</h3>
-        <p style="font-size:.95rem;line-height:1.6;color:#94a3b8;margin-bottom:1rem">PlainScript uses a zero-config convention. Place your source files in <code>src/</code> and compiled output goes to <code>dist/</code>. The entry point is <code>src/app.pln</code> by default. No configuration file is needed.</p>
-        <div class="code-block">
-          <div class="code-block-header">
-            <div class="code-block-dots"><span></span><span></span><span></span></div>
-            <span class="code-block-title">Default project structure</span>
-            <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-          </div>
-          <pre><code>myapp/
-  src/
-    app.pln        <span class="cmt">// entry point</span>
-    utils.pln      <span class="cmt">// other modules</span>
-  dist/            <span class="cmt">// compiled output (auto-generated)</span></code></pre>
-        </div>
-      </div>
-      <div>
-        <h3 class="sub-heading"><i class="fa-solid fa-plug"></i> Dependency detection</h3>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>PlainScript</th><th>Compiles to</th></tr></thead>
-            <tbody>
-              <tr><td><code>use express</code></td><td><code>const express = require('express')</code></td></tr>
-              <tr><td><code>use sqlite</code></td><td><code>const Database = require('better-sqlite3')</code></td></tr>
-              <tr><td><code>use fs</code></td><td><code>const fs = require('fs')</code></td></tr>
-              <tr><td><code>use path</code></td><td><code>const path = require('path')</code></td></tr>
-              <tr><td><code>web app</code></td><td><code>express</code> (automatic)</td></tr>
-              <tr><td><code>ocr &hellip;</code></td><td><code>tesseract.js</code> (automatic)</td></tr>
-              <tr><td><code>whatsapp bot</code> </td><td><code>@whiskeysockets/baileys</code> + <code>qrcode-terminal</code> (automatic)</td></tr>
-              <tr><td><code>use axios</code></td><td><code>const axios = require('axios')</code></td></tr>
-              <tr><td><code>use node-fetch</code></td><td><code>require('node-fetch')</code></td></tr>
-              <tr><td><code>use @scope/package</code></td><td><code>require('@scope/package')</code></td></tr>
-              <tr><td><code>use node-fetch as fetch</code> </td><td><code>const fetch = require('node-fetch')</code></td></tr>
-              <tr><td><code>use left-pad@^1.3.0</code> </td><td><code>require('left-pad')</code> &middot; installs <code>left-pad@^1.3.0</code></td></tr>
-              <tr><td><code>use dotenv@16 as env</code> </td><td><code>const env = require('dotenv')</code></td></tr>
-              <tr><td><code>use &lt;any npm&gt;</code></td><td><code>require('&lt;package&gt;')</code></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="callout callout-info" style="margin-top:1rem">
-          <i class="fa-solid fa-tag"></i>
-          <div class="callout-body">
-            <strong>Aliases &amp; version ranges</strong>
-            <p>Hyphenated and scoped names can now bind to a variable with <code>as &lt;name&gt;</code>, and any specifier may carry a version range (<code>@^1.3.0</code>, <code>@~2</code>, <code>@*</code>). Ranges flow through to installation; <code>require()</code> always uses the bare name. Aliasing PlainScript&rsquo;s built-in runtime packages (<code>express</code>, <code>sqlite</code>, &hellip;) produces a friendly error instead of silent breakage.</p>
-          </div>
-        </div>
-
-        <div class="callout callout-warning" style="margin-top:1rem">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-          <div class="callout-body">
-            <strong>Automatic runtime dependencies</strong>
-            <p>PlainScript detects <code>use</code>, <code>web app</code>, <code>ocr</code>, and database dependencies. <code>plainscript install</code>, <code>plainscript run</code>, and <code>plainscript build</code> install only missing npm packages &mdash; checked by bare name, installed with their full <code>name@range</code> specifier. Built-in Node modules are never installed.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- MULTI-FILE PROJECTS                                                     -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="multi-file">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-folder-tree"></i> Multi-file Projects</div>
-    <h2 class="section-title">Imports &amp; Dependency Ordering</h2>
-    <p class="section-lead">
-      Split a project across multiple <code>.pln</code> files. The compiler resolves dependencies automatically and compiles in the correct order.
-    </p>
-
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Project structure</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code>myapp/
-  src/
-    app.pln         <span class="cmt">// entry point</span>
-    math.pln        <span class="cmt">// helper functions</span>
-    utils.pln       <span class="cmt">// utility functions</span>
-  package.json      <span class="cmt">// npm scripts: build, start</span>
-  dist/             <span class="cmt">// generated JavaScript</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">app.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">import</span> <span class="str">"./math.pln"</span>
-<span class="kw">import</span> <span class="str">"./utils.pln"</span>
-
-<span class="kw">show</span> <span class="fn">add</span>(<span class="num">3</span>, <span class="num">4</span>)
-<span class="kw">show</span> <span class="fn">uppercase</span>(<span class="str">"hello"</span>)</code></pre>
-      </div>
-    </div>
-
-    <div class="callout callout-info">
-      <i class="fa-solid fa-circle-info"></i>
-      <div class="callout-body">
-        <strong>Import rules</strong>
-        <p>Paths must be relative (<code>./</code> or <code>../</code>). Files compile in dependency order &mdash; deepest first. Circular imports produce a friendly compiler error.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- CLI REFERENCE                                                           -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="cli">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-terminal"></i> CLI Reference</div>
-    <h2 class="section-title">All Commands</h2>
-    <p class="section-lead">
-      Everything the PlainScript compiler can do, from a single unified CLI.
-    </p>
-
-    <div class="two-col-wide" style="margin-bottom:2rem">
-      <div>
-        <h3 class="sub-heading" style="margin-top:0"><i class="fa-solid fa-hammer"></i> Core</h3>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Command</th><th>Description</th></tr></thead>
-            <tbody>
-              <tr><td><code>plainscript run &lt;file.pln&gt;</code></td><td>Install missing dependencies, compile, and execute</td></tr>
-              <tr><td><code>plainscript build &lt;file.pln&gt;</code></td><td>Install missing dependencies and compile to <code>.js</code></td></tr>
-              <tr><td><code>plainscript check &lt;file.pln&gt;</code></td><td>Syntax check &mdash; exits 0 or 1</td></tr>
-              <tr><td><code>plainscript fmt &lt;file.pln&gt;</code></td><td>Format source in-place</td></tr>
-              <tr><td><code>plainscript new [name]</code></td><td>Scaffold a new project</td></tr>
-              <tr><td><code>plainscript start</code></td><td>Run <code>src/app.pln</code> and execute its <code>dist/</code> output</td></tr>
-              <tr><td><code>plainscript doctor</code></td><td>Check the PlainScript environment and project dependencies</td></tr>
-              <tr><td><code>plainscript version</code></td><td>Print the compiler version</td></tr>
-              <tr><td><code>plainscript help</code></td><td>Show help text</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <h3 class="sub-heading" style="margin-top:1.5rem"><i class="fa-solid fa-cubes"></i> Packages</h3>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Command</th><th>Description</th></tr></thead>
-            <tbody>
-              <tr><td><code>plainscript install</code></td><td>Detect and install missing runtime dependencies</td></tr>
-              <tr><td><code>plainscript add &lt;pkg&gt;</code></td><td>Install a package and record it</td></tr>
-              <tr><td><code>plainscript remove &lt;pkg&gt;</code></td><td>Uninstall a package</td></tr>
-              <tr><td><code>plainscript update</code></td><td>Update all installed packages</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- BACKEND SERVICES                                                        -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="backend-services">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-server"></i> Backend Services</div>
-    <h2 class="section-title">Backend Services</h2>
-    <p class="section-lead">
-      Everything a backend needs, compiled deterministically — portable databases, an HTTP client, passwords and tokens, sessions, uploads, cookies, rate limiting, Google OAuth, custom 404s, error handling and retries. No rules, no AI, no hidden codegen.
-    </p>
-
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">sessions.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">web app</span>
-<span class="kw">enable sessions</span> <span class="str">"a-long-random-secret"</span>
-
-<span class="kw">route post</span> <span class="str">"/login"</span>
-    user <span class="kw">of session of request becomes</span> username <span class="kw">of body of request</span>
-    <span class="kw">reply</span> <span class="str">"welcome"</span>
-<span class="kw">done</span>
-
-<span class="kw">route post</span> <span class="str">"/logout"</span>
-    <span class="kw">destroy session</span>
-    <span class="kw">reply</span> <span class="str">"bye"</span>
-<span class="kw">done</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">client.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">remember</span> r <span class="kw">as get</span> <span class="str">"https://api.example.com/users"</span>
-
-<span class="kw">if</span> ok <span class="kw">of</span> r
-    <span class="kw">show</span> status <span class="kw">of</span> r
-    <span class="kw">show</span> data <span class="kw">of</span> r
-<span class="kw">done</span></code></pre>
-      </div>
-    </div>
-
-    <div class="feature-grid" style="margin-bottom:2rem">
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-database"></i></div>
-        <h4>Portable databases</h4>
-        <p><code>database "app.db"</code> probes the native driver and falls back to WebAssembly SQLite (<code>sql.js</code>). Pin it with <code>using "native"</code> or <code>using "wasm"</code>.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-lock"></i></div>
-        <h4>Passwords and tokens</h4>
-        <p>scrypt hashing with <code>hashPassword</code>/<code>checkPassword</code>; HMAC-signed tokens with expiry via <code>createToken</code>/<code>readToken</code>.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-file-arrow-up"></i></div>
-        <h4>File uploads</h4>
-        <p><code>accept uploads limit "5 MB" allow [...] folder "..."</code>; files surface as records with name, type, size, data and path (HTTP 413/415 enforced).</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-gauge-high"></i></div>
-        <h4>Rate limiting and API keys</h4>
-        <p><code>limit requests to 100 per minute</code> per-IP sliding window; <code>require api key from env("API_KEY")</code> fails closed.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-brands fa-google"></i></div>
-        <h4>Google OAuth</h4>
-        <p>A <code>google oauth</code> block registers redirect and callback endpoints and stores the signed-in user on the session.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-rotate-left"></i></div>
-        <h4>Error handling and retries</h4>
-        <p><code>try ... recover ... done</code> catches failures; <code>retry 3 times every 5 seconds</code> re-runs flaky operations until they succeed.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- SECURITY                                                                -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="security">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-shield-halved"></i> Security</div>
-    <h2 class="section-title">Security Model</h2>
-    <p class="section-lead">
-      PlainScript compiles deterministically — the JavaScript you run is the JavaScript you can read. The compiler adds multiple layers of validation so projects stay safe and predictable.
-    </p>
-
-    <div class="feature-grid" style="margin-bottom:2rem">
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-code"></i></div>
-        <h4>Readable output</h4>
-        <p>Every construct compiles to plain, inspectable JavaScript. Nothing hidden, nothing generated behind your back — <code>plainscript build</code> shows you exactly what will run.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-ban"></i></div>
-        <h4>Dependency restrictions</h4>
-        <p>Packages referenced by <code>use</code> must be declared and installed. Missing dependencies stop compilation with a friendly error instead of failing at runtime.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-bug-slash"></i></div>
-        <h4>Teaching errors</h4>
-        <p>The compiler rejects ambiguous or invalid programs at compile time with clear messages — including route-only features used outside routes and sessions used without <code>enable sessions</code>.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-key"></i></div>
-        <h4>Environment secrets</h4>
-        <p>API keys and tokens are read from environment variables via <code>env()</code> at runtime. Secret values never live in PlainScript source code.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-file-shield"></i></div>
-        <h4>.env support</h4>
-        <p>PlainScript loads <code>.env</code> files automatically via <code>dotenv</code>. Environment variables are available through <code>env("KEY")</code> in PlainScript code.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-shield-halved"></i></div>
-        <h4>Hardened web primitives</h4>
-        <p>Passwords use salted scrypt with constant-time verification, tokens are HMAC-signed with expiry, API-key checks fail closed, and sessions ride HttpOnly cookies.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- EXAMPLES                                                                -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="examples">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-terminal"></i> Examples</div>
-    <h2 class="section-title">PlainScript in action</h2>
-    <p class="section-lead">
-      Real programs written in PlainScript. Every example compiles to clean, readable JavaScript.
-    </p>
-
-    <!-- 1. CLI Hello World -->
-    <h3 class="sub-heading"><i class="fa-solid fa-hand-sparkles"></i> CLI Hello World</h3>
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">hello.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">remember</span> name <span class="kw">as</span> <span class="str">"World"</span>
-<span class="kw">show</span> <span class="str">"Hello, "</span> + name</code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Terminal</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="prm">$</span> plainscript run hello.pln
-Hello, World!</code></pre>
-      </div>
-    </div>
-
-    <!-- 2. Calculator -->
-    <h3 class="sub-heading"><i class="fa-solid fa-calculator"></i> Calculator</h3>
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">calc.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">make</span> <span class="fn">add</span>(a, b)
-    <span class="kw">give</span> a + b
-<span class="kw">done</span>
-
-<span class="kw">make</span> <span class="fn">multiply</span>(a, b)
-    <span class="kw">give</span> a * b
-<span class="kw">done</span>
-
-<span class="kw">show</span> <span class="fn">add</span>(<span class="num">5</span>, <span class="num">3</span>)
-<span class="kw">show</span> <span class="fn">multiply</span>(<span class="num">4</span>, <span class="num">7</span>)</code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">Terminal</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="prm">$</span> plainscript run calc.pln
-8
-28</code></pre>
-      </div>
-    </div>
-
-    <!-- 3. File Processing -->
-    <h3 class="sub-heading"><i class="fa-solid fa-file-lines"></i> File Processing</h3>
-    <div class="code-block" style="margin-bottom:2rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">files.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="kw">remember</span> data <span class="kw">as</span> <span class="fn">read</span>(<span class="str">"input.txt"</span>)
-<span class="kw">remember</span> upper <span class="kw">as</span> <span class="fn">uppercase</span>(data)
-<span class="fn">write</span>(upper <span class="kw">to</span> <span class="str">"output.txt"</span>)
-<span class="kw">show</span> <span class="str">"File processed. Lines: "</span> + <span class="fn">length</span>(data)</code></pre>
-    </div>
-
-    <!-- 4. REST API -->
-    <h3 class="sub-heading"><i class="fa-solid fa-server"></i> REST API</h3>
-    <div class="code-block" style="margin-bottom:2rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">api.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="kw">web app</span>
-
-<span class="kw">remember</span> todos <span class="kw">as</span> []
-
-<span class="kw">route</span> <span class="str">"/api/todos"</span>
-    <span class="kw">reply json</span>
-        todos <span class="kw">is</span> todos
-    <span class="kw">done</span>
-<span class="kw">done</span>
-
-<span class="kw">route</span> <span class="str">"/"</span>
-    <span class="kw">reply</span> <span class="str">"Todo API running"</span>
-<span class="kw">done</span>
-
-<span class="kw">start</span> <span class="num">3000</span></code></pre>
-    </div>
-
-    <!-- 5. REST API fetching multiple APIs -->
-    <h3 class="sub-heading"><i class="fa-solid fa-arrows-rotate"></i> Fetching Multiple APIs</h3>
-    <div class="code-block" style="margin-bottom:2rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">multi-fetch.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="kw">remember</span> users <span class="kw">as</span> <span class="kw">await</span> <span class="fn">fetch</span> <span class="str">"https://jsonplaceholder.typicode.com/users"</span>
-<span class="kw">remember</span> posts <span class="kw">as</span> <span class="kw">await</span> <span class="fn">fetch</span> <span class="str">"https://jsonplaceholder.typicode.com/posts"</span>
-
-<span class="kw">if</span> users <span class="kw">is</span> ok <span class="kw">and</span> posts <span class="kw">is</span> ok
-    <span class="kw">remember</span> userData <span class="kw">as</span> users.<span class="fn">json</span>()
-    <span class="kw">remember</span> postData <span class="kw">as</span> posts.<span class="fn">json</span>()
-    <span class="kw">show</span> <span class="str">"Users: "</span> + <span class="fn">length</span>(userData)
-    <span class="kw">show</span> <span class="str">"Posts: "</span> + <span class="fn">length</span>(postData)
-<span class="kw">otherwise</span>
-    <span class="kw">show</span> <span class="str">"One or more API calls failed"</span>
-<span class="kw">done</span></code></pre>
-    </div>
-
-    <!-- 6. Telegram Bot -->
-    <h3 class="sub-heading"><i class="fa-brands fa-telegram"></i> Telegram Bot</h3>
-    <div class="code-block" style="margin-bottom:2rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">telegram.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="kw">remember</span> token <span class="kw">as</span> <span class="fn">env</span>(<span class="str">"BOT_TOKEN"</span>)
-<span class="kw">remember</span> bot <span class="kw">as</span> telegram bot with token
-
-<span class="kw">when someone sends</span> <span class="str">"/start"</span>
-    <span class="kw">reply</span> <span class="str">"Welcome to the PlainScript bot!"</span>
-<span class="kw">done</span>
-
-<span class="kw">when someone sends</span> <span class="str">"/echo"</span>
-    <span class="kw">reply</span> <span class="str">"You said: "</span> + message
-<span class="kw">done</span></code></pre>
-    </div>
-
-    <!-- 7. WebSocket Server -->
-    <h3 class="sub-heading"><i class="fa-solid fa-plug"></i> WebSocket Server</h3>
-    <div class="code-block" style="margin-bottom:2rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">ws.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="kw">use</span> ws
-
-<span class="kw">remember</span> server <span class="kw">as</span> <span class="kw">new</span> <span class="fn">WebSocketServer</span>(port: <span class="num">8080</span>)
-
-<span class="kw">when someone connects</span>
-    <span class="kw">show</span> <span class="str">"Client connected"</span>
-    <span class="kw">when they send</span> message
-        <span class="kw">send</span> <span class="str">"Echo: "</span> + message
-    <span class="kw">done</span>
-<span class="kw">done</span></code></pre>
-    </div>
-
-    <!-- 8. Scheduled Task -->
-    <h3 class="sub-heading"><i class="fa-solid fa-clock"></i> Scheduled Task</h3>
-    <div class="code-block" style="margin-bottom:2rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">cron.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="kw">use</span> node-cron
-
-<span class="kw">schedule</span> <span class="str">"0 9 * * *"</span>
-    <span class="kw">show</span> <span class="str">"Daily 9am task ran at "</span> + <span class="fn">date</span>()
-<span class="kw">done</span></code></pre>
-    </div>
-
-    <!-- 9. Email -->
-    <h3 class="sub-heading"><i class="fa-solid fa-envelope"></i> Email</h3>
-    <div class="code-block" style="margin-bottom:2rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">email.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="kw">use</span> nodemailer
-
-<span class="kw">remember</span> transporter <span class="kw">as</span> <span class="fn">createTransport</span>({
-    host: <span class="str">"smtp.example.com"</span>,
-    port: <span class="num">587</span>
-})
-
-<span class="kw">send email</span>
-    from    <span class="kw">is</span> <span class="str">"me@example.com"</span>
-    to      <span class="kw">is</span> <span class="str">"you@example.com"</span>
-    subject <span class="kw">is</span> <span class="str">"Test"</span>
-    body    <span class="kw">is</span> <span class="str">"Hello from PlainScript!"</span>
-<span class="kw">done</span></code></pre>
-    </div>
-
-    <!-- 10. Database-backed API -->
-    <h3 class="sub-heading"><i class="fa-solid fa-database"></i> Database-backed API</h3>
-    <div class="code-block" style="margin-bottom:2rem">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">db-api.pln</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code><span class="kw">web app</span>
-<span class="kw">database</span> <span class="str">"app.db"</span>
-
-<span class="kw">execute</span>
-    CREATE TABLE IF NOT EXISTS items (
-        id   INTEGER PRIMARY KEY,
-        name TEXT NOT NULL
-    )
-<span class="kw">done</span>
-
-<span class="kw">route</span> <span class="str">"/items"</span>
-    <span class="kw">remember</span> rows <span class="kw">as</span> query
-        SELECT * FROM items
-    <span class="kw">done</span>
-    <span class="kw">reply json</span>
-        items <span class="kw">is</span> rows
-    <span class="kw">done</span>
-<span class="kw">done</span>
-
-<span class="kw">start</span> <span class="num">3000</span></code></pre>
-    </div>
-
-    <!-- 11. Multi-file Application -->
-    <h3 class="sub-heading"><i class="fa-solid fa-folder-tree"></i> Multi-file Application</h3>
-    <div class="compare" style="margin-bottom:2rem">
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">math.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">make</span> <span class="fn">add</span>(a, b)
-    <span class="kw">give</span> a + b
-<span class="kw">done</span>
-
-<span class="kw">make</span> <span class="fn">multiply</span>(a, b)
-    <span class="kw">give</span> a * b
-<span class="kw">done</span></code></pre>
-      </div>
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="code-block-dots"><span></span><span></span><span></span></div>
-          <span class="code-block-title">app.pln</span>
-          <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-        </div>
-        <pre><code><span class="kw">import</span> <span class="str">"./math.pln"</span>
-
-<span class="kw">show</span> <span class="fn">add</span>(<span class="num">10</span>, <span class="num">20</span>)
-<span class="kw">show</span> <span class="fn">multiply</span>(<span class="num">6</span>, <span class="num">7</span>)</code></pre>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- ROADMAP                                                                  -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="roadmap">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-map"></i> Roadmap</div>
-    <h2 class="section-title">What&rsquo;s next</h2>
-    <p class="section-lead">
-      PlainScript 0.1.7 is the first release: one deterministic compiler, the complete language, production builds, backend services, and WhatsApp and Telegram bots. Here&rsquo;s what&rsquo;s planned next.
-    </p>
-
-    <div class="roadmap">
-
-      <div class="roadmap-item">
-        <div class="roadmap-version">0.1.7</div>
-        <div class="roadmap-line-wrap">
-          <div class="roadmap-dot done"></div>
-          <div class="roadmap-connector"></div>
-        </div>
-        <div class="roadmap-content">
-          <h4>0.1.7 &mdash; First release <span class="badge badge-green" style="margin-left:.5rem"><i class="fa-solid fa-check"></i> Released</span></h4>
+        <div class="footer-col">
+          <h4>Resources</h4>
           <ul>
-            <li>Deterministic compiler &mdash; lexer, parser, generator and bundler with production builds to <code>dist/</code></li>
-            <li>The complete language &mdash; conditions, functions, collections, string templates, PlainScript Expressions, multi-file projects and the JavaScript Gateway</li>
-            <li>Backend services &mdash; routing, SQLite and PostgreSQL, sessions, password hashing and tokens, uploads, OCR, email, cron jobs, WebSocket servers and cache</li>
-            <li>WhatsApp bots &mdash; QR and pairing-code linking; Telegram bots with inline keyboards</li>
-            <li>Npm aliases and version ranges, interactive terminal input, formatter and doctor</li>
+            <li><a href="#quickstart">Quickstart</a></li>
+            <li><a href="#language">Language</a></li>
+            <li><a href="#examples">Examples</a></li>
+            <li><a href="#cli">CLI Reference</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Language</h4>
+          <ul>
+            <li><a href="#language">Features</a></li>
+            <li><a href="#packages">Packages</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Community</h4>
+          <ul>
+            <li><a href="https://github.com/ayoistooslick/plain-code" target="_blank" rel="noopener">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/plainscript-lang" target="_blank" rel="noopener">npm</a></li>
+            <li><a href="https://github.com/ayoistooslick/plain-code/issues" target="_blank" rel="noopener">Issue Tracker</a></li>
           </ul>
         </div>
       </div>
-
-      <div class="roadmap-item">
-        <div class="roadmap-version">Future</div>
-        <div class="roadmap-line-wrap">
-          <div class="roadmap-dot"></div>
-        </div>
-        <div class="roadmap-content">
-          <h4>Future &mdash; Extended Language <span class="badge badge-amber" style="margin-left:.5rem">Planned</span></h4>
-          <ul>
-            <li>Optional type hints (non-breaking)</li>
-            <li><code>plainscript watch</code> &mdash; recompile on file change</li>
-            <li>Language Server Protocol (LSP) support</li>
-            <li>Standard library expansion &amp; module refinements</li>
-          </ul>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- FAQ                                                                      -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="faq">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-circle-question"></i> FAQ</div>
-    <h2 class="section-title">Frequently Asked Questions</h2>
-
-    <div class="faq">
-
-      <div class="faq-item">
-        <button class="faq-question">What is PlainScript? <i class="fa-solid fa-chevron-down"></i></button>
-        <div class="faq-answer">
-          PlainScript is an Intent-Oriented Programming Language (IOPL). It compiles <code>.pln</code> source files to JavaScript and runs them with Node.js. PlainScript&rsquo;s design goal is to let developers describe <em>what</em> they want to happen in near-English sentences, while the compiler handles the JavaScript implementation details.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">Is PlainScript production-ready? <i class="fa-solid fa-chevron-down"></i></button>
-        <div class="faq-answer">
-          PlainScript 0.1.7 includes runtime dependency detection, automatic installation, OCR, npm aliases and version ranges, portable databases, an HTTP client, sessions, uploads, rate limiting, deployment-oriented CLI commands, WhatsApp bots, and interactive terminal input &mdash; backed by a test suite of 625 checks. It compiles to standard Node.js-compatible JavaScript and remains well-suited for personal projects, tooling, and learning.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">Does PlainScript support TypeScript? <i class="fa-solid fa-chevron-down"></i></button>
-        <div class="faq-answer">
-          Not yet. PlainScript compiles to plain JavaScript. Optional type hints are planned for a future version, but they will be designed to stay readable in PlainScript&rsquo;s English-sentence style &mdash; not to mirror TypeScript syntax.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">Can I use npm packages? <i class="fa-solid fa-chevron-down"></i></button>
-        <div class="faq-answer">
-          Yes. Any npm package can be declared with <code>use &lt;package&gt;</code> and installed with <code>plainscript add &lt;package&gt;</code>. Since v2.0.1 you can bind hyphenated or scoped packages to a variable with <code>use node-fetch as fetch</code>, and pin ranges inline with <code>use left-pad@^1.3.0</code>. PlainScript scans your source files for <code>use</code> declarations and manages the underlying <code>node_modules</code> automatically, validating that all declared packages are installed before compiling.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">How does OCR work? <i class="fa-solid fa-chevron-down"></i></button>
-        <div class="faq-answer">
-          Write <code>ocr "scan.png" as text</code>. The statement is backed by Tesseract.js &mdash; an implementation detail that never appears in your source. <code>plainscript install</code>, <code>plainscript run</code>, and <code>plainscript build</code> detect <code>ocr</code> statements and fetch the package automatically. An optional <code>using "&lt;lang&gt;"</code> clause selects a language pack (<code>"deu"</code>, <code>"deu+eng"</code>, &hellip;); extraction defaults to English.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">Can PlainScript build WhatsApp bots? <i class="fa-solid fa-chevron-down"></i></button>
-        <div class="faq-answer">
-          Yes. Write a <code>whatsapp bot</code> block with an <code>auth</code> folder and either <code>login qr</code>, <code>login pairing "&lt;number&gt;"</code>, or <code>login pairing phone</code> with the number typed in at runtime via <code>ask</code>. The first run links a real WhatsApp account by scanning the printed QR code or typing the pairing code into Linked Devices; later runs reconnect from saved credentials. Incoming messages flow through <code>on message ... done</code> handlers, and <code>reply</code> answers the current chat. Baileys is installed automatically &mdash; it never appears in your source.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">What&rsquo;s the difference between <code>for each</code> and <code>for every</code>? <i class="fa-solid fa-chevron-down"></i></button>
-        <div class="faq-answer">
-          They are identical. Both compile to a <code>for...of</code> JavaScript loop. <code>for every</code> is provided as an alias because it reads naturally in certain sentences &mdash; e.g. <em>for every item in basket</em>. In PlainScript, there is never a functional difference between the two.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">How do I debug PlainScript code? <i class="fa-solid fa-chevron-down"></i></button>
-        <div class="faq-answer">
-          Use <code>plainscript build app.pln</code> to compile to <code>app.js</code> and inspect the generated JavaScript. Since the output is clean, readable JS you can open it in any Node.js debugger, add <code>console.log</code> statements, or run it directly with <code>node app.js</code>. You can also use <code>plainscript check app.pln</code> to catch syntax errors before running.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">Does PlainScript work on Windows? <i class="fa-solid fa-chevron-down"></i></button>
-        <div class="faq-answer">
-          Yes. PlainScript is a Node.js package and works wherever Node.js is installed &mdash; Windows, macOS, and Linux. Install it with <code>npm install --save-dev plainscript</code> on any platform.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">How do portable databases work? <i class="fa-solid fa-chevron-down"></i></button>
-        <div class="faq-answer">
-          Write <code>database "app.db"</code>. PlainScript probes the native driver (<code>better-sqlite3</code>) at startup and silently falls back to a pure-JavaScript WebAssembly engine (<code>sql.js</code>) if it is unavailable &mdash; same statements, same transactions, no code changes. Pin an engine explicitly with <code>using "native"</code> or <code>using "wasm"</code>; the WebAssembly engine persists the database file after every write so data survives restarts.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-question">Is PlainScript&rsquo;s compiler deterministic? <i class="fa-solid fa-chevron-down"></i></button>
-        <div class="faq-answer">
-          Yes. Every construct &mdash; including backend services like sessions, uploads, and OAuth &mdash; has explicit syntax and compiles to readable JavaScript through the fixed pipeline. No rules, no providers, no hidden code generation: what you read in <code>plainscript build</code> output is exactly what runs.
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- CONTRIBUTING                                                             -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section section--alt" id="contributing">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-hands-helping"></i> Open Source</div>
-    <h2 class="section-title">Contributing</h2>
-    <p class="section-lead">
-      PlainScript is open-source and welcomes contributions. Whether it&rsquo;s a bug report, a test case, a documentation fix, or a new feature &mdash; every contribution matters.
-    </p>
-
-    <div class="feature-grid" style="margin-bottom:2rem">
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-bug"></i></div>
-        <h4>Report a bug</h4>
-        <p>Found something that compiles incorrectly or crashes? Open an issue on GitHub with a minimal <code>.pln</code> reproduction.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-flask"></i></div>
-        <h4>Write a test</h4>
-        <p>Tests live in <code>tests/compiler.test.js</code>. Adding a test for an edge case is one of the most valuable contributions.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-card-icon"><i class="fa-solid fa-code-pull-request"></i></div>
-        <h4>Submit a pull request</h4>
-        <p>Fork the repo, make your change, and run <code>node tests/compiler.test.js</code>. The full compiler and runtime suite must pass before merging.</p>
+      <div class="footer-bottom">
+        <p>&copy; 2026 PlainScript Contributors. MIT License.</p>
+        <span class="footer-badge">v0.1.7</span>
       </div>
     </div>
+  </footer>
 
-    <div class="callout callout-info">
-      <i class="fa-brands fa-github"></i>
-      <div class="callout-body">
-        <strong>GitHub repository</strong>
-        <p>Source code, issues, and pull requests at <a href="https://github.com/ayoistooslick/plain-code" target="_blank" rel="noopener">github.com/ayoistooslick/plain-code</a>. Read <code>CONTRIBUTING.md</code> before opening a PR.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- LICENSE                                                                  -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<section class="section" id="license">
-  <div class="container">
-    <div class="section-tag"><i class="fa-solid fa-scale-balanced"></i> License</div>
-    <h2 class="section-title">MIT License</h2>
-    <p style="color:var(--muted);max-width:640px;line-height:1.8">
-      PlainScript is released under the <strong>MIT License</strong>. You are free to use, modify, and distribute PlainScript &mdash; commercially or non-commercially &mdash; with or without modification, as long as the original copyright notice is preserved.
-    </p>
-
-    <div class="code-block" style="margin-top:1.5rem;max-width:640px">
-      <div class="code-block-header">
-        <div class="code-block-dots"><span></span><span></span><span></span></div>
-        <span class="code-block-title">LICENSE</span>
-        <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-      <pre><code>MIT License
-
-Copyright (c) 2024 Ayokunle
-
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without
-restriction, including without limitation the rights to use,
-copy, modify, merge, publish, distribute, sublicense, and/or
-sell copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.</code></pre>
-    </div>
-  </div>
-</section>
-
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- FOOTER                                                                   -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <span class="footer-logo"><span>PlainScript</span></span>
-      <p>An Intent-Oriented Programming Language. Write programs in near-English. Compile to JavaScript.</p>
-      <div class="footer-socials">
-        <a href="https://github.com/ayoistooslick/plain-code" target="_blank" rel="noopener" aria-label="GitHub">
-          <i class="fa-brands fa-github"></i>
-        </a>
-        <a href="https://www.npmjs.com/package/plainscript" target="_blank" rel="noopener" aria-label="npm">
-          <i class="fa-brands fa-npm"></i>
-        </a>
-      </div>
-    </div>
-
-    <div class="footer-col">
-      <h5>Documentation</h5>
-      <ul>
-        <li><a href="#introduction">Introduction</a></li>
-        <li><a href="#quickstart">Quick Start</a></li>
-        <li><a href="#language">Language Reference</a></li>
-        <li><a href="#examples">Examples</a></li>
-        <li><a href="#packages">Packages</a></li>
-      </ul>
-    </div>
-
-      <div class="footer-col">
-        <h5>Features</h5>
-        <ul>
-          <li><a href="#web">Web Development</a></li>
-          <li><a href="#http">HTTP</a></li>
-          <li><a href="#telegram">Telegram</a></li>
-          <li><a href="#whatsapp">WhatsApp</a></li>
-          <li><a href="#ocr">OCR</a></li>
-          <li><a href="#database">Database</a></li>
-          <li><a href="#cli">CLI Reference</a></li>
-        </ul>
-      </div>
-
-    <div class="footer-col">
-      <h5>Project</h5>
-      <ul>
-        <li><a href="#backend-services">Backend Services</a></li>
-        <li><a href="#security">Security</a></li>
-        <li><a href="#roadmap">Roadmap</a></li>
-        <li><a href="#faq">FAQ</a></li>
-        <li><a href="#contributing">Contributing</a></li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="footer-bottom">
-    <p>Copyright &copy; 2026 Ayokunle. Released under the MIT License.</p>
-    <span class="badge badge-blue version-badge">
-      <i class="fa-solid fa-bolt"></i> PlainScript v0.1.7
-    </span>
-  </div>
-</footer>
-
-<script src="website/script.js"></script>
+  <script src="website/script.js"></script>
 </body>
 </html>
