@@ -16,7 +16,7 @@ PLINJS is an Intent-Oriented Programming Language (IOPL). You describe **what** 
 ## Quick start
 
 ```bash
-npx plinjs new myapp     # scaffolds src/app.pln, plinjs.config.json, package.json
+npx plinjs new myapp     # scaffolds src/app.pln and package.json
 cd myapp
 npm install            # installs plinjs as a devDependency plus runtime packages
 npm run build          # compiles src/ -> dist/ (plinjs build)
@@ -27,7 +27,7 @@ Adding PLINJS to an existing project:
 
 ```bash
 npm install --save-dev plinjs
-npx plinjs init          # creates plinjs.config.json (+ index.pln if missing)
+# start writing src/*.pln files — plinjs build auto-discovers them
 ```
 
 No global install is needed anywhere — everything runs through npm scripts
@@ -47,12 +47,11 @@ plinjs build  [file.pln]   Compile to dist/. With no argument, builds every
 plinjs check  <file.pln>   Check syntax only (no output, no execution)
 plinjs fmt    <file.pln>   Format a PLINJS file in-place
 plinjs new    [name]       Create a new PLINJS project (npm-ready)
-plinjs init                Create a plinjs.config.json in the current directory
-plinjs install             Install dependencies required by the project's source files
-plinjs start               Build the configured entry and run its dist/ output
+plinjs install             Install dependencies detected in the project's sources
+plinjs start               Build src/app.pln and run its dist/ output
 plinjs doctor              Check the PLINJS project environment
-plinjs add    <package>    Install a package and add it to plinjs.config.json
-plinjs remove <package>    Remove a package from plinjs.config.json and uninstall it
+plinjs add    <package>    Install a package into the project
+plinjs remove <package>    Uninstall a package from the project
 plinjs update              Update all installed npm packages
 plinjs version             Print the compiler version
 plinjs help                Print help text
@@ -63,35 +62,20 @@ plinjs help                Print help text
 ## Building and configuration
 
 `plinjs build` is a deterministic production build, TypeScript-style but for
-`.pln` sources:
+`.pln` sources — **zero configuration required**:
 
-- Output goes to `dist/` (configurable via `outDir`) and **source file names
-  are preserved**: `src/messi.pln` → `dist/messi.js`,
+- `plinjs build` (no argument) discovers every `.pln` file under `src/` and
+  compiles each to `dist/` **preserving source file names and folder structure**:
+  `src/messi.pln` → `dist/messi.js`,
   `src/helpers/math.pln` → `dist/helpers/math.js`.
+- `plinjs build <file.pln>` compiles a single file into `dist/`.
 - Imports are bundled into each output, so every file in `dist/` runs
   standalone under Node.
 - Rebuilds are byte-identical — safe to commit, diff, and cache.
 
-Configuration lives in `plinjs.config.json`:
-
-```json
-{
-    "name": "my-app",
-    "version": "1.0.0",
-    "entry": "index.pln",
-    "srcDir": "src",
-    "outDir": "dist"
-}
-```
-
-| Key      | Default                          | Meaning                              |
-|----------|----------------------------------|--------------------------------------|
-| `outDir` | `"dist"`                         | Build output directory               |
-| `srcDir` | `"src"` if it exists, else `"."` | Root that `plinjs build` scans         |
-| `entry`  | auto-detected                    | File used by `plinjs start` / `install`|
-
 Source discovery skips `node_modules`, hidden directories, and the output
-directory itself.
+directory itself. When no `src/` directory exists, the project root is scanned
+instead.
 
 ### Publishing a library written in PLINJS
 
@@ -722,12 +706,11 @@ See `examples/whatsapp-bot/` for ready-to-link programs.
 ## Project management
 
 ```bash
-plinjs init              # Create plinjs.config.json
-plinjs install           # Install all project dependencies
+plinjs install           # Install all detected dependencies
 plinjs add express       # Add a package
 plinjs remove express    # Remove a package
 plinjs update            # Update all packages
-plinjs start             # Build the entry and run its dist/ output
+plinjs start             # Build src/app.pln and run its dist/ output
 plinjs doctor            # Check project environment
 ```
 

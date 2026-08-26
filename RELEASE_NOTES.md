@@ -30,12 +30,9 @@ editor tooling ship together.
 - Deterministic output: rebuilds are byte-identical — safe to commit,
   diff, and cache.
 
-### Project configuration (`plinjs.config.json`)
-
-- Keys: `outDir` (default `"dist"`), `srcDir` (default `"src"` when present,
-  else the project root), optional `entry`, plus `name`/`version`/
-  `dependencies`.
-- Discovery never scans `node_modules`, hidden directories, or the output
+- `plinjs build` discovers all `.pln` files under `src/` and compiles each to
+  `dist/`, preserving file names and folder structure. No configuration file needed.
+- Source discovery skips `node_modules`, hidden directories, and the output
   directory itself.
 
 ### npm-package building

@@ -1,7 +1,7 @@
 // PLINJS v1.0.1 — runtime dependency and deployment example
 //
 // `plinjs build` and `plinjs run` detect express from `web app` and install it
-// when it is missing. `plinjs start` uses the entry in plinjs.config.json.
+// when it is missing. `plinjs start` builds src/app.pln by default.
 
 web app
 

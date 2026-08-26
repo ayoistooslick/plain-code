@@ -46,57 +46,26 @@ npx plinjs build app.pln   # writes dist/app.js — read it to see exactly what 
 
 ---
 
-## 2. Project structure and plinjs.config.json
+## 2. Project structure and zero-config builds
 
 A PLINJS project is a plain npm package. Typical layout:
 
 ```
 my-app/
 ├── package.json          # normal npm semantics; plinjs is a devDependency
-├── plinjs.config.json      # optional project/build configuration
 ├── src/                  # sources (.pln) — the default source root
 └── dist/                 # generated JavaScript (never edited, safe to gitignore)
 ```
 
-`plinjs.config.json` has two shapes.
+`plinjs build` follows a TypeScript-style model with zero configuration:
 
-**Single project (object):**
+- `plinjs build` (no argument) discovers every `.pln` file under `src/` and
+  compiles each to `dist/` preserving file names and folder structure.
+- `plinjs build <file.pln>` compiles a single file into `dist/`.
+- When no `src/` directory exists, the project root is scanned instead.
 
-```json
-{
-    "name": "my-app",
-    "version": "1.0.0",
-    "entry": "index.pln",
-    "srcDir": "src",
-    "outDir": "dist",
-    "dependencies": {
-        "express": "^4.18.2"
-    }
-}
-```
-
-**Multiple projects (array)** — each element is its own build target,
-compiled into its own `outDir` by `plinjs build`, in declaration order:
-
-```json
-[
-    { "name": "test-proj", "outDir": "dist/test" },
-    { "name": "tools", "srcDir": "tools", "outDir": "dist/tools" }
-]
-```
-
-| Key            | Default                             | Used by                          |
-|----------------|-------------------------------------|----------------------------------|
-| `outDir`       | `"dist"`                            | `build`, `start`                 |
-| `srcDir`       | `"src"` if that folder exists, else `"."` | `build`                    |
-| `entry`        | auto-detected (`app.pln`, `index.pln`) | `start`, `install`            |
-| `name`         | file name / `project-N`             | labels array projects            |
-| `version`      | —                                   | informational                    |
-| `dependencies` | `{}`                                | `install`, `add`, `remove`       |
-
-For array configs, commands that work on one program (`start`, `install`,
-`doctor`) use the **first** element. Source discovery skips `node_modules`,
-hidden directories, and each project's own `outDir`.
+Source discovery skips `node_modules`, hidden directories, and the `dist/`
+output directory.
 
 ---
 
@@ -107,15 +76,14 @@ All commands also work through `npx` and npm scripts.
 | Command                 | Behaviour                                                        |
 |-------------------------|------------------------------------------------------------------|
 | `plinjs new <name>`       | Scaffold a complete npm project (`src/app.pln`, Express starter)  |
-| `plinjs init`             | Create `plinjs.config.json` (+ `index.pln` stub) in current dir     |
-| `plinjs build [file]`     | Compile to `outDir`; no argument builds every project's sources   |
+| `plinjs build [file]`     | Compile `src/` to `dist/`; no argument builds all source files    |
 | `plinjs run <file.pln>`   | Install missing deps → compile → execute from a scratch directory |
-| `plinjs start [args...]`  | Build the configured entry into `outDir`, then run that file      |
+| `plinjs start [args...]`  | Build `src/app.pln` into `dist/`, then run that file              |
 | `plinjs check <file.pln>` | Syntax/compile check only — no execution                          |
 | `plinjs fmt <file.pln>`   | Rewrite the file in canonical style, in place                     |
-| `plinjs install`          | Detect every dependency and install what is missing               |
-| `plinjs add <pkg>`        | Install a package and record it in `plinjs.config.json`             |
-| `plinjs remove <pkg>`     | Remove it from `plinjs.config.json` and uninstall                   |
+| `plinjs install`          | Detect every dependency in source files and install what is missing|
+| `plinjs add <pkg>`        | Install a package into the project                                |
+| `plinjs remove <pkg>`     | Uninstall a package from the project                              |
 | `plinjs update`           | `npm update` for all installed packages                           |
 | `plinjs doctor`           | Environment + project health report                               |
 | `plinjs version`          | Print `PLINJS v0.1.7`                                               |

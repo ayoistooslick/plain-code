@@ -339,14 +339,14 @@ filesystem.
 ### Deployment workflow
 
 ```bash
-plinjs init
+npm install --save-dev plinjs
 plinjs install
 plinjs build app.pln
 plinjs run app.pln
 ```
 
-`plinjs start` builds the `entry` from `plinjs.config.json` into the output
-directory and runs it. `plinjs doctor` reports missing tools, configuration,
+`plinjs start` builds `src/app.pln` (or `src/index.pln`) into the output
+directory and runs it. `plinjs doctor` reports missing tools, source files,
 or dependencies. Generated JavaScript remains standard
 Node.js-compatible JavaScript and runtime `require()` declarations are emitted
 once in deterministic order.
@@ -972,41 +972,24 @@ See `plinjs-acode/README.md` for details.
 
 ## Project Management
 
-PLINJS manages project configuration through `plinjs.config.json`.
-
-### plinjs.config.json format
-
-    {
-        "name": "my-app",
-        "version": "0.1.0",
-        "entry": "index.pln",
-        "srcDir": "src",
-        "outDir": "dist",
-        "dependencies": {
-            "express": "^4.18.2"
-        }
-    }
-
-Defaults: `outDir` is `"dist"`; `srcDir` is `"src"` when that folder exists,
-otherwise the project root. `plinjs build` compiles every source under `srcDir`
-into `outDir`, preserving file names and directory structure; imports are
-bundled into each output so every built file runs standalone.
+PLINJS follows a zero-configuration model. Source files live in `src/` (or the
+project root when `src/` doesn't exist) and `plinjs build` discovers them
+automatically, preserving file names and directory structure into `dist/`.
 
 ### Commands
 
 | Command                 | Behaviour                                            |
 |-------------------------|------------------------------------------------------|
 | `plinjs run <file.pln>`   | Install dependencies, compile and execute            |
-| `plinjs build [file]`     | Compile to outDir preserving names; no arg builds all|
+| `plinjs build [file]`     | Compile to dist/ preserving names; no arg builds all|
 | `plinjs check <file.pln>` | Check syntax only (no output, no execution)          |
 | `plinjs fmt <file.pln>`   | Format a PLINJS file in-place                          |
 | `plinjs new [name]`       | Create a new PLINJS project                            |
-| `plinjs init`             | Creates `plinjs.config.json` in the current directory  |
-| `plinjs install`          | Install dependencies required by source files        |
-| `plinjs start`            | Build the entry and run its outDir output            |
+| `plinjs install`          | Detect and install dependencies from source files     |
+| `plinjs start`            | Build src/app.pln and run its dist/ output            |
 | `plinjs doctor`           | Check the PLINJS project environment                   |
-| `plinjs add <pkg>`        | Installs package, adds it to `plinjs.config.json`      |
-| `plinjs remove <pkg>`     | Uninstalls package, removes it from `plinjs.config.json` |
+| `plinjs add <pkg>`        | Install a package into the project                     |
+| `plinjs remove <pkg>`     | Uninstall a package from the project                   |
 | `plinjs update`           | Runs `npm update` for all installed packages         |
 | `plinjs version`          | Print the compiler version                           |
 | `plinjs help`             | Print help text                                      |

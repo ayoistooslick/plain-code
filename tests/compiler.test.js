@@ -931,68 +931,35 @@ function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'plinjs-test-'));
 }
 
-test('plinjs init creates plinjs.config.json', () => {
+test('plinjs init is not a recognized command', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
-  const jsonPath = path.join(dir, 'plinjs.config.json');
-  if (!fs.existsSync(jsonPath)) throw new Error('plinjs.config.json was not created');
-  const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-  if (!data.name)    throw new Error('plinjs.config.json missing "name"');
-  if (!data.version) throw new Error('plinjs.config.json missing "version"');
-  if (!data.entry)   throw new Error('plinjs.config.json missing "entry"');
-});
-
-test('plinjs init shows "Project already initialized." when plinjs.config.json exists', () => {
-  const dir = tmpDir();
-  runCli(['init'], dir);
   const out = runCli(['init'], dir);
-  if (!out.includes('Project already initialized.')) {
-    throw new Error(`Expected "Project already initialized." but got: ${out}`);
+  if (!out.toLowerCase().includes('unknown command')) {
+    throw new Error(`Expected "Unknown command" for init but got: ${out}`);
   }
-});
-
-test('plinjs init plinjs.config.json has correct default entry', () => {
-  const dir = tmpDir();
-  runCli(['init'], dir);
-  const data = JSON.parse(fs.readFileSync(path.join(dir, 'plinjs.config.json'), 'utf8'));
-  if (data.entry !== 'index.pln') throw new Error(`expected entry "index.pln", got "${data.entry}"`);
-});
-
-test('plinjs init plinjs.config.json is valid JSON with name, version, entry', () => {
-  const dir = tmpDir();
-  runCli(['init'], dir);
-  let data;
-  try {
-    data = JSON.parse(fs.readFileSync(path.join(dir, 'plinjs.config.json'), 'utf8'));
-  } catch (e) {
-    throw new Error(`plinjs.config.json is not valid JSON: ${e.message}`);
-  }
-  if (typeof data.name    !== 'string') throw new Error('name must be a string');
-  if (typeof data.version !== 'string') throw new Error('version must be a string');
-  if (typeof data.entry   !== 'string') throw new Error('entry must be a string');
 });
 
 console.log('\nv0.4.2 â€” plinjs add / remove');
 
-test('plinjs add errors without plinjs.config.json', () => {
+test('plinjs add installs a package without requiring any setup', () => {
   const dir = tmpDir();
-  const out = runCli(['add', 'express'], dir);
-  if (!out.toLowerCase().includes('plinjs init')) {
-    throw new Error(`Expected hint to run "plinjs init" but got: ${out}`);
+  const out = runCli(['add', 'semver'], dir);
+  if (!out.includes('Installed') && !out.includes('installed')) {
+    throw new Error(`Expected install success but got: ${out}`);
   }
 });
 
-test('plinjs remove errors without plinjs.config.json', () => {
+test('plinjs remove uninstalls a package', () => {
   const dir = tmpDir();
-  const out = runCli(['remove', 'express'], dir);
-  if (!out.toLowerCase().includes('plinjs init')) {
-    throw new Error(`Expected hint to run "plinjs init" but got: ${out}`);
+  runCli(['add', 'semver'], dir);
+  const out = runCli(['remove', 'semver'], dir);
+  if (!out.includes('Removed') && !out.includes('removed')) {
+    throw new Error(`Expected uninstall success but got: ${out}`);
   }
 });
 
 test('plinjs add without package name shows usage', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
   const out = runCli(['add'], dir);
   if (!out.toLowerCase().includes('usage')) {
     throw new Error(`Expected usage hint but got: ${out}`);
@@ -1001,7 +968,6 @@ test('plinjs add without package name shows usage', () => {
 
 test('plinjs remove without package name shows usage', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
   const out = runCli(['remove'], dir);
   if (!out.toLowerCase().includes('usage')) {
     throw new Error(`Expected usage hint but got: ${out}`);
@@ -1010,7 +976,6 @@ test('plinjs remove without package name shows usage', () => {
 
 test('plinjs add rejects invalid package name (shell injection attempt)', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
   // A name containing shell metacharacters must be rejected before npm is called.
   const out = runCli(['add', 'express; rm -rf /'], dir);
   if (!out.toLowerCase().includes('invalid package name')) {
@@ -1020,7 +985,6 @@ test('plinjs add rejects invalid package name (shell injection attempt)', () => 
 
 test('plinjs remove rejects invalid package name', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
   const out = runCli(['remove', '$(evil)'], dir);
   if (!out.toLowerCase().includes('invalid package name')) {
     throw new Error(`Expected "Invalid package name" error but got: ${out}`);
@@ -1029,19 +993,19 @@ test('plinjs remove rejects invalid package name', () => {
 
 console.log('\nv0.4.2 â€” plinjs install (RFC-0009.2)');
 
-test('plinjs install errors without plinjs.config.json', () => {
+test('plinjs install reports no sources when src/ is empty', () => {
   const dir = tmpDir();
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   const out = runCli(['install'], dir);
-  if (!out.toLowerCase().includes('plinjs init')) {
-    throw new Error(`Expected hint to run "plinjs init" but got: ${out}`);
+  if (!out.toLowerCase().includes('no .pln source files')) {
+    throw new Error(`Expected "no .pln source files" error but got: ${out}`);
   }
 });
 
 test('plinjs install with no external dependencies shows correct message', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
-  const plnFile = path.join(dir, 'index.pln');
-  fs.writeFileSync(plnFile, 'show "hello"\n');
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "hello"\n');
   const out = runCli(['install'], dir);
   if (!out.includes('This project has no external dependencies.')) {
     throw new Error(`Expected "This project has no external dependencies." but got: ${out}`);
@@ -1050,9 +1014,8 @@ test('plinjs install with no external dependencies shows correct message', () =>
 
 test('plinjs install with built-in modules only shows no external dependencies', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
-  const plnFile = path.join(dir, 'index.pln');
-  fs.writeFileSync(plnFile, 'use fs\nuse path\nshow "ok"\n');
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use fs\nuse path\nshow "ok"\n');
   const out = runCli(['install'], dir);
   if (!out.includes('This project has no external dependencies.')) {
     throw new Error(`Expected "This project has no external dependencies." but got: ${out}`);
@@ -1061,9 +1024,8 @@ test('plinjs install with built-in modules only shows no external dependencies',
 
 test('plinjs install installs missing dependencies and reports success', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
-  const plnFile = path.join(dir, 'index.pln');
-  fs.writeFileSync(plnFile, 'use semver\nshow "ok"\n');
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nshow "ok"\n');
   const out = runCli(['install'], dir);
   // Check that it found and installed the package
   if (!out.includes('Found 1 required package(s).')) {
@@ -1084,9 +1046,8 @@ test('plinjs install installs missing dependencies and reports success', () => {
 
 test('plinjs install skips already installed dependencies', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
-  const plnFile = path.join(dir, 'index.pln');
-  fs.writeFileSync(plnFile, 'use semver\nshow "ok"\n');
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nshow "ok"\n');
   // First install
   runCli(['install'], dir);
   // Second install should say all installed
@@ -1098,9 +1059,8 @@ test('plinjs install skips already installed dependencies', () => {
 
 test('plinjs install handles multiple dependencies', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
-  const plnFile = path.join(dir, 'index.pln');
-  fs.writeFileSync(plnFile, 'use semver\nuse express\nshow "ok"\n');
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nuse express\nshow "ok"\n');
   const out = runCli(['install'], dir);
   if (!out.includes('Found 2 required package(s).')) {
     throw new Error(`Expected "Found 2 required package(s)." but got: ${out}`);
@@ -1109,38 +1069,32 @@ test('plinjs install handles multiple dependencies', () => {
   if (!out.includes('Installing express...')) throw new Error('express install missing');
 });
 
-test('plinjs install fails when entry file is missing', () => {
+test('plinjs install fails when no source files found', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
-  // Remove the entry file
-  const entry = path.join(dir, 'index.pln');
-  fs.unlinkSync(entry);
   const out = runCli(['install'], dir);
-  if (!out.toLowerCase().includes('entry file "index.pln" not found')) {
-    throw new Error(`Expected entry file not found error but got: ${out}`);
+  if (!out.toLowerCase().includes('no .pln source files')) {
+    throw new Error(`Expected no-sources error but got: ${out}`);
   }
 });
 
-test('plinjs install shows friendly error on resolver failure (circular import)', () => {
+test('plinjs install parses source files directly (no entry-file resolution)', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
-  const entry = path.join(dir, 'index.pln');
-  fs.writeFileSync(entry, 'import "./a.pln"\n');
-  const aFile = path.join(dir, 'a.pln');
-  fs.writeFileSync(aFile, 'import "./index.pln"\n');
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  // write two files that both declare deps; install scans every source file
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'util.pln'), 'use lodash\nshow "ok"\n');
   const out = runCli(['install'], dir);
-  if (!out.toLowerCase().includes('circular')) {
-    throw new Error(`Expected circular import error but got: ${out}`);
-  }
+  if (!out.includes('semver')) throw new Error(`Expected semver in output but got: ${out}`);
+  if (!out.includes('lodash')) throw new Error(`Expected lodash in output but got: ${out}`);
 });
 
 // â”€â”€ End of install tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv0.4.2 â€” CLI help');
 
-test('plinjs help includes "plinjs init"', () => {
+test('plinjs help does not mention "plinjs init"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plinjs init')) throw new Error(`"plinjs init" missing from help. Got:\n${out}`);
+  if (out.includes('plinjs init')) throw new Error(`"plinjs init" must no longer appear in help. Got:\n${out}`);
 });
 
 test('plinjs help includes "plinjs install"', () => {
@@ -2038,15 +1992,16 @@ test('plinjs new creates src/app.pln', () => {
   fs.rmSync(projectDir, { recursive: true, force: true });
 });
 
-test('plinjs new creates plinjs.config.json and a local-devDependency package.json', () => {
+test('plinjs new creates package.json with build scripts and does NOT create plinjs.config.json', () => {
   const dir = tmpDir();
   const projectName = 'test-new-json';
   const projectDir = path.join(dir, projectName);
   runCli(['new', projectName], dir);
-  if (!fs.existsSync(path.join(projectDir, 'plinjs.config.json'))) throw new Error('plinjs.config.json not created');
+  if (fs.existsSync(path.join(projectDir, 'plinjs.config.json'))) throw new Error('plinjs.config.json must NOT be created');
   const pkg = JSON.parse(fs.readFileSync(path.join(projectDir, 'package.json'), 'utf8'));
   if (!pkg.scripts || pkg.scripts.build !== 'plinjs build') throw new Error('expected npm build script "plinjs build"');
   if (!pkg.devDependencies || !pkg.devDependencies.plinjs) throw new Error('expected plinjs devDependency');
+  if (!fs.existsSync(path.join(projectDir, 'src', 'app.pln'))) throw new Error('expected src/app.pln scaffold');
   fs.rmSync(projectDir, { recursive: true, force: true });
 });
 
@@ -2929,11 +2884,11 @@ test('plinjs run resolves dependencies from the project node_modules, not the gl
   }
 });
 
-test('plinjs start resolves project-local dependencies via the plinjs.config.json entry', () => {
+test('plinjs start resolves project-local dependencies from src/', () => {
   const dir = tmpDir();
   writeLocalPackage(dir, 'plinjslocaltest', 'module.exports = "start-resolved-locally";\n');
-  fs.writeFileSync(path.join(dir, 'app.pln'), 'use plinjslocaltest\nshow plinjslocaltest\n');
-  fs.writeFileSync(path.join(dir, 'plinjs.config.json'), JSON.stringify({ entry: 'app.pln' }));
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use plinjslocaltest\nshow plinjslocaltest\n');
   const out = runCli(['start'], dir);
   if (!out.includes('start-resolved-locally')) {
     throw new Error(`plinjs start did not resolve the local dependency. Output:\n${out}`);
@@ -3017,32 +2972,33 @@ test('plinjs doctor does not report a Complex Compilation layer', () => {
   if (out.includes('Complex Compilation')) throw new Error(`Complex Compilation must be gone. Output:\n${out}`);
 });
 
-test('plinjs doctor reports project configuration when plinjs.config.json exists', () => {
+test('plinjs doctor reports source files when src/ contains .pln files', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "hello"\n');
   const out = runCli(['doctor'], dir);
-  if (!out.includes('plinjs.config.json found')) throw new Error(`Expected "plinjs.config.json found" but got: ${out}`);
+  if (!out.includes('Source files')) throw new Error(`Expected "Source files" check but got: ${out}`);
+  if (!out.includes('src')) throw new Error(`Expected "src" in source check detail but got: ${out}`);
 });
 
-test('plinjs doctor reports missing plinjs.config.json when no project initialized', () => {
+test('plinjs doctor reports no sources when no .pln files exist', () => {
   const dir = tmpDir();
   const out = runCli(['doctor'], dir);
-  if (!out.includes('run plinjs init')) throw new Error(`Expected "run plinjs init" hint but got: ${out}`);
+  if (!out.includes('Source files')) throw new Error(`Expected "Source files" check but got: ${out}`);
+  if (!out.includes('no .pln files')) throw new Error(`Expected "no .pln files" detail but got: ${out}`);
 });
 
-test('plinjs doctor reports missing entry file', () => {
+test('plinjs doctor reports no sources when src/ is empty', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
-  const entry = path.join(dir, 'index.pln');
-  fs.unlinkSync(entry);
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   const out = runCli(['doctor'], dir);
-  if (!out.includes('not found')) throw new Error(`Expected "not found" for entry file but got: ${out}`);
+  if (!out.includes('no .pln files')) throw new Error(`Expected "no .pln files" detail but got: ${out}`);
 });
 
 test('plinjs doctor reports ready dependencies when all installed', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
-  fs.writeFileSync(path.join(dir, 'app.pln'), 'show "hello"\n');
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "hello"\n');
   const out = runCli(['doctor'], dir);
   if (!out.includes('ready')) throw new Error(`Expected "ready" for dependencies but got: ${out}`);
 });
@@ -3054,39 +3010,40 @@ test('plinjs help includes "plinjs doctor"', () => {
 
 console.log('\nCLI â€” plinjs start');
 
-test('plinjs start errors without plinjs.config.json', () => {
+test('plinjs start errors when no entry file found', () => {
   const dir = tmpDir();
   const out = runCli(['start'], dir);
-  if (!out.toLowerCase().includes('plinjs init')) {
-    throw new Error(`Expected hint to run "plinjs init" but got: ${out}`);
+  if (!out.includes('No entry file found')) {
+    throw new Error(`Expected "No entry file found" but got: ${out}`);
   }
 });
 
-test('plinjs start errors when entry file is missing', () => {
+test('plinjs start errors when src/app.pln is missing', () => {
   const dir = tmpDir();
-  runCli(['init'], dir);
-  const entry = path.join(dir, 'index.pln');
-  fs.unlinkSync(entry);
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   const out = runCli(['start'], dir);
-  if (!out.includes('not found')) {
-    throw new Error(`Expected "not found" error but got: ${out}`);
+  if (!out.includes('No entry file found')) {
+    throw new Error(`Expected "No entry file found" but got: ${out}`);
   }
 });
 
-test('plinjs start runs the entry file from plinjs.config.json', () => {
+test('plinjs start runs src/app.pln by default', () => {
   const dir = tmpDir();
-  fs.writeFileSync(path.join(dir, 'app.pln'), 'show "start-ok"\n');
-  fs.writeFileSync(path.join(dir, 'plinjs.config.json'), JSON.stringify({ entry: 'app.pln' }));
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "started-from-src"\n');
   const out = runCli(['start'], dir);
-  if (!out.includes('start-ok')) {
-    throw new Error(`Expected "start-ok" output but got: ${out}`);
+  if (!out.includes('started-from-src')) {
+    throw new Error(`Expected "started-from-src" output but got: ${out}`);
+  }
+  if (!fs.existsSync(path.join(dir, 'dist', 'app.js'))) {
+    throw new Error('start must persist the built output in dist/');
   }
 });
 
-test('plinjs start defaults to app.pln when entry is not set', () => {
+test('plinjs start defaults to src/app.pln when no entry configured', () => {
   const dir = tmpDir();
-  fs.writeFileSync(path.join(dir, 'app.pln'), 'show "default-entry"\n');
-  fs.writeFileSync(path.join(dir, 'plinjs.config.json'), JSON.stringify({ name: 'test' }));
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "default-entry"\n');
   const out = runCli(['start'], dir);
   if (!out.includes('default-entry')) {
     throw new Error(`Expected "default-entry" output but got: ${out}`);

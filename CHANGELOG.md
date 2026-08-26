@@ -35,12 +35,12 @@ release.
   `src/a/b.pln` → `dist/a/b.js`). Every entry is bundled with its imports,
   so each file in `dist/` runs standalone. Compilation is deterministic:
   identical sources produce byte-identical output.
-- **Project configuration via `plinjs.config.json`** with `outDir` (default
-  `"dist"`), `srcDir` (default `"src"` when present, else the project root),
-  an optional `entry`, plus `name`/`version`/`dependencies` for project
-  dependency management. Discovery never scans `node_modules`, hidden
-  directories, or the output directory itself.
-- **Full CLI:** `plinjs build | run | start | init | new | install | add |
+- **Zero-config production build** — `plinjs build` auto-discovers `.pln` files
+  under `src/` and compiles each to `dist/`, preserving file names and directory
+  structure (`src/messi.pln` → `dist/messi.js`, `src/a/b.pln` → `dist/a/b.js`).
+  Every entry is bundled with its imports, so each file in `dist/` runs standalone.
+  Compilation is deterministic: identical sources produce byte-identical output.
+- **Full CLI:** `plinjs build | run | start | new | install | add | remove |
   remove | update | check | fmt | doctor | version | help`.
 - **Complete language:** variables, conditions, functions, arrays, objects,
   loops, string templates with `${...}` interpolation, PLINJS Expressions,

@@ -199,7 +199,7 @@
       <div class="why-item">
         <div class="why-num"><i class="fa-solid fa-gauge-high"></i></div>
         <h3>Zero configuration</h3>
-        <p>No webpack. No tsconfig. No babel. Drop a <code>.pln</code> file anywhere and run it. Configuration is optional and stored in a single <code>plinjs.config.json</code>.</p>
+        <p>No webpack. No tsconfig. No babel. Drop a <code>.pln</code> file anywhere and run it. Zero configuration required.</p>
       </div>
       <div class="why-item">
         <div class="why-num"><i class="fa-solid fa-ruler"></i></div>
@@ -1451,21 +1451,19 @@ console.<span class="fn">log</span>(text);</code></pre>
         <div class="cmd-strip"><span class="prm">$</span> <span class="cmd">plinjs install</span></div>
         <div class="cmd-strip"><span class="prm">$</span> <span class="cmd">plinjs start</span></div>
 
-        <h3 class="sub-heading" style="margin-top:1.5rem"><i class="fa-solid fa-file-code"></i> plinjs.config.json</h3>
+        <h3 class="sub-heading" style="margin-top:1.5rem"><i class="fa-solid fa-folder-open"></i> Project layout</h3>
+        <p style="font-size:.95rem;line-height:1.6;color:#94a3b8;margin-bottom:1rem">PLINJS uses a zero-config convention. Place your source files in <code>src/</code> and compiled output goes to <code>dist/</code>. The entry point is <code>src/app.pln</code> by default. No configuration file is needed.</p>
         <div class="code-block">
           <div class="code-block-header">
             <div class="code-block-dots"><span></span><span></span><span></span></div>
-            <span class="code-block-title">plinjs.config.json</span>
+            <span class="code-block-title">Default project structure</span>
             <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
           </div>
-          <pre><code>{
-    <span class="str">"name"</span>: <span class="str">"my-app"</span>,
-    <span class="str">"version"</span>: <span class="str">"0.1.0"</span>,
-    <span class="str">"entry"</span>: <span class="str">"app.pln"</span>,
-    <span class="str">"dependencies"</span>: {
-        <span class="str">"express"</span>: <span class="str">"^4.18.2"</span>
-    }
-}</code></pre>
+          <pre><code>myapp/
+  src/
+    app.pln        <span class="cmt">// entry point</span>
+    utils.pln      <span class="cmt">// other modules</span>
+  dist/            <span class="cmt">// compiled output (auto-generated)</span></code></pre>
         </div>
       </div>
       <div>
@@ -1531,10 +1529,12 @@ console.<span class="fn">log</span>(text);</code></pre>
           <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
         <pre><code>myapp/
-  app.pln         <span class="cmt">// entry point</span>
-  math.pln        <span class="cmt">// helper functions</span>
-  utils.pln       <span class="cmt">// utility functions</span>
-  plinjs.config.json</code></pre>
+  src/
+    app.pln         <span class="cmt">// entry point</span>
+    math.pln        <span class="cmt">// helper functions</span>
+    utils.pln       <span class="cmt">// utility functions</span>
+  package.json      <span class="cmt">// npm scripts: build, start</span>
+  dist/             <span class="cmt">// generated JavaScript</span></code></pre>
       </div>
       <div class="code-block">
         <div class="code-block-header">
@@ -1583,8 +1583,7 @@ console.<span class="fn">log</span>(text);</code></pre>
               <tr><td><code>plinjs check &lt;file.pln&gt;</code></td><td>Syntax check &mdash; exits 0 or 1</td></tr>
               <tr><td><code>plinjs fmt &lt;file.pln&gt;</code></td><td>Format source in-place</td></tr>
               <tr><td><code>plinjs new [name]</code></td><td>Scaffold a new project</td></tr>
-              <tr><td><code>plinjs init</code></td><td>Create <code>plinjs.config.json</code> in current directory</td></tr>
-              <tr><td><code>plinjs start</code></td><td>Run the <code>plinjs.config.json</code> entry file</td></tr>
+              <tr><td><code>plinjs start</code></td><td>Run <code>src/app.pln</code> and execute its <code>dist/</code> output</td></tr>
               <tr><td><code>plinjs doctor</code></td><td>Check the PLINJS environment and project dependencies</td></tr>
               <tr><td><code>plinjs version</code></td><td>Print the compiler version</td></tr>
               <tr><td><code>plinjs help</code></td><td>Show help text</td></tr>
@@ -2087,7 +2086,7 @@ Hello, World!</code></pre>
       <div class="faq-item">
         <button class="faq-question">Can I use npm packages? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Yes. Any npm package can be declared with <code>use &lt;package&gt;</code> and installed with <code>plinjs add &lt;package&gt;</code>. Since v2.0.1 you can bind hyphenated or scoped packages to a variable with <code>use node-fetch as fetch</code>, and pin ranges inline with <code>use left-pad@^1.3.0</code>. PLINJS manages your <code>plinjs.config.json</code> and the underlying <code>node_modules</code> automatically, validating that all declared packages are installed before compiling.
+          Yes. Any npm package can be declared with <code>use &lt;package&gt;</code> and installed with <code>plinjs add &lt;package&gt;</code>. Since v2.0.1 you can bind hyphenated or scoped packages to a variable with <code>use node-fetch as fetch</code>, and pin ranges inline with <code>use left-pad@^1.3.0</code>. PLINJS scans your source files for <code>use</code> declarations and manages the underlying <code>node_modules</code> automatically, validating that all declared packages are installed before compiling.
         </div>
       </div>
 

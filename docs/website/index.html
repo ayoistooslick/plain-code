@@ -204,7 +204,7 @@
       <div class="why-item">
         <div class="why-num"><i class="fa-solid fa-gauge-high"></i></div>
         <h3>Zero configuration</h3>
-        <p>No webpack. No tsconfig. No babel. Drop a <code>.pln</code> file anywhere and run it. Configuration is optional and stored in a single <code>plinjs.config.json</code>.</p>
+        <p>No webpack. No tsconfig. No babel. Drop a <code>.pln</code> file anywhere and run it. Zero configuration required.</p>
       </div>
       <div class="why-item">
         <div class="why-num"><i class="fa-solid fa-ruler"></i></div>
@@ -364,7 +364,7 @@ console.<span class="fn">log</span>(<span class="str">"Hello, "</span> + name);
       <div class="feature-card">
         <div class="feature-card-icon"><i class="fa-solid fa-cubes"></i></div>
         <h4>plinjs add</h4>
-        <p>Install an npm package and add it to <code>plinjs.config.json</code> automatically. Try <code>plinjs add express</code>.</p>
+        <p>Install an npm package into the project automatically. Try <code>plinjs add express</code>.</p>
       </div>
       <div class="feature-card">
         <div class="feature-card-icon"><i class="fa-solid fa-hammer"></i></div>
@@ -379,7 +379,7 @@ console.<span class="fn">log</span>(<span class="str">"Hello, "</span> + name);
       <div class="feature-card">
         <div class="feature-card-icon"><i class="fa-solid fa-folder-plus"></i></div>
         <h4>plinjs new</h4>
-        <p>Scaffold a new PLINJS project with <code>app.pln</code>, <code>plinjs.config.json</code>, and a <code>.gitignore</code> already set up.</p>
+        <p>Scaffold a new PLINJS project with <code>src/app.pln</code>, <code>package.json</code>, and a <code>README</code> already set up.</p>
       </div>
     </div>
   </div>
@@ -784,21 +784,18 @@ scores[<span class="num">1</span>] = <span class="num">95</span>;</code></pre>
         <div class="cmd-strip"><span class="prm">$</span> <span class="cmd">plinjs install</span></div>
         <div class="cmd-strip"><span class="prm">$</span> <span class="cmd">plinjs update</span></div>
 
-        <h3 class="sub-heading" style="margin-top:1.5rem"><i class="fa-solid fa-file-code"></i> plinjs.config.json</h3>
+        <h3 class="sub-heading" style="margin-top:1.5rem"><i class="fa-solid fa-folder-tree"></i> Project layout</h3>
         <div class="code-block">
           <div class="code-block-header">
             <div class="code-block-dots"><span></span><span></span><span></span></div>
-            <span class="code-block-title">plinjs.config.json</span>
+            <span class="code-block-title">zero-config build</span>
             <button class="code-copy"><i class="fa-regular fa-copy"></i> Copy</button>
           </div>
-          <pre><code>{
-    <span class="str">"name"</span>: <span class="str">"my-app"</span>,
-    <span class="str">"version"</span>: <span class="str">"0.1.0"</span>,
-    <span class="str">"entry"</span>: <span class="str">"app.pln"</span>,
-    <span class="str">"dependencies"</span>: {
-        <span class="str">"express"</span>: <span class="str">"^4.18.2"</span>
-    }
-}</code></pre>
+          <pre><code>src/
+  app.pln            <span class="str">← entry point</span>
+  lib/
+    helpers.pln      <span class="str">← any .pln file you add</span>
+dist/                <span class="str">← compiled output (auto-created)</span></code></pre>
         </div>
       </div>
       <div>
@@ -1093,8 +1090,7 @@ scores[<span class="num">1</span>] = <span class="num">95</span>;</code></pre>
               <tr><td><code>plinjs check &lt;file.pln&gt;</code></td><td>Syntax check — exits 0 or 1</td></tr>
               <tr><td><code>plinjs fmt &lt;file.pln&gt;</code></td><td>Format source in-place</td></tr>
               <tr><td><code>plinjs new [name]</code></td><td>Scaffold a new project</td></tr>
-              <tr><td><code>plinjs init</code></td><td>Create <code>plinjs.config.json</code> in current directory</td></tr>
-              <tr><td><code>plinjs install</code></td><td>Install all dependencies from <code>plinjs.config.json</code></td></tr>
+              <tr><td><code>plinjs install</code></td><td>Install all dependencies detected in the project's sources</td></tr>
               <tr><td><code>plinjs add &lt;pkg&gt;</code></td><td>Install a package and record it</td></tr>
               <tr><td><code>plinjs remove &lt;pkg&gt;</code></td><td>Uninstall a package</td></tr>
               <tr><td><code>plinjs update</code></td><td>Update all installed packages</td></tr>
@@ -1326,7 +1322,7 @@ PLINJS v0.1.7</code></pre>
       <div class="faq-item">
         <button class="faq-question">Can I use npm packages? <i class="fa-solid fa-chevron-down"></i></button>
         <div class="faq-answer">
-          Yes. Any npm package can be declared with <code>use &lt;package&gt;</code> and installed with <code>plinjs add &lt;package&gt;</code>. Since v2.0.1 you can bind hyphenated or scoped packages to a variable with <code>use node-fetch as fetch</code>, and pin ranges inline with <code>use left-pad@^1.3.0</code>. PLINJS manages your <code>plinjs.config.json</code> and the underlying <code>node_modules</code> automatically, validating that all declared packages are installed before compiling.
+          Yes. Any npm package can be declared with <code>use &lt;package&gt;</code> and installed with <code>plinjs add &lt;package&gt;</code>. Since v2.0.1 you can bind hyphenated or scoped packages to a variable with <code>use node-fetch as fetch</code>, and pin ranges inline with <code>use left-pad@^1.3.0</code>. PLINJS scans your source files for <code>use</code> declarations and manages the underlying <code>node_modules</code> automatically, validating that all declared packages are installed before compiling.
         </div>
       </div>
 
