@@ -1,31 +1,14 @@
-/* PlainScript v0.1.7 — Documentation Website JS */
+/* PlainScript v0.1.7 -- Documentation Website JS */
 
-/* ── Copy buttons ────────────────────────────────────────────────────────── */
+/* -- Copy buttons ---------------------------------------------------------- */
 function initCopyButtons() {
-  document.querySelectorAll('.code-copy').forEach(btn => {
+  document.querySelectorAll('.code-copy, .copy-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const block = btn.closest('.code-block');
-      const pre   = block ? block.querySelector('pre') : null;
+      const block = btn.closest('.code-block, .code-window, .install-strip');
+      const pre   = block ? block.querySelector('pre, code') : null;
       if (!pre) return;
 
       const text = pre.innerText.trim();
-      navigator.clipboard.writeText(text).then(() => {
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
-        btn.classList.add('copied');
-        setTimeout(() => {
-          btn.innerHTML = originalHTML;
-          btn.classList.remove('copied');
-        }, 2000);
-      });
-    });
-  });
-
-  /* install-strip copy buttons */
-  document.querySelectorAll('.install-cmd button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const cmd = btn.closest('.install-cmd');
-      const text = cmd ? cmd.querySelector('code').innerText.trim() : '';
       navigator.clipboard.writeText(text).then(() => {
         const originalHTML = btn.innerHTML;
         btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
@@ -73,27 +56,24 @@ function initMobileMenu() {
   });
 }
 
-/* ── FAQ accordion ───────────────────────────────────────────────────────── */
+/* -- FAQ accordion --------------------------------------------------------- */
 function initFAQ() {
-  document.querySelectorAll('.faq-question').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item    = btn.closest('.faq-item');
-      const isOpen  = item.classList.contains('open');
-
-      /* close all others */
-      document.querySelectorAll('.faq-item.open').forEach(o => {
-        if (o !== item) o.classList.remove('open');
+  document.querySelectorAll('.faq-item').forEach(item => {
+    const summary = item.querySelector('summary');
+    if (!summary) return;
+    summary.addEventListener('click', e => {
+      const wasOpen = item.open;
+      document.querySelectorAll('.faq-item[open]').forEach(o => {
+        if (o !== item) o.removeAttribute('open');
       });
-
-      item.classList.toggle('open', !isOpen);
     });
   });
 }
 
-/* ── Active nav link on scroll ───────────────────────────────────────────── */
+/* -- Active nav link on scroll --------------------------------------------- */
 function initScrollSpy() {
   const sections = document.querySelectorAll('section[id]');
-  const links    = document.querySelectorAll('.nav-links a[href^="#"]');
+  const links    = document.querySelectorAll('.nav-links a[href^="#"], .mobile-menu a[href^="#"]');
 
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
@@ -110,7 +90,7 @@ function initScrollSpy() {
   sections.forEach(s => observer.observe(s));
 }
 
-/* ── Scroll progress bar ─────────────────────────────────────────────────── */
+/* -- Scroll progress bar --------------------------------------------------- */
 function initScrollProgress() {
   let bar = document.getElementById('scroll-progress');
   if (!bar) {
@@ -128,7 +108,7 @@ function initScrollProgress() {
   update();
 }
 
-/* ── Back to top button ──────────────────────────────────────────────────── */
+/* -- Back to top button ---------------------------------------------------- */
 function initBackToTop() {
   let btn = document.getElementById('to-top');
   if (!btn) {
@@ -149,13 +129,12 @@ function initBackToTop() {
   toggle();
 }
 
-/* ── Reveal on scroll ────────────────────────────────────────────────────── */
+/* -- Reveal on scroll ------------------------------------------------------ */
 function initReveal() {
-  /* Skip entirely if the user prefers reduced motion (CSS also guards). */
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const targets = document.querySelectorAll(
-    '.section > .container > .section-tag, .section > .container > .section-title, .section > .container > .section-lead'
+    '.section-tag, .section-title, .section-lead, .feature-card, .stat-item'
   );
   targets.forEach(el => el.classList.add('reveal'));
 
@@ -171,7 +150,7 @@ function initReveal() {
   targets.forEach(el => observer.observe(el));
 }
 
-/* ── Smooth scroll nav highlight on click ────────────────────────────────── */
+/* -- Smooth scroll nav highlight on click ---------------------------------- */
 function initNavLinks() {
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
@@ -184,7 +163,7 @@ function initNavLinks() {
   });
 }
 
-/* ── Boot ────────────────────────────────────────────────────────────────── */
+/* -- Boot ------------------------------------------------------------------ */
 document.addEventListener('DOMContentLoaded', () => {
   initCopyButtons();
   initMobileMenu();

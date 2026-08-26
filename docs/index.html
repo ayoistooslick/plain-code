@@ -23,44 +23,42 @@
   <!-- ═══════════════════════════ NAVIGATION ═══════════════════════════ -->
   <nav class="site-nav">
     <div class="nav-inner">
-      <a href="#" class="nav-brand">
-        <img src="logo.jpg" alt="PlainScript" class="nav-logo" />
+      <a href="#" class="nav-logo">
+        <img src="logo.jpg" alt="PlainScript" />
         <span class="logo-word">PlainScript</span>
         <span class="logo-ver">v0.1.7</span>
       </a>
-      <ul class="nav-links">
-        <li><a href="#language">Language</a></li>
-        <li><a href="#examples">Examples</a></li>
-        <li><a href="#cli">CLI</a></li>
-        <li><a href="#packages">Packages</a></li>
-        <li><a href="#faq">FAQ</a></li>
-      </ul>
+      <div class="nav-links">
+        <a href="#language">Language</a>
+        <a href="#examples">Examples</a>
+        <a href="#cli">CLI</a>
+        <a href="#packages">Packages</a>
+        <a href="#faq">FAQ</a>
+      </div>
       <div class="nav-actions">
-        <a href="https://github.com/ayoistooslick/plain-code" class="btn btn-outline" target="_blank" rel="noopener">
+        <a href="https://github.com/ayoistooslick/plain-code" class="btn btn-outline btn-sm" target="_blank" rel="noopener">
           <i class="fab fa-github"></i> GitHub
         </a>
-        <a href="https://www.npmjs.com/package/plainscript-lang" class="btn btn-primary" target="_blank" rel="noopener">
-          <i class="fab fa-npm"></i> npm install
+        <a href="https://www.npmjs.com/package/plainscript-lang" class="btn btn-primary btn-sm" target="_blank" rel="noopener">
+          <i class="fab fa-npm"></i> npm
         </a>
       </div>
-      <button class="nav-hamburger" aria-label="Toggle menu">
+      <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu">
         <i class="fas fa-bars"></i>
       </button>
     </div>
-    <div class="nav-mobile">
-      <ul class="nav-links">
-        <li><a href="#language">Language</a></li>
-        <li><a href="#examples">Examples</a></li>
-        <li><a href="#cli">CLI</a></li>
-        <li><a href="#packages">Packages</a></li>
-        <li><a href="#faq">FAQ</a></li>
-      </ul>
-      <div class="nav-actions">
-        <a href="https://github.com/ayoistooslick/plain-code" class="btn btn-outline" target="_blank" rel="noopener">
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="#language">Language</a>
+      <a href="#examples">Examples</a>
+      <a href="#cli">CLI</a>
+      <a href="#packages">Packages</a>
+      <a href="#faq">FAQ</a>
+      <div class="mobile-actions">
+        <a href="https://github.com/ayoistooslick/plain-code" class="btn btn-outline btn-sm" target="_blank" rel="noopener">
           <i class="fab fa-github"></i> GitHub
         </a>
-        <a href="https://www.npmjs.com/package/plainscript-lang" class="btn btn-primary" target="_blank" rel="noopener">
-          <i class="fab fa-npm"></i> npm install
+        <a href="https://www.npmjs.com/package/plainscript-lang" class="btn btn-primary btn-sm" target="_blank" rel="noopener">
+          <i class="fab fa-npm"></i> npm
         </a>
       </div>
     </div>
@@ -69,7 +67,7 @@
   <!-- ═══════════════════════════ HERO ═══════════════════════════ -->
   <section class="hero">
     <div class="container">
-      <span class="hero-badge">v0.1.7 — Now with JavaScript Gateway</span>
+      <span class="hero-badge">v0.1.7, now with JavaScript Gateway</span>
       <h1 class="hero-title">Write code that<br>reads like <span class="green">Plain English</span></h1>
       <p class="hero-subtitle">PlainScript is an Intent-Oriented Programming Language. You describe what you want; the compiler decides how to implement it in JavaScript.</p>
       <div class="hero-actions">
@@ -128,32 +126,32 @@ console.log(<span class="str">"Hello, "</span> + name + <span class="str">"!"</s
       <h2 class="section-title">Built for developer happiness</h2>
       <div class="features-grid">
         <div class="feature-card">
-          <div class="feature-icon">🧠</div>
+          <div class="feature-icon"><i class="fas fa-lightbulb"></i></div>
           <h3>Intent-Oriented</h3>
           <p>Describe what you want. The compiler figures out the how.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">🌐</div>
+          <div class="feature-icon"><i class="fas fa-code"></i></div>
           <h3>JavaScript Gateway</h3>
           <p>Embed raw JS with the <code>javascript</code> keyword when you need low-level control.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">📦</div>
+          <div class="feature-icon"><i class="fas fa-cube"></i></div>
           <h3>Package System</h3>
-          <p><code>use express</code>, <code>use sqlite</code> — one line to import any npm package.</p>
+          <p><code>use express</code>, <code>use sqlite</code>, one line to import any npm package.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">🗃️</div>
+          <div class="feature-icon"><i class="fas fa-database"></i></div>
           <h3>Built-in Database</h3>
-          <p><code>database</code>, <code>query</code>, <code>insert</code> — first-class SQLite with native or WebAssembly.</p>
+          <p><code>database</code>, <code>query</code>, <code>insert</code>, first-class SQLite with native or WebAssembly.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">🔧</div>
+          <div class="feature-icon"><i class="fas fa-terminal"></i></div>
           <h3>CLI Tools</h3>
-          <p><code>plainscript build</code>, <code>plainscript run</code>, <code>plainscript doctor</code> — everything you need.</p>
+          <p><code>plainscript build</code>, <code>plainscript run</code>, <code>plainscript doctor</code>, everything you need.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">📝</div>
+          <div class="feature-icon"><i class="fas fa-paint-brush"></i></div>
           <h3>Formatter</h3>
           <p><code>plainscript fmt</code> auto-formats your code consistently.</p>
         </div>

@@ -20,7 +20,7 @@
   <meta name="twitter:image" content="https://plain-code.name.ng/logo.jpg">
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="/website/style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -55,13 +55,13 @@
     </button>
   </div>
 
-  <div class="nav-mobile" id="nav-mobile">
-    <a href="#language" class="nav-mobile-link">Language</a>
-    <a href="#examples" class="nav-mobile-link">Examples</a>
-    <a href="#cli" class="nav-mobile-link">CLI</a>
-    <a href="#packages" class="nav-mobile-link">Packages</a>
-    <a href="#faq" class="nav-mobile-link">FAQ</a>
-    <div class="nav-mobile-actions">
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="#language" class="mobile-link">Language</a>
+    <a href="#examples" class="mobile-link">Examples</a>
+    <a href="#cli" class="mobile-link">CLI</a>
+    <a href="#packages" class="mobile-link">Packages</a>
+    <a href="#faq" class="mobile-link">FAQ</a>
+    <div class="mobile-actions">
       <a href="https://github.com/ayoistooslick/plain-code" class="btn btn-outline btn-sm" target="_blank" rel="noopener">
         <i class="fab fa-github"></i> GitHub
       </a>
@@ -76,7 +76,7 @@
 <section class="hero">
   <div class="container">
     <div class="hero-content">
-      <span class="badge">v0.1.7 — Now with JavaScript Gateway</span>
+      <span class="badge">v0.1.7, now with JavaScript Gateway</span>
       <h1 class="hero-title">Write code that<br>reads like <span class="green">Plain English</span></h1>
       <p class="hero-subtitle">PlainScript is an Intent-Oriented Programming Language. You describe what you want; the compiler decides how to implement it in JavaScript.</p>
       <div class="hero-actions">
@@ -156,17 +156,17 @@ console.<span class="fn">log</span>(<span class="str">"Hello, "</span> + name + 
       <div class="feature-card">
         <div class="feature-icon"><i class="fas fa-box-open"></i></div>
         <h3 class="feature-title">Package System</h3>
-        <p class="feature-desc"><code>use express</code>, <code>use sqlite</code> — one line to import any npm package.</p>
+        <p class="feature-desc"><code>use express</code>, <code>use sqlite</code>, one line to import any npm package.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i class="fas fa-database"></i></div>
         <h3 class="feature-title">Built-in Database</h3>
-        <p class="feature-desc"><code>database</code>, <code>query</code>, <code>insert</code> — first-class SQLite with native or WebAssembly.</p>
+        <p class="feature-desc"><code>database</code>, <code>query</code>, <code>insert</code>, first-class SQLite with native or WebAssembly.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i class="fas fa-wrench"></i></div>
         <h3 class="feature-title">CLI Tools</h3>
-        <p class="feature-desc"><code>plainscript build</code>, <code>plainscript run</code>, <code>plainscript doctor</code> — everything you need.</p>
+        <p class="feature-desc"><code>plainscript build</code>, <code>plainscript run</code>, <code>plainscript doctor</code>, everything you need.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i class="fas fa-file-code"></i></div>
@@ -404,7 +404,7 @@ console.<span class="fn">log</span>(results);</code></pre>
 <span class="kw">use</span> crypto
 <span class="kw">use</span> cors
 
-<span class="fn">show</span> <span class="str">"All packages imported — PlainScript handles the rest."</span></code></pre>
+<span class="fn">show</span> <span class="str">"All packages imported, PlainScript handles the rest."</span></code></pre>
     </div>
   </div>
 </section>
@@ -503,6 +503,6 @@ console.<span class="fn">log</span>(results);</code></pre>
   </div>
 </footer>
 
-<script src="/website/script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
