@@ -1,7 +1,7 @@
 # PlainScript
 
 <p align="center">
-  <img src="docs/og.svg" alt="PlainScript Logo" width="200" />
+  <img src="docs/logo.jpg" alt="PlainScript Logo" width="200" />
 </p>
 
 > "When even a simple sentence can be code."
