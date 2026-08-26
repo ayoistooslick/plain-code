@@ -7,7 +7,7 @@ bot env("BOT_TOKEN")
 
 // Start command: welcome message with an inline keyboard
 when someone sends "/start"
-    reply "Welcome to the PLIN bot!" with buttons
+    reply "Welcome to the PLINJS bot!" with buttons
         "Help" -> "help"
         "About" -> "about"
         "Status" -> "status"
@@ -31,7 +31,7 @@ when someone clicks "help"
 done
 
 when someone clicks "about"
-    reply "Built with PLIN - an Intent-Oriented Programming Language."
+    reply "Built with PLINJS - an Intent-Oriented Programming Language."
 done
 
 when someone clicks "status"

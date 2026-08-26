@@ -5,17 +5,17 @@ remember app as express()
 serve folder "public"
 
 when someone visits "/"
-    reply "Hello from Plain!"
+    reply "Hello from PLINJS!"
 done
 
 when someone visits "/about"
-    reply "This server is written in Plain."
+    reply "This server is written in PLINJS."
 done
 
 when someone visits "/api/status"
     reply json
         status is "ok"
-        language is "Plain"
+        language is "PLINJS"
         version is "0.3"
     done
 done

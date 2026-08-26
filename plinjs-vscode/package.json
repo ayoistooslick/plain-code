@@ -1,0 +1,45 @@
+{
+    "name": "plinjs-language",
+    "displayName": "PLINJS Language",
+    "description": "Syntax highlighting and language support for the PLINJS programming language (.pln files)",
+    "version": "0.1.7",
+    "publisher": "ayoistooslick",
+    "engines": {
+        "vscode": "^1.70.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "plinjs",
+                "aliases": ["PLINJS", "plinjs"],
+                "extensions": [".pln"],
+                "configuration": "./language-configuration.json",
+                "icon": {
+                    "light": "./icons/plinjs-file.svg",
+                    "dark": "./icons/plinjs-file.svg"
+                }
+            }
+        ],
+        "grammars": [
+            {
+                "language": "plinjs",
+                "scopeName": "source.plinjs",
+                "path": "./syntaxes/plinjs.tmLanguage.json"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "plinjs",
+                "path": "./snippets/plinjs.code-snippets"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "echo 'No build step required'"
+    },
+    "license": "MIT"
+}
+

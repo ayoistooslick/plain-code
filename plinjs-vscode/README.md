@@ -1,6 +1,6 @@
-# PLIN Language — VS Code Extension
+# PLINJS Language — VS Code Extension
 
-Syntax highlighting and language support for the [PLIN programming language](https://github.com/ayoistooslick/plain-code) (`.pln` files).
+Syntax highlighting and language support for the [PLINJS programming language](https://github.com/ayoistooslick/plain-code) (`.pln` files).
 
 ---
 
@@ -8,7 +8,7 @@ Syntax highlighting and language support for the [PLIN programming language](htt
 
 - **Syntax highlighting** — keywords, strings, numbers, comments, operators, and function names
 - **File icon** — `.pln` files get a distinctive icon in the file tree
-- **Language registration** — VS Code recognises `.pln` as Plain source
+- **Language registration** — VS Code recognises `.pln` as PLINJS source
 - **Auto-closing pairs** — `()`, `[]`, `{}`, `""`
 - **Comment toggling** — `Ctrl+/` / `Cmd+/` toggles `//` line comments
 - **Bracket matching** — highlights matching brackets
@@ -27,10 +27,10 @@ Syntax highlighting and language support for the [PLIN programming language](htt
    ```
 3. Package the extension:
    ```bash
-   cd plain-vscode
+   cd plinjs-vscode
    vsce package
    ```
-   This produces `plain-language-1.0.0.vsix`.
+   This produces `plinjs-language-0.1.7.vsix`.
 4. Install the VSIX in VS Code:
    - Open VS Code
    - Press `Ctrl+Shift+P` / `Cmd+Shift+P`
@@ -39,7 +39,7 @@ Syntax highlighting and language support for the [PLIN programming language](htt
 
 ### Option B — Development mode (no packaging needed)
 
-1. Open the `plain-vscode` folder in VS Code.
+1. Open the `plinjs-vscode` folder in VS Code.
 2. Press `F5` to launch the **Extension Development Host** — a new VS Code window opens with the extension active.
 3. Open any `.pln` file to see syntax highlighting immediately.
 

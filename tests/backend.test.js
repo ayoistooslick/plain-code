@@ -1,4 +1,4 @@
-// Tests for Plain v2.1.0 — deterministic backend capabilities:
+// Tests for PLINJS v2.1.0 — deterministic backend capabilities:
 //   HTTP routing (methods, groups, accessors, status, CORS, validation)
 //   filesystem operations, text / number / collection helpers,
 //   databases (SQLite live, PostgreSQL shape, transactions),
@@ -70,7 +70,7 @@ function assertThrows(source, expectedMessage) {
   throw new Error(`Expected compilation to fail${expectedMessage ? ` with "${expectedMessage}"` : ''}, but it succeeded.`);
 }
 
-// Compile Plain source the way `plain build` does (async runtime wrapper).
+// Compile PLINJS source the way `plinjs build` does (async runtime wrapper).
 function compileProgram(source) {
   const context = createGenerationContext();
   let js = generate(parse(tokenize(source)), context);
@@ -273,8 +273,8 @@ start 0
 `);
   const { server, port } = await runWebProgram(js);
   try {
-    const getRes = await fetch(`http://127.0.0.1:${port}/hello/plain`);
-    assert(await getRes.text(), 'hi plain');
+    const getRes = await fetch(`http://127.0.0.1:${port}/hello/plinjs`);
+    assert(await getRes.text(), 'hi plinjs');
 
     const bad = await fetch(`http://127.0.0.1:${port}/check`, {
       method: 'POST',
@@ -306,7 +306,7 @@ start 0
 // ── Filesystem ───────────────────────────────────────────────────────────────
 
 testAsync('filesystem: write/read/append/copy/move/list/delete roundtrip', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'plain-fs-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'plinjs-fs-'));
   const q = (p) => p.replace(/\\/g, '\\\\');
   const src = `writeFile("${q(path.join(dir, 'a.txt'))}", "one")
 appendFile("${q(path.join(dir, 'a.txt'))}", "-two")

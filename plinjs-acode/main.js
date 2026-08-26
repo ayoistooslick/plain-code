@@ -1,17 +1,17 @@
-// Plain Language — Acode plugin
+// PLINJS Language — Acode plugin
 //
 // Registers a CodeMirror 6 language for `.pln` files through Acode's modern
 // `editorLanguages` API, with a documented fallback to the legacy `aceModes`
 // API for Acode builds that do not expose `editorLanguages` yet (e.g. the
 // older Ace-based builds). The highlighting rules live in stream-spec.js
 // (pure CommonJS, no CodeMirror dependency) so they can be tested by the
-// Plain test suite (tests/compiler.test.js) with the exact same code the
+// PLINJS test suite (tests/compiler.test.js) with the exact same code the
 // editor runs.
 
-const PlainStreamSpec = require('./stream-spec.js');
+const PlinjsStreamSpec = require('./stream-spec.js');
 
-const PLUGIN_ID = 'dev.ayoxx.plain-language';
-const LANGUAGE_NAME = 'Plain';
+const PLUGIN_ID = 'dev.ayoistooslick.plinjs-language';
+const LANGUAGE_NAME = 'PLINJS';
 const EXTENSIONS = ['pln'];
 
 // Build the CodeMirror 6 language extension from the module graph Acode
@@ -24,7 +24,7 @@ function buildLanguage(acodeApi) {
   // does not depend on StreamLanguage's built-in default table.
   return [
     StreamLanguage.define({
-      ...PlainStreamSpec,
+      ...PlinjsStreamSpec,
       tokenTable: {
         function: tags.function(tags.variableName),
         builtin: tags.standard(tags.variableName),
@@ -42,7 +42,7 @@ function buildLanguage(acodeApi) {
   ];
 }
 
-class PlainLanguagePlugin {
+class PlinjsLanguagePlugin {
   constructor(acodeApi) {
     this.acode = acodeApi;
     this.registration = null; // { path: 'editorLanguages' | 'aceModes', module }
@@ -59,7 +59,7 @@ class PlainLanguagePlugin {
       ? this.acode.require.bind(this.acode)
       : null;
     if (!requireFn) {
-      const message = '[Plain] acode.require is unavailable; cannot register the .pln language.';
+      const message = '[PLINJS] acode.require is unavailable; cannot register the .pln language.';
       console.error(message);
       throw new Error(message);
     }
@@ -83,7 +83,7 @@ class PlainLanguagePlugin {
       return this.registration.path;
     }
 
-    const message = '[Plain] Acode does not expose "editorLanguages" or "aceModes" via acode.require; cannot register the .pln language.';
+    const message = '[PLINJS] Acode does not expose "editorLanguages" or "aceModes" via acode.require; cannot register the .pln language.';
     console.error(message);
     throw new Error(message);
   }
@@ -105,15 +105,15 @@ class PlainLanguagePlugin {
   }
 }
 
-// Export for the Plain test suite (Node). Acode runs main.js as a classic
+// Export for the PLINJS test suite (Node). Acode runs main.js as a classic
 // script where `module`/`exports` may not exist, so the export is guarded.
 if (typeof module !== 'undefined' && module && module.exports) {
-  module.exports = { PLUGIN_ID, LANGUAGE_NAME, EXTENSIONS, buildLanguage, PlainLanguagePlugin };
+  module.exports = { PLUGIN_ID, LANGUAGE_NAME, EXTENSIONS, buildLanguage, PlinjsLanguagePlugin };
 }
 
 // Acode plugin wiring. The `acode` global is only present inside Acode.
 if (typeof acode !== 'undefined' && acode) {
-  const plainLanguagePlugin = new PlainLanguagePlugin(acode);
-  acode.setPluginInit(PLUGIN_ID, () => plainLanguagePlugin.init());
-  acode.setPluginUnmount(PLUGIN_ID, () => plainLanguagePlugin.destroy());
+  const plinjsLanguagePlugin = new PlinjsLanguagePlugin(acode);
+  acode.setPluginInit(PLUGIN_ID, () => plinjsLanguagePlugin.init());
+  acode.setPluginUnmount(PLUGIN_ID, () => plinjsLanguagePlugin.destroy());
 }

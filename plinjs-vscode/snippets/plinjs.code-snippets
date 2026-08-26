@@ -99,7 +99,7 @@
             "web app",
             "",
             "route \"/\"",
-            "    reply \"${1:Hello from Plain!}\"",
+            "    reply \"${1:Hello from PLINJS!}\"",
             "done",
             "",
             "start ${2:3000}"
@@ -123,7 +123,7 @@
             "remember app as express()",
             "",
             "when someone visits \"${1:/}\"",
-            "    reply \"${2:Hello from Plain!}\"",
+            "    reply \"${2:Hello from PLINJS!}\"",
             "done",
             "",
             "listen on ${3:3000}",

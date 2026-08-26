@@ -1,6 +1,6 @@
-// Plain v2.1 — A real REST API
+// PLINJS v2.1 — A real REST API
 //
-// Run with:  plain run examples/rest-api.pln
+// Run with:  plinjs run examples/rest-api.pln
 // Try:       curl http://localhost:3000/api/users
 //
 // Demonstrates method routes, route groups, CORS, request validation,

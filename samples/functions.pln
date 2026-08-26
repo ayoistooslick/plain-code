@@ -1,4 +1,4 @@
-// Plain v1.0.0 — Functions
+// PLINJS v1.0.0 — Functions
 
 make greet(name)
     show "Hello, " + name + "!"

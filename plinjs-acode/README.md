@@ -1,18 +1,18 @@
-# Plain for Acode
+# PLINJS for Acode
 
-Syntax highlighting for the Plain programming language (`.pln`) in
+Syntax highlighting for the PLINJS programming language (`.pln`) in
 [Acode](https://acode.app), implemented with Acode's modern CodeMirror 6
 `editorLanguages` API.
 
 ## Features
 
 - Automatic `.pln` file recognition
-- Syntax highlighting derived from the Plain compiler itself
+- Syntax highlighting derived from the PLINJS compiler itself
   (`compiler/lexer.js`, `compiler/parser.js`, `compiler/generator.js`)
 - Structural keywords (declarations, control flow, web, database, gateway)
 - Multi-word comparison phrases (`is above`, `is at least`, `between ... and`,
   `contains`, `starts with`, ...)
-- v1.1 expression words (`first ... from`, `... of ...`, `... length`,
+- expression words (`first ... from`, `... of ...`, `... length`,
   `add/remove/write` calls)
 - Numbered-item number words (`player one from players`)
 - Strings, numbers, `//` comments and `note:` documentation comments
@@ -23,7 +23,7 @@ Syntax highlighting for the Plain programming language (`.pln`) in
 - Standard-library function calls (`readFile(...)`, `jsonEncode(...)`, ...)
 - JavaScript gateway blocks (`javascript ... done`) highlighted as JavaScript
 - SQL blocks (`query ... done`, `insert ... done`, ...) kept visually distinct
-  from Plain code
+  from PLINJS code
 
 ## Installation
 
@@ -34,8 +34,8 @@ Syntax highlighting for the Plain programming language (`.pln`) in
 
 ## What this plugin does not do
 
-Plain for Acode only provides syntax highlighting and `.pln` file
-recognition. It does **not** run the Plain compiler, provide LSP
+PLINJS for Acode only provides syntax highlighting and `.pln` file
+recognition. It does **not** run the PLINJS compiler, provide LSP
 diagnostics, autocomplete, formatting, or terminal integration.
 
 ## Compatibility
@@ -50,8 +50,8 @@ diagnostics, autocomplete, formatting, or terminal integration.
 ## Development
 
 The highlighting rules live in `stream-spec.js`, a pure CommonJS module with
-no CodeMirror dependency. The Plain test suite (`npm test`) exercises it
+no CodeMirror dependency. The PLINJS test suite (`npm test`) exercises it
 directly from `tests/compiler.test.js`, so the tokenizer is verified with the
 same code the editor runs.
 
-Compatible with Plain v1.1.1.
+Compatible with PLINJS v0.1.7.

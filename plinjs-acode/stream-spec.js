@@ -1,8 +1,8 @@
-// Stream-language spec for the Plain programming language.
+// Stream-language spec for the PLINJS programming language.
 //
 // Pure CommonJS with no external dependencies so it can be:
 //  1. unit-tested by tests/compiler.test.js (plain Node.js), and
-//  2. wrapped by plain-acode/main.js in @codemirror/language's StreamLanguage.
+//  2. wrapped by plinjs-acode/main.js in @codemirror/language's StreamLanguage.
 //
 // Every construct below is derived from the ACTUAL current compiler:
 //   compiler/lexer.js     — keyword list, SQL_BLOCK_WORDS, punctuation, `use`
@@ -47,7 +47,7 @@ const KEYWORDS = new Set([
 const SQL_BLOCK_WORDS = new Set(['query', 'insert', 'update', 'delete', 'execute']);
 
 // Comparison phrase words (v0.6), assignment words and v1.1 expression words.
-// These lex as identifiers/keywords but only have meaning inside Plain's
+// These lex as identifiers/keywords but only have meaning inside PLINJS's
 // natural-language operator phrases, so they highlight as operators.
 const OPERATOR_WORDS = new Set([
   // v0.6 comparisons
@@ -122,7 +122,7 @@ function scanString(stream, quote) {
   }
 }
 
-// Plain-language tokenizer. Runs at the start of a token; must always
+// PLINJS-language tokenizer. Runs at the start of a token; must always
 // advance the stream (directly or through a match).
 function token(stream, state) {
   // JavaScript gateway block: highlight JS until a line that is exactly
@@ -132,11 +132,11 @@ function token(stream, state) {
   if (state.inSQL) return tokenSQL(stream, state);
 
   // Inside a `${...}` interpolation inside a template string.
-  // Handle the closing `}` here, then fall through to Plain tokenization
+  // Handle the closing `}` here, then fall through to PLINJS tokenization
   // for the inner expression tokens (skips tokenTemplate to avoid recursion).
   if (state.inTemplateExpr) {
     if (stream.eat('}')) { state.inTemplateExpr = false; return 'punctuation'; }
-    // Fall through below for normal Plain tokenization of the inner expression.
+    // Fall through below for normal PLINJS tokenization of the inner expression.
   } else if (state.inTemplate) {
     return tokenTemplate(stream, state);
   }
@@ -247,7 +247,7 @@ function token(stream, state) {
 
 // Tokenizer for `javascript ... done` gateway blocks. Highlights the body as
 // JavaScript; a line whose trimmed content is exactly `done` ends the block
-// and returns to Plain (mirrors compiler/lexer.js raw-block collection).
+// and returns to PLINJS (mirrors compiler/lexer.js raw-block collection).
 function tokenJavaScript(stream, state) {
   // Block-comment continuation (started on a previous line).
   if (state.inJSComment) {
@@ -319,7 +319,7 @@ function tokenJavaScript(stream, state) {
 }
 
 // Tokenizer for SQL blocks. The raw SQL body is emitted as `meta` tokens so
-// it stays visually distinct from Plain code; the block ends at `done`.
+// it stays visually distinct from PLINJS code; the block ends at `done`.
 function tokenSQL(stream, state) {
   if (stream.match(/^[ \t]*done[ \t]*$/)) {
     state.inSQL = false;
@@ -334,7 +334,7 @@ function tokenSQL(stream, state) {
 // content and `${...}` interpolation as operators. Multi-line: the block
 // continues across lines until a closing backtick is found.
 function tokenTemplate(stream, state) {
-  // Inside a `${...}` expression — Plain tokenization is handled by the
+  // Inside a `${...}` expression — PLINJS tokenization is handled by the
   // main token() function (which checks inTemplateExpr before entering here).
   if (state.inTemplateExpr) return null;
 
@@ -353,9 +353,9 @@ function tokenTemplate(stream, state) {
   return 'string-2';
 }
 
-// Exported spec consumed by plain-acode/main.js (StreamLanguage.define).
+// Exported spec consumed by plinjs-acode/main.js (StreamLanguage.define).
 module.exports = {
-  name: 'plain',
+  name: 'plinjs',
   startState: () => ({
     inJavaScript: false,
     inSQL: false,

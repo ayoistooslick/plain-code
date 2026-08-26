@@ -1,16 +1,16 @@
-// Plain v1.0.0 — Web server (Express shorthand)
+// PLINJS v1.0.0 — Web server (Express shorthand)
 
 web app
 
 route "/"
-    reply "Hello from Plain v1.0!"
+    reply "Hello from PLINJS!"
 done
 
 route "/api/status"
     reply json
         status is "ok"
         version is "1.0.0"
-        language is "Plain"
+        language is "PLINJS"
     done
 done
 

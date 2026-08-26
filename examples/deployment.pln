@@ -1,12 +1,12 @@
-// Plain v1.0.1 — runtime dependency and deployment example
+// PLINJS v1.0.1 — runtime dependency and deployment example
 //
-// `plain build` and `plain run` detect express from `web app` and install it
-// when it is missing. `plain start` uses the entry in plain.json.
+// `plinjs build` and `plinjs run` detect express from `web app` and install it
+// when it is missing. `plinjs start` uses the entry in plinjs.config.json.
 
 web app
 
 route "/"
-    reply "Plain is ready to deploy!"
+    reply "PLINJS is ready to deploy!"
 done
 
 start 3000

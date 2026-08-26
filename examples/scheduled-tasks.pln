@@ -1,6 +1,6 @@
-// Plain v2.1 — Scheduled and recurring tasks
+// PLINJS v2.1 — Scheduled and recurring tasks
 //
-// Run with:  plain run examples/scheduled-tasks.pln
+// Run with:  plinjs run examples/scheduled-tasks.pln
 //
 // "every" covers simple intervals; "schedule" accepts any standard cron
 // expression (powered by croner).

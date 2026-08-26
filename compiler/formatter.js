@@ -1,4 +1,4 @@
-// Formatter: normalises Plain source code style without changing its logic.
+// Formatter: normalises PLINJS source code style without changing its logic.
 //
 // Rules applied:
 //   - Consistent 4-space indentation
@@ -69,7 +69,7 @@ function countUnquoted(line, ch) {
   return count;
 }
 
-// Format a single Plain source string and return the formatted version.
+// Format a single PLINJS source string and return the formatted version.
 function format(source) {
   const rawLines   = source.split('\n');
   const output     = [];
@@ -84,7 +84,7 @@ function format(source) {
 
     // ── Inside a raw JavaScript block ───────────────────────────────────────
     // JavaScript must be preserved verbatim: do not re-indent or trim its
-    // lines, and do not apply Plain bracket/blank-line rules (RFC-0011 §31).
+    // lines, and do not apply PLINJS bracket/blank-line rules (RFC-0011 §31).
     if (inJsBlock) {
       if (content === 'done') {
         if (depth > 0) depth--;

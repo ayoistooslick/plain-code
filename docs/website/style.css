@@ -1,5 +1,5 @@
 /* ============================================================
-   Plain v1.0.0 — Documentation Website
+   PLINJS v0.1.7 — Documentation Website
    Design: Ink — precise, typographic, developer-focused
    ============================================================ */
 
@@ -518,7 +518,7 @@ code .prm { color: #94a3b8; }   /* prompt / shell */
   line-height: 1.65;
 }
 
-/* ── Why Plain ───────────────────────────────────────────────────────────── */
+/* ── Why PLINJS ───────────────────────────────────────────────────────────── */
 .why-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

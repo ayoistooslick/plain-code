@@ -1,4 +1,4 @@
-// Plain v1.1 — Plain Expressions Examples
+// PLINJS v1.1 — PLINJS Expressions Examples
 
 remember players as ["Haaland", "Foden", "Rodri"]
 
@@ -35,6 +35,6 @@ name of user becomes "Ayo"
 show name of user
 
 // Files
-write("Hello from Plain Expressions" to "expressions.txt")
+write("Hello from PLINJS Expressions" to "expressions.txt")
 remember content as read("expressions.txt")
 show content

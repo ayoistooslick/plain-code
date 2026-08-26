@@ -1,4 +1,4 @@
-// Plain v1.1.0 — Plain Expressions
+// PLINJS v1.1.0 — PLINJS Expressions
 
 remember players as ["Haaland", "Foden", "Rodri"]
 
@@ -20,5 +20,5 @@ done
 show name of user
 name of user becomes "Ayo"
 
-write("Saved by Plain Expressions" to "notes.txt")
+write("Saved by PLINJS Expressions" to "notes.txt")
 show read("notes.txt")

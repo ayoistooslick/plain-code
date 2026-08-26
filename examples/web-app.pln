@@ -1,13 +1,13 @@
-// Plain v0.6 — Web App (Express shorthand)
+// PLINJS v0.6 — Web App (Express shorthand)
 
 web app
 
 route "/"
-    reply "Hello from Plain v0.6!"
+    reply "Hello from PLINJS!"
 done
 
 route "/about"
-    reply "About Plain"
+    reply "About PLINJS"
 done
 
 route "/api/status"

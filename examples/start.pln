@@ -1,2 +1,2 @@
-// Plain v1.0.1 — entry file for `plain start`
-show "Application started by Plain"
+// PLINJS v1.0.1 — entry file for `plinjs start`
+show "Application started by PLINJS"

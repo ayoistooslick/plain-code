@@ -1,4 +1,4 @@
-// Tests for Plain v1.2 — Telegram statements, inline objects, and the
+// Tests for PLINJS v1.2 — Telegram statements, inline objects, and the
 // statement-level JavaScript block.
 //
 // Run with: node tests/telegram.test.js
@@ -50,7 +50,7 @@ function compile(source) {
   return generate(parse(tokenize(source)));
 }
 
-// Compile Plain source the way `plain build` does (async runtime wrapper).
+// Compile PLINJS source the way `plinjs build` does (async runtime wrapper).
 function compileProgram(source) {
   const context = createGenerationContext();
   let js = generate(parse(tokenize(source)), context);
@@ -148,7 +148,7 @@ test('parser: when someone sends matching pattern block', () => {
 });
 
 test('parser: when someone clicks callback block', () => {
-  const ast = parse(tokenize('when someone clicks "about"\n  reply "About Plain"\ndone'));
+  const ast = parse(tokenize('when someone clicks "about"\n  reply "About PLINJS"\ndone'));
   const stmt = ast.body[0];
   if (stmt.type !== 'TelegramCallbackStatement') throw new Error('not TelegramCallbackStatement');
   if (stmt.data !== 'about') throw new Error('wrong data');
@@ -310,7 +310,7 @@ test('format: reply with buttons block indents button rows', () => {
   if (lines[2] !== 'done') throw new Error('done not dedented');
 });
 
-// ── End-to-end: rendered inline button executes its Plain callback ─────────
+// ── End-to-end: rendered inline button executes its PLINJS callback ─────────
 
 const BUTTONS_SOURCE = [
   'bot "0123456789:TEST"',
@@ -325,7 +325,7 @@ const BUTTONS_SOURCE = [
   'start telegram bot',
 ].join('\n');
 
-testAsync('runtime: rendered inline button carries callback_data and executes its Plain callback', async () => {
+testAsync('runtime: rendered inline button carries callback_data and executes its PLINJS callback', async () => {
   const calls = runTelegramProgram(compileProgram(BUTTONS_SOURCE));
 
   // 1. The /menu reply must render the inline keyboard with callback_data.
@@ -339,11 +339,11 @@ testAsync('runtime: rendered inline button carries callback_data and executes it
     throw new Error(`"About" button missing callback_data "about": ${JSON.stringify(flatButtons)}`);
   }
 
-  // 2. Pressing the button (callback_query update) must execute the Plain
+  // 2. Pressing the button (callback_query update) must execute the PLINJS
   //    "when someone clicks" handler — proven by its reply reaching Telegram.
   await waitFor(calls, (c) => c.some(m => m.method === 'sendMessage' && m.body.text === 'You clicked about!'));
   const click = calls.find(m => m.method === 'sendMessage' && m.body.text === 'You clicked about!');
-  if (!click) throw new Error('clicking the rendered button did not execute the Plain callback');
+  if (!click) throw new Error('clicking the rendered button did not execute the PLINJS callback');
   if (click.body.chat_id !== 42) throw new Error('callback reply went to the wrong chat');
 });
 

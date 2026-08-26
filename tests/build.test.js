@@ -1,12 +1,12 @@
-// Tests for PLIN v0.1.7 — production build model and project configuration.
+// Tests for PLINJS v0.1.7 — production build model and project configuration.
 //
-//   build:    plin build writes dist/<name>.js preserving source names and
+//   build:    plinjs build writes dist/<name>.js preserving source names and
 //             structure relative to the source root (TypeScript-style)
-//   config:   plin.config.json with outDir/srcDir/entry; deterministic
+//   config:   plinjs.config.json with outDir/srcDir/entry; deterministic
 //             defaults when the file is absent (outDir "dist", srcDir "."
 //             or "src" when that folder exists)
 //   run:      execution happens from a scratch directory outside the
-//             project — no _plain_out.js is ever written again
+//             project — execution never writes output files into it
 //   packages: multi-file projects and npm-package-style projects build to a
 //             normal Node-consumable dist/
 //
@@ -62,7 +62,7 @@ function runNode(file, cwd) {
   }
 }
 
-function tmpDir(prefix = 'plin-build-') {
+function tmpDir(prefix = 'plinjs-build-') {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
@@ -75,7 +75,7 @@ function write(dir, rel, content) {
 
 // ── Configuration defaults ───────────────────────────────────────────────────
 
-test('config: without plin.config.json the default outDir is dist and srcDir is the project root', () => {
+test('config: without plinjs.config.json the default outDir is dist and srcDir is the project root', () => {
   const dir = tmpDir();
   write(dir, 'messi.pln', 'show "goal"\n');
   const out = runCli(['build'], dir);
@@ -94,7 +94,7 @@ test('config: an existing src/ folder becomes the source root automatically', ()
 
 test('config: outDir is configurable ("build")', () => {
   const dir = tmpDir();
-  write(dir, 'plin.config.json', JSON.stringify({ outDir: 'build' }));
+  write(dir, 'plinjs.config.json', JSON.stringify({ outDir: 'build' }));
   write(dir, 'app.pln', 'show "ok"\n');
   runCli(['build'], dir);
   assert(fs.existsSync(path.join(dir, 'build', 'app.js')), 'expected build/app.js');
@@ -103,7 +103,7 @@ test('config: outDir is configurable ("build")', () => {
 
 test('config: srcDir is configurable', () => {
   const dir = tmpDir();
-  write(dir, 'plin.config.json', JSON.stringify({ srcDir: 'lib' }));
+  write(dir, 'plinjs.config.json', JSON.stringify({ srcDir: 'lib' }));
   write(dir, 'lib/core.pln', 'show "core"\n');
   runCli(['build'], dir);
   assert(fs.existsSync(path.join(dir, 'dist', 'core.js')), 'expected dist/core.js from lib/ sources');
@@ -111,7 +111,7 @@ test('config: srcDir is configurable', () => {
 
 test('config: entry is configurable and used by start', () => {
   const dir = tmpDir();
-  write(dir, 'plin.config.json', JSON.stringify({ entry: 'main.pln' }));
+  write(dir, 'plinjs.config.json', JSON.stringify({ entry: 'main.pln' }));
   write(dir, 'main.pln', 'show "custom-entry"\n');
   const out = runCli(['start'], dir);
   assert(out.includes('custom-entry'), `start must execute the declared entry, got:\n${out}`);
@@ -166,7 +166,7 @@ test('build: compilation is deterministic (identical bytes across rebuilds)', ()
 test('build: node_modules and hidden directories are never scanned', () => {
   const dir = tmpDir();
   write(dir, 'keep.pln', 'show "kept"\n');
-  write(dir, 'node_modules', 'junk', 'junk.js', 'not-plin');
+  write(dir, 'node_modules', 'junk', 'junk.js', 'not-plinjs');
   write(dir, 'node_modules', 'junk', 'fake.pln', 'show "should not compile"');
   write(dir, '.hidden', 'secret.pln', 'show "should not compile"');
   const out = runCli(['build'], dir);
@@ -200,7 +200,8 @@ test('run: executes correctly and leaves zero files behind in the project', () =
   assert(out.includes('Done.'), `expected completion marker:\n${out}`);
   const after = fs.readdirSync(dir).sort().join(',');
   assert(before === after, `project directory changed: before [${before}] after [${after}]`);
-  assert(!fs.existsSync(path.join(dir, '_plain_out.js')), '_plain_out.js must never exist again');
+  const strays = fs.readdirSync(dir).filter((f) => f.endsWith('.js'));
+  assert(strays.length === 0, `run wrote files beside the source: ${strays.join(', ')}`);
 });
 
 // Fabricate an installed package so require() resolution can be proven
@@ -214,15 +215,15 @@ function writeLocalPackage(projectDir, pkgName, mainSrc) {
 
 test('run: requires resolve against project node_modules even from the scratch dir', () => {
   const dir = tmpDir();
-  writeLocalPackage(dir, 'plinfakerun', 'module.exports = "resolved-ok"');
-  write(dir, 'app.pln', 'use plinfakerun\nshow plinfakerun\n');
+  writeLocalPackage(dir, 'fakerunpkg', 'module.exports = "resolved-ok"');
+  write(dir, 'app.pln', 'use fakerunpkg\nshow fakerunpkg\n');
   const out = runCli(['run', 'app.pln'], dir);
   assert(out.includes('resolved-ok'), `NODE_PATH resolution failed:\n${out}`);
 });
 
 test('start: builds the entry into dist and executes that output', () => {
   const dir = tmpDir();
-  write(dir, 'plin.config.json', JSON.stringify({ entry: 'boot.pln' }));
+  write(dir, 'plinjs.config.json', JSON.stringify({ entry: 'boot.pln' }));
   write(dir, 'boot.pln', 'show "started-from-dist"\n');
   const out = runCli(['start'], dir);
   assert(out.includes('started-from-dist'), `start did not execute:\n${out}`);
@@ -233,7 +234,7 @@ test('start: builds the entry into dist and executes that output', () => {
 
 test('config: an array of projects builds each into its own outDir, in order', () => {
   const dir = tmpDir();
-  write(dir, 'plin.config.json', JSON.stringify([
+  write(dir, 'plinjs.config.json', JSON.stringify([
     { name: 'test-proj', srcDir: 'web', outDir: 'dist/test' },
     { name: 'tools', srcDir: 'tools', outDir: 'dist/tools' },
   ]));
@@ -249,7 +250,7 @@ test('config: an array of projects builds each into its own outDir, in order', (
 
 test('config: array elements may declare their own srcDir', () => {
   const dir = tmpDir();
-  write(dir, 'plin.config.json', JSON.stringify([
+  write(dir, 'plinjs.config.json', JSON.stringify([
     { name: 'site', srcDir: 'site-src', outDir: 'public/js' },
   ]));
   write(dir, path.join('site-src', 'main.pln'), 'show "site"');
@@ -261,7 +262,7 @@ test('config: array elements may declare their own srcDir', () => {
 
 test('config: commands that run one program use the first project in the array', () => {
   const dir = tmpDir();
-  write(dir, 'plin.config.json', JSON.stringify([
+  write(dir, 'plinjs.config.json', JSON.stringify([
     { name: 'first', entry: 'first.pln', outDir: 'dist/a' },
     { name: 'second', entry: 'second.pln', outDir: 'dist/b' },
   ]));
@@ -274,7 +275,7 @@ test('config: commands that run one program use the first project in the array',
 
 test('config: an empty project array teaches instead of crashing', () => {
   const dir = tmpDir();
-  write(dir, 'plin.config.json', '[]');
+  write(dir, 'plinjs.config.json', '[]');
   const out = runCli(['build'], dir);
   assert(out.toLowerCase().includes('declares no projects'), `expected a teaching error, got:\n${out}`);
 });
@@ -287,7 +288,7 @@ test('integration: a multi-file project imports are bundled and the dist output 
   write(dir, path.join('src', 'index.pln'), [
     'import "./helpers/greet.pln"',
     '',
-    'greet("PLIN")',
+    'greet("PLINJS")',
   ].join('\n'));
   write(dir, path.join('src', 'helpers', 'greet.pln'), [
     'make greet(who)',
@@ -300,7 +301,7 @@ test('integration: a multi-file project imports are bundled and the dist output 
   assert(fs.existsSync(path.join(dir, 'dist', 'helpers', 'greet.js')), 'each source file gets its own dist output');
 
   const printed = runNode(path.join(dir, 'dist', 'index.js'), dir);
-  assert(printed.includes('Hello PLIN'), `standalone dist output broken:\n${printed}`);
+  assert(printed.includes('Hello PLINJS'), `standalone dist output broken:\n${printed}`);
 });
 
 // ── Integration: npm-package-style project ───────────────────────────────────
@@ -308,11 +309,11 @@ test('integration: a multi-file project imports are bundled and the dist output 
 test('integration: an npm-package-style project builds src/index.pln -> dist/index.js consumable by Node', () => {
   const dir = tmpDir();
   write(dir, 'package.json', JSON.stringify({
-    name: 'my-plin-package',
+    name: 'my-plinjs-package',
     version: '1.0.0',
     main: 'dist/index.js',
-    scripts: { build: 'plin build' },
-    devDependencies: { plin: '^0.1.7' },
+    scripts: { build: 'plinjs build' },
+    devDependencies: { plinjs: '^0.1.7' },
   }, null, 2));
   write(dir, path.join('src', 'index.pln'), [
     'remember greeting as "published"',
@@ -332,7 +333,7 @@ test('integration: an npm-package-style project builds src/index.pln -> dist/ind
 
   // The project's own package.json semantics were respected, not rewritten.
   const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
-  assert(pkg.main === 'dist/index.js' && pkg.name === 'my-plin-package', 'package.json was modified by the build');
+  assert(pkg.main === 'dist/index.js' && pkg.name === 'my-plinjs-package', 'package.json was modified by the build');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

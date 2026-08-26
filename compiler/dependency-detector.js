@@ -1,5 +1,5 @@
 
-// Runtime dependency detection for Plain source files.
+// Runtime dependency detection for PLINJS source files.
 //
 // This module only inspects source/AST data. It never installs packages or
 // checks the filesystem, so it can be reused by the CLI, editors, and tools.
@@ -8,14 +8,14 @@ const { builtinModules } = require('module');
 const { tokenize } = require('./lexer');
 const { parse } = require('./parser');
 
-// Plain's friendly module names mapped to the npm packages they require.
+// PLINJS's friendly module names mapped to the npm packages they require.
 const PACKAGE_MAP = Object.freeze({
   express: 'express',
   sqlite: 'better-sqlite3',
   fs: 'fs',
   path: 'path',
   // v2.0.1 — OCR statements are backed by tesseract.js. The mapping keeps the
-  // implementation dependency out of Plain's language surface: source says
+  // implementation dependency out of PLINJS's language surface: source says
   // `ocr ... as text`, tooling installs tesseract.js.
   ocr: 'tesseract.js',
   // v2.1.0 — PostgreSQL behind the friendly "postgres" name.
@@ -30,7 +30,7 @@ const PACKAGE_MAP = Object.freeze({
   uploads: 'multer',
   'wasm-sqlite': 'sql.js',
   // v2.1.1 — WhatsApp bots run on Baileys; QR codes render in the terminal
-  // through qrcode-terminal. Neither package ever appears in Plain source.
+  // through qrcode-terminal. Neither package ever appears in PLINJS source.
   whatsapp: '@whiskeysockets/baileys',
   'wa-qrcode': 'qrcode-terminal',
 });
@@ -115,10 +115,10 @@ function visit(node, onUse) {
 }
 
 /**
- * Return the unique npm packages required by Plain `use` statements
+ * Return the unique npm packages required by PLINJS `use` statements
  * `web app` and `database` shorthand blocks.
  *
- * @param {string|object} source Plain source text or a parsed Plain AST
+ * @param {string|object} source PLINJS source text or a parsed PLINJS AST
  * @returns {string[]} package names in first-seen order
  */
 function detectDependencies(source) {
@@ -128,7 +128,7 @@ function detectDependencies(source) {
   const dependencies = new Set();
 
   // Only the resolved npm package decides whether a dependency is real.
-  // Plain's friendly module names (e.g. sqlite) must not be mistaken for Node
+  // PLINJS's friendly module names (e.g. sqlite) must not be mistaken for Node
   // built-ins just because Node ships a module with the same name.
   const addPackage = (moduleName) => {
     // A specifier may carry a version range ("left-pad@^1.3.0"); friendly

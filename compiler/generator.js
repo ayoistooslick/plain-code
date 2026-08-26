@@ -1,4 +1,4 @@
-// Generator: converts a Plain AST into JavaScript source code.
+// Generator: converts a PLINJS AST into JavaScript source code.
 
 const vm = require('vm');
 const { splitPackageSpec } = require('./dependency-detector');
@@ -15,7 +15,7 @@ const KNOWN_PACKAGES = {
   postgres: `const { Pool } = require('pg');`,
 };
 
-// Plain module names whose npm package name differs from the Plain name.
+// PLINJS module names whose npm package name differs from the PLINJS name.
 // Used to de-duplicate runtime requires across aliases (RFC-0011 §22).
 const NPM_NAME = {
   sqlite: 'better-sqlite3',
@@ -129,7 +129,7 @@ const BUILTIN_DECLARATIONS = {
   // v2.1.1 — WhatsApp runtime (@whiskeysockets/baileys behind the
   // "whatsapp bot" block). Everything Baileys-shaped stays in here: socket
   // creation, auth-state files, QR rendering, pairing codes, connection
-  // lifecycle and messages.upsert normalization. Plain programs only ever
+  // lifecycle and messages.upsert normalization. PLINJS programs only ever
   // see __whatsappStart/__whatsappOnMessage/__whatsappReply.
   whatsapp: [
     `const { __whatsappStart, __whatsappOnMessage, __whatsappReply } = (() => {`,
@@ -173,7 +173,7 @@ const BUILTIN_DECLARATIONS = {
     `    const baileys = require('@whiskeysockets/baileys');`,
     `    const makeWASocket = baileys.default;`,
     `    const { useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, DisconnectReason } = baileys;`,
-    `    const folder = options.folder || 'plain-whatsapp-auth';`,
+    `    const folder = options.folder || 'plinjs-whatsapp-auth';`,
     `    const mode = options.login && options.login.mode === 'pairing' ? 'pairing' : 'qr';`,
     `    const pairingPhone = mode === 'pairing' ? __waNormalizePhone(options.login.phone) : null;`,
     `    let connecting = false;`,
@@ -201,7 +201,7 @@ const BUILTIN_DECLARATIONS = {
     `        });`,
     `        sock.ev.on('creds.update', saveCreds);`,
     // Pairing codes are requested two seconds after socket creation — asking
-    // earlier aborts the link attempt. Plain calls requestPairingCode(phone)
+    // earlier aborts the link attempt. PLINJS calls requestPairingCode(phone)
     // with no custom suffix; the number was validated at compile time.
     `        if (mode === 'pairing' && !state.creds.registered) {`,
     `          setTimeout(() => {`,
@@ -248,7 +248,7 @@ const BUILTIN_DECLARATIONS = {
     `          }`,
     `        });`,
     // Incoming messages: only fresh ("notify") deliveries, never our own,
-    // never status broadcasts. Each message becomes a Plain record.
+    // never status broadcasts. Each message becomes a PLINJS record.
     `        sock.ev.on('messages.upsert', async (upsert) => {`,
     `          try {`,
     `            if (!upsert || upsert.type !== 'notify') return;`,
@@ -285,7 +285,7 @@ const BUILTIN_DECLARATIONS = {
     `})();`,
   ].join('\n'),
   // v2.1.1 — HTTP client runtime on the global fetch API (Node.js 18+).
-  // Every response becomes a Plain-friendly record: { ok, status, headers,
+  // Every response becomes a PLINJS-friendly record: { ok, status, headers,
   // data }, where data holds parsed JSON when the content type says JSON.
   http: [
     `async function __httpRequest(method, url, options = {}) {`,
@@ -395,7 +395,7 @@ const BUILTIN_DECLARATIONS = {
     `  return (req, res, next) => {`,
     `    const cookies = __parseCookies(req.headers.cookie);`,
     `    req.__session = null;`,
-    `    const sid = cookies['plain.sid'];`,
+    `    const sid = cookies['plinjs.sid'];`,
     `    if (sid && sid.startsWith('s:') && sid.indexOf('.', 2) !== -1) {`,
     `      const dot = sid.indexOf('.', 2);`,
     `      const id = sid.slice(2, dot);`,
@@ -409,7 +409,7 @@ const BUILTIN_DECLARATIONS = {
     `      req.__session = {};`,
     `      __sessionStore.set(id, req.__session);`,
     `      const signature = __sessionsCrypto.createHmac('sha256', String(secret)).update(id).digest('base64url');`,
-    `      res.setHeader('Set-Cookie', 'plain.sid=s:' + id + '.' + signature + '; Path=/; HttpOnly; SameSite=Lax');`,
+    `      res.setHeader('Set-Cookie', 'plinjs.sid=s:' + id + '.' + signature + '; Path=/; HttpOnly; SameSite=Lax');`,
     `    }`,
     `    next();`,
     `  };`,
@@ -422,11 +422,11 @@ const BUILTIN_DECLARATIONS = {
     `  return request.__oauthUser || (request.__session && request.__session.user) || null;`,
     `}`,
     `function __destroySession(request, response) {`,
-    `  const sid = __parseCookies(request.headers.cookie)['plain.sid'];`,
+    `  const sid = __parseCookies(request.headers.cookie)['plinjs.sid'];`,
     `  if (sid && sid.startsWith('s:') && sid.indexOf('.', 2) !== -1) {`,
     `    __sessionStore.delete(sid.slice(2, sid.indexOf('.', 2)));`,
     `  }`,
-    `  response.setHeader('Set-Cookie', 'plain.sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');`,
+    `  response.setHeader('Set-Cookie', 'plinjs.sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');`,
     `}`,
   ].join('\n'),
   // v2.1.1 — authentication runtime: scrypt password hashing and signed
@@ -560,7 +560,7 @@ const BUILTIN_DECLARATIONS = {
   ].join('\n'),
   // v2.1.1 — SQLite runtime with a portable engine chain. Default order:
   // better-sqlite3 (native binding) first, sql.js (WebAssembly) as fallback.
-  // Both engines are wrapped in the same tiny synchronous surface that Plain
+  // Both engines are wrapped in the same tiny synchronous surface that PLINJS
   // generates (prepare().all()/.run(), exec(), transaction()), so compiled
   // database code is identical either way. The WebAssembly engine persists
   // the whole database back to disk after every write.
@@ -574,7 +574,7 @@ const BUILTIN_DECLARATIONS = {
     `    if (mode === 'native') {`,
     `      throw new Error('Database: the native SQLite engine is not usable on this machine (' + __sqliteNativeReason + ').\\nFix the better-sqlite3 build, or run anywhere with:\\n  database "' + file + '" using "wasm"');`,
     `    }`,
-    `    console.error('Plain: native SQLite unavailable (' + __sqliteNativeReason + '); using the WebAssembly engine instead.');`,
+    `    console.error('PLINJS: native SQLite unavailable (' + __sqliteNativeReason + '); using the WebAssembly engine instead.');`,
     `  }`,
     `  const initSqlJs = require('sql.js');`,
     `  const SQL = await initSqlJs();`,
@@ -615,7 +615,7 @@ const BUILTIN_DECLARATIONS = {
     `    try {`,
     `      require('fs').writeFileSync(file, Buffer.from(db.export()));`,
     `    } catch (error) {`,
-    `      console.error('Plain: could not save the database to ' + file + ': ' + error.message);`,
+    `      console.error('PLINJS: could not save the database to ' + file + ': ' + error.message);`,
     `    }`,
     `  };`,
     `  return {`,
@@ -696,7 +696,7 @@ const BUILTIN_DECLARATIONS = {
     // registry (`handlers`) and API transport (`call`, `sleep`) are in scope.
     // Defining it outside made every BOT.onCommand/onPattern/onCallback call
     // throw "ReferenceError: handlers is not defined", so no rendered inline
-    // button could ever execute its Plain callback.
+    // button could ever execute its PLINJS callback.
     `  async function createTelegramBot(botToken) {`,
     `    const resolved = botToken || process.env.TELEGRAM_BOT_TOKEN;`,
     `    if (!resolved) throw new Error('Telegram: bot token is missing. Use: bot "YOUR_BOT_TOKEN"');`,
@@ -782,7 +782,7 @@ const BUILTIN_DECLARATIONS = {
   ].join('\n'),
 };
 
-// Built-in stdlib functions: Plain name → JS code generator.
+// Built-in stdlib functions: PLINJS name → JS code generator.
 // v0.1–v0.4 original stdlib
 const STDLIB = {
   length:    (args, context) => `(${generateExpr(args[0], context)}).length`,
@@ -1003,13 +1003,13 @@ function requireOneArg(name, args) {
 }
 
 // Set to true while generating inside a route handler body.
-// Remaps Plain's "request" → "req" and "response" → "res".
+// Remaps PLINJS's "request" → "req" and "response" → "res".
 let _inRoute = false;
-// True while generating inside a Telegram handler body. Remaps Plain's
+// True while generating inside a Telegram handler body. Remaps PLINJS's
 // "reply" statement to send a chat message instead of an HTTP response.
 let _inTelegram = false;
 // v2.1.1 — true while generating inside a WhatsApp "on message" handler.
-// Remaps Plain's "reply" to a WhatsApp chat message and Plain's "message"
+// Remaps PLINJS's "reply" to a WhatsApp chat message and PLINJS's "message"
 // identifier to the normalized message record of the current delivery.
 let _inWhatsApp = false;
 // v2.1.0 — active "group" prefixes. Route paths are prefixed with the
@@ -1088,7 +1088,7 @@ function emitRequire(context, moduleName, alias) {
     if (known) {
       const boundAs = known.match(/const (\w+)/)[1];
       throw new Error(
-        `"${bareName}" is part of Plain's built-in runtime and is already available as "${boundAs}". Remove "as ${alias}".`
+        `"${bareName}" is part of PLINJS's built-in runtime and is already available as "${boundAs}". Remove "as ${alias}".`
       );
     }
     const key = `${npmName}\0${alias}`;
@@ -1149,7 +1149,7 @@ function findAsyncCalls(node, found) {
 }
 
 // True when any statement in the block emits `await` (a JavaScript block,
-// `ask`, or `ocr`), including inside nested if / loop bodies. Nested Plain
+// `ask`, or `ocr`), including inside nested if / loop bodies. Nested PLINJS
 // function declarations are handled independently, so they are not descended
 // into.
 function containsAsyncBlock(statements) {
@@ -1191,7 +1191,7 @@ function generate(ast, context = createGenerationContext()) {
   const body = ast.body.map(node => generateStatement(node, '', context)).filter(Boolean).join('\n');
   const lines = context.pendingPrelude.slice(preludeStart).concat(body).filter(Boolean);
   // Top-level functions are the module's public API: export them so a built
-  // PLIN file works as a normal CommonJS module (npm packages, require()).
+  // PLINJS file works as a normal CommonJS module (npm packages, require()).
   // Harmless for programs that are only executed.
   const exported = ast.body
     .filter(node => node.type === 'FunctionDeclaration')
@@ -1267,7 +1267,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // javascript … done                      (statement-level block)
     case 'JavaScriptBlock': {
       // Validate the raw JavaScript at compile time so JS syntax errors are
-      // reported as such, with the Plain context that produced them.
+      // reported as such, with the PLINJS context that produced them.
       try {
         new vm.Script(`(async () => {\n${node.body}\n})`);
       } catch (e) {
@@ -1704,7 +1704,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       ensureBuiltin(context, 'whatsapp');
       markAsync(context);
       // v2.1.2 — the pairing phone may be a compile-time literal or any
-      // Plain expression (e.g. a variable filled by `ask`). Runtime values
+      // PLINJS expression (e.g. a variable filled by `ask`). Runtime values
       // are normalized/validated by __waNormalizePhone at startup.
       let loginArg;
       if (node.login.mode === 'pairing') {
@@ -1728,7 +1728,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     }
 
     // on message … done — registers the handler that receives each incoming
-    // WhatsApp message as a normalized Plain record on `message`.
+    // WhatsApp message as a normalized PLINJS record on `message`.
     case 'WhatsAppOnMessageStatement': {
       ensureBuiltin(context, 'whatsapp');
       if (!context.inFunction) context.needsAsync = true;
@@ -1886,7 +1886,7 @@ function generateExpr(node, context = createGenerationContext()) {
   switch (node.type) {
     case 'StringLiteral':    return JSON.stringify(node.value);
     case 'NumberLiteral':    return String(node.value);
-    // v2.1.1 — boolean and null literals are Plain keywords.
+    // v2.1.1 — boolean and null literals are PLINJS keywords.
     case 'BooleanLiteral':   return String(node.value);
     case 'NullLiteral':      return 'null';
     // v2.1.1 — arithmetic: unary minus (binary + - * / % reuse
@@ -1897,7 +1897,7 @@ function generateExpr(node, context = createGenerationContext()) {
         ? `(${generateExpr(node.operand, context)})`
         : generateExpr(node.operand, context)}`;
     // v2.1.1 — wait for <expr>: awaits an async value (fetch promises,
-    // async functions called from Plain, etc.).
+    // async functions called from PLINJS, etc.).
     case 'AwaitExpression': {
       markAsync(context);
       return `(await ${generateExpr(node.value, context)})`;
@@ -1922,10 +1922,10 @@ function generateExpr(node, context = createGenerationContext()) {
     }
 
     case 'Identifier': {
-      // Inside route handlers, remap Plain's request/response to req/res
+      // Inside route handlers, remap PLINJS's request/response to req/res
       if (_inRoute && node.name === 'request')  return 'req';
       if (_inRoute && node.name === 'response') return 'res';
-      // Inside WhatsApp "on message" handlers, Plain's "message" is the
+      // Inside WhatsApp "on message" handlers, PLINJS's "message" is the
       // normalized record of the current delivery.
       if (_inWhatsApp && node.name === 'message') return '__waCtx.message';
       return node.name;

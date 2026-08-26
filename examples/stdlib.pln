@@ -1,4 +1,4 @@
-// Plain v0.6 — Standard Library Examples
+// PLINJS v0.6 — Standard Library Examples
 
 // print (alias for show, compiled to console.log)
 print("Hello from print!")
@@ -26,7 +26,7 @@ remember nodeEnv as env("NODE_ENV")
 show nodeEnv
 
 // File operations
-writeFile("hello.txt", "Hello from Plain!")
+writeFile("hello.txt", "Hello from PLINJS!")
 remember exists as fileExists("hello.txt")
 show exists
 

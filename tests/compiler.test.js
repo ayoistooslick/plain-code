@@ -1,4 +1,4 @@
-// Tests for the Plain compiler
+// Tests for the PLINJS compiler
 
 const fs   = require('fs');
 const path = require('path');
@@ -906,7 +906,7 @@ test('import path preserved correctly in AST', () => {
 
 // â”€â”€ v0.4.2 â€” Package Manager & Project Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.4.2 â€” plain init');
+console.log('\nv0.4.2 â€” plinjs init');
 
 const os  = require('os');
 const { execFileSync: _execFileSync } = require('child_process');
@@ -928,21 +928,21 @@ function runCli(args, cwd) {
 
 // Create a fresh temp directory for a test.
 function tmpDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'plain-test-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'plinjs-test-'));
 }
 
-test('plain init creates plin.config.json', () => {
+test('plinjs init creates plinjs.config.json', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
-  const jsonPath = path.join(dir, 'plin.config.json');
-  if (!fs.existsSync(jsonPath)) throw new Error('plin.config.json was not created');
+  const jsonPath = path.join(dir, 'plinjs.config.json');
+  if (!fs.existsSync(jsonPath)) throw new Error('plinjs.config.json was not created');
   const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-  if (!data.name)    throw new Error('plin.config.json missing "name"');
-  if (!data.version) throw new Error('plin.config.json missing "version"');
-  if (!data.entry)   throw new Error('plin.config.json missing "entry"');
+  if (!data.name)    throw new Error('plinjs.config.json missing "name"');
+  if (!data.version) throw new Error('plinjs.config.json missing "version"');
+  if (!data.entry)   throw new Error('plinjs.config.json missing "entry"');
 });
 
-test('plin init shows "Project already initialized." when plin.config.json exists', () => {
+test('plinjs init shows "Project already initialized." when plinjs.config.json exists', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const out = runCli(['init'], dir);
@@ -951,46 +951,46 @@ test('plin init shows "Project already initialized." when plin.config.json exist
   }
 });
 
-test('plin init plin.config.json has correct default entry', () => {
+test('plinjs init plinjs.config.json has correct default entry', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
-  const data = JSON.parse(fs.readFileSync(path.join(dir, 'plin.config.json'), 'utf8'));
+  const data = JSON.parse(fs.readFileSync(path.join(dir, 'plinjs.config.json'), 'utf8'));
   if (data.entry !== 'index.pln') throw new Error(`expected entry "index.pln", got "${data.entry}"`);
 });
 
-test('plain init plin.config.json is valid JSON with name, version, entry', () => {
+test('plinjs init plinjs.config.json is valid JSON with name, version, entry', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   let data;
   try {
-    data = JSON.parse(fs.readFileSync(path.join(dir, 'plin.config.json'), 'utf8'));
+    data = JSON.parse(fs.readFileSync(path.join(dir, 'plinjs.config.json'), 'utf8'));
   } catch (e) {
-    throw new Error(`plin.config.json is not valid JSON: ${e.message}`);
+    throw new Error(`plinjs.config.json is not valid JSON: ${e.message}`);
   }
   if (typeof data.name    !== 'string') throw new Error('name must be a string');
   if (typeof data.version !== 'string') throw new Error('version must be a string');
   if (typeof data.entry   !== 'string') throw new Error('entry must be a string');
 });
 
-console.log('\nv0.4.2 â€” plain add / remove');
+console.log('\nv0.4.2 â€” plinjs add / remove');
 
-test('plain add errors without plin.config.json', () => {
+test('plinjs add errors without plinjs.config.json', () => {
   const dir = tmpDir();
   const out = runCli(['add', 'express'], dir);
-  if (!out.toLowerCase().includes('plin init')) {
-    throw new Error(`Expected hint to run "plin init" but got: ${out}`);
+  if (!out.toLowerCase().includes('plinjs init')) {
+    throw new Error(`Expected hint to run "plinjs init" but got: ${out}`);
   }
 });
 
-test('plain remove errors without plin.config.json', () => {
+test('plinjs remove errors without plinjs.config.json', () => {
   const dir = tmpDir();
   const out = runCli(['remove', 'express'], dir);
-  if (!out.toLowerCase().includes('plin init')) {
-    throw new Error(`Expected hint to run "plin init" but got: ${out}`);
+  if (!out.toLowerCase().includes('plinjs init')) {
+    throw new Error(`Expected hint to run "plinjs init" but got: ${out}`);
   }
 });
 
-test('plain add without package name shows usage', () => {
+test('plinjs add without package name shows usage', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const out = runCli(['add'], dir);
@@ -999,7 +999,7 @@ test('plain add without package name shows usage', () => {
   }
 });
 
-test('plain remove without package name shows usage', () => {
+test('plinjs remove without package name shows usage', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const out = runCli(['remove'], dir);
@@ -1008,7 +1008,7 @@ test('plain remove without package name shows usage', () => {
   }
 });
 
-test('plain add rejects invalid package name (shell injection attempt)', () => {
+test('plinjs add rejects invalid package name (shell injection attempt)', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   // A name containing shell metacharacters must be rejected before npm is called.
@@ -1018,7 +1018,7 @@ test('plain add rejects invalid package name (shell injection attempt)', () => {
   }
 });
 
-test('plain remove rejects invalid package name', () => {
+test('plinjs remove rejects invalid package name', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const out = runCli(['remove', '$(evil)'], dir);
@@ -1027,17 +1027,17 @@ test('plain remove rejects invalid package name', () => {
   }
 });
 
-console.log('\nv0.4.2 â€” plain install (RFC-0009.2)');
+console.log('\nv0.4.2 â€” plinjs install (RFC-0009.2)');
 
-test('plain install errors without plin.config.json', () => {
+test('plinjs install errors without plinjs.config.json', () => {
   const dir = tmpDir();
   const out = runCli(['install'], dir);
-  if (!out.toLowerCase().includes('plin init')) {
-    throw new Error(`Expected hint to run "plin init" but got: ${out}`);
+  if (!out.toLowerCase().includes('plinjs init')) {
+    throw new Error(`Expected hint to run "plinjs init" but got: ${out}`);
   }
 });
 
-test('plain install with no external dependencies shows correct message', () => {
+test('plinjs install with no external dependencies shows correct message', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const plnFile = path.join(dir, 'index.pln');
@@ -1048,7 +1048,7 @@ test('plain install with no external dependencies shows correct message', () => 
   }
 });
 
-test('plain install with built-in modules only shows no external dependencies', () => {
+test('plinjs install with built-in modules only shows no external dependencies', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const plnFile = path.join(dir, 'index.pln');
@@ -1059,7 +1059,7 @@ test('plain install with built-in modules only shows no external dependencies', 
   }
 });
 
-test('plain install installs missing dependencies and reports success', () => {
+test('plinjs install installs missing dependencies and reports success', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const plnFile = path.join(dir, 'index.pln');
@@ -1082,7 +1082,7 @@ test('plain install installs missing dependencies and reports success', () => {
   if (!fs.existsSync(pkgDir)) throw new Error('semver package not installed');
 });
 
-test('plain install skips already installed dependencies', () => {
+test('plinjs install skips already installed dependencies', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const plnFile = path.join(dir, 'index.pln');
@@ -1096,7 +1096,7 @@ test('plain install skips already installed dependencies', () => {
   }
 });
 
-test('plain install handles multiple dependencies', () => {
+test('plinjs install handles multiple dependencies', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const plnFile = path.join(dir, 'index.pln');
@@ -1109,7 +1109,7 @@ test('plain install handles multiple dependencies', () => {
   if (!out.includes('Installing express...')) throw new Error('express install missing');
 });
 
-test('plain install fails when entry file is missing', () => {
+test('plinjs install fails when entry file is missing', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   // Remove the entry file
@@ -1121,7 +1121,7 @@ test('plain install fails when entry file is missing', () => {
   }
 });
 
-test('plain install shows friendly error on resolver failure (circular import)', () => {
+test('plinjs install shows friendly error on resolver failure (circular import)', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const entry = path.join(dir, 'index.pln');
@@ -1138,32 +1138,32 @@ test('plain install shows friendly error on resolver failure (circular import)',
 
 console.log('\nv0.4.2 â€” CLI help');
 
-test('plain help includes "plin init"', () => {
+test('plinjs help includes "plinjs init"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plin init')) throw new Error(`"plin init" missing from help. Got:\n${out}`);
+  if (!out.includes('plinjs init')) throw new Error(`"plinjs init" missing from help. Got:\n${out}`);
 });
 
-test('plain help includes "plain install"', () => {
+test('plinjs help includes "plinjs install"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plin install')) throw new Error(`"plain install" missing from help. Got:\n${out}`);
+  if (!out.includes('plinjs install')) throw new Error(`"plinjs install" missing from help. Got:\n${out}`);
 });
 
-test('plain help includes "plain add"', () => {
+test('plinjs help includes "plinjs add"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plin add')) throw new Error(`"plain add" missing from help. Got:\n${out}`);
+  if (!out.includes('plinjs add')) throw new Error(`"plinjs add" missing from help. Got:\n${out}`);
 });
 
-test('plain help includes "plain remove"', () => {
+test('plinjs help includes "plinjs remove"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plin remove')) throw new Error(`"plain remove" missing from help. Got:\n${out}`);
+  if (!out.includes('plinjs remove')) throw new Error(`"plinjs remove" missing from help. Got:\n${out}`);
 });
 
-test('plain help includes "plain update"', () => {
+test('plinjs help includes "plinjs update"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plin update')) throw new Error(`"plain update" missing from help. Got:\n${out}`);
+  if (!out.includes('plinjs update')) throw new Error(`"plinjs update" missing from help. Got:\n${out}`);
 });
 
-test('plain version shows the compiler version', () => {
+test('plinjs version shows the compiler version', () => {
   const out = runCli(['version'], process.cwd());
   const { VERSION } = require('../compiler/version');
   if (!out.includes(VERSION)) throw new Error(`Expected version ${VERSION} but got: ${out}`);
@@ -1269,11 +1269,11 @@ test('format: no blank lines between array elements', () => {
   }
 });
 
-// â”€â”€ v0.5 â€” plain check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v0.5 â€” plinjs check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.5 â€” plain check');
+console.log('\nv0.5 â€” plinjs check');
 
-test('plain check exits 0 on valid file', () => {
+test('plinjs check exits 0 on valid file', () => {
   const dir = tmpDir();
   const plnFile = path.join(dir, 'ok.pln');
   fs.writeFileSync(plnFile, 'remember x as 1\nshow x\n');
@@ -1283,7 +1283,7 @@ test('plain check exits 0 on valid file', () => {
   }
 });
 
-test('plain check reports error on invalid file', () => {
+test('plinjs check reports error on invalid file', () => {
   const dir = tmpDir();
   const plnFile = path.join(dir, 'bad.pln');
   fs.writeFileSync(plnFile, 'remembr x as 1\n');
@@ -1293,7 +1293,7 @@ test('plain check reports error on invalid file', () => {
   }
 });
 
-test('plain check includes line number in error', () => {
+test('plinjs check includes line number in error', () => {
   const dir = tmpDir();
   const plnFile = path.join(dir, 'bad.pln');
   fs.writeFileSync(plnFile, 'remember x as 1\nremembr y as 2\n');
@@ -1303,7 +1303,7 @@ test('plain check includes line number in error', () => {
   }
 });
 
-test('plain check includes filename in error', () => {
+test('plinjs check includes filename in error', () => {
   const dir = tmpDir();
   const plnFile = path.join(dir, 'bad.pln');
   fs.writeFileSync(plnFile, 'remember x as 1\nremembr y as 2\n');
@@ -1313,7 +1313,7 @@ test('plain check includes filename in error', () => {
   }
 });
 
-test('plain check errors without file argument', () => {
+test('plinjs check errors without file argument', () => {
   const dir = tmpDir();
   const out = runCli(['check'], dir);
   if (!out.toLowerCase().includes('usage')) {
@@ -1321,7 +1321,7 @@ test('plain check errors without file argument', () => {
   }
 });
 
-test('plain check errors on missing file', () => {
+test('plinjs check errors on missing file', () => {
   const dir = tmpDir();
   const out = runCli(['check', 'does_not_exist.pln'], dir);
   if (!out.toLowerCase().includes('not found')) {
@@ -1329,11 +1329,11 @@ test('plain check errors on missing file', () => {
   }
 });
 
-// â”€â”€ v0.5 â€” plain fmt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v0.5 â€” plinjs fmt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nv0.5 â€” plain fmt');
+console.log('\nv0.5 â€” plinjs fmt');
 
-test('plain fmt formats file in-place', () => {
+test('plinjs fmt formats file in-place', () => {
   const dir = tmpDir();
   const plnFile = path.join(dir, 'app.pln');
   fs.writeFileSync(plnFile, 'make add(a, b)\ngive a + b\ndone\n');
@@ -1344,7 +1344,7 @@ test('plain fmt formats file in-place', () => {
   }
 });
 
-test('plain fmt reports success message', () => {
+test('plinjs fmt reports success message', () => {
   const dir = tmpDir();
   const plnFile = path.join(dir, 'app.pln');
   fs.writeFileSync(plnFile, 'show "hello"\n');
@@ -1354,7 +1354,7 @@ test('plain fmt reports success message', () => {
   }
 });
 
-test('plain fmt errors without file argument', () => {
+test('plinjs fmt errors without file argument', () => {
   const dir = tmpDir();
   const out = runCli(['fmt'], dir);
   if (!out.toLowerCase().includes('usage')) {
@@ -1362,7 +1362,7 @@ test('plain fmt errors without file argument', () => {
   }
 });
 
-test('plain fmt errors on missing file', () => {
+test('plinjs fmt errors on missing file', () => {
   const dir = tmpDir();
   const out = runCli(['fmt', 'does_not_exist.pln'], dir);
   if (!out.toLowerCase().includes('not found')) {
@@ -1422,28 +1422,28 @@ test('unknown keyword suggestion includes "Did you mean"', () => {
 
 console.log('\nv0.5 â€” CLI help & version');
 
-test('plain help includes "plain check"', () => {
+test('plinjs help includes "plinjs check"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plin check')) throw new Error(`"plain check" missing from help. Got:\n${out}`);
+  if (!out.includes('plinjs check')) throw new Error(`"plinjs check" missing from help. Got:\n${out}`);
 });
 
-test('plain help includes "plain fmt"', () => {
+test('plinjs help includes "plinjs fmt"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plin fmt')) throw new Error(`"plain fmt" missing from help. Got:\n${out}`);
+  if (!out.includes('plinjs fmt')) throw new Error(`"plinjs fmt" missing from help. Got:\n${out}`);
 });
 
-test('plain version shows the compiler version', () => {
+test('plinjs version shows the compiler version', () => {
   const out = runCli(['version'], process.cwd());
   const { VERSION } = require('../compiler/version');
   if (!out.includes(VERSION)) throw new Error(`Expected version ${VERSION} but got: ${out}`);
 });
 
-test('package.json exposes a plin bin with a node shebang', () => {
+test('package.json exposes a plinjs bin with a node shebang', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-  if (!pkg.bin || pkg.bin.plin !== './compiler/cli.js') throw new Error('missing "plin" bin');
-  if (pkg.bin.plain || pkg.bin['plain-code']) throw new Error('the old plain bins must be removed');
-  if (pkg.preferGlobal) throw new Error('preferGlobal must be false: plin installs locally as a devDependency');
-  if (pkg.name !== 'plin') throw new Error('package name must be "plin"');
+  if (!pkg.bin || pkg.bin.plinjs !== './compiler/cli.js') throw new Error('missing "plinjs" bin');
+  if (Object.keys(pkg.bin).length !== 1) throw new Error('package.json must expose exactly one bin');
+  if (pkg.preferGlobal) throw new Error('preferGlobal must be false: plinjs installs locally as a devDependency');
+  if (pkg.name !== 'plinjs') throw new Error('package name must be "plinjs"');
   const firstLine = fs.readFileSync(path.join(__dirname, '..', 'compiler', 'cli.js'), 'utf8').split('\n')[0];
   if (firstLine.trim() !== '#!/usr/bin/env node') {
     throw new Error('compiler/cli.js must start with a node shebang for global installs');
@@ -1539,10 +1539,10 @@ test('"is not empty" compiles to .length > 0', () => {
 });
 
 test('"contains" compiles to .includes()', () => {
-  const src = 'if name contains "Plain"\n  show "yes"\ndone';
+  const src = 'if name contains "PLINJS"\n  show "yes"\ndone';
   const js = compile(src);
   if (!js.includes('.includes(')) throw new Error('expected .includes()');
-  if (!js.includes('"Plain"')) throw new Error('expected search value');
+  if (!js.includes('"PLINJS"')) throw new Error('expected search value');
 });
 
 test('"starts with" compiles to .startsWith()', () => {
@@ -1826,23 +1826,23 @@ test('"execute" block compiles to db.exec()', () => {
 
 console.log('\nv0.6 â€” CLI updates');
 
-test('plain version shows the compiler version (CLI)', () => {
+test('plinjs version shows the compiler version (CLI)', () => {
   const out = runCli(['version'], process.cwd());
   const { VERSION } = require('../compiler/version');
   if (!out.includes(VERSION)) throw new Error(`Expected ${VERSION} but got: ${out}`);
 });
 
-test('plain help mentions v1.0 features', () => {
+test('plinjs help mentions v1.0 features', () => {
   const out = runCli(['help'], process.cwd());
   if (!out.includes('1.0')) throw new Error('"1.0" missing from help');
 });
 
-test('plain help mentions v1.1 Plain Expressions', () => {
+test('plinjs help mentions v1.1 PLINJS Expressions', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('Plain Expressions')) throw new Error('"Plain Expressions" missing from help');
+  if (!out.includes('PLINJS Expressions')) throw new Error('"PLINJS Expressions" missing from help');
 });
 
-test('plain help includes "route"', () => {
+test('plinjs help includes "route"', () => {
   const out = runCli(['help'], process.cwd());
   if (!out.includes('route')) throw new Error('"route" missing from help');
 });
@@ -2020,7 +2020,7 @@ test('format: object literal body is indented', () => {
 
 console.log('\nv1.0 â€” CLI additional coverage');
 
-test('plain new creates the project directory', () => {
+test('plinjs new creates the project directory', () => {
   const dir = tmpDir();
   const projectName = 'test-new-project';
   const projectDir = path.join(dir, projectName);
@@ -2029,7 +2029,7 @@ test('plain new creates the project directory', () => {
   fs.rmSync(projectDir, { recursive: true, force: true });
 });
 
-test('plin new creates src/app.pln', () => {
+test('plinjs new creates src/app.pln', () => {
   const dir = tmpDir();
   const projectName = 'test-new-pln';
   const projectDir = path.join(dir, projectName);
@@ -2038,19 +2038,19 @@ test('plin new creates src/app.pln', () => {
   fs.rmSync(projectDir, { recursive: true, force: true });
 });
 
-test('plin new creates plin.config.json and a local-devDependency package.json', () => {
+test('plinjs new creates plinjs.config.json and a local-devDependency package.json', () => {
   const dir = tmpDir();
   const projectName = 'test-new-json';
   const projectDir = path.join(dir, projectName);
   runCli(['new', projectName], dir);
-  if (!fs.existsSync(path.join(projectDir, 'plin.config.json'))) throw new Error('plin.config.json not created');
+  if (!fs.existsSync(path.join(projectDir, 'plinjs.config.json'))) throw new Error('plinjs.config.json not created');
   const pkg = JSON.parse(fs.readFileSync(path.join(projectDir, 'package.json'), 'utf8'));
-  if (!pkg.scripts || pkg.scripts.build !== 'plin build') throw new Error('expected npm build script "plin build"');
-  if (!pkg.devDependencies || !pkg.devDependencies.plin) throw new Error('expected plin devDependency');
+  if (!pkg.scripts || pkg.scripts.build !== 'plinjs build') throw new Error('expected npm build script "plinjs build"');
+  if (!pkg.devDependencies || !pkg.devDependencies.plinjs) throw new Error('expected plinjs devDependency');
   fs.rmSync(projectDir, { recursive: true, force: true });
 });
 
-test('plin build writes .js output into dist/, preserving the file name', () => {
+test('plinjs build writes .js output into dist/, preserving the file name', () => {
   const dir = tmpDir();
   const plnFile = path.join(dir, 'hello.pln');
   fs.writeFileSync(plnFile, 'show "hello"\n');
@@ -2060,7 +2060,7 @@ test('plin build writes .js output into dist/, preserving the file name', () => 
   if (fs.existsSync(path.join(dir, 'hello.js'))) throw new Error('output must not sit next to the source');
 });
 
-test('plin build output file contains valid JS', () => {
+test('plinjs build output file contains valid JS', () => {
   const dir = tmpDir();
   const plnFile = path.join(dir, 'prog.pln');
   fs.writeFileSync(plnFile, 'remember x as 42\nshow x\n');
@@ -2070,9 +2070,9 @@ test('plin build output file contains valid JS', () => {
   if (!js.includes('console.log(x)')) throw new Error('expected console.log in output');
 });
 
-test('plain help includes "plain new"', () => {
+test('plinjs help includes "plinjs new"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plin new')) throw new Error('"plain new" missing from help');
+  if (!out.includes('plinjs new')) throw new Error('"plinjs new" missing from help');
 });
 
 test('unknown command shows an error message', () => {
@@ -2083,7 +2083,7 @@ test('unknown command shows an error message', () => {
   }
 });
 
-test('plain run on a nonexistent file exits with a friendly error', () => {
+test('plinjs run on a nonexistent file exits with a friendly error', () => {
   const dir = tmpDir();
   const out = runCli(['run', 'no_such_file.pln'], dir);
   if (!out.includes('File not found')) {
@@ -2136,9 +2136,9 @@ test('multiple show statements compile to multiple console.log calls', () => {
 });
 
 test('reply json with multiple properties compiles correctly', () => {
-  const src = 'when someone visits "/"\n  reply json\n    name is "Plain"\n    version is "1.0"\n  done\ndone';
+  const src = 'when someone visits "/"\n  reply json\n    name is "PLINJS"\n    version is "1.0"\n  done\ndone';
   const js = compile(src);
-  if (!js.includes('"name": "Plain"')) throw new Error('missing name property');
+  if (!js.includes('"name": "PLINJS"')) throw new Error('missing name property');
   if (!js.includes('"version": "1.0"')) throw new Error('missing version property');
 });
 
@@ -2160,9 +2160,9 @@ test('between condition in while loop', () => {
   if (!js.includes('x >= 1 && x <= 10')) throw new Error('expected between range');
 });
 
-// â”€â”€ RFC-0010 â€” Plain Expressions (v1.1) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ RFC-0010 â€” PLINJS Expressions (v1.1) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nRFC-0010 â€” Plain Expressions (v1.1)');
+console.log('\nRFC-0010 â€” PLINJS Expressions (v1.1)');
 
 test('first player from players compiles to index 0', () => {
   assert(compile('show first player from players'), 'console.log(players[0]);');
@@ -2338,7 +2338,7 @@ test('unknown special call form throws a helpful error', () => {
     compile('frobnicate(a to b)');
     throw new Error('expected an error but none was thrown');
   } catch (e) {
-    if (!e.message.includes('not a valid Plain collection expression')) {
+    if (!e.message.includes('not a valid PLINJS collection expression')) {
       throw new Error(`unexpected message: ${e.message}`);
     }
   }
@@ -2594,15 +2594,15 @@ test('JavaScript block supports async/await', () => {
   if (!js.includes('return data.data')) throw new Error('missing return');
 });
 
-test('JavaScript block can read Plain variables in scope', () => {
+test('JavaScript block can read PLINJS variables in scope', () => {
   const js = compile('remember url as "https://api.example.com"\nremember response as javascript\n  return await axios.get(url)\ndone');
   if (!js.includes('axios.get(url)')) throw new Error('plain variable not visible inside JS block');
 });
 
-test('Plain code can use the result of a JavaScript block', () => {
+test('PLINJS code can use the result of a JavaScript block', () => {
   const js = compile('remember response as javascript\n  return 42\ndone\nshow response');
   if (!js.includes('let response = await (async () => {')) throw new Error('missing assignment');
-  if (!js.includes('console.log(response)')) throw new Error('result not usable in Plain');
+  if (!js.includes('console.log(response)')) throw new Error('result not usable in PLINJS');
 });
 
 test('JavaScript block body is emitted verbatim (template literals preserved)', () => {
@@ -2868,19 +2868,19 @@ test('hyphenated package require inside a JavaScript block is preserved verbatim
 
 // â”€â”€ CLI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-test('plain help includes the JavaScript Gateway', () => {
+test('plinjs help includes the JavaScript Gateway', () => {
   const out = runCli(['help'], process.cwd());
   if (!out.includes('JavaScript')) throw new Error('"JavaScript" missing from help');
   if (!out.includes('ask')) throw new Error('"ask" missing from help');
 });
 
-test('plain version shows the compiler version', () => {
+test('plinjs version shows the compiler version', () => {
   const out = runCli(['version'], process.cwd());
   const { VERSION } = require('../compiler/version');
   if (!out.includes(VERSION)) throw new Error(`Expected ${VERSION} but got: ${out}`);
 });
 
-test('plain build produces executable async output for a JavaScript block', () => {
+test('plinjs build produces executable async output for a JavaScript block', () => {
   const dir = tmpDir();
   const plnFile = path.join(dir, 'gw.pln');
   fs.writeFileSync(plnFile, 'remember x as javascript\n  return 1\ndone\nshow x\n');
@@ -2890,7 +2890,7 @@ test('plain build produces executable async output for a JavaScript block', () =
   if (!js.includes('let x = await (async () => {')) throw new Error('JS block missing in build');
 });
 
-test('plain run on a nonexistent file reports a friendly error and does not invoke AI', () => {
+test('plinjs run on a nonexistent file reports a friendly error and does not invoke AI', () => {
   const dir = tmpDir();
   const out = runCli(['run', 'missing.pln'], dir);
   if (!out.includes('File not found')) {
@@ -2915,37 +2915,37 @@ function writeLocalPackage(projectDir, pkgName, mainSrc) {
   fs.writeFileSync(path.join(pkgDir, 'index.js'), mainSrc);
 }
 
-test('plain run resolves dependencies from the project node_modules, not the global install', () => {
+test('plinjs run resolves dependencies from the project node_modules, not the global install', () => {
   const dir = tmpDir();
-  writeLocalPackage(dir, 'plainlocaltest', 'module.exports = "resolved-from-project-node_modules";\n');
-  fs.writeFileSync(path.join(dir, 'app.pln'), 'use plainlocaltest\nshow plainlocaltest\n');
+  writeLocalPackage(dir, 'plinjslocaltest', 'module.exports = "resolved-from-project-node_modules";\n');
+  fs.writeFileSync(path.join(dir, 'app.pln'), 'use plinjslocaltest\nshow plinjslocaltest\n');
   const out = runCli(['run', 'app.pln'], dir);
   if (!out.includes('resolved-from-project-node_modules')) {
     throw new Error(`local dependency did not resolve from the project. Output:\n${out}`);
   }
-  const stale = path.join(__dirname, '..', 'compiler', '_plain_out.js');
+  const stale = path.join(dir, 'stray-check.tmp.js');
   if (fs.existsSync(stale)) {
-    throw new Error('_plain_out.js was written into the compiler directory');
+    throw new Error('run wrote an artifact into the compiler directory');
   }
 });
 
-test('plain start resolves project-local dependencies via the plin.config.json entry', () => {
+test('plinjs start resolves project-local dependencies via the plinjs.config.json entry', () => {
   const dir = tmpDir();
-  writeLocalPackage(dir, 'plainlocaltest', 'module.exports = "start-resolved-locally";\n');
-  fs.writeFileSync(path.join(dir, 'app.pln'), 'use plainlocaltest\nshow plainlocaltest\n');
-  fs.writeFileSync(path.join(dir, 'plin.config.json'), JSON.stringify({ entry: 'app.pln' }));
+  writeLocalPackage(dir, 'plinjslocaltest', 'module.exports = "start-resolved-locally";\n');
+  fs.writeFileSync(path.join(dir, 'app.pln'), 'use plinjslocaltest\nshow plinjslocaltest\n');
+  fs.writeFileSync(path.join(dir, 'plinjs.config.json'), JSON.stringify({ entry: 'app.pln' }));
   const out = runCli(['start'], dir);
   if (!out.includes('start-resolved-locally')) {
-    throw new Error(`plain start did not resolve the local dependency. Output:\n${out}`);
+    throw new Error(`plinjs start did not resolve the local dependency. Output:\n${out}`);
   }
 });
 
 test('hyphenated packages resolve at runtime from the project node_modules', () => {
   const dir = tmpDir();
   const marker = path.join(dir, 'hyphenated-loaded.txt');
-  writeLocalPackage(dir, 'plain-fake-fetch',
+  writeLocalPackage(dir, 'plinjs-fake-fetch',
     `require('fs').writeFileSync(${JSON.stringify(marker)}, 'ok');\nmodule.exports = {};\n`);
-  fs.writeFileSync(path.join(dir, 'app.pln'), 'use plain-fake-fetch\nshow "hyphenated-ok"\n');
+  fs.writeFileSync(path.join(dir, 'app.pln'), 'use plinjs-fake-fetch\nshow "hyphenated-ok"\n');
   const out = runCli(['run', 'app.pln'], dir);
   if (!out.includes('hyphenated-ok')) throw new Error(`run failed. Output:\n${out}`);
   if (!fs.existsSync(marker)) {
@@ -2968,20 +2968,20 @@ test('scoped packages resolve at runtime from the project node_modules', () => {
 
 test('multiple project-local dependencies resolve at runtime', () => {
   const dir = tmpDir();
-  writeLocalPackage(dir, 'plainfirst', 'module.exports = "first";\n');
-  writeLocalPackage(dir, 'plainsecond', 'module.exports = "second";\n');
+  writeLocalPackage(dir, 'plinjsfirst', 'module.exports = "first";\n');
+  writeLocalPackage(dir, 'plinjssecond', 'module.exports = "second";\n');
   fs.writeFileSync(path.join(dir, 'app.pln'),
-    'use plainfirst\nuse plainsecond\nshow plainfirst + " " + plainsecond\n');
+    'use plinjsfirst\nuse plinjssecond\nshow plinjsfirst + " " + plinjssecond\n');
   const out = runCli(['run', 'app.pln'], dir);
   if (!out.includes('first second')) throw new Error(`multiple deps did not resolve. Output:\n${out}`);
 });
 
 test('multi-file projects resolve project-local dependencies at runtime', () => {
   const dir = tmpDir();
-  writeLocalPackage(dir, 'plainlocaltest', 'module.exports = "from-multifile";\n');
+  writeLocalPackage(dir, 'plinjslocaltest', 'module.exports = "from-multifile";\n');
   fs.writeFileSync(path.join(dir, 'lib.pln'), 'make version()\n  give "v2"\ndone\n');
   fs.writeFileSync(path.join(dir, 'app.pln'),
-    'import "./lib.pln"\nuse plainlocaltest\nshow plainlocaltest + " " + version()\n');
+    'import "./lib.pln"\nuse plinjslocaltest\nshow plinjslocaltest + " " + version()\n');
   const out = runCli(['run', 'app.pln'], dir);
   if (!out.includes('from-multifile v2')) throw new Error(`multi-file run failed. Output:\n${out}`);
 });
@@ -2997,40 +2997,40 @@ test('built-in modules still execute after the dependency-resolution fix', () =>
 
 // â”€â”€ CLI: doctor, update, start, cc commands â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-console.log('\nCLI â€” plain doctor');
+console.log('\nCLI â€” plinjs doctor');
 
-test('plain doctor exits 0 and prints environment checks', () => {
+test('plinjs doctor exits 0 and prints environment checks', () => {
   const dir = tmpDir();
   const out = runCli(['doctor'], dir);
-  if (!out.includes('PLIN doctor')) throw new Error(`Expected "PLIN doctor" header but got: ${out}`);
+  if (!out.includes('PLINJS doctor')) throw new Error(`Expected "PLINJS doctor" header but got: ${out}`);
   if (!out.includes('Node.js')) throw new Error('Expected Node.js check');
   if (!out.includes('npm')) throw new Error('Expected npm check');
-  if (!out.includes('PLIN CLI')) throw new Error('Expected PLIN CLI check');
+  if (!out.includes('PLINJS CLI')) throw new Error('Expected PLINJS CLI check');
   if (!out.includes('Compiler')) throw new Error('Expected Compiler check');
   if (!out.includes('Formatter')) throw new Error('Expected Formatter check');
   if (!out.includes('Runtime')) throw new Error('Expected Runtime check');
 });
 
-test('plain doctor does not report a Complex Compilation layer', () => {
+test('plinjs doctor does not report a Complex Compilation layer', () => {
   const dir = tmpDir();
   const out = runCli(['doctor'], dir);
   if (out.includes('Complex Compilation')) throw new Error(`Complex Compilation must be gone. Output:\n${out}`);
 });
 
-test('plin doctor reports project configuration when plin.config.json exists', () => {
+test('plinjs doctor reports project configuration when plinjs.config.json exists', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const out = runCli(['doctor'], dir);
-  if (!out.includes('plin.config.json found')) throw new Error(`Expected "plin.config.json found" but got: ${out}`);
+  if (!out.includes('plinjs.config.json found')) throw new Error(`Expected "plinjs.config.json found" but got: ${out}`);
 });
 
-test('plin doctor reports missing plin.config.json when no project initialized', () => {
+test('plinjs doctor reports missing plinjs.config.json when no project initialized', () => {
   const dir = tmpDir();
   const out = runCli(['doctor'], dir);
-  if (!out.includes('run plin init')) throw new Error(`Expected "run plin init" hint but got: ${out}`);
+  if (!out.includes('run plinjs init')) throw new Error(`Expected "run plinjs init" hint but got: ${out}`);
 });
 
-test('plin doctor reports missing entry file', () => {
+test('plinjs doctor reports missing entry file', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const entry = path.join(dir, 'index.pln');
@@ -3039,7 +3039,7 @@ test('plin doctor reports missing entry file', () => {
   if (!out.includes('not found')) throw new Error(`Expected "not found" for entry file but got: ${out}`);
 });
 
-test('plain doctor reports ready dependencies when all installed', () => {
+test('plinjs doctor reports ready dependencies when all installed', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   fs.writeFileSync(path.join(dir, 'app.pln'), 'show "hello"\n');
@@ -3047,22 +3047,22 @@ test('plain doctor reports ready dependencies when all installed', () => {
   if (!out.includes('ready')) throw new Error(`Expected "ready" for dependencies but got: ${out}`);
 });
 
-test('plain help includes "plin doctor"', () => {
+test('plinjs help includes "plinjs doctor"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plin doctor')) throw new Error('"plin doctor" missing from help');
+  if (!out.includes('plinjs doctor')) throw new Error('"plinjs doctor" missing from help');
 });
 
-console.log('\nCLI â€” plain start');
+console.log('\nCLI â€” plinjs start');
 
-test('plain start errors without plin.config.json', () => {
+test('plinjs start errors without plinjs.config.json', () => {
   const dir = tmpDir();
   const out = runCli(['start'], dir);
-  if (!out.toLowerCase().includes('plin init')) {
-    throw new Error(`Expected hint to run "plin init" but got: ${out}`);
+  if (!out.toLowerCase().includes('plinjs init')) {
+    throw new Error(`Expected hint to run "plinjs init" but got: ${out}`);
   }
 });
 
-test('plain start errors when entry file is missing', () => {
+test('plinjs start errors when entry file is missing', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const entry = path.join(dir, 'index.pln');
@@ -3073,29 +3073,29 @@ test('plain start errors when entry file is missing', () => {
   }
 });
 
-test('plin start runs the entry file from plin.config.json', () => {
+test('plinjs start runs the entry file from plinjs.config.json', () => {
   const dir = tmpDir();
   fs.writeFileSync(path.join(dir, 'app.pln'), 'show "start-ok"\n');
-  fs.writeFileSync(path.join(dir, 'plin.config.json'), JSON.stringify({ entry: 'app.pln' }));
+  fs.writeFileSync(path.join(dir, 'plinjs.config.json'), JSON.stringify({ entry: 'app.pln' }));
   const out = runCli(['start'], dir);
   if (!out.includes('start-ok')) {
     throw new Error(`Expected "start-ok" output but got: ${out}`);
   }
 });
 
-test('plain start defaults to app.pln when entry is not set', () => {
+test('plinjs start defaults to app.pln when entry is not set', () => {
   const dir = tmpDir();
   fs.writeFileSync(path.join(dir, 'app.pln'), 'show "default-entry"\n');
-  fs.writeFileSync(path.join(dir, 'plin.config.json'), JSON.stringify({ name: 'test' }));
+  fs.writeFileSync(path.join(dir, 'plinjs.config.json'), JSON.stringify({ name: 'test' }));
   const out = runCli(['start'], dir);
   if (!out.includes('default-entry')) {
     throw new Error(`Expected "default-entry" output but got: ${out}`);
   }
 });
 
-console.log('\nCLI â€” plain update');
+console.log('\nCLI â€” plinjs update');
 
-test('plain update runs npm update', () => {
+test('plinjs update runs npm update', () => {
   const dir = tmpDir();
   runCli(['init'], dir);
   const out = runCli(['update'], dir);
@@ -3103,42 +3103,42 @@ test('plain update runs npm update', () => {
   if (!out.includes('updated')) throw new Error(`Expected "updated" confirmation but got: ${out}`);
 });
 
-test('plain help includes "plain update"', () => {
+test('plinjs help includes "plinjs update"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plin update')) throw new Error('"plain update" missing from help');
+  if (!out.includes('plinjs update')) throw new Error('"plinjs update" missing from help');
 });
 
 console.log('\nCLI â€” one compiler only');
 
-test('plain cc is no longer a command', () => {
+test('plinjs cc is no longer a command', () => {
   const out = runCli(['cc', 'status'], process.cwd());
   if (!out.toLowerCase().includes('unknown command')) throw new Error(`Expected "Unknown command" but got: ${out}`);
 });
 
-test('plain ai is no longer a command', () => {
+test('plinjs ai is no longer a command', () => {
   const out = runCli(['ai', 'status'], process.cwd());
   if (!out.toLowerCase().includes('unknown command')) throw new Error(`Expected "Unknown command" but got: ${out}`);
 });
 
-test('plain help does not mention Complex Compilation', () => {
+test('plinjs help does not mention Complex Compilation', () => {
   const out = runCli(['help'], process.cwd());
   if (out.includes('Complex Compilation')) throw new Error(`Help must not mention Complex Compilation. Output:\n${out}`);
 });
 
-test('plain help includes "plin start"', () => {
+test('plinjs help includes "plinjs start"', () => {
   const out = runCli(['help'], process.cwd());
-  if (!out.includes('plin start')) throw new Error('"plin start" missing from help');
+  if (!out.includes('plinjs start')) throw new Error('"plinjs start" missing from help');
 });
 
 // â”€â”€ Acode syntax highlighting (stream spec) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// The Acode plugin wraps plain-acode/stream-spec.js in CodeMirror's
+// The Acode plugin wraps plinjs-acode/stream-spec.js in CodeMirror's
 // StreamLanguage. That spec is pure CommonJS, so we can exercise the exact
 // tokenizer here in Node. The shim below mirrors @codemirror/language's
 // StringStream (line-based) and its drive loop, so these tests reflect what
 // Acode's editor will actually highlight.
 
-const streamSpec = require('../plain-acode/stream-spec.js');
+const streamSpec = require('../plinjs-acode/stream-spec.js');
 
 class StringStream {
   constructor(string) {
@@ -3225,7 +3225,7 @@ function highlightLastType(source, text) {
 }
 
 // The exact set of legacy token names the spec may emit. StreamLanguage
-// resolves these against the tokenTable in plain-acode/main.js.
+// resolves these against the tokenTable in plinjs-acode/main.js.
 const ALLOWED_TOKENS = new Set([
   'keyword', 'operator', 'string', 'string-2', 'number', 'comment',
   'variable', 'property', 'function', 'builtin', 'atom', 'meta',
@@ -3288,7 +3288,7 @@ test('highlight: multi-word comparison phrases are operators', () => {
 test('highlight: route paths are special strings', () => {
   const src = [
     'route "/"',
-    '  reply "Hello from Plain!"',
+    '  reply "Hello from PLINJS!"',
     'done',
     'when someone visits "/api/status"',
     '  reply json',
@@ -3299,7 +3299,7 @@ test('highlight: route paths are special strings', () => {
   ].join('\n');
   if (highlightType(src, '"/"') !== 'string-2') throw new Error('route root path not string-2');
   if (highlightType(src, '"/api/status"') !== 'string-2') throw new Error('route path not string-2');
-  if (highlightType(src, '"Hello from Plain!"') !== 'string') throw new Error('reply string not plain string');
+  if (highlightType(src, '"Hello from PLINJS!"') !== 'string') throw new Error('reply string not plain string');
   for (const word of ['route', 'visits', 'json']) {
     if (highlightType(src, word) !== 'keyword') throw new Error(`${word} not keyword`);
   }
@@ -3393,7 +3393,7 @@ test('highlight: database and SQL blocks', () => {
   }
 });
 
-test('highlight: javascript gateway block highlights JS inside and Plain after', () => {
+test('highlight: javascript gateway block highlights JS inside and PLINJS after', () => {
   const src = [
     'remember response as javascript',
     '  const value = 42',
@@ -3407,7 +3407,7 @@ test('highlight: javascript gateway block highlights JS inside and Plain after',
   }
   if (highlightType(src, '42') !== 'number') throw new Error('JS number not number');
   if (highlightLastType(src, 'done') !== 'keyword') throw new Error('gateway done not keyword');
-  if (highlightType(src, 'show') !== 'keyword') throw new Error('Plain after gateway not highlighted');
+  if (highlightType(src, 'show') !== 'keyword') throw new Error('PLINJS after gateway not highlighted');
 });
 
 test('highlight: only a line exactly equal to done terminates the JS block', () => {
@@ -3452,7 +3452,7 @@ test('highlight: atoms, invalid characters, and operator set', () => {
   ].join('\n');
   if (highlightType(src, 'true') !== 'atom') throw new Error('true not atom');
   if (highlightType(src, '+') !== 'operator') throw new Error('+ not operator');
-  if (highlightType(src, ';') !== 'invalid') throw new Error('; should be invalid in Plain');
+  if (highlightType(src, ';') !== 'invalid') throw new Error('; should be invalid in PLINJS');
 });
 
 test('highlight: atoms null and undefined', () => {
@@ -3500,7 +3500,7 @@ test('highlight: multiline template strings', () => {
   }
 });
 
-test('highlight: template string closing backtick resets to Plain', () => {
+test('highlight: template string closing backtick resets to PLINJS', () => {
   const src = [
     'show `hello`',
     'show "world"',
@@ -3535,10 +3535,10 @@ test('highlight: every emitted token type is a known legacy token', () => {
 // â”€â”€ Acode plugin loading (editorLanguages / aceModes) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const {
-  PlainLanguagePlugin,
+  PlinjsLanguagePlugin,
   LANGUAGE_NAME,
   EXTENSIONS,
-} = require('../plain-acode/main.js');
+} = require('../plinjs-acode/main.js');
 
 // The suite's test() helper is synchronous, so plugin tests that await the
 // async init() run through this helper and are joined with the summary below.
@@ -3592,7 +3592,7 @@ testAsync('plugin: registers via modern editorLanguages when available', async (
     '@codemirror/language': cmLanguageMock,
     '@lezer/highlight': lezerHighlightMock,
   });
-  const plugin = new PlainLanguagePlugin(acode);
+  const plugin = new PlinjsLanguagePlugin(acode);
   const usedPath = await plugin.init();
   if (usedPath !== 'editorLanguages') throw new Error('init did not use editorLanguages');
   if (!call) throw new Error('editorLanguages.register was not called');
@@ -3604,7 +3604,7 @@ testAsync('plugin: registers via modern editorLanguages when available', async (
   if (!Array.isArray(language) || !language[0] || !language[0].spec) {
     throw new Error('loader did not return a StreamLanguage extension');
   }
-  if (language[0].spec.name !== 'plain') throw new Error('loader returned the wrong spec');
+  if (language[0].spec.name !== 'plinjs') throw new Error('loader returned the wrong spec');
 });
 
 testAsync('plugin: falls back to legacy aceModes when editorLanguages is missing', async () => {
@@ -3618,7 +3618,7 @@ testAsync('plugin: falls back to legacy aceModes when editorLanguages is missing
       removeMode() {},
     },
   });
-  const plugin = new PlainLanguagePlugin(acode);
+  const plugin = new PlinjsLanguagePlugin(acode);
   const usedPath = await plugin.init();
   if (usedPath !== 'aceModes') throw new Error('init did not fall back to aceModes');
   if (!call) throw new Error('aceModes.addMode was not called');
@@ -3630,7 +3630,7 @@ testAsync('plugin: falls back to legacy aceModes when editorLanguages is missing
 
 testAsync('plugin: fails gracefully when neither API is available', async () => {
   const acode = makeMockAcode({});
-  const plugin = new PlainLanguagePlugin(acode);
+  const plugin = new PlinjsLanguagePlugin(acode);
   let error = null;
   try {
     await plugin.init();
@@ -3654,7 +3654,7 @@ testAsync('plugin: cleanup after modern editorLanguages registration', async () 
     '@codemirror/language': cmLanguageMock,
     '@lezer/highlight': lezerHighlightMock,
   });
-  const plugin = new PlainLanguagePlugin(acode);
+  const plugin = new PlinjsLanguagePlugin(acode);
   await plugin.init();
   plugin.destroy();
   if (unregistered !== LANGUAGE_NAME) {
@@ -3670,7 +3670,7 @@ testAsync('plugin: cleanup after legacy aceModes registration', async () => {
       removeMode(name) { removed = name; },
     },
   });
-  const plugin = new PlainLanguagePlugin(acode);
+  const plugin = new PlinjsLanguagePlugin(acode);
   await plugin.init();
   plugin.destroy();
   if (removed !== LANGUAGE_NAME) {
@@ -3686,11 +3686,11 @@ testAsync('plugin: main.js wires init/unmount on the acode global', async () => 
     setPluginInit(id, fn) { initFn = fn; },
     setPluginUnmount(id, fn) { unmountFn = fn; },
   };
-  const mainPath = require.resolve('../plain-acode/main.js');
+  const mainPath = require.resolve('../plinjs-acode/main.js');
   delete require.cache[mainPath];
   global.acode = globalAcode;
   try {
-    require('../plain-acode/main.js');
+    require('../plinjs-acode/main.js');
   } finally {
     delete global.acode;
   }

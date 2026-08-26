@@ -1,4 +1,4 @@
-// Tests for Plain v2.1.1 — WhatsApp bots and general string escapes.
+// Tests for PLINJS v2.1.1 — WhatsApp bots and general string escapes.
 //
 //   language: multiline backtick strings, escape sequences (\n \t \\ \")
 //   bots:     whatsapp bot … done with auth, login qr, login pairing,
@@ -239,12 +239,12 @@ const QR_SOURCE = [
 
 // ── 1. Compiler / check ─────────────────────────────────────────────────────
 
-test('check: the finalized pairing example passes plain check', () => {
+test('check: the finalized pairing example passes plinjs check', () => {
   const file = path.join(__dirname, '..', 'examples', 'whatsapp-bot', 'pairing.pln');
   resolveDependencies(path.resolve(file)); // same gate cmdCheck runs
 });
 
-test('check: the QR example passes plain check', () => {
+test('check: the QR example passes plinjs check', () => {
   const file = path.join(__dirname, '..', 'examples', 'whatsapp-bot', 'qr.pln');
   resolveDependencies(path.resolve(file));
 });
@@ -313,7 +313,7 @@ test('parser: separators and a leading plus are normalized away', () => {
 test('parser: defaults are deterministic — no auth/login means default folder and QR', () => {
   const ast = parse(tokenize('whatsapp bot\n    on message\n        log message\n    done\ndone'));
   const bot = ast.body[0];
-  if (bot.authFolder !== 'plain-whatsapp-auth') throw new Error('bad default auth folder');
+  if (bot.authFolder !== 'plinjs-whatsapp-auth') throw new Error('bad default auth folder');
   if (bot.login.mode !== 'qr') throw new Error('bad default login mode');
 });
 

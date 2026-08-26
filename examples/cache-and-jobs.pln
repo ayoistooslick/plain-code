@@ -1,6 +1,6 @@
-// Plain v2.1 — Cache, background jobs and cron working together
+// PLINJS v2.1 — Cache, background jobs and cron working together
 //
-// Run with:  REDIS_URL=redis://localhost:6379 plain run examples/cache-and-jobs.pln
+// Run with:  REDIS_URL=redis://localhost:6379 plinjs run examples/cache-and-jobs.pln
 //
 // Heavy work is pushed off the request path with "run background", shared
 // state lives in Redis, and a cron job refreshes it every minute.

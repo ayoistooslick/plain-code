@@ -1,4 +1,4 @@
-// Bundler: resolves Plain import statements, builds a dependency graph,
+// Bundler: resolves PLINJS import statements, builds a dependency graph,
 // and returns a single concatenated JavaScript output.
 
 const fs   = require('fs');
