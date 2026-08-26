@@ -1,38 +1,38 @@
-# knowledge.md — Teach any AI to write PLINJS
+# knowledge.md — Teach any AI to write PlainScript
 
-> **Purpose:** PLINJS is a small language with sharp edges that trip up code
+> **Purpose:** PlainScript is a small language with sharp edges that trip up code
 > generators (LLMs included). This file documents the language, the CLI, and
-> the project model **exactly as implemented in the `plinjs` npm package
+> the project model **exactly as implemented in the `plainscript` npm package
 > v0.1.7**. Every example below was verified against the real compiler.
 >
 > **How to use:**
-> 1. Paste this entire file into your AI chat before asking it to write PLINJS.
+> 1. Paste this entire file into your AI chat before asking it to write PlainScript.
 > 2. Or save it as `AGENTS.md` / `knowledge.md` in your project root so coding
 >    agents pick it up automatically.
 >
-> Conventions: valid programs appear in ```plinjs fences. Invalid snippets that
+> Conventions: valid programs appear in ```plainscript fences. Invalid snippets that
 > illustrate mistakes appear in ```text fences — never copy those.
 
 ---
 
-## 1. What PLINJS is and how it installs
+## 1. What PlainScript is and how it installs
 
-PLINJS is an Intent-Oriented Programming Language (IOPL). You describe **what**
+PlainScript is an Intent-Oriented Programming Language (IOPL). You describe **what**
 you want; a fully deterministic compiler decides **how** to implement it in
 JavaScript. There is no AI step, no rules engine, no hidden code generation:
 the same source always produces the same JavaScript.
 
-PLINJS is an npm package used **per project**, never globally:
+PlainScript is an npm package used **per project**, never globally:
 
 ```bash
-npm install --save-dev plinjs
+npm install --save-dev plainscript
 ```
 
 Everything runs through npm scripts or `npx`. A deployed application needs
-only its generated `dist/` output and normal npm dependencies — the `plinjs`
+only its generated `dist/` output and normal npm dependencies — the `plainscript`
 compiler itself is a devDependency and does not ship to production.
 
-```plinjs
+```plainscript
 // app.pln — a complete program
 remember name as "World"
 remember greeting as `Hello ${name}!`
@@ -40,37 +40,37 @@ show greeting
 ```
 
 ```bash
-npx plinjs run app.pln     # installs missing deps, compiles, runs (from a scratch dir)
-npx plinjs build app.pln   # writes dist/app.js — read it to see exactly what happens
+npx plainscript run app.pln     # installs missing deps, compiles, runs (from a scratch dir)
+npx plainscript build app.pln   # writes dist/app.js — read it to see exactly what happens
 ```
 
 ---
 
 ## 2. Project structure and configuration
 
-A PLINJS project is a plain npm package. Typical layout:
+A PlainScript project is a plain npm package. Typical layout:
 
 ```
 my-app/
-├── package.json          # normal npm semantics; plinjs is a devDependency
+├── package.json          # normal npm semantics; plainscript is a devDependency
 ├── src/                  # sources (.pln) — the default source root
 └── dist/                 # generated JavaScript (never edited, safe to gitignore)
 ```
 
-`plinjs build` follows a TypeScript-style model with zero configuration:
+`plainscript build` follows a TypeScript-style model with zero configuration:
 
-- `plinjs build` (no argument) discovers every `.pln` file under `src/` and
+- `plainscript build` (no argument) discovers every `.pln` file under `src/` and
   compiles each to `dist/` preserving file names and folder structure.
-- `plinjs build <file.pln>` compiles a single file into `dist/`.
+- `plainscript build <file.pln>` compiles a single file into `dist/`.
 - When no `src/` directory exists, the project root is scanned instead.
 
 Source discovery skips `node_modules`, hidden directories, and the `dist/`
 output directory.
 
-### Optional `plinjs.config.json`
+### Optional `plainscript.config.json`
 
 For projects that need custom output or source directories, add a
-`plinjs.config.json` with a `compilerOptions` block:
+`plainscript.config.json` with a `compilerOptions` block:
 
 ```json
 {
@@ -85,7 +85,7 @@ For projects that need custom output or source directories, add a
 | Key         | Default                          | Meaning                                      |
 |-------------|----------------------------------|----------------------------------------------|
 | `outDir`    | `"dist"`                         | Build output directory                       |
-| `rootDir`   | `"src"` if it exists, else `"."` | Root that `plinjs build` scans for sources   |
+| `rootDir`   | `"src"` if it exists, else `"."` | Root that `plainscript build` scans for sources   |
 | `exclude`   | `["node_modules"]`               | Directories to skip during source discovery   |
 
 ---
@@ -96,19 +96,19 @@ All commands also work through `npx` and npm scripts.
 
 | Command                 | Behaviour                                                        |
 |-------------------------|------------------------------------------------------------------|
-| `plinjs new <name>`       | Scaffold a complete npm project (`src/app.pln`, Express starter)  |
-| `plinjs build [file]`     | Compile `src/` to `dist/`; no argument builds all source files    |
-| `plinjs run <file.pln>`   | Install missing deps → compile → execute from a scratch directory |
-| `plinjs start [args...]`  | Build `src/app.pln` into `dist/`, then run that file              |
-| `plinjs check <file.pln>` | Syntax/compile check only — no execution                          |
-| `plinjs fmt <file.pln>`   | Rewrite the file in canonical style, in place                     |
-| `plinjs install`          | Detect every dependency in source files and install what is missing|
-| `plinjs add <pkg>`        | Install a package into the project                                |
-| `plinjs remove <pkg>`     | Uninstall a package from the project                              |
-| `plinjs update`           | `npm update` for all installed packages                           |
-| `plinjs doctor`           | Environment + project health report                               |
-| `plinjs version`          | Print `PLINJS v0.1.7`                                               |
-| `plinjs help`             | Command reference                                                 |
+| `plainscript new <name>`       | Scaffold a complete npm project (`src/app.pln`, Express starter)  |
+| `plainscript build [file]`     | Compile `src/` to `dist/`; no argument builds all source files    |
+| `plainscript run <file.pln>`   | Install missing deps → compile → execute from a scratch directory |
+| `plainscript start [args...]`  | Build `src/app.pln` into `dist/`, then run that file              |
+| `plainscript check <file.pln>` | Syntax/compile check only — no execution                          |
+| `plainscript fmt <file.pln>`   | Rewrite the file in canonical style, in place                     |
+| `plainscript install`          | Detect every dependency in source files and install what is missing|
+| `plainscript add <pkg>`        | Install a package into the project                                |
+| `plainscript remove <pkg>`     | Uninstall a package from the project                              |
+| `plainscript update`           | `npm update` for all installed packages                           |
+| `plainscript doctor`           | Environment + project health report                               |
+| `plainscript version`          | Print `PlainScript v0.1.7`                                               |
+| `plainscript help`             | Command reference                                                 |
 
 ### Build semantics (the important one)
 
@@ -122,7 +122,7 @@ All commands also work through `npx` and npm scripts.
 - Compilation is deterministic: identical sources produce byte-identical
   output, so builds can be diffed and cached.
 - Running a program never writes into your project. There is no temp output
-  file next to the source; `plinjs run` works from an external scratch
+  file next to the source; `plainscript run` works from an external scratch
   directory while still resolving packages from your `node_modules`.
 
 ---
@@ -151,7 +151,7 @@ if finished is true          // correct
 9. **Route-only helpers** (`param`, `query`, `header`, cookies, sessions,
    `upload`) work only inside routes; the compiler rejects them elsewhere
    with teaching errors.
-10. SQL placeholders are `{likeThis}` and bind to PLINJS variables.
+10. SQL placeholders are `{likeThis}` and bind to PlainScript variables.
 
 ---
 
@@ -159,7 +159,7 @@ if finished is true          // correct
 
 ### Variables and printing
 
-```plinjs
+```plainscript
 remember name as "Ayokunle"
 remember age as 16
 age becomes age + 1
@@ -171,7 +171,7 @@ print(age)                  // same as show
 
 `+ - * / %` with standard precedence, parentheses, unary minus. No `**`.
 
-```plinjs
+```plainscript
 remember total as (3 + 4) * 2
 remember rest as 10 % 3
 show total + rest
@@ -182,7 +182,7 @@ show total + rest
 Double quotes decode `\n`, `\t`, `\\`, `\"`. Backticks are multiline and
 interpolate `${expression}` at runtime.
 
-```plinjs
+```plainscript
 remember who as "World"
 remember greeting as `Hello ${who}!
 Second line, whitespace preserved.`
@@ -191,7 +191,7 @@ show greeting
 
 ### Comparisons
 
-| PLINJS                           | JavaScript         |
+| PlainScript                           | JavaScript         |
 |--------------------------------|--------------------|
 | `is` / `is equal to`           | `===`              |
 | `is not`                       | `!==`              |
@@ -206,7 +206,7 @@ show greeting
 
 Combine with `and`, `or`, `not`.
 
-```plinjs
+```plainscript
 remember age as 21
 if age is at least 18 and age is below 65
     show "working age"
@@ -222,7 +222,7 @@ done
 
 ### Loops
 
-```plinjs
+```plainscript
 remember players as ["Haaland", "Foden", "Rodri"]
 for each player in players
     show player
@@ -241,7 +241,7 @@ show n
 
 ### Functions
 
-```plinjs
+```plainscript
 make add(a, b)
     give a + b
 done
@@ -260,7 +260,7 @@ CommonJS `module.exports` for them, so built files work with `require()`.
 
 ### Collections and objects
 
-```plinjs
+```plainscript
 remember players as ["Haaland", "Foden", "Rodri"]
 
 show first player from players        // players[0]
@@ -290,7 +290,7 @@ Number words `one`…`twenty` are one-based positions: `player one` is first.
 
 ### Files
 
-```plinjs
+```plainscript
 remember data as read("users.txt")
 write(data to "copy.txt")
 if fileExists("users.txt") is true
@@ -304,7 +304,7 @@ Conditions need a comparison even for boolean calls — use `is true`.
 
 Raw JS with full async support; the block becomes one awaited expression.
 
-```plinjs
+```plainscript
 remember doubled as javascript
     const xs = [1, 2, 3].map(x => x * 2)
     return xs
@@ -316,7 +316,7 @@ wait for fetch("https://example.com")     // await a raw promise
 
 ### Console input
 
-```plinjs
+```plainscript
 ask "What is your name? " as name
 show `Hello ${name}`
 ```
@@ -325,7 +325,7 @@ show `Hello ${name}`
 
 ### Errors and retries
 
-```plinjs
+```plainscript
 try
     remember n as jsonDecode("{ bad json")
 recover as err
@@ -357,7 +357,7 @@ done
 | `uppercase(x)` / `lowercase(x)` | Case conversion               |
 | `random()` / `round(x)`  | 0–1 float / nearest integer          |
 
-```plinjs
+```plainscript
 remember stamp as date()
 remember id as uuid()
 show stamp + " " + id
@@ -367,7 +367,7 @@ show stamp + " " + id
 
 ## 7. Packages
 
-```plinjs
+```plainscript
 use axios
 use node-fetch as fetcher
 use left-pad@^1.3.0
@@ -391,7 +391,7 @@ use @scope/package-name
 
 Method routes live inside a `web app` block; every block closes with `done`.
 
-```plinjs
+```plainscript
 web app
 allow cors
 
@@ -438,7 +438,7 @@ start 3000
 
 Classic Express style also exists:
 
-```plinjs
+```plainscript
 use express
 
 remember app as express()
@@ -456,10 +456,10 @@ done
 
 ### Sessions
 
-In-memory store behind an HMAC-signed `HttpOnly` cookie (`plinjs.sid`);
+In-memory store behind an HMAC-signed `HttpOnly` cookie (`plainscript.sid`);
 restarting the server signs everyone out.
 
-```plinjs
+```plainscript
 web app
 enable sessions "a-long-random-secret"
 
@@ -478,7 +478,7 @@ start 3000
 
 ### File uploads
 
-```plinjs
+```plainscript
 web app
 accept uploads limit "5 MB" allow ["image/png", "image/jpeg"] folder "uploads"
 
@@ -496,7 +496,7 @@ Files arrive as records: `name`, `type`, `size`, `data` (buffer), `path`
 
 ### Cookies
 
-```plinjs
+```plainscript
 web app
 
 route get "/theme"
@@ -511,7 +511,7 @@ start 3000
 
 ### Rate limiting and API keys
 
-```plinjs
+```plainscript
 web app
 limit requests to 100 per minute
 require api key from env("API_KEY")
@@ -530,7 +530,7 @@ Sliding window per client IP; exceeding it answers HTTP 429.
 Registers `/auth/google` and `/auth/google/callback`; after login the session
 holds the user and the browser lands on `landing`.
 
-```plinjs
+```plainscript
 web app
 google oauth
 id is env("GOOGLE_ID")
@@ -553,7 +553,7 @@ start 3000
 Portable SQLite: probes the native driver, falls back to pure-WebAssembly
 (`sql.js`) transparently; both persist to disk.
 
-```plinjs
+```plainscript
 database "app.db"
 
 execute
@@ -578,10 +578,10 @@ show rows length
 - Pin an engine: `database "app.db" using "native"` or `using "wasm"`.
 - PostgreSQL: `postgres env("DATABASE_URL")` — placeholders become `$n` and
   queries are awaited.
-- `{placeholders}` bind to PLINJS variables in `execute`/`insert`/`query`.
+- `{placeholders}` bind to PlainScript variables in `execute`/`insert`/`query`.
 - Wrap writes atomically:
 
-```plinjs
+```plainscript
 database "app.db"
 
 transaction
@@ -593,7 +593,7 @@ done
 
 ### Auth helpers
 
-```plinjs
+```plainscript
 remember hash as hashPassword("correct horse battery")
 if checkPassword("correct horse battery", hash) is true
     remember token as createToken("user-1", env("TOKEN_SECRET"), 3600)
@@ -607,7 +607,7 @@ scrypt password hashing; HMAC-signed expiring tokens that fail closed.
 
 ## 10. HTTP client
 
-```plinjs
+```plainscript
 remember r as get "https://api.example.com/users"
 if ok of r is true
     show status of r
@@ -632,7 +632,7 @@ normal function call, not a request.
 
 ## 11. Email, schedules, background jobs
 
-```plinjs
+```plainscript
 mail transport
 host is "smtp.gmail.com"
 port is 587
@@ -644,11 +644,11 @@ send mail
 from is "hello@example.dev"
 to is "you@example.com"
 subject is "Hello"
-text is "Sent from PLINJS."
+text is "Sent from PlainScript."
 done
 ```
 
-```plinjs
+```plainscript
 every 5 minutes
 show "heartbeat"
 done
@@ -670,7 +670,7 @@ run background resize("photo.png")
 
 ## 12. Realtime and cache
 
-```plinjs
+```plainscript
 websocket server on 8080
 when socket connects
 send socket "Welcome!"
@@ -684,7 +684,7 @@ done
 done
 ```
 
-```plinjs
+```plainscript
 cache env("REDIS_URL")
 cacheSet("greeting", "hi", 60)
 show cacheGet("greeting")
@@ -699,7 +699,7 @@ The bot is created with a `bot <token-expr>` statement (bound for you — no
 `remember`), handlers register by command or callback data, and
 `start telegram bot` boots long polling.
 
-```plinjs
+```plainscript
 bot env("BOT_TOKEN")
 
 when someone sends "/start"
@@ -731,7 +731,7 @@ start telegram bot
 Real WhatsApp connectivity (Baileys under the hood). Link once by QR scan or
 pairing code; credentials persist in the auth folder.
 
-```plinjs
+```plainscript
 whatsapp bot
 auth "session"                       // credential folder, persists
 login qr                             // or login pairing "2348012345678"
@@ -753,7 +753,7 @@ done
 - `login pairing "<number>"` takes 8–15 digits (validated at compile time).
 - Pairing numbers may come from any value — typically typed at runtime:
 
-```plinjs
+```plainscript
 ask "WhatsApp number: " as phone
 
 whatsapp bot
@@ -777,7 +777,7 @@ done
 
 ## 15. OCR
 
-```plinjs
+```plainscript
 ocr "scan.png" as text
 show text
 
@@ -790,7 +790,7 @@ Async handled automatically; top-level use wraps the whole program.
 
 ## 16. Multi-file projects
 
-```plinjs
+```plainscript
 // index.pln
 import "./math.pln"
 import "./utils/plural.pln"
@@ -798,7 +798,7 @@ import "./utils/plural.pln"
 show double(21)
 ```
 
-```plinjs
+```plainscript
 // math.pln
 make double(n)
 give n * 2
@@ -808,14 +808,14 @@ done
 - Paths are relative (`./`, `../`); directories need a trailing file name.
 - Compilation is dependency-ordered; duplicate imports de-duplicate;
   circular imports and missing files produce friendly errors.
-- Each entry bundles its imports: `plinjs build` gives every source file its
+- Each entry bundles its imports: `plainscript build` gives every source file its
   own standalone module under `dist/`.
 
 ---
 
-## 17. Building and publishing an npm package written in PLINJS
+## 17. Building and publishing an npm package written in PlainScript
 
-PLINJS libraries ship like any Node package: you publish the generated
+PlainScript libraries ship like any Node package: you publish the generated
 `dist/` output; consumers never see `.pln` files or the compiler. Every
 top-level `make` function is exported automatically from the built file —
 `require('./dist/index.js')` returns an object with those functions.
@@ -825,7 +825,7 @@ Complete walkthrough for a package called `greet-pkg`:
 ```bash
 mkdir greet-pkg && cd greet-pkg
 npm init -y
-npm install --save-dev plinjs
+npm install --save-dev plainscript
 ```
 
 `package.json` — note `main` points at the built output and `prepare` builds
@@ -837,18 +837,18 @@ before publishing:
     "version": "1.0.0",
     "main": "dist/index.js",
     "scripts": {
-        "build": "plinjs build",
-        "prepare": "plinjs build"
+        "build": "plainscript build",
+        "prepare": "plainscript build"
     },
     "devDependencies": {
-        "plinjs": "^0.1.7"
+        "plainscript": "^0.1.7"
     }
 }
 ```
 
 `src/index.pln`:
 
-```plinjs
+```plainscript
 make greet(who)
 give `Hello, ${who}!`
 done
@@ -861,7 +861,7 @@ done
 Build and inspect:
 
 ```bash
-npx plinjs build          # src/index.pln -> dist/index.js
+npx plainscript build          # src/index.pln -> dist/index.js
 node -e "console.log(require('./dist/index.js').greet('Ada'))"
 ```
 
@@ -877,17 +877,17 @@ const { greet } = require('greet-pkg');
 console.log(greet('World'));
 ```
 
-There is no PLINJS-specific registry or format — standard `package.json`
+There is no PlainScript-specific registry or format — standard `package.json`
 semantics (`main`, `exports`) apply, and any deployment target that runs
-Node can use the result without knowing PLINJS was involved.
+Node can use the result without knowing PlainScript was involved.
 
 ---
 
 ## 18. Verification workflow (do this after generating code)
 
 ```bash
-npx plinjs check app.pln   # fast syntax gate — run this before anything else
-npx plinjs run app.pln     # full pipeline
+npx plainscript check app.pln   # fast syntax gate — run this before anything else
+npx plainscript run app.pln     # full pipeline
 ```
 
 If `check` reports `Line N, Column M: ...`, fix that exact spot. Errors
@@ -897,7 +897,7 @@ include suggestions ("Did you mean ...") — trust them.
 
 ## 19. Copy-paste prompt for your AI
 
-> You are writing PLINJS (`.pln`) source that compiles with the `plinjs`
+> You are writing PlainScript (`.pln`) source that compiles with the `plainscript`
 > compiler v0.1.7. Follow these rules strictly:
 >
 > - Every block ends with `done`. No braces, no semicolons.
@@ -953,9 +953,9 @@ include suggestions ("Did you mean ...") — trust them.
 >   `login pairing <value>`, and `on message ... done` handlers using
 >   `message.text` and `reply "..."`.
 > - OCR: `ocr "img.png" as text` (optional `using "deu"`).
-> - After writing code, run `npx plinjs check app.pln` and fix reported lines.
+> - After writing code, run `npx plainscript check app.pln` and fix reported lines.
 
 ---
 
-*Every claim in this file reflects the deterministic `plinjs` compiler v0.1.7.
-When in doubt: `plinjs check` is ground truth.*
+*Every claim in this file reflects the deterministic `plainscript` compiler v0.1.7.
+When in doubt: `plainscript check` is ground truth.*

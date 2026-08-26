@@ -1,20 +1,20 @@
 #!/usr/bin/env node
-// CLI: compile and run PLINJS (.pln) files.
+// CLI: compile and run PlainScript (.pln) files.
 //
 // Usage:
-//   plinjs run    <file.pln>   install missing dependencies, compile and execute
-//   plinjs build  [file.pln]   compile src/ (or one file) to dist/, names preserved
-//   plinjs check  <file.pln>   check syntax only (no JS generated, no execution)
-//   plinjs fmt    <file.pln>   format a PLINJS file in-place
-//   plinjs new    [name]       scaffold a new PLINJS project
-//   plinjs install            install dependencies detected in the project's sources
-//   plinjs start              build src/app.pln (or index.pln) and run its dist output
-//   plinjs doctor             check the PLINJS project environment
-//   plinjs add    <package>   install a package into the project
-//   plinjs remove <package>   uninstall a package from the project
-//   plinjs update             update all installed packages
-//   plinjs version            print the compiler version
-//   plinjs help               print this help text
+//   plainscript run    <file.pln>   install missing dependencies, compile and execute
+//   plainscript build  [file.pln]   compile src/ (or one file) to dist/, names preserved
+//   plainscript check  <file.pln>   check syntax only (no JS generated, no execution)
+//   plainscript fmt    <file.pln>   format a PlainScript file in-place
+//   plainscript new    [name]       scaffold a new PlainScript project
+//   plainscript install            install dependencies detected in the project's sources
+//   plainscript start              build src/app.pln (or index.pln) and run its dist output
+//   plainscript doctor             check the PlainScript project environment
+//   plainscript add    <package>   install a package into the project
+//   plainscript remove <package>   uninstall a package from the project
+//   plainscript update             update all installed packages
+//   plainscript version            print the compiler version
+//   plainscript help               print this help text
 
 const fs   = require('fs');
 const path = require('path');
@@ -49,29 +49,29 @@ function warn(message) {
 const section = (title) => `\n${clrCyan(clrBold(title))}`;
 
 const HELP = `
-${clrBold(`PLINJS v${VERSION}`)} ${clrDim('· .pln compiles to readable Node.js')}
+${clrBold(`PlainScript v${VERSION}`)} ${clrDim('· .pln compiles to readable Node.js')}
 
 ${section('START')}
-  plinjs new [name]        Scaffold a new project with a working app.pln
-  plinjs run <file.pln>    Install missing deps, compile, execute
-  plinjs start             Build src/app.pln and run it from dist/
+  plainscript new [name]        Scaffold a new project with a working app.pln
+  plainscript run <file.pln>    Install missing deps, compile, execute
+  plainscript start             Build src/app.pln and run it from dist/
 
 ${section('BUILD & CHECK')}
-  plinjs build             Compile every .pln under src/ into dist/
-  plinjs build <file.pln>  Compile one file into dist/ (name preserved)
-  plinjs check <file.pln>  Syntax-check only — fastest feedback loop
-  plinjs fmt <file.pln>    Format a file in place
+  plainscript build             Compile every .pln under src/ into dist/
+  plainscript build <file.pln>  Compile one file into dist/ (name preserved)
+  plainscript check <file.pln>  Syntax-check only — fastest feedback loop
+  plainscript fmt <file.pln>    Format a file in place
 
 ${section('PACKAGES')}
-  plinjs install           Install everything your source needs
-  plinjs add <package>     Install a package into the project
-  plinjs remove <package>  Uninstall a package from the project
-  plinjs update            Update all installed packages
+  plainscript install           Install everything your source needs
+  plainscript add <package>     Install a package into the project
+  plainscript remove <package>  Uninstall a package from the project
+  plainscript update            Update all installed packages
 
 ${section('TOOLS')}
-  plinjs doctor            Check the project environment
-  plinjs version           Print the compiler version
-  plinjs help              Print this text
+  plainscript doctor            Check the project environment
+  plainscript version           Print the compiler version
+  plainscript help              Print this text
 
 ${section('THE LANGUAGE IN EIGHT LINES')}
   remember name as "Ada"          show \`Hi \${name}\`         variables, printing
@@ -84,15 +84,15 @@ ${section('THE LANGUAGE IN EIGHT LINES')}
   try ... recover as err ... done      retry 3 times every 5s  errors
 
 ${section('ALSO SHIPPED')}
-  Comparisons and stdlib (v1.0) · PLINJS Expressions (v1.1) ·
+  Comparisons and stdlib (v1.0) · PlainScript Expressions (v1.1) ·
   JavaScript gateway with ask (v1.1.1) · OCR · Telegram bots ·
   WhatsApp bots (v2.1.1) ·
   email · schedules · WebSocket · cache (v2.1) ·
   sessions · uploads · cookies · rate limits · api keys · OAuth (v2.1.1)
 
 ${section('FIRST RUN')}
-  plinjs new hello               scaffolds hello/ with a live web app
-  plinjs run hello/app.pln       serves it at http://localhost:3000
+  plainscript new hello               scaffolds hello/ with a live web app
+  plainscript run hello/app.pln       serves it at http://localhost:3000
 `.trim();
 
 // ── npm invocation ────────────────────────────────────────────────────────────
@@ -133,14 +133,14 @@ function isValidPackageName(name) {
 
 // ── Build conventions ────────────────────────────────────────────────────────
 //
-// `plinjs build` follows a TypeScript-style model:
+// `plainscript build` follows a TypeScript-style model:
 //
 //   Zero configuration (default):
 //     - sources are discovered automatically under "src/" (the project root is
 //       scanned when no src/ directory exists)
 //     - output always goes to "dist/"
 //
-//   Optional plinjs.config.json (tsconfig-like):
+//   Optional plainscript.config.json (tsconfig-like):
 //     { "compilerOptions": { "outDir": "./build", "rootDir": "./lib",
 //       "exclude": ["vendor"] } }
 //
@@ -150,17 +150,17 @@ function isValidPackageName(name) {
 const SOURCE_DIR = 'src';
 const DEFAULT_OUT_DIR = 'dist';
 
-// Read optional plinjs.config.json. Returns { compilerOptions } or null.
+// Read optional plainscript.config.json. Returns { compilerOptions } or null.
 // The file is tsconfig-like: only compilerOptions.outDir, compilerOptions.rootDir,
 // and compilerOptions.exclude are used.
 function readCompilerOptions() {
-  const configPath = path.resolve('plinjs.config.json');
+  const configPath = path.resolve('plainscript.config.json');
   if (!fs.existsSync(configPath)) return null;
   try {
     const raw = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     return raw.compilerOptions || null;
   } catch (e) {
-    console.error(`plinjs.config.json is not valid JSON: ${e.message}`);
+    console.error(`plainscript.config.json is not valid JSON: ${e.message}`);
     process.exit(1);
   }
 }
@@ -230,7 +230,7 @@ function stage(label, fn) {
   }
 }
 
-// Map PLINJS package names to their npm package names (same as the compiler's
+// Map PlainScript package names to their npm package names (same as the compiler's
 // KNOWN_PACKAGES in generator.js).
 // Keep dependency checks in one CLI execution cheap and deterministic.
 const dependencyCache = new Map();
@@ -329,7 +329,7 @@ function installPackages(packages, cwd = process.cwd()) {
       if (bareName === 'better-sqlite3') {
         console.log(
           `${clrYellow('⚠')} ${pkg} could not be installed on this platform. ` +
-          `PLINJS will use its WebAssembly SQLite engine instead.`
+          `PlainScript will use its WebAssembly SQLite engine instead.`
         );
         continue;
       }
@@ -353,7 +353,7 @@ function ensureDependencies(files, install = true) {
   throw new Error(`Missing dependencies:\n\n${lines.join('\n\n')}`);
 }
 
-// Compile a PLINJS program to JavaScript.
+// Compile a PlainScript program to JavaScript.
 //
 // Deterministic only: the lexer/parser/generator pipeline is the single
 // authoritative compiler. Unsupported syntax produces a precise compiler
@@ -399,7 +399,7 @@ function nodeModulesSearchPaths(entryDir) {
 
 async function cmdRun(filePath, extraArgs = []) {
   if (!filePath) {
-    console.error('Usage: plinjs run <file.pln>');
+    console.error('Usage: plainscript run <file.pln>');
     process.exit(1);
   }
   const js = compile(filePath);
@@ -408,7 +408,7 @@ async function cmdRun(filePath, extraArgs = []) {
   // behaviour match a direct `node` invocation.
   const entryDir = path.dirname(path.resolve(filePath));
   const searchPaths = nodeModulesSearchPaths(entryDir);
-  const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'plinjs-run-'));
+  const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'plainscript-run-'));
   const tmpFile = path.join(tmpDir, 'out.js');
   fs.writeFileSync(tmpFile, js, 'utf8');
   try {
@@ -444,14 +444,14 @@ function buildOne(filePath, srcDir, outDir) {
   return path.relative(process.cwd(), outPath) || outPath;
 }
 
-// `plinjs build` — TypeScript-style production build:
+// `plainscript build` — TypeScript-style production build:
 //
 //   Zero config (default):
 //     messi.pln        → dist/messi.js       (project-root sources)
 //     src/index.pln    → dist/index.js       (src/ is the source root)
 //     src/a/b.pln      → dist/a/b.js         (structure preserved)
 //
-//   With plinjs.config.json:
+//   With plainscript.config.json:
 //     { "compilerOptions": { "outDir": "./build", "rootDir": "./lib" } }
 //     lib/app.pln → build/app.js
 //
@@ -507,7 +507,7 @@ async function cmdStart(extraArgs = []) {
 }
 
 function cmdNew(projectName) {
-  const name = projectName || 'my-plinjs-app';
+  const name = projectName || 'my-plainscript-app';
   const dir  = path.resolve(name);
 
   if (fs.existsSync(dir)) {
@@ -527,7 +527,7 @@ remember app as express()
 serve folder "public"
 
 when someone visits "/"
-    reply "Hello from PLINJS!"
+    reply "Hello from PlainScript!"
 done
 
 when someone visits "/api/status"
@@ -542,19 +542,19 @@ listen on 3000
 done
 `);
 
-  // package.json — plain Node semantics; PLINJS itself is a devDependency and
+  // package.json — plain Node semantics; PlainScript itself is a devDependency and
   // deployment only needs the generated dist/ output.
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
     name,
     version: '1.0.0',
-    description: `A PLINJS v${VERSION} application`,
+    description: `A PlainScript v${VERSION} application`,
     main: 'dist/app.js',
     scripts: {
-      build: 'plinjs build',
+      build: 'plainscript build',
       start: 'node dist/app.js',
     },
     devDependencies: {
-      plinjs: `^${VERSION}`,
+      plainscript: `^${VERSION}`,
     },
     dependencies: {
       express: '^4.18.2',
@@ -564,7 +564,7 @@ done
   // README.md
   fs.writeFileSync(path.join(dir, 'README.md'), `# ${name}
 
-A PLINJS v${VERSION} application.
+A PlainScript v${VERSION} application.
 
 ## Getting started
 
@@ -578,10 +578,10 @@ Then open http://localhost:3000 in your browser.
 `);
 
   console.log(`✓ Created project "${name}"`);
-  console.log(`\nNext steps:\n  cd ${name}\n  npm install\n  npx plinjs run src/app.pln`);
+  console.log(`\nNext steps:\n  cd ${name}\n  npm install\n  npx plainscript run src/app.pln`);
 }
 
-// ── plinjs install ────────────────────────────────────────────────────────────
+// ── plainscript install ────────────────────────────────────────────────────────────
 
 // Locate the project entry for commands that work on a single program (start):
 // conventional defaults inside src/ first, then the project root.
@@ -648,7 +648,7 @@ function cmdInstall() {
 }
 
 function cmdDoctor() {
-  console.log('PLINJS doctor\n');
+  console.log('PlainScript doctor\n');
   const check = (label, ok, detail = '') => {
     const suffix = detail ? ` — ${detail}` : '';
     console.log(`${ok ? clrGreen('✓') : clrRed('✗')} ${label}${suffix}`);
@@ -657,7 +657,7 @@ function cmdDoctor() {
   let npmVersion = '';
   try { npmVersion = runNpm(['--version'], { encoding: 'utf8' }).trim(); } catch (_) {}
   check('npm', Boolean(npmVersion), npmVersion);
-  check('PLINJS CLI', true);
+  check('PlainScript CLI', true);
   check('Compiler', fs.existsSync(path.join(__dirname, 'parser.js')));
   check('Formatter', fs.existsSync(path.join(__dirname, 'formatter.js')));
   check('Runtime', fs.existsSync(path.join(__dirname, 'generator.js')));
@@ -690,7 +690,7 @@ function cmdDoctor() {
 
 function cmdAdd(packageName) {
   if (!packageName) {
-    console.error('Usage: plinjs add <package>');
+    console.error('Usage: plainscript add <package>');
     process.exit(1);
   }
   if (!isValidPackageName(packageName)) {
@@ -711,7 +711,7 @@ function cmdAdd(packageName) {
 
 function cmdRemove(packageName) {
   if (!packageName) {
-    console.error('Usage: plinjs remove <package>');
+    console.error('Usage: plainscript remove <package>');
     process.exit(1);
   }
   if (!isValidPackageName(packageName)) {
@@ -744,10 +744,10 @@ function cmdUpdate() {
   }
 }
 
-// Check syntax of a PLINJS file without generating JavaScript or executing.
+// Check syntax of a PlainScript file without generating JavaScript or executing.
 function cmdCheck(filePath) {
   if (!filePath) {
-    console.error('Usage: plinjs check <file.pln>');
+    console.error('Usage: plainscript check <file.pln>');
     process.exit(1);
   }
   const absPath = path.resolve(filePath);
@@ -766,10 +766,10 @@ function cmdCheck(filePath) {
   }
 }
 
-// Format a PLINJS file in-place.
+// Format a PlainScript file in-place.
 function cmdFmt(filePath) {
   if (!filePath) {
-    console.error('Usage: plinjs fmt <file.pln>');
+    console.error('Usage: plainscript fmt <file.pln>');
     process.exit(1);
   }
   const absPath = path.resolve(filePath);
@@ -788,7 +788,7 @@ function cmdFmt(filePath) {
 }
 
 function cmdVersion() {
-  console.log(`PLINJS v${VERSION}`);
+  console.log(`PlainScript v${VERSION}`);
 }
 
 function cmdHelp() {
@@ -831,7 +831,7 @@ async function main() {
       if (command && command.endsWith('.pln')) {
         await cmdRun(command);
       } else {
-        console.error(`Unknown command: "${command}". Run "plinjs help" for usage.`);
+        console.error(`Unknown command: "${command}". Run "plainscript help" for usage.`);
         process.exit(1);
       }
   }

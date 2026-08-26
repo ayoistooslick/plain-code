@@ -1,4 +1,4 @@
-// PLINJS v1.0.0 — Conditions and comparisons
+// PlainScript v1.0.0 — Conditions and comparisons
 
 remember score as 85
 
@@ -12,9 +12,9 @@ if score between 80 and 89
     show "B grade"
 done
 
-remember name as "PLINJS"
+remember name as "PlainScript"
 
-if name contains "PLINJS"
+if name contains "PlainScript"
     show "Found it"
 done
 

@@ -1,13 +1,13 @@
-# PLINJS for Acode
+# PlainScript for Acode
 
-Syntax highlighting for the PLINJS programming language (`.pln`) in
+Syntax highlighting for the PlainScript programming language (`.pln`) in
 [Acode](https://acode.app), implemented with Acode's modern CodeMirror 6
 `editorLanguages` API.
 
 ## Features
 
 - Automatic `.pln` file recognition
-- Syntax highlighting derived from the PLINJS compiler itself
+- Syntax highlighting derived from the PlainScript compiler itself
   (`compiler/lexer.js`, `compiler/parser.js`, `compiler/generator.js`)
 - Structural keywords (declarations, control flow, web, database, gateway)
 - Multi-word comparison phrases (`is above`, `is at least`, `between ... and`,
@@ -23,7 +23,7 @@ Syntax highlighting for the PLINJS programming language (`.pln`) in
 - Standard-library function calls (`readFile(...)`, `jsonEncode(...)`, ...)
 - JavaScript gateway blocks (`javascript ... done`) highlighted as JavaScript
 - SQL blocks (`query ... done`, `insert ... done`, ...) kept visually distinct
-  from PLINJS code
+  from PlainScript code
 
 ## Installation
 
@@ -34,8 +34,8 @@ Syntax highlighting for the PLINJS programming language (`.pln`) in
 
 ## What this plugin does not do
 
-PLINJS for Acode only provides syntax highlighting and `.pln` file
-recognition. It does **not** run the PLINJS compiler, provide LSP
+PlainScript for Acode only provides syntax highlighting and `.pln` file
+recognition. It does **not** run the PlainScript compiler, provide LSP
 diagnostics, autocomplete, formatting, or terminal integration.
 
 ## Compatibility
@@ -50,8 +50,8 @@ diagnostics, autocomplete, formatting, or terminal integration.
 ## Development
 
 The highlighting rules live in `stream-spec.js`, a pure CommonJS module with
-no CodeMirror dependency. The PLINJS test suite (`npm test`) exercises it
+no CodeMirror dependency. The PlainScript test suite (`npm test`) exercises it
 directly from `tests/compiler.test.js`, so the tokenizer is verified with the
 same code the editor runs.
 
-Compatible with PLINJS v0.1.7.
+Compatible with PlainScript v0.1.7.

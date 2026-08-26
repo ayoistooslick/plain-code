@@ -1,6 +1,6 @@
-// Tests for PLINJS — zero-config production build model.
+﻿// Tests for PlainScript — zero-config production build model.
 //
-//   build:    plinjs build writes dist/<name>.js preserving source names and
+//   build:    plainscript build writes dist/<name>.js preserving source names and
 //             structure relative to the source root (TypeScript-style)
 //   src:      automatic src/ discovery; src/ falls back to project root
 //   run:      execution happens from a scratch directory outside the
@@ -60,7 +60,7 @@ function runNode(file, cwd) {
   }
 }
 
-function tmpDir(prefix = 'plinjs-build-') {
+function tmpDir(prefix = 'plainscript-build-') {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
@@ -116,11 +116,11 @@ test('src: entry is src/app.pln by default for start', () => {
   assert(out.includes('custom-entry'), `start must execute src/app.pln, got:\n${out}`);
 });
 
-// ── plinjs.config.json overrides ─────────────────────────────────────────────
+// ── plainscript.config.json overrides ─────────────────────────────────────────────
 
 test('config: outDir override redirects build output', () => {
   const dir = tmpDir();
-  write(dir, 'plinjs.config.json', JSON.stringify({ compilerOptions: { outDir: './build' } }));
+  write(dir, 'plainscript.config.json', JSON.stringify({ compilerOptions: { outDir: './build' } }));
   write(dir, 'src/app.pln', 'show "ok"\n');
   runCli(['build'], dir);
   assert(fs.existsSync(path.join(dir, 'build', 'app.js')), 'expected build/app.js');
@@ -129,7 +129,7 @@ test('config: outDir override redirects build output', () => {
 
 test('config: rootDir override changes source discovery root', () => {
   const dir = tmpDir();
-  write(dir, 'plinjs.config.json', JSON.stringify({ compilerOptions: { rootDir: './lib' } }));
+  write(dir, 'plainscript.config.json', JSON.stringify({ compilerOptions: { rootDir: './lib' } }));
   write(dir, 'lib/core.pln', 'show "core"\n');
   write(dir, 'src/other.pln', 'show "other"\n');
   runCli(['build'], dir);
@@ -139,7 +139,7 @@ test('config: rootDir override changes source discovery root', () => {
 
 test('config: exclude skips named directories', () => {
   const dir = tmpDir();
-  write(dir, 'plinjs.config.json', JSON.stringify({ compilerOptions: { exclude: ['vendor'] } }));
+  write(dir, 'plainscript.config.json', JSON.stringify({ compilerOptions: { exclude: ['vendor'] } }));
   write(dir, 'src/app.pln', 'show "app"\n');
   write(dir, 'src/vendor/old.pln', 'show "old"\n');
   runCli(['build'], dir);
@@ -149,7 +149,7 @@ test('config: exclude skips named directories', () => {
 
 test('config: combined outDir + rootDir overrides', () => {
   const dir = tmpDir();
-  write(dir, 'plinjs.config.json', JSON.stringify({ compilerOptions: { outDir: './build', rootDir: './lib' } }));
+  write(dir, 'plainscript.config.json', JSON.stringify({ compilerOptions: { outDir: './build', rootDir: './lib' } }));
   write(dir, 'lib/app.pln', 'show "from-lib"\n');
   runCli(['build'], dir);
   assert(fs.existsSync(path.join(dir, 'build', 'app.js')), 'expected build/app.js');
@@ -157,7 +157,7 @@ test('config: combined outDir + rootDir overrides', () => {
 
 test('config: start uses rootDir and outDir from config', () => {
   const dir = tmpDir();
-  write(dir, 'plinjs.config.json', JSON.stringify({ compilerOptions: { rootDir: './app', outDir: './build' } }));
+  write(dir, 'plainscript.config.json', JSON.stringify({ compilerOptions: { rootDir: './app', outDir: './build' } }));
   write(dir, 'app/index.pln', 'show "config-start"\n');
   const out = runCli(['start'], dir);
   assert(out.includes('config-start'), `start must use config rootDir, got:\n${out}`);
@@ -212,7 +212,7 @@ test('build: compilation is deterministic (identical bytes across rebuilds)', ()
 test('build: node_modules and hidden directories are never scanned', () => {
   const dir = tmpDir();
   write(dir, 'keep.pln', 'show "kept"\n');
-  write(dir, 'node_modules', 'junk', 'junk.js', 'not-plinjs');
+  write(dir, 'node_modules', 'junk', 'junk.js', 'not-plainscript');
   write(dir, 'node_modules', 'junk', 'fake.pln', 'show "should not compile"');
   write(dir, '.hidden', 'secret.pln', 'show "should not compile"');
   const out = runCli(['build'], dir);
@@ -283,7 +283,7 @@ test('integration: a multi-file project imports are bundled and the dist output 
   write(dir, path.join('src', 'index.pln'), [
     'import "./helpers/greet.pln"',
     '',
-    'greet("PLINJS")',
+    'greet("PlainScript")',
   ].join('\n'));
   write(dir, path.join('src', 'helpers', 'greet.pln'), [
     'make greet(who)',
@@ -296,7 +296,7 @@ test('integration: a multi-file project imports are bundled and the dist output 
   assert(fs.existsSync(path.join(dir, 'dist', 'helpers', 'greet.js')), 'each source file gets its own dist output');
 
   const printed = runNode(path.join(dir, 'dist', 'index.js'), dir);
-  assert(printed.includes('Hello PLINJS'), `standalone dist output broken:\n${printed}`);
+  assert(printed.includes('Hello PlainScript'), `standalone dist output broken:\n${printed}`);
 });
 
 // ── Integration: npm-package-style project ───────────────────────────────────
@@ -304,11 +304,11 @@ test('integration: a multi-file project imports are bundled and the dist output 
 test('integration: an npm-package-style project builds src/index.pln -> dist/index.js consumable by Node', () => {
   const dir = tmpDir();
   write(dir, 'package.json', JSON.stringify({
-    name: 'my-plinjs-package',
+    name: 'my-plainscript-package',
     version: '1.0.0',
     main: 'dist/index.js',
-    scripts: { build: 'plinjs build' },
-    devDependencies: { plinjs: '^0.1.7' },
+    scripts: { build: 'plainscript build' },
+    devDependencies: { plainscript: '^0.1.7' },
   }, null, 2));
   write(dir, path.join('src', 'index.pln'), [
     'remember greeting as "published"',
@@ -328,7 +328,7 @@ test('integration: an npm-package-style project builds src/index.pln -> dist/ind
 
   // The project's own package.json semantics were respected, not rewritten.
   const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
-  assert(pkg.main === 'dist/index.js' && pkg.name === 'my-plinjs-package', 'package.json was modified by the build');
+  assert(pkg.main === 'dist/index.js' && pkg.name === 'my-plainscript-package', 'package.json was modified by the build');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

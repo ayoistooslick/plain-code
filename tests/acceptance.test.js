@@ -1,4 +1,4 @@
-// Acceptance tests for the v2.1.1 example projects.
+﻿// Acceptance tests for the v2.1.1 example projects.
 //
 // These boot the REAL compiled output of examples/ over live HTTP:
 //   • examples/football-backend/app.pln  — SQLite + sessions + api key + 404
@@ -40,7 +40,7 @@ function compileFile(file) {
   return js;
 }
 
-// Boots compiled PLINJS output on an ephemeral port by capturing app.listen,
+// Boots compiled PlainScript output on an ephemeral port by capturing app.listen,
 // exactly like the backend test harness. `fakeOcr(path)` replaces the
 // tesseract.js engine when provided.
 async function bootApp(js, { fakeOcr = null } = {}) {
@@ -162,7 +162,7 @@ async function footballAcceptance() {
     assert(loginBody.user, 'ada');
     assertIncludes(loginBody.token, '.');
     const cookie = login.headers.get('set-cookie').split(';')[0];
-    assertIncludes(cookie, 'plinjs.sid=');
+    assertIncludes(cookie, 'plainscript.sid=');
 
     const me = await fetch(`${base}/me`, { headers: { cookie } });
     assert((await me.json()).user, 'ada');
@@ -210,7 +210,7 @@ console.log('\nAcceptance — ID verification');
 console.log('(examples/id-verification/app.pln over live HTTP)');
 
 async function idVerificationAcceptance() {
-  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'plinjs-idverify-'));
+  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'plainscript-idverify-'));
   // Compile before switching cwd (source paths are repo-relative); the app's
   // relative "uploads" folder then lands inside the temp work directory.
   const js = compileFile('examples/id-verification/app.pln');

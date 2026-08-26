@@ -1,6 +1,6 @@
-// PLINJS v2.1 — Sending email
+// PlainScript v2.1 — Sending email
 //
-// Run with:  MAIL_PASS=secret plinjs run examples/email-send.pln
+// Run with:  MAIL_PASS=secret plainscript run examples/email-send.pln
 //
 // Configure the outgoing transport once, then send as many mails as you
 // like. Credentials come from the environment — never hardcode them.
@@ -13,10 +13,10 @@ mail transport
 done
 
 send mail
-    from is "hello@plinjs.dev"
+    from is "hello@plainscript.dev"
     to is "you@example.com"
-    subject is "Hello from PLINJS"
-    text is "This email was sent from a PLINJS program."
+    subject is "Hello from PlainScript"
+    text is "This email was sent from a PlainScript program."
 done
 
 show "Email sent successfully"

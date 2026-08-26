@@ -1,12 +1,12 @@
-# PLINJS v0.1.7 — Release Notes
+# PlainScript v0.1.7 — Release Notes
 
 **Release date:** 2026
 
 ---
 
-## What is PLINJS 0.1.7?
+## What is PlainScript 0.1.7?
 
-PLINJS is an Intent-Oriented Programming Language (IOPL). You describe
+PlainScript is an Intent-Oriented Programming Language (IOPL). You describe
 **what** you want in plain sentences; the deterministic compiler decides
 **how** to implement it in JavaScript. This is the first release: the whole
 language, the production build model, the backend capabilities, and the
@@ -14,14 +14,14 @@ editor tooling ship together.
 
 ## Highlights
 
-### The `plinjs` npm package
+### The `plainscript` npm package
 
-- Install per project: `npm install --save-dev plinjs`. No global install.
-- CLI commands: `plinjs build | run | start | init | new | install | add |
+- Install per project: `npm install --save-dev plainscript`. No global install.
+- CLI commands: `plainscript build | run | start | init | new | install | add |
   remove | update | check | fmt | doctor | version | help`.
 - Everything runs through npm scripts and `npx`.
 
-### Production builds (`plinjs build`)
+### Production builds (`plainscript build`)
 
 - Sources compile to `dist/` preserving names and structure:
   `src/messi.pln` → `dist/messi.js`, nested folders included.
@@ -30,7 +30,7 @@ editor tooling ship together.
 - Deterministic output: rebuilds are byte-identical — safe to commit,
   diff, and cache.
 
-- `plinjs build` discovers all `.pln` files under `src/` and compiles each to
+- `plainscript build` discovers all `.pln` files under `src/` and compiles each to
   `dist/`, preserving file names and folder structure. No configuration file needed.
 - Source discovery skips `node_modules`, hidden directories, and the output
   directory itself.
@@ -41,7 +41,7 @@ editor tooling ship together.
   publish. Consumers `require()` the generated `dist/` output like any
   Node package — no custom registry, no custom format.
 - The `prepare` script hooks straight into the compiler:
-  `"prepare": "plinjs build"`.
+  `"prepare": "plainscript build"`.
 
 ## The language
 
@@ -50,7 +50,7 @@ editor tooling ship together.
   `for each player in players`.
 - String templates preserve whitespace and interpolate with `${expression}`,
   compiling directly to JavaScript template literals.
-- PLINJS Expressions: `show first player from players`, `add("X" to items)`,
+- PlainScript Expressions: `show first player from players`, `add("X" to items)`,
   `show city of address of customer`, `remember data as read("users.txt")`.
 - Multi-file projects bundle imports per entry; every source file gets its
   own standalone output under `dist/`.
@@ -79,9 +79,9 @@ engine, no AI, no hidden codegen:
 
 ## Editor support
 
-- `plinjs-vscode/`: syntax highlighting, snippets, folding, and a file icon
+- `plainscript-vscode/`: syntax highlighting, snippets, folding, and a file icon
   for `.pln` sources.
-- `plinjs-acode/`: a zero-dependency Acode plugin whose tokenizer mirrors
+- `plainscript-acode/`: a zero-dependency Acode plugin whose tokenizer mirrors
   the compiler's token table.
 
 ## Verification

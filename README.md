@@ -1,33 +1,33 @@
-# PLINJS
+# PlainScript
 
 <p align="center">
-  <img src="docs/og.svg" alt="PLINJS Logo" width="200" />
+  <img src="docs/og.svg" alt="PlainScript Logo" width="200" />
 </p>
 
 > "When even a simple sentence can be code."
 > Don't forget to star the repo
 
-PLINJS is an Intent-Oriented Programming Language (IOPL). You describe **what** you want; the compiler decides **how** to implement it in JavaScript.
+PlainScript is an Intent-Oriented Programming Language (IOPL). You describe **what** you want; the compiler decides **how** to implement it in JavaScript.
 
-**Current version:** v0.1.7 — the `plinjs` npm package with a TypeScript-style production build (`plinjs build` → `dist/`, source names preserved).
+**Current version:** v0.1.7 — the `plainscript` npm package with a TypeScript-style production build (`plainscript build` → `dist/`, source names preserved).
 
 ---
 
 ## Quick start
 
 ```bash
-npx plinjs new myapp     # scaffolds src/app.pln and package.json
+npx plainscript new myapp     # scaffolds src/app.pln and package.json
 cd myapp
-npm install            # installs plinjs as a devDependency plus runtime packages
-npm run build          # compiles src/ -> dist/ (plinjs build)
+npm install            # installs plainscript as a devDependency plus runtime packages
+npm run build          # compiles src/ -> dist/ (plainscript build)
 node dist/app.js       # or: npm start
 ```
 
-Adding PLINJS to an existing project:
+Adding PlainScript to an existing project:
 
 ```bash
-npm install --save-dev plinjs
-# start writing src/*.pln files — plinjs build auto-discovers them
+npm install --save-dev plainscript
+# start writing src/*.pln files — plainscript build auto-discovers them
 ```
 
 No global install is needed anywhere — everything runs through npm scripts
@@ -38,37 +38,37 @@ and `npx`.
 ## CLI
 
 ```
-plinjs run    <file.pln>   Install missing dependencies, compile and execute
+plainscript run    <file.pln>   Install missing dependencies, compile and execute
                          (executes from a scratch dir — nothing is written
                          into your project)
-plinjs build  [file.pln]   Compile to dist/. With no argument, builds every
+plainscript build  [file.pln]   Compile to dist/. With no argument, builds every
                          .pln file under the source root, preserving names
                          and folder structure
-plinjs check  <file.pln>   Check syntax only (no output, no execution)
-plinjs fmt    <file.pln>   Format a PLINJS file in-place
-plinjs new    [name]       Create a new PLINJS project (npm-ready)
-plinjs install             Install dependencies detected in the project's sources
-plinjs start               Build src/app.pln and run its dist/ output
-plinjs doctor              Check the PLINJS project environment
-plinjs add    <package>    Install a package into the project
-plinjs remove <package>    Uninstall a package from the project
-plinjs update              Update all installed npm packages
-plinjs version             Print the compiler version
-plinjs help                Print help text
+plainscript check  <file.pln>   Check syntax only (no output, no execution)
+plainscript fmt    <file.pln>   Format a PlainScript file in-place
+plainscript new    [name]       Create a new PlainScript project (npm-ready)
+plainscript install             Install dependencies detected in the project's sources
+plainscript start               Build src/app.pln and run its dist/ output
+plainscript doctor              Check the PlainScript project environment
+plainscript add    <package>    Install a package into the project
+plainscript remove <package>    Uninstall a package from the project
+plainscript update              Update all installed npm packages
+plainscript version             Print the compiler version
+plainscript help                Print help text
 ```
 
 ---
 
 ## Building and configuration
 
-`plinjs build` is a deterministic production build, TypeScript-style but for
+`plainscript build` is a deterministic production build, TypeScript-style but for
 `.pln` sources — **zero configuration required**:
 
-- `plinjs build` (no argument) discovers every `.pln` file under `src/` and
+- `plainscript build` (no argument) discovers every `.pln` file under `src/` and
   compiles each to `dist/` **preserving source file names and folder structure**:
   `src/messi.pln` → `dist/messi.js`,
   `src/helpers/math.pln` → `dist/helpers/math.js`.
-- `plinjs build <file.pln>` compiles a single file into `dist/`.
+- `plainscript build <file.pln>` compiles a single file into `dist/`.
 - Imports are bundled into each output, so every file in `dist/` runs
   standalone under Node.
 - Rebuilds are byte-identical — safe to commit, diff, and cache.
@@ -77,10 +77,10 @@ Source discovery skips `node_modules`, hidden directories, and the output
 directory itself. When no `src/` directory exists, the project root is scanned
 instead.
 
-### Optional `plinjs.config.json`
+### Optional `plainscript.config.json`
 
 For projects that need custom output or source directories, add a
-`plinjs.config.json` with a `compilerOptions` block (like `tsconfig.json`):
+`plainscript.config.json` with a `compilerOptions` block (like `tsconfig.json`):
 
 ```json
 {
@@ -95,25 +95,25 @@ For projects that need custom output or source directories, add a
 | Key         | Default                          | Meaning                                      |
 |-------------|----------------------------------|----------------------------------------------|
 | `outDir`    | `"dist"`                         | Build output directory                       |
-| `rootDir`   | `"src"` if it exists, else `"."` | Root that `plinjs build` scans for sources   |
+| `rootDir`   | `"src"` if it exists, else `"."` | Root that `plainscript build` scans for sources   |
 | `exclude`   | `["node_modules"]`               | Directories to skip during source discovery   |
 
-### Publishing a library written in PLINJS
+### Publishing a library written in PlainScript
 
 ```json
 {
-    "name": "my-plinjs-library",
+    "name": "my-plainscript-library",
     "main": "dist/index.js",
     "scripts": {
-        "build": "plinjs build",
-        "prepare": "plinjs build"
+        "build": "plainscript build",
+        "prepare": "plainscript build"
     },
-    "devDependencies": { "plinjs": "^0.1.7" }
+    "devDependencies": { "plainscript": "^0.1.7" }
 }
 ```
 
 `src/index.pln` builds to `dist/index.js`; consumers install and `require()`
-it like any Node package. There is no PLINJS-specific registry or format —
+it like any Node package. There is no PlainScript-specific registry or format —
 standard `package.json` semantics apply.
 
 ---
@@ -122,7 +122,7 @@ standard `package.json` semantics apply.
 
 ### Variables
 
-```plinjs
+```plainscript
 remember name as "Ayokunle"
 remember age as 16
 age becomes 17
@@ -132,7 +132,7 @@ age becomes 17
 
 Backtick-delimited strings preserve whitespace and support `${expression}` interpolation:
 
-```plinjs
+```plainscript
 remember name as "World"
 remember greeting as `Hello ${name}!`
 show greeting
@@ -149,14 +149,14 @@ Interpolation compiles directly to JavaScript template literals — it is not ev
 
 ### Conditions
 
-```plinjs
+```plainscript
 if age is at least 18
     show "Adult"
 otherwise
     show "Teenager"
 done
 
-if name contains "PLINJS"
+if name contains "PlainScript"
     show "Found it"
 done
 
@@ -167,7 +167,7 @@ done
 
 All comparison operators:
 
-| PLINJS                  | JavaScript         |
+| PlainScript                  | JavaScript         |
 |------------------------|--------------------|
 | `is` / `is equal to`  | `===`              |
 | `is not`               | `!==`              |
@@ -184,7 +184,7 @@ All comparison operators:
 
 ### Functions
 
-```plinjs
+```plainscript
 make add(a, b)
     give a + b
 done
@@ -193,7 +193,7 @@ show add(5, 7)
 
 ### Arrays & Objects
 
-```plinjs
+```plainscript
 remember players as ["Haaland", "Foden", "Rodri"]
 show players[0]
 players[1] becomes "Palmer"
@@ -207,7 +207,7 @@ show user.name
 
 ### Loops
 
-```plinjs
+```plainscript
 for each player in players
     show player
 done
@@ -221,13 +221,13 @@ while age is less than 18
 done
 ```
 
-### PLINJS Expressions
+### PlainScript Expressions
 
 Collections, properties, and files read like sentences.
 
 **Items**
 
-```plinjs
+```plainscript
 remember players as ["Haaland", "Foden", "Rodri"]
 
 show first player from players   // players[0]
@@ -240,7 +240,7 @@ Number words from `one` to `twenty` map to one-based positions: `player one` is 
 
 **Collections**
 
-```plinjs
+```plainscript
 show players length              // players.length
 add("Palmer" to players)         // players.push("Palmer")
 remove("Rodri" from players)     // players.splice(players.indexOf("Rodri"), 1)
@@ -252,7 +252,7 @@ done
 
 **Properties**
 
-```plinjs
+```plainscript
 show name of user                // user.name
 show city of address of customer // customer.address.city
 name of user becomes "Ayo"       // user.name = "Ayo"
@@ -262,7 +262,7 @@ name of user becomes "Ayo"       // user.name = "Ayo"
 
 **Files**
 
-```plinjs
+```plainscript
 remember data as read("users.txt")   // fs.readFileSync("users.txt", 'utf8')
 write(data to "users.txt")           // fs.writeFileSync(data, "users.txt", 'utf8')
 ```
@@ -273,7 +273,7 @@ The older `readFile()` / `writeFile()` forms still work and are unchanged.
 
 JavaScript blocks run raw JavaScript with full async support:
 
-```plinjs
+```plainscript
 remember response as javascript
     const res = await fetch("https://api.example.com")
     const data = await res.json()
@@ -284,14 +284,14 @@ show response
 
 `ask` reads a line of input from the terminal:
 
-```plinjs
+```plainscript
 ask "What is your name?" as name
 show "Hello, " + name
 ```
 
 Any npm package can be declared with `use`:
 
-```plinjs
+```plainscript
 use axios
 use node-fetch
 use @scope/package-name
@@ -306,16 +306,16 @@ no hidden codegen.
 
 ### Portable databases (SQLite native or WebAssembly)
 
-```plinjs
+```plainscript
 database "app.db"                  // probes better-sqlite3, falls back to sql.js
 ```
 
-`plinjs install` verifies that `better-sqlite3` actually loads; if the native
-module cannot be used, PLINJS warns and continues on the pure-JavaScript
+`plainscript install` verifies that `better-sqlite3` actually loads; if the native
+module cannot be used, PlainScript warns and continues on the pure-JavaScript
 WebAssembly engine (`sql.js`) — the same program runs unchanged. Force an
 engine explicitly:
 
-```plinjs
+```plainscript
 database "app.db" using "native"   // hard requirement: better-sqlite3
 database "app.db" using "wasm"     // hard requirement: sql.js
 ```
@@ -325,7 +325,7 @@ so data survives restarts either way.
 
 ### HTTP client
 
-```plinjs
+```plainscript
 remember r as get "https://api.example.com/users"
 if ok of r
     show status of r
@@ -344,7 +344,7 @@ awaits raw promises when you need it.
 
 ### Passwords and tokens (built-in auth)
 
-```plinjs
+```plainscript
 remember hash as hashPassword("correct horse")
 if checkPassword(password of body of request, hash)
     remember token as createToken(user, env("TOKEN_SECRET"), 3600)
@@ -358,7 +358,7 @@ expiry and fail closed on tampering or timeout.
 
 ### Sessions
 
-```plinjs
+```plainscript
 web app
 enable sessions "a-long-random-secret"
 
@@ -377,12 +377,12 @@ route post "/logout"
 done
 ```
 
-Sessions ride an HMAC-signed `HttpOnly` cookie (`plinjs.sid`). The store is
+Sessions ride an HMAC-signed `HttpOnly` cookie (`plainscript.sid`). The store is
 in-memory: restarting the server signs everyone out.
 
 ### File uploads
 
-```plinjs
+```plainscript
 accept uploads limit "5 MB" allow ["image/png", "image/jpeg"] folder "uploads"
 
 route post "/scan"
@@ -398,7 +398,7 @@ types 415. `uploads("docs")` returns every file under a field name.
 
 ### Cookies
 
-```plinjs
+```plainscript
 set cookie "theme" to "dark" expires in 7 days
 show cookie("theme")
 clear cookie "theme"
@@ -406,7 +406,7 @@ clear cookie "theme"
 
 ### Rate limiting
 
-```plinjs
+```plainscript
 rate limit 100 requests per minute
 ```
 
@@ -414,7 +414,7 @@ Sliding window per client IP; the quota-exceeded response is HTTP 429.
 
 ### Google OAuth
 
-```plinjs
+```plainscript
 google oauth
     id is env("GOOGLE_ID")
     secret is env("GOOGLE_SECRET")
@@ -429,7 +429,7 @@ user and the browser lands on `landing`.
 
 ### Custom 404
 
-```plinjs
+```plainscript
 when nothing matches
     status 404
     reply json
@@ -440,7 +440,7 @@ done
 
 ### Error handling and retries
 
-```plinjs
+```plainscript
 try
     remember data as jsonDecode(raw)
 recover as err
@@ -458,7 +458,7 @@ done
 
 No imports needed. These functions are built into the compiler:
 
-| PLINJS                    | Description                        |
+| PlainScript                    | Description                        |
 |--------------------------|------------------------------------|
 | `print(x)`              | Print a value (`console.log`)      |
 | `readFile("path")`      | Read a file as UTF-8 text          |
@@ -483,11 +483,11 @@ No imports needed. These functions are built into the compiler:
 
 ## Web Apps
 
-```plinjs
+```plainscript
 web app
 
 route "/"
-    reply "Hello from PLINJS!"
+    reply "Hello from PlainScript!"
 done
 
 route "/api/status"
@@ -504,7 +504,7 @@ start 3000
 
 ## SQLite Database
 
-```plinjs
+```plainscript
 database "app.db"
 
 execute
@@ -529,7 +529,7 @@ no rules, no AI, no hidden codegen.
 
 ### HTTP routing
 
-```plinjs
+```plainscript
 web app
 allow cors
 
@@ -562,7 +562,7 @@ start env("PORT")
 
 ### Databases with parameters and transactions
 
-```plinjs
+```plainscript
 database "app.db"                    // or: postgres env("DATABASE_URL")
 
 transaction
@@ -572,12 +572,12 @@ transaction
 done
 ```
 
-Placeholders `{likeThis}` bind to PLINJS variables. `postgres "..."` switches
+Placeholders `{likeThis}` bind to PlainScript variables. `postgres "..."` switches
 every SQL statement to node-postgres pool queries (`$n`, awaited).
 
 ### Email
 
-```plinjs
+```plainscript
 mail transport
     host is "smtp.gmail.com"
     port is 587
@@ -586,16 +586,16 @@ mail transport
 done
 
 send mail
-    from is "hello@plinjs.dev"
+    from is "hello@plainscript.dev"
     to is "you@example.com"
-    subject is "Hello from PLINJS"
-    text is "Sent from a PLINJS program."
+    subject is "Hello from PlainScript"
+    text is "Sent from a PlainScript program."
 done
 ```
 
 ### Cron and background jobs
 
-```plinjs
+```plainscript
 every 5 minutes
     show "heartbeat"
 done
@@ -609,7 +609,7 @@ run background resizeImage("photo.png")
 
 ### WebSocket servers
 
-```plinjs
+```plainscript
 websocket server on 8080
     when socket connects
         send socket "Welcome!"
@@ -622,7 +622,7 @@ done
 
 ### Cache (Redis)
 
-```plinjs
+```plainscript
 cache env("REDIS_URL")
 remember token as cacheGet("token")
 cacheSet("greeting", "hi", 60)
@@ -633,7 +633,7 @@ cacheDelete("greeting")
 
 ## Multi-file projects
 
-```plinjs
+```plainscript
 import "./math.pln"
 import "./utils.pln"
 
@@ -642,14 +642,14 @@ show PI
 show double(5)
 ```
 
-Imports are bundled per entry: `plinjs build` gives every source file its own
+Imports are bundled per entry: `plainscript build` gives every source file its own
 standalone output under `dist/`, with imported code inlined.
 
 ---
 
 ## Express server
 
-```plinjs
+```plainscript
 use express
 
 remember app as express()
@@ -657,7 +657,7 @@ remember app as express()
 serve folder "public"
 
 when someone visits "/"
-    reply "Hello from PLINJS!"
+    reply "Hello from PlainScript!"
 done
 
 when someone visits "/api/status"
@@ -679,7 +679,7 @@ done
 Full WhatsApp connectivity through Baileys — the implementation package is
 installed automatically and never appears in your source:
 
-```plinjs
+```plainscript
 whatsapp bot
     auth "session"                          // credential folder, persists
                                             // across restarts
@@ -706,7 +706,7 @@ done
 - `login pairing` also accepts any value — prompt for the number
   at runtime instead of hard-coding it:
 
-  ```plinjs
+  ```plainscript
   ask "WhatsApp number: " as phone
 
   whatsapp bot
@@ -727,19 +727,19 @@ See `examples/whatsapp-bot/` for ready-to-link programs.
 ## Project management
 
 ```bash
-plinjs install           # Install all detected dependencies
-plinjs add express       # Add a package
-plinjs remove express    # Remove a package
-plinjs update            # Update all packages
-plinjs start             # Build src/app.pln and run its dist/ output
-plinjs doctor            # Check project environment
+plainscript install           # Install all detected dependencies
+plainscript add express       # Add a package
+plainscript remove express    # Remove a package
+plainscript update            # Update all packages
+plainscript start             # Build src/app.pln and run its dist/ output
+plainscript doctor            # Check project environment
 ```
 
 ---
 
 ## Supported packages
 
-| PLINJS                     | Compiles to                          |
+| PlainScript                     | Compiles to                          |
 |---------------------------|--------------------------------------|
 | `use express`            | `const express = require('express');` |
 | `use sqlite`             | `const Database = require('better-sqlite3');` |
@@ -762,13 +762,13 @@ npm test
 ## Project structure
 
 ```
-plinjs/
+plainscript/
 ├── compiler/
-│   ├── lexer.js              — tokenises PLINJS source into tokens
+│   ├── lexer.js              — tokenises PlainScript source into tokens
 │   ├── parser.js             — builds an AST from tokens
 │   ├── generator.js          — generates JavaScript from the AST
 │   ├── bundler.js            — resolves imports and bundles files
-│   ├── formatter.js          — normalises PLINJS source style
+│   ├── formatter.js          — normalises PlainScript source style
 │   ├── dependency-detector.js— detects npm packages from source
 │   ├── version.js            — single compiler version constant
 │   └── cli.js                — command-line entry point
@@ -807,7 +807,7 @@ plinjs/
 │   └── acceptance.test.js    — boots the example projects over live HTTP
 │
 ├── docs/
-│   ├── PLINJS_SPEC.md
+│   ├── PlainScript_SPEC.md
 │   └── index.html
 │
 ├── package.json

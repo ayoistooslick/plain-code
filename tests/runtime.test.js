@@ -1,4 +1,4 @@
-// Tests for PLINJS v2.1.1 — one deterministic compiler, no Complex
+﻿// Tests for PlainScript v2.1.1 — one deterministic compiler, no Complex
 // Compilation:
 //   language: booleans/null, arithmetic, and/or/not, try/recover,
 //             wait for, retry, HTTP client expressions
@@ -255,7 +255,7 @@ testAsync('http client parses JSON responses into a record', async () => {
     ok: true,
     status: 200,
     headers: { get: (h) => (h.toLowerCase() === 'content-type' ? 'application/json' : null), entries: () => [] },
-    text: async () => '{"name":"plinjs"}',
+    text: async () => '{"name":"plainscript"}',
     url,
     options,
   });
@@ -266,7 +266,7 @@ testAsync('http client parses JSON responses into a record', async () => {
   ].join('\n'));
   assertIncludes(js, "__httpRequest('GET'");
   const logs = await runProgramWithFetch(js, fakeFetch);
-  assert(JSON.stringify(logs), JSON.stringify(['200', 'plinjs']));
+  assert(JSON.stringify(logs), JSON.stringify(['200', 'plainscript']));
 });
 
 async function runProgramWithFetch(js, fetchImpl) {
@@ -361,7 +361,7 @@ testAsync('using "wasm" runs SQLite through WebAssembly', async () => {
 });
 
 testAsync('wasm databases persist to disk across runs', async () => {
-  const dbFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'plinjs-db-')), 'data.db');
+  const dbFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'plainscript-db-')), 'data.db');
   const fileRef = dbFile.replace(/\\/g, '/');
   await runProgram(compileProgram([
     `database "${fileRef}" using "wasm"`,
@@ -551,7 +551,7 @@ testAsync('google oauth registers redirect and callback endpoints', async () => 
 });
 
 testAsync('accept uploads stores files and upload()/uploads() expose them', async () => {
-  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'plinjs-uploads-'));
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'plainscript-uploads-'));
   const { port, server } = await runWebProgram(compileProgram([
     'web app',
     `accept uploads limit "5 MB" allow ["image/png"] folder "${folder.replace(/\\/g, '/')}"`,

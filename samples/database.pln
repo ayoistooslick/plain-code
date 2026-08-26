@@ -1,4 +1,4 @@
-// PLINJS v1.0.0 — SQLite database
+// PlainScript v1.0.0 — SQLite database
 
 database "app.db"
 

@@ -1,4 +1,4 @@
-// Tests for PLINJS v2.0.1 — OCR statements (tesseract.js backing).
+﻿// Tests for PlainScript v2.0.1 — OCR statements (tesseract.js backing).
 //
 // Run with: node tests/ocr.test.js
 
@@ -44,7 +44,7 @@ function assert(actual, expected) {
   }
 }
 
-// Compile PLINJS source the way `plinjs build` does (async runtime wrapper).
+// Compile PlainScript source the way `plainscript build` does (async runtime wrapper).
 function compileProgram(source) {
   const context = createGenerationContext();
   let js = generate(parse(tokenize(source)), context);

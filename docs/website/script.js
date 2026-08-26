@@ -1,4 +1,4 @@
-/* PLINJS v0.1.7 — Documentation Website JS */
+/* PlainScript v0.1.7 — Documentation Website JS */
 
 /* ── Copy buttons ────────────────────────────────────────────────────────── */
 function initCopyButtons() {

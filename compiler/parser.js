@@ -2,7 +2,7 @@
 
 const { TOKEN } = require('./lexer');
 
-// Statement-starting PLINJS keywords, used for "did you mean?" suggestions.
+// Statement-starting PlainScript keywords, used for "did you mean?" suggestions.
 const STATEMENT_KEYWORDS = [
   'remember', 'show', 'if', 'make', 'give',
   'for', 'while', 'use', 'import', 'when', 'listen', 'reply', 'serve',
@@ -22,7 +22,7 @@ const NUMBER_WORDS = {
 };
 
 // HTTP methods accepted by the route statement (v2.1.0). Lowercase only —
-// PLINJS keywords are lowercase by convention.
+// PlainScript keywords are lowercase by convention.
 const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete'];
 
 // Time units accepted by the "every <n> <unit>" statement, in milliseconds
@@ -577,7 +577,7 @@ function parse(tokens) {
         ));
       }
       throw new Error(makeError(
-        `Unexpected word "${word}". This is not a valid statement in PLINJS.`,
+        `Unexpected word "${word}". This is not a valid statement in PlainScript.`,
         token
       ));
     }
@@ -945,7 +945,7 @@ function parse(tokens) {
   // when someone clicks "<data>" ... done
   function parseTelegramCallback() {
     const data = consume(TOKEN.STRING,
-      'Expected a button name string after "clicks".\n\nExample:\n  when someone clicks "about"\n    reply "About PLINJS"\n  done').value;
+      'Expected a button name string after "clicks".\n\nExample:\n  when someone clicks "about"\n    reply "About PlainScript"\n  done').value;
     const body = parseBody('"when someone clicks" block');
     return { type: 'TelegramCallbackStatement', data, body };
   }
@@ -1117,7 +1117,7 @@ function parse(tokens) {
   // database "<file>" [using "<driver>"]
   //
   // v2.1.1 — the optional driver selects the SQLite engine without changing
-  // any other PLINJS database semantics:
+  // any other PlainScript database semantics:
   //   "native" — better-sqlite3 (requires a working native binding)
   //   "wasm"   — sql.js WebAssembly build (runs anywhere Node runs)
   // The default ("auto") tries native first and falls back to the wasm
@@ -1152,7 +1152,7 @@ function parse(tokens) {
 
   // query/insert/update/delete/execute SQL_BODY DONE
   //
-  // v2.1.0 — the raw SQL may reference PLINJS variables with {name}
+  // v2.1.0 — the raw SQL may reference PlainScript variables with {name}
   // placeholders. They are extracted at parse time and replaced: SQLite gets
   // anonymous "?" markers, PostgreSQL numbered "$1…" markers (the generator
   // decides). Values are always passed as bound parameters — never spliced
@@ -1893,7 +1893,7 @@ function parse(tokens) {
   //   done
   //
   // The Baileys runtime, its socket, events and auth APIs stay hidden: this
-  // block is the whole surface. Defaults: auth folder "plinjs-whatsapp-auth",
+  // block is the whole surface. Defaults: auth folder "plainscript-whatsapp-auth",
   // QR login when no `login` line is present.
   function parseWhatsAppBot() {
     advance(); // whatsapp
@@ -1931,7 +1931,7 @@ function parse(tokens) {
         if (modeToken.type === TOKEN.IDENTIFIER && modeToken.value === 'pairing') {
           advance(); // pairing
           // v2.1.2 — the phone may be a string literal (validated here at
-          // compile time) or any PLINJS value, typically a variable filled by
+          // compile time) or any PlainScript value, typically a variable filled by
           // `ask`:
           //
           //   ask "WhatsApp number: " as phone
@@ -1973,7 +1973,7 @@ function parse(tokens) {
 
     return {
       type: 'WhatsAppBotStatement',
-      authFolder: authFolder || 'plinjs-whatsapp-auth',
+      authFolder: authFolder || 'plainscript-whatsapp-auth',
       login: login || { mode: 'qr' },
       handlers,
     };
@@ -2059,7 +2059,7 @@ function parse(tokens) {
       return { type: 'WriteCall', data: args[0], file: args[1] };
     }
     throw new Error(makeError(
-      `"${name}" is not a valid PLINJS collection expression.\n\nPlain supports:\n  add(item to collection)\n  remove(item from collection)\n  write(data to "file")`,
+      `"${name}" is not a valid PlainScript collection expression.\n\nPlain supports:\n  add(item to collection)\n  remove(item from collection)\n  write(data to "file")`,
       nameToken
     ));
   }

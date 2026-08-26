@@ -5,12 +5,12 @@ on:
     branches:
       - main
     paths:
-      - "plinjs-acode/**"
+      - "plainscript-acode/**"
       - ".github/workflows/build.yml"
 
   pull_request:
     paths:
-      - "plinjs-acode/**"
+      - "plainscript-acode/**"
       - ".github/workflows/build.yml"
 
   workflow_dispatch:
@@ -27,38 +27,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run PLINJS tests
+      - name: Run PlainScript tests
         run: npm test
 
       - name: Verify Acode plugin files
         run: |
-          test -f plinjs-acode/plugin.json
-          test -f plinjs-acode/main.js
+          test -f plainscript-acode/plugin.json
+          test -f plainscript-acode/main.js
 
           echo "Acode plugin files:"
-          ls -lah plinjs-acode
+          ls -lah plainscript-acode
 
       - name: Package Acode plugin
         run: |
           mkdir -p dist
 
-          cd plinjs-acode
-          zip -r ../dist/plinjs-acode-plugin.zip . \
+          cd plainscript-acode
+          zip -r ../dist/plainscript-acode-plugin.zip . \
             -x "*.git*" \
             -x "node_modules/*"
 
       - name: Verify plugin ZIP
         run: |
           echo "Plugin package:"
-          ls -lh dist/plinjs-acode-plugin.zip
+          ls -lh dist/plainscript-acode-plugin.zip
 
           echo
           echo "ZIP contents:"
-          unzip -l dist/plinjs-acode-plugin.zip
+          unzip -l dist/plainscript-acode-plugin.zip
 
       - name: Upload Acode plugin
         uses: actions/upload-artifact@v4
         with:
-          name: plinjs-acode-plugin
-          path: dist/plinjs-acode-plugin.zip
+          name: plainscript-acode-plugin
+          path: dist/plainscript-acode-plugin.zip
           if-no-files-found: error

@@ -1,11 +1,11 @@
-// PLINJS v2.1 — Databases: SQLite, parameters and transactions
+// PlainScript v2.1 — Databases: SQLite, parameters and transactions
 //
-// Run with:  plinjs run examples/database.pln
+// Run with:  plainscript run examples/database.pln
 //
-// SQL placeholders are written {likeThis} and bind to PLINJS variables of
+// SQL placeholders are written {likeThis} and bind to PlainScript variables of
 // the same name. A transaction block runs all enclosed writes atomically.
 
-database "plinjs-demo.db"
+database "plainscript-demo.db"
 
 execute
     CREATE TABLE IF NOT EXISTS users (

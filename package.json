@@ -1,10 +1,10 @@
 {
-  "name": "plinjs",
+  "name": "plainscript",
   "version": "0.1.7",
-  "description": "PLINJS — an Intent-Oriented Programming Language. When even a simple sentence can be code.",
+  "description": "PlainScript — an Intent-Oriented Programming Language. When even a simple sentence can be code.",
   "main": "compiler/cli.js",
   "bin": {
-    "plinjs": "./compiler/cli.js"
+    "plainscript": "./compiler/cli.js"
   },
   "scripts": {
     "test": "node tests/compiler.test.js && node tests/build.test.js && node tests/telegram.test.js && node tests/ocr.test.js && node tests/backend.test.js && node tests/runtime.test.js && node tests/acceptance.test.js && node tests/whatsapp.test.js"
@@ -20,7 +20,7 @@
     "access": "public"
   },
   "keywords": [
-    "plinjs",
+    "plainscript",
     "language",
     "compiler",
     "iopl"

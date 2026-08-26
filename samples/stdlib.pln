@@ -1,4 +1,4 @@
-// PLINJS v1.0.0 — Standard library
+// PlainScript v1.0.0 — Standard library
 
 // JSON
 remember user as
@@ -26,6 +26,6 @@ show id
 // String utilities
 show uppercase("hello")
 show lowercase("WORLD")
-show length("PLINJS")
+show length("PlainScript")
 show round(3.7)
 show random()

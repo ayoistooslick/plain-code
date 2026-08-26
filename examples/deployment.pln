@@ -1,12 +1,12 @@
-// PLINJS v1.0.1 — runtime dependency and deployment example
+// PlainScript v1.0.1 — runtime dependency and deployment example
 //
-// `plinjs build` and `plinjs run` detect express from `web app` and install it
-// when it is missing. `plinjs start` builds src/app.pln by default.
+// `plainscript build` and `plainscript run` detect express from `web app` and install it
+// when it is missing. `plainscript start` builds src/app.pln by default.
 
 web app
 
 route "/"
-    reply "PLINJS is ready to deploy!"
+    reply "PlainScript is ready to deploy!"
 done
 
 start 3000

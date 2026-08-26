@@ -1,9 +1,9 @@
-# Contributing to PLINJS
+# Contributing to PlainScript
 
-## Thanks for your interest in contributing to PLINJS.
+## Thanks for your interest in contributing to PlainScript.
 > An IOPL created by Ayokunle.
 
-PLINJS is a small programming language and compiler designed to make programming readable without hiding the underlying power of JavaScript. Contributions are welcome, whether you're fixing a bug, improving the compiler, adding tests, improving documentation, or proposing a new feature.
+PlainScript is a small programming language and compiler designed to make programming readable without hiding the underlying power of JavaScript. Contributions are welcome, whether you're fixing a bug, improving the compiler, adding tests, improving documentation, or proposing a new feature.
 
 Before You Start
 
@@ -15,7 +15,7 @@ Small fixes, documentation improvements, and test improvements can usually go di
 
 Development Setup
 
-PLINJS is a Node.js project.
+PlainScript is a Node.js project.
 
 Clone the repository and install dependencies:
 ```bash
@@ -31,7 +31,7 @@ All tests should pass before submitting a pull request.
 
 Making Changes
 
-When working on PLINJS:
+When working on PlainScript:
 
 - Keep changes focused and related to the issue or feature being addressed.
 - Preserve existing language behavior unless the change intentionally modifies the language.
@@ -40,9 +40,9 @@ When working on PLINJS:
 - Add regression tests for bugs you fix.
 - Add tests for new language features.
 - Update documentation when user-facing behavior changes.
-- Do not silently introduce syntax that conflicts with existing PLINJS syntax.
+- Do not silently introduce syntax that conflicts with existing PlainScript syntax.
 
-PLINJS has a deliberately readable syntax. New syntax should fit that design rather than simply exposing JavaScript syntax in a different spelling.
+PlainScript has a deliberately readable syntax. New syntax should fit that design rather than simply exposing JavaScript syntax in a different spelling.
 
 Testing
 
@@ -72,9 +72,9 @@ For compiler changes, tests should generally cover:
 4. Runtime or integration behavior when applicable
 5. Error handling when applicable
 
-PLINJS Language Changes
+PlainScript Language Changes
 
-Changes to the PLINJS language require extra care.
+Changes to the PlainScript language require extra care.
 
 If you add or modify syntax:
 
@@ -90,14 +90,14 @@ Do not remove existing syntax or change its meaning without documenting the comp
 
 JavaScript Gateway
 
-PLINJS supports a JavaScript Gateway for cases where PLINJS does not yet provide native syntax or functionality.
+PlainScript supports a JavaScript Gateway for cases where PlainScript does not yet provide native syntax or functionality.
 
 This includes JavaScript blocks and JavaScript interoperability.
 
 When modifying the JavaScript Gateway:
 
 - Preserve JavaScript blocks verbatim where the language requires it.
-- Ensure PLINJS variables can continue to interact with gateway code correctly.
+- Ensure PlainScript variables can continue to interact with gateway code correctly.
 - Test async behavior.
 - Test gateway behavior inside functions, routes, and loops where applicable.
 - Test npm package detection and imports, including hyphenated and scoped package names.
@@ -187,11 +187,11 @@ When reporting a bug, include:
 
 - What you expected to happen
 - What actually happened
-- A minimal PLINJS example that reproduces the problem
+- A minimal PlainScript example that reproduces the problem
 - The command you ran
 - The relevant error message
 - Your Node.js version when relevant
-- Your PLINJS version when relevant
+- Your PlainScript version when relevant
 
 A small reproduction is much more useful than a paragraph explaining that "the compiler is being weird."
 
@@ -200,8 +200,8 @@ Feature Requests
 For feature requests, explain:
 
 - What problem the feature solves
-- What the proposed PLINJS syntax could look like
-- Why the feature belongs in PLINJS rather than being handled through existing functionality
+- What the proposed PlainScript syntax could look like
+- Why the feature belongs in PlainScript rather than being handled through existing functionality
 - Whether the proposal affects existing syntax or behavior
 
 Language design changes should prioritize readability, consistency, and composability.
@@ -212,14 +212,14 @@ Contributors are expected to communicate respectfully and constructively.
 
 Technical disagreement is normal and encouraged. Personal attacks, harassment, or deliberately disruptive behavior are not.
 
-The goal is to make PLINJS better, not to win an argument on the internet, a task humanity has historically been spectacularly bad at.
+The goal is to make PlainScript better, not to win an argument on the internet, a task humanity has historically been spectacularly bad at.
 
 License
 
-By contributing to PLINJS, you agree that your contributions will be licensed under the same license as the project, subject to the terms of that license.
+By contributing to PlainScript, you agree that your contributions will be licensed under the same license as the project, subject to the terms of that license.
 
 Questions
 
 If you're unsure whether a change belongs in the project, open an issue and describe what you are trying to accomplish before investing heavily in an implementation.
 
-Thanks for helping make **`plinjs`** better.
+Thanks for helping make **`plainscript`** better.

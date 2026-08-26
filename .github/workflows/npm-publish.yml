@@ -1,4 +1,4 @@
-name: Publish PLINJS
+name: Publish PlainScript
 
 on:
   workflow_dispatch:
@@ -79,5 +79,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.event.inputs.version }}
-          name: PLINJS v${{ github.event.inputs.version }}
+          name: PlainScript v${{ github.event.inputs.version }}
           generate_release_notes: true

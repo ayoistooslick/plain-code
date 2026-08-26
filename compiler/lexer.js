@@ -1,4 +1,4 @@
-// Lexer: converts PLINJS source text into a stream of tokens.
+// Lexer: converts PlainScript source text into a stream of tokens.
 // Each token includes { type, value, line, col } for diagnostic reporting.
 
 const TOKEN = {
@@ -402,7 +402,7 @@ function tokenize(source) {
     if (source[i] === '%') { tokens.push({ type: TOKEN.PERCENT,  value: '%', line: tokenLine, col: tokenCol }); i++; continue; }
 
     throw new Error(
-      `Line ${line}, Column ${col()}: Unexpected character "${source[i]}". PLINJS only uses letters, numbers, strings, and known symbols.`
+      `Line ${line}, Column ${col()}: Unexpected character "${source[i]}". PlainScript only uses letters, numbers, strings, and known symbols.`
     );
   }
 

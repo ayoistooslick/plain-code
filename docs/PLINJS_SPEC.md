@@ -1,4 +1,4 @@
-# PLINJS Language Specification (v0.1.7)
+# PlainScript Language Specification (v0.1.7)
 
 Version: 2.1.1
 Status: Stable
@@ -10,11 +10,11 @@ Tagline: "When even a simple sentence can be code."
 
 ## Mission
 
-PLINJS is an Intent-Oriented Programming Language (IOPL).
+PlainScript is an Intent-Oriented Programming Language (IOPL).
 
 Its goal is to let developers describe WHAT they want while the compiler decides HOW JavaScript should implement it.
 
-PLINJS is designed to be: beginner-friendly, readable, predictable, consistent, and easy to teach.
+PlainScript is designed to be: beginner-friendly, readable, predictable, consistent, and easy to teach.
 
 Every keyword should be understandable by a 12-year-old.
 
@@ -72,7 +72,7 @@ Both keyword form (`show expr`) and call form (`show(expr)`) are valid and produ
 
 ### Comparison Operators
 
-| PLINJS                        | JavaScript         |
+| PlainScript                        | JavaScript         |
 |------------------------------|--------------------|
 | `is` / `is equal to`         | `===`              |
 | `is not`                     | `!==`              |
@@ -161,7 +161,7 @@ All built-in functions are available without any `use` or `import` statement.
 
 ### Strings & Numbers
 
-| PLINJS           | JavaScript equivalent   |
+| PlainScript           | JavaScript equivalent   |
 |-----------------|-------------------------|
 | `length(x)`     | `(x).length`            |
 | `uppercase(x)`  | `(x).toUpperCase()`     |
@@ -201,7 +201,7 @@ Notes:
 
 ### I/O & Files
 
-| PLINJS                        | JavaScript equivalent                            |
+| PlainScript                        | JavaScript equivalent                            |
 |------------------------------|--------------------------------------------------|
 | `print(x)`                   | `console.log(x)`                                 |
 | `readFile(path)`             | `require('fs').readFileSync(path, 'utf8')`       |
@@ -210,7 +210,7 @@ Notes:
 
 ### Time & System
 
-| PLINJS          | JavaScript equivalent                  |
+| PlainScript          | JavaScript equivalent                  |
 |----------------|----------------------------------------|
 | `time()`       | `Date.now()`                           |
 | `date()`       | `new Date().toISOString()`             |
@@ -221,14 +221,14 @@ Notes:
 
 ### JSON
 
-| PLINJS              | JavaScript equivalent       |
+| PlainScript              | JavaScript equivalent       |
 |--------------------|-----------------------------|
 | `jsonEncode(x)`    | `JSON.stringify(x)`         |
 | `jsonDecode(s)`    | `JSON.parse(s)`             |
 
 ---
 
-## PLINJS Imports
+## PlainScript Imports
 
 Split a project across multiple `.pln` files:
 
@@ -303,18 +303,18 @@ Version ranges are part of the specifier and flow through to installation;
     use sqlite@7                 → const Database = require('better-sqlite3');
     use dotenv@16 as env         → const env = require('dotenv');
 
-`plinjs install`, `plinjs run`, and `plinjs build` check installed-ness by bare
+`plainscript install`, `plainscript run`, and `plainscript build` check installed-ness by bare
 package name but install with the full `name@range` specifier.
 
 ### Runtime dependency detection and installation
 
-The compiler exposes a reusable dependency detector that reads PLINJS source
+The compiler exposes a reusable dependency detector that reads PlainScript source
 without duplicate results. It scans every `use` statement and runtime
 shorthand, returning a unique list of npm package names in first-seen order.
 
-PLINJS module names are mapped to npm packages:
+PlainScript module names are mapped to npm packages:
 
-| PLINJS module | npm package |
+| PlainScript module | npm package |
 |--------------|-------------|
 | `express`    | `express`   |
 | `sqlite`     | `better-sqlite3` |
@@ -332,21 +332,21 @@ Version ranges survive detection: `use left-pad@^1.3.0` is reported as
 is reported as `better-sqlite3@7`).
 
 Built-in modules are never installed. Missing npm packages are installed by
-`plinjs install`, `plinjs run`, and `plinjs build`; package checks are cached for
+`plainscript install`, `plainscript run`, and `plainscript build`; package checks are cached for
 the duration of one CLI command so repeated imports do not rescan the
 filesystem.
 
 ### Deployment workflow
 
 ```bash
-npm install --save-dev plinjs
-plinjs install
-plinjs build app.pln
-plinjs run app.pln
+npm install --save-dev plainscript
+plainscript install
+plainscript build app.pln
+plainscript run app.pln
 ```
 
-`plinjs start` builds `src/app.pln` (or `src/index.pln`) into the output
-directory and runs it. `plinjs doctor` reports missing tools, source files,
+`plainscript start` builds `src/app.pln` (or `src/index.pln`) into the output
+directory and runs it. `plainscript doctor` reports missing tools, source files,
 or dependencies. Generated JavaScript remains standard
 Node.js-compatible JavaScript and runtime `require()` declarations are emitted
 once in deterministic order.
@@ -364,7 +364,7 @@ Classic style:
     serve folder "public"
 
     when someone visits "/"
-        reply "Hello from PLINJS!"
+        reply "Hello from PlainScript!"
     done
 
     when someone visits "/api/status"
@@ -383,7 +383,7 @@ Shorthand style:
     web app
 
     route "/"
-        reply "Hello from PLINJS!"
+        reply "Hello from PlainScript!"
     done
 
     start 3000
@@ -413,11 +413,11 @@ Inside route bodies:
 ### JSON Responses
 
     reply json
-        name is "PLINJS"
+        name is "PlainScript"
         version is "1.0"
     done
 
-Compiles to: `res.json({ "name": "PLINJS", "version": "1.0" })`
+Compiles to: `res.json({ "name": "PlainScript", "version": "1.0" })`
 
 ### Static Files
 
@@ -469,7 +469,7 @@ Shorthand style:
 
 ### SQL Block Commands
 
-| PLINJS              | Compiles to                      |
+| PlainScript              | Compiles to                      |
 |--------------------|----------------------------------|
 | `database "f.db"`  | `const db = new Database("f.db")`|
 | `query ... done`   | `db.prepare(...).all()`          |
@@ -500,7 +500,7 @@ returns the list of missing field names.
 
 ## Databases
 
-SQL placeholders are written `{likeThis}` and bind to PLINJS variables of the
+SQL placeholders are written `{likeThis}` and bind to PlainScript variables of the
 same name. Results are captured with `remember`:
 
     database "app.db"
@@ -545,7 +545,7 @@ Text/numbers: `trim`, `replace`, `split`, `join`, `number`, `text`, `floor`,
     done
 
     send mail
-        from is "hello@plinjs.dev"
+        from is "hello@plainscript.dev"
         to is "you@example.com"
         subject is "Hello"
         text is "Body"
@@ -591,7 +591,7 @@ Handlers are optional. `send socket <value>` replies to one client,
 
 connects Redis once. Then:
 
-| PLINJS                        | Compiles to                    |
+| PlainScript                        | Compiles to                    |
 |------------------------------|--------------------------------|
 | `cacheGet("k")`              | `client.get(k)`                |
 | `cacheSet("k", v)`           | `client.set(k, v)`             |
@@ -606,7 +606,7 @@ All three are async and require a configured cache first.
 
 All statements below compile deterministically. Implementation packages
 (`better-sqlite3`, `sql.js`, `multer`) are detected and installed
-automatically; they never appear in PLINJS source.
+automatically; they never appear in PlainScript source.
 
 ### Portable databases
 
@@ -654,7 +654,7 @@ awaits a raw promise.
 
 ### Passwords and tokens
 
-| PLINJS                                  | Behaviour                                    |
+| PlainScript                                  | Behaviour                                    |
 |----------------------------------------|----------------------------------------------|
 | `hashPassword(pw)`                     | scrypt hash with per-password salt           |
 | `checkPassword(pw, storedHash)`        | constant-time verification, returns boolean  |
@@ -674,7 +674,7 @@ awaits a raw promise.
         reply "bye"
     done
 
-- The session rides an HMAC-signed cookie named `plinjs.sid`
+- The session rides an HMAC-signed cookie named `plainscript.sid`
   (`HttpOnly`, `SameSite=Lax`).
 - `session of request` is the session record; assign fields onto it with
   `becomes`.
@@ -689,7 +689,7 @@ awaits a raw promise.
 All clauses are optional; the statement must appear before the routes it
 protects. Inside routes:
 
-| PLINJS               | Result                                                |
+| PlainScript               | Result                                                |
 |---------------------|-------------------------------------------------------|
 | `upload("field")`   | first file under the field, or null                   |
 | `uploads("field")`  | array of files under the field                        |
@@ -794,8 +794,8 @@ Semantics:
   combinations like `"deu+eng"` are allowed).
 - The statement is async — top-level use wraps the program in the async
   runtime, and using it inside a function makes that function async.
-- `tesseract.js` is an implementation dependency: it never appears in PLINJS
-  source, but `plinjs install`, `plinjs run`, and `plinjs build` fetch it
+- `tesseract.js` is an implementation dependency: it never appears in PlainScript
+  source, but `plainscript install`, `plainscript run`, and `plainscript build` fetch it
   automatically through dependency detection.
 
 Generated JavaScript shape:
@@ -823,7 +823,7 @@ let text = await __ocr("scan.png");
 A `whatsapp bot` block declares one WhatsApp connection and its message
 handlers. The implementation package (`@whiskeysockets/baileys`, with
 `qrcode-terminal` for QR rendering) is detected, installed, and hidden —
-it never appears in PLINJS source.
+it never appears in PlainScript source.
 
     whatsapp bot
         auth "session"                      // credential folder
@@ -860,13 +860,13 @@ Syntax:
   anything else is a teaching error.
 - `auth "<folder>"` selects the credential folder created by
   `useMultiFileAuthState` and reused across restarts. Optional; defaults to
-  `"plinjs-whatsapp-auth"`.
+  `"plainscript-whatsapp-auth"`.
 - `login qr` links by scanning a terminal QR code; it is the default when the
   clause is omitted. `login pairing "<number>"` requests an enter-on-phone
   pairing code instead. Pairing numbers are validated at compile time: after
   stripping separators and a leading plus (`+234 801-234-5678`) they must be
   8–15 digits.
-- `login pairing` also accepts any PLINJS value
+- `login pairing` also accepts any PlainScript value
   (`login pairing phone`) — typically a variable filled by `ask`. Values are
   normalized and validated when the bot starts; invalid input fails with the
   same teaching message before any connection attempt.
@@ -914,9 +914,9 @@ __whatsappOnMessage(async (__waCtx) => {
 
 ### Formatter
 
-Format a PLINJS file in-place:
+Format a PlainScript file in-place:
 
-    plinjs fmt app.pln
+    plainscript fmt app.pln
 
 Formatting rules:
 
@@ -930,7 +930,7 @@ Formatting rules:
 
 Check syntax without generating JavaScript or running anything:
 
-    plinjs check app.pln
+    plainscript check app.pln
 
 Exits with code 0 if no errors are found. Exits with code 1 and prints a
 friendly error (with line, column, and suggestion where possible) if the
@@ -938,7 +938,7 @@ file contains a syntax error.
 
 ### VS Code Extension
 
-Install `plinjs-vscode` for:
+Install `plainscript-vscode` for:
 
 - Syntax highlighting
 - File icon for `.pln` files
@@ -948,15 +948,15 @@ Install `plinjs-vscode` for:
 - Code folding
 - Snippets for common patterns
 
-See `plinjs-vscode/README.md` for installation instructions.
+See `plainscript-vscode/README.md` for installation instructions.
 
 ### Acode Editor
 
-Acode support (`plinjs-acode/`) provides syntax highlighting and `.pln` file
+Acode support (`plainscript-acode/`) provides syntax highlighting and `.pln` file
 recognition in the [Acode](https://acode.app) Android editor, using Acode's
 modern CodeMirror 6 `editorLanguages` API.
 
-Install it by zipping the `plinjs-acode/` folder contents (`plugin.json`,
+Install it by zipping the `plainscript-acode/` folder contents (`plugin.json`,
 `main.js`, `stream-spec.js`, `README.md`) and selecting the zip in Acode:
 Settings → Plugins → "+".
 
@@ -966,18 +966,18 @@ words, and JavaScript/SQL blocks. It does **not** provide LSP diagnostics,
 autocomplete, or compiler execution. The tokenizer in `stream-spec.js` is
 pure CommonJS and is exercised by the test suite (`tests/compiler.test.js`).
 
-See `plinjs-acode/README.md` for details.
+See `plainscript-acode/README.md` for details.
 
 ---
 
 ## Project Management
 
-PLINJS follows a zero-configuration model. Source files live in `src/` (or the
-project root when `src/` doesn't exist) and `plinjs build` discovers them
+PlainScript follows a zero-configuration model. Source files live in `src/` (or the
+project root when `src/` doesn't exist) and `plainscript build` discovers them
 automatically, preserving file names and directory structure into `dist/`.
 
 For projects that need custom output or source directories, add an optional
-`plinjs.config.json` with a `compilerOptions` block:
+`plainscript.config.json` with a `compilerOptions` block:
 
 ```json
 {
@@ -993,27 +993,27 @@ For projects that need custom output or source directories, add an optional
 
 | Command                 | Behaviour                                            |
 |-------------------------|------------------------------------------------------|
-| `plinjs run <file.pln>`   | Install dependencies, compile and execute            |
-| `plinjs build [file]`     | Compile to dist/ preserving names; no arg builds all|
-| `plinjs check <file.pln>` | Check syntax only (no output, no execution)          |
-| `plinjs fmt <file.pln>`   | Format a PLINJS file in-place                          |
-| `plinjs new [name]`       | Create a new PLINJS project                            |
-| `plinjs install`          | Detect and install dependencies from source files     |
-| `plinjs start`            | Build src/app.pln and run its dist/ output            |
-| `plinjs doctor`           | Check the PLINJS project environment                   |
-| `plinjs add <pkg>`        | Install a package into the project                     |
-| `plinjs remove <pkg>`     | Uninstall a package from the project                   |
-| `plinjs update`           | Runs `npm update` for all installed packages         |
-| `plinjs version`          | Print the compiler version                           |
-| `plinjs help`             | Print help text                                      |
+| `plainscript run <file.pln>`   | Install dependencies, compile and execute            |
+| `plainscript build [file]`     | Compile to dist/ preserving names; no arg builds all|
+| `plainscript check <file.pln>` | Check syntax only (no output, no execution)          |
+| `plainscript fmt <file.pln>`   | Format a PlainScript file in-place                          |
+| `plainscript new [name]`       | Create a new PlainScript project                            |
+| `plainscript install`          | Detect and install dependencies from source files     |
+| `plainscript start`            | Build src/app.pln and run its dist/ output            |
+| `plainscript doctor`           | Check the PlainScript project environment                   |
+| `plainscript add <pkg>`        | Install a package into the project                     |
+| `plainscript remove <pkg>`     | Uninstall a package from the project                   |
+| `plainscript update`           | Runs `npm update` for all installed packages         |
+| `plainscript version`          | Print the compiler version                           |
+| `plainscript help`             | Print help text                                      |
 
 ### Dependency Validation
 
-Before compiling, PLINJS checks that every package referenced by `use` is installed.
+Before compiling, PlainScript checks that every package referenced by `use` is installed.
 If a package is missing, the compiler prints a friendly error and stops:
 
     Package "express" is not installed.
-    Run: plinjs add express
+    Run: plainscript add express
 
 ---
 
@@ -1047,5 +1047,5 @@ If a package is missing, the compiler prints a friendly error and stops:
 
 ---
 
-This document is the single source of truth for PLINJS v0.1.7.
+This document is the single source of truth for PlainScript v0.1.7.
 Every compiler implementation must follow this specification.
