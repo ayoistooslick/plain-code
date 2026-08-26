@@ -1397,7 +1397,7 @@ test('package.json exposes a plainscript bin with a node shebang', () => {
   if (!pkg.bin || pkg.bin.plainscript !== './compiler/cli.js') throw new Error('missing "plainscript" bin');
   if (Object.keys(pkg.bin).length !== 1) throw new Error('package.json must expose exactly one bin');
   if (pkg.preferGlobal) throw new Error('preferGlobal must be false: plainscript installs locally as a devDependency');
-  if (pkg.name !== 'plainscript') throw new Error('package name must be "plainscript"');
+  if (pkg.name !== 'plain-script') throw new Error('package name must be "plain-script"');
   const firstLine = fs.readFileSync(path.join(__dirname, '..', 'compiler', 'cli.js'), 'utf8').split('\n')[0];
   if (firstLine.trim() !== '#!/usr/bin/env node') {
     throw new Error('compiler/cli.js must start with a node shebang for global installs');

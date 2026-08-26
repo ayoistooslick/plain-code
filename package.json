@@ -1,5 +1,5 @@
 {
-  "name": "plainscript",
+  "name": "plain-script",
   "version": "0.1.7",
   "description": "PlainScript — an Intent-Oriented Programming Language. When even a simple sentence can be code.",
   "main": "compiler/cli.js",
