@@ -116,6 +116,53 @@ test('src: entry is src/app.pln by default for start', () => {
   assert(out.includes('custom-entry'), `start must execute src/app.pln, got:\n${out}`);
 });
 
+// ── plinjs.config.json overrides ─────────────────────────────────────────────
+
+test('config: outDir override redirects build output', () => {
+  const dir = tmpDir();
+  write(dir, 'plinjs.config.json', JSON.stringify({ compilerOptions: { outDir: './build' } }));
+  write(dir, 'src/app.pln', 'show "ok"\n');
+  runCli(['build'], dir);
+  assert(fs.existsSync(path.join(dir, 'build', 'app.js')), 'expected build/app.js');
+  assert(!fs.existsSync(path.join(dir, 'dist', 'app.js')), 'default dist/ must not appear when outDir is overridden');
+});
+
+test('config: rootDir override changes source discovery root', () => {
+  const dir = tmpDir();
+  write(dir, 'plinjs.config.json', JSON.stringify({ compilerOptions: { rootDir: './lib' } }));
+  write(dir, 'lib/core.pln', 'show "core"\n');
+  write(dir, 'src/other.pln', 'show "other"\n');
+  runCli(['build'], dir);
+  assert(fs.existsSync(path.join(dir, 'dist', 'core.js')), 'expected dist/core.js from lib/ sources');
+  assert(!fs.existsSync(path.join(dir, 'dist', 'other.js')), 'files outside rootDir must not compile');
+});
+
+test('config: exclude skips named directories', () => {
+  const dir = tmpDir();
+  write(dir, 'plinjs.config.json', JSON.stringify({ compilerOptions: { exclude: ['vendor'] } }));
+  write(dir, 'src/app.pln', 'show "app"\n');
+  write(dir, 'src/vendor/old.pln', 'show "old"\n');
+  runCli(['build'], dir);
+  assert(fs.existsSync(path.join(dir, 'dist', 'app.js')), 'src/app.pln must compile');
+  assert(!fs.existsSync(path.join(dir, 'dist', 'vendor', 'old.js')), 'excluded directory must not compile');
+});
+
+test('config: combined outDir + rootDir overrides', () => {
+  const dir = tmpDir();
+  write(dir, 'plinjs.config.json', JSON.stringify({ compilerOptions: { outDir: './build', rootDir: './lib' } }));
+  write(dir, 'lib/app.pln', 'show "from-lib"\n');
+  runCli(['build'], dir);
+  assert(fs.existsSync(path.join(dir, 'build', 'app.js')), 'expected build/app.js');
+});
+
+test('config: start uses rootDir and outDir from config', () => {
+  const dir = tmpDir();
+  write(dir, 'plinjs.config.json', JSON.stringify({ compilerOptions: { rootDir: './app', outDir: './build' } }));
+  write(dir, 'app/index.pln', 'show "config-start"\n');
+  const out = runCli(['start'], dir);
+  assert(out.includes('config-start'), `start must use config rootDir, got:\n${out}`);
+});
+
 // ── Build model behaviour ────────────────────────────────────────────────────
 
 test('build: source filenames are preserved (messi.pln -> dist/messi.js)', () => {

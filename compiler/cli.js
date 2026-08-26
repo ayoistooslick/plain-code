@@ -133,36 +133,74 @@ function isValidPackageName(name) {
 
 // ── Build conventions ────────────────────────────────────────────────────────
 //
-// `plinjs build` follows a TypeScript-style model with zero configuration:
+// `plinjs build` follows a TypeScript-style model:
 //
-//   - sources are discovered automatically under "src/" (the project root is
-//     scanned when no src/ directory exists)
-//   - output always goes to "dist/"
-//   - filenames and folder structure are preserved:
+//   Zero configuration (default):
+//     - sources are discovered automatically under "src/" (the project root is
+//       scanned when no src/ directory exists)
+//     - output always goes to "dist/"
+//
+//   Optional plinjs.config.json (tsconfig-like):
+//     { "compilerOptions": { "outDir": "./build", "rootDir": "./lib",
+//       "exclude": ["vendor"] } }
+//
+//   Filenames and folder structure are always preserved:
 //       src/messi.pln     → dist/messi.js
 //       src/helpers/math.pln → dist/helpers/math.js
 const SOURCE_DIR = 'src';
 const DEFAULT_OUT_DIR = 'dist';
 
-function resolveSrcDir() {
+// Read optional plinjs.config.json. Returns { compilerOptions } or null.
+// The file is tsconfig-like: only compilerOptions.outDir, compilerOptions.rootDir,
+// and compilerOptions.exclude are used.
+function readCompilerOptions() {
+  const configPath = path.resolve('plinjs.config.json');
+  if (!fs.existsSync(configPath)) return null;
+  try {
+    const raw = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    return raw.compilerOptions || null;
+  } catch (e) {
+    console.error(`plinjs.config.json is not valid JSON: ${e.message}`);
+    process.exit(1);
+  }
+}
+
+// Resolve the source root directory.
+// Priority: config rootDir > automatic src/ detection > project root.
+function resolveSrcDir(opts) {
+  if (opts && opts.rootDir) return opts.rootDir;
   return fs.existsSync(path.resolve(SOURCE_DIR)) ? SOURCE_DIR : '.';
 }
 
+// Resolve the output directory.
+// Priority: config outDir > default "dist".
+function resolveOutDir(opts) {
+  if (opts && opts.outDir) return opts.outDir;
+  return DEFAULT_OUT_DIR;
+}
+
 // Every .pln file under srcDir, recursively, as paths relative to srcDir.
-// Deterministic order (sorted); node_modules, the output directory, hidden
-// directories and non-.pln files are never scanned.
-function discoverSources(srcDir, outDir) {
+// Deterministic order (sorted); node_modules, hidden directories, the output
+// directory, and any user-specified exclude patterns are skipped.
+function discoverSources(srcDir, outDir, exclude) {
   const root = path.resolve(srcDir);
   const outAbs = path.resolve(outDir);
+  const excludeSet = new Set(['node_modules']);
+  // Always exclude the output directory and hidden directories
+  excludeSet.add(path.basename(outAbs));
+  // Add user-specified excludes
+  if (Array.isArray(exclude)) {
+    for (const pattern of exclude) excludeSet.add(pattern);
+  }
   const found = [];
   (function walk(dir) {
     for (const name of fs.readdirSync(dir).sort()) {
+      if (name.startsWith('.')) continue;
+      if (excludeSet.has(name)) continue;
       const full = path.join(dir, name);
-      if (full === outAbs) continue;
       let stat;
       try { stat = fs.statSync(full); } catch (_) { continue; }
       if (stat.isDirectory()) {
-        if (name === 'node_modules' || name.startsWith('.')) continue;
         walk(full);
       } else if (name.endsWith('.pln')) {
         found.push(path.relative(root, full));
@@ -406,22 +444,30 @@ function buildOne(filePath, srcDir, outDir) {
   return path.relative(process.cwd(), outPath) || outPath;
 }
 
-// `plinjs build` — TypeScript-style production build with zero configuration:
+// `plinjs build` — TypeScript-style production build:
 //
-//   messi.pln        → dist/messi.js       (project-root sources)
-//   src/index.pln    → dist/index.js       (src/ is the source root)
-//   src/a/b.pln      → dist/a/b.js         (structure preserved)
+//   Zero config (default):
+//     messi.pln        → dist/messi.js       (project-root sources)
+//     src/index.pln    → dist/index.js       (src/ is the source root)
+//     src/a/b.pln      → dist/a/b.js         (structure preserved)
+//
+//   With plinjs.config.json:
+//     { "compilerOptions": { "outDir": "./build", "rootDir": "./lib" } }
+//     lib/app.pln → build/app.js
 //
 // With an explicit file argument only that entry is compiled; without one,
-// every .pln under the discovered source root builds to dist/.
+// every .pln under the discovered source root builds to the output directory.
 async function cmdBuild(filePath) {
-  const srcDir = resolveSrcDir();
+  const opts = readCompilerOptions();
+  const srcDir = resolveSrcDir(opts);
+  const outDir = resolveOutDir(opts);
+  const exclude = opts && opts.exclude;
   if (filePath) {
-    const outPath = buildOne(filePath, srcDir, DEFAULT_OUT_DIR);
+    const outPath = buildOne(filePath, srcDir, outDir);
     console.log(`\nOutput written to ${outPath}`);
     return;
   }
-  const sources = discoverSources(srcDir, DEFAULT_OUT_DIR);
+  const sources = discoverSources(srcDir, outDir, exclude);
   if (sources.length === 0) {
     console.error(`No .pln files found under "${srcDir}".`);
     process.exit(1);
@@ -431,7 +477,7 @@ async function cmdBuild(filePath) {
   try {
     built = sources.map((rel) => ({
       source: path.join(srcDir === '.' ? '' : srcDir, rel),
-      outPath: buildOne(path.join(path.resolve(srcDir), rel), srcDir, DEFAULT_OUT_DIR),
+      outPath: buildOne(path.join(path.resolve(srcDir), rel), srcDir, outDir),
     }));
   } finally {
     QUIET_STAGES = false;
@@ -439,16 +485,19 @@ async function cmdBuild(filePath) {
   for (const { source, outPath } of built) {
     console.log(`${clrGreen('✓')} ${source} -> ${outPath}`);
   }
-  console.log(`\n${built.length} file(s) compiled to ${DEFAULT_OUT_DIR}/.`);
+  console.log(`\n${built.length} file(s) compiled to ${outDir}/.`);
 }
 
 async function cmdStart(extraArgs = []) {
-  const entryPath = findEntry();
+  const opts = readCompilerOptions();
+  const srcDir = resolveSrcDir(opts);
+  const outDir = resolveOutDir(opts);
+  const entryPath = findEntry(opts);
   if (!entryPath) {
     console.error('No entry file found. Expected "src/app.pln" or "src/index.pln".');
     process.exit(1);
   }
-  const outFile = buildOne(entryPath, resolveSrcDir(), DEFAULT_OUT_DIR);
+  const outFile = buildOne(entryPath, srcDir, outDir);
   const entryDir = path.dirname(path.resolve(entryPath));
   execFileSync(process.execPath, [path.resolve(outFile), ...extraArgs], {
     stdio: 'inherit',
@@ -494,8 +543,7 @@ done
 `);
 
   // package.json — plain Node semantics; PLINJS itself is a devDependency and
-  // deployment only needs the generated dist/ output. There is no project
-  // configuration file: `plinjs build` discovers src/**/*.pln automatically.
+  // deployment only needs the generated dist/ output.
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
     name,
     version: '1.0.0',
@@ -537,13 +585,15 @@ Then open http://localhost:3000 in your browser.
 
 // Locate the project entry for commands that work on a single program (start):
 // conventional defaults inside src/ first, then the project root.
-function findEntry() {
+function findEntry(opts) {
+  const srcDir = resolveSrcDir(opts);
   const candidates = [
-    path.join(SOURCE_DIR, 'app.pln'),
-    path.join(SOURCE_DIR, 'index.pln'),
-    'app.pln',
-    'index.pln',
+    path.join(srcDir, 'app.pln'),
+    path.join(srcDir, 'index.pln'),
   ];
+  if (srcDir !== '.') {
+    candidates.push('app.pln', 'index.pln');
+  }
   return candidates.find((c) => fs.existsSync(path.resolve(c))) || null;
 }
 
@@ -551,8 +601,11 @@ function findEntry() {
 // detection. Parsing each file directly means dependencies are found even
 // when nothing imports a given module yet.
 function collectSourceAsts() {
-  const srcDir = resolveSrcDir();
-  const sources = discoverSources(srcDir, DEFAULT_OUT_DIR);
+  const opts = readCompilerOptions();
+  const srcDir = resolveSrcDir(opts);
+  const outDir = resolveOutDir(opts);
+  const exclude = opts && opts.exclude;
+  const sources = discoverSources(srcDir, outDir, exclude);
   if (sources.length === 0) {
     console.error(`No .pln source files found under "${srcDir}".`);
     process.exit(1);
@@ -611,8 +664,11 @@ function cmdDoctor() {
   console.log('');
 
   // Source discovery check: does the project have any .pln files?
-  const srcDir = resolveSrcDir();
-  const sources = discoverSources(srcDir, DEFAULT_OUT_DIR);
+  const opts = readCompilerOptions();
+  const srcDir = resolveSrcDir(opts);
+  const outDir = resolveOutDir(opts);
+  const exclude = opts && opts.exclude;
+  const sources = discoverSources(srcDir, outDir, exclude);
   check('Source files', sources.length > 0,
     sources.length > 0 ? `"${srcDir}/" discovered (${sources.length} file(s))` : `no .pln files under "${srcDir}"`);
   if (sources.length === 0) return;

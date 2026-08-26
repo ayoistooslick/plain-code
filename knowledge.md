@@ -46,7 +46,7 @@ npx plinjs build app.pln   # writes dist/app.js — read it to see exactly what 
 
 ---
 
-## 2. Project structure and zero-config builds
+## 2. Project structure and configuration
 
 A PLINJS project is a plain npm package. Typical layout:
 
@@ -66,6 +66,27 @@ my-app/
 
 Source discovery skips `node_modules`, hidden directories, and the `dist/`
 output directory.
+
+### Optional `plinjs.config.json`
+
+For projects that need custom output or source directories, add a
+`plinjs.config.json` with a `compilerOptions` block:
+
+```json
+{
+  "compilerOptions": {
+    "outDir": "./build",
+    "rootDir": "./lib",
+    "exclude": ["vendor"]
+  }
+}
+```
+
+| Key         | Default                          | Meaning                                      |
+|-------------|----------------------------------|----------------------------------------------|
+| `outDir`    | `"dist"`                         | Build output directory                       |
+| `rootDir`   | `"src"` if it exists, else `"."` | Root that `plinjs build` scans for sources   |
+| `exclude`   | `["node_modules"]`               | Directories to skip during source discovery   |
 
 ---
 

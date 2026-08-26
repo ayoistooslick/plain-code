@@ -77,6 +77,27 @@ Source discovery skips `node_modules`, hidden directories, and the output
 directory itself. When no `src/` directory exists, the project root is scanned
 instead.
 
+### Optional `plinjs.config.json`
+
+For projects that need custom output or source directories, add a
+`plinjs.config.json` with a `compilerOptions` block (like `tsconfig.json`):
+
+```json
+{
+  "compilerOptions": {
+    "outDir": "./build",
+    "rootDir": "./lib",
+    "exclude": ["vendor"]
+  }
+}
+```
+
+| Key         | Default                          | Meaning                                      |
+|-------------|----------------------------------|----------------------------------------------|
+| `outDir`    | `"dist"`                         | Build output directory                       |
+| `rootDir`   | `"src"` if it exists, else `"."` | Root that `plinjs build` scans for sources   |
+| `exclude`   | `["node_modules"]`               | Directories to skip during source discovery   |
+
 ### Publishing a library written in PLINJS
 
 ```json

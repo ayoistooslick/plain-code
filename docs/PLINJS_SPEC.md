@@ -976,6 +976,19 @@ PLINJS follows a zero-configuration model. Source files live in `src/` (or the
 project root when `src/` doesn't exist) and `plinjs build` discovers them
 automatically, preserving file names and directory structure into `dist/`.
 
+For projects that need custom output or source directories, add an optional
+`plinjs.config.json` with a `compilerOptions` block:
+
+```json
+{
+  "compilerOptions": {
+    "outDir": "./build",
+    "rootDir": "./lib",
+    "exclude": ["vendor"]
+  }
+}
+```
+
 ### Commands
 
 | Command                 | Behaviour                                            |
