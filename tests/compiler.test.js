@@ -1985,7 +1985,7 @@ test('plainscript new creates the project directory', () => {
 
 test('plainscript new creates src/app.ps', () => {
   const dir = tmpDir();
-  const projectName = 'test-new-pln';
+  const projectName = 'test-new-ps';
   const projectDir = path.join(dir, projectName);
   runCli(['new', projectName], dir);
   if (!fs.existsSync(path.join(projectDir, 'src', 'app.ps'))) throw new Error('src/app.ps not created');

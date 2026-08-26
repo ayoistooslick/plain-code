@@ -12,7 +12,7 @@ const PlinjsStreamSpec = require('./stream-spec.js');
 
 const PLUGIN_ID = 'dev.ayoistooslick.plainscript-language';
 const LANGUAGE_NAME = 'PlainScript';
-const EXTENSIONS = ['pln'];
+const EXTENSIONS = ['ps'];
 
 // Build the CodeMirror 6 language extension from the module graph Acode
 // exposes through acode.require. Called lazily by Acode as the loader.
