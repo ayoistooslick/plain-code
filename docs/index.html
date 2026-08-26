@@ -52,14 +52,14 @@
           <i class="fab fa-npm"></i> npm
         </a>
       </div>
-      <button class="nav-hamburger" aria-label="Toggle menu">
+      <button id="nav-hamburger" class="nav-hamburger" aria-label="Toggle menu">
         <i class="fas fa-bars"></i>
       </button>
     </div>
   </nav>
 
   <!-- Mobile Menu -->
-  <div class="mobile-menu">
+  <div id="mobile-menu" class="mobile-menu">
     <div class="mobile-menu-links">
       <a href="#language">Language</a>
       <a href="#examples">Examples</a>
@@ -104,6 +104,7 @@
               <span class="dot green"></span>
             </div>
             <span class="code-window-title">app.pln</span>
+            <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
           </div>
           <div class="code-window-body">
             <pre><code><span class="keyword">server</span> on port <span class="number">3000</span>
@@ -121,6 +122,7 @@
               <span class="dot green"></span>
             </div>
             <span class="code-window-title">Compiled Output (JavaScript)</span>
+            <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
           </div>
           <div class="code-window-body">
             <pre><code><span class="keyword">const</span> express = <span class="function">require</span>(<span class="string">"express"</span>);
@@ -228,6 +230,7 @@ console.<span class="function">log</span>(<span class="string">"Server is runnin
                 <span class="dot green"></span>
               </div>
               <span class="code-window-title">PlainScript</span>
+              <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
             </div>
             <div class="code-window-body">
               <pre><code><span class="keyword">use</span> express
@@ -250,6 +253,7 @@ console.<span class="function">log</span>(<span class="string">"Server is runnin
                 <span class="dot green"></span>
               </div>
               <span class="code-window-title">Express.js</span>
+              <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
             </div>
             <div class="code-window-body">
               <pre><code><span class="keyword">const</span> express = <span class="function">require</span>(<span class="string">"express"</span>);
@@ -285,6 +289,7 @@ app.<span class="function">listen</span>(<span class="number">3000</span>, () =&
                 <span class="dot green"></span>
               </div>
               <span class="code-window-title">PlainScript</span>
+              <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
             </div>
             <div class="code-window-body">
               <pre><code><span class="keyword">database</span> <span class="string">"app.db"</span>
@@ -304,6 +309,7 @@ app.<span class="function">listen</span>(<span class="number">3000</span>, () =&
                 <span class="dot green"></span>
               </div>
               <span class="code-window-title">better-sqlite3</span>
+              <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
             </div>
             <div class="code-window-body">
               <pre><code><span class="keyword">const</span> Database = <span class="function">require</span>(<span class="string">"better-sqlite3"</span>);
@@ -335,7 +341,8 @@ results.<span class="function">forEach</span>((user) =&gt; {
           <div class="step-content">
             <h3 class="step-title">Install</h3>
             <div class="code-block">
-              <code>npm install -g plainscript-lang</code>
+              <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
+              <pre><code>npm install -g plainscript-lang</code></pre>
             </div>
           </div>
         </div>
@@ -344,7 +351,8 @@ results.<span class="function">forEach</span>((user) =&gt; {
           <div class="step-content">
             <h3 class="step-title">Create</h3>
             <div class="code-block">
-              <code>plainscript new my-app</code>
+              <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
+              <pre><code>plainscript new my-app</code></pre>
             </div>
             <p class="step-note">Then write your code in <code>src/app.ps</code></p>
           </div>
@@ -354,7 +362,8 @@ results.<span class="function">forEach</span>((user) =&gt; {
           <div class="step-content">
             <h3 class="step-title">Run</h3>
             <div class="code-block">
-              <code>plainscript run</code>
+              <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
+              <pre><code>plainscript run</code></pre>
             </div>
           </div>
         </div>
@@ -426,6 +435,7 @@ results.<span class="function">forEach</span>((user) =&gt; {
       <div class="section-tag">Ecosystem</div>
       <h2 class="section-title">Works with the npm ecosystem</h2>
       <div class="code-block--wide">
+        <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
         <pre><code><span class="keyword">use</span> express
 <span class="keyword">use</span> sqlite
 <span class="keyword">use</span> fs
@@ -524,7 +534,7 @@ results.<span class="function">forEach</span>((user) =&gt; {
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2024 PlainScript. All rights reserved.</p>
+        <p>&copy; 2026 PlainScript. All rights reserved.</p>
         <span class="footer-badge">v0.1.7</span>
       </div>
     </div>

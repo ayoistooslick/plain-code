@@ -206,23 +206,31 @@ pre{font-family:var(--font-mono);font-size:.875rem;line-height:1.7;overflow-x:au
   overflow:hidden;
   box-shadow:0 8px 32px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.03) inset;
 }
-.code-header{
-  display:flex;align-items:center;gap:8px;
+.code-window-header{
+  display:flex;align-items:center;gap:8px;justify-content:space-between;
   padding:12px 16px;border-bottom:1px solid var(--border);
   background:rgba(255,255,255,.02);
 }
-.code-dot{width:10px;height:10px;border-radius:50%}
-.code-dot.red{background:#ff5f57}
-.code-dot.yellow{background:#febc2e}
-.code-dot.green{background:#28c840}
-.code-filename{
-  margin-left:8px;font-family:var(--font-mono);font-size:.75rem;
-  color:var(--text-dim);
+.code-window-dots{display:flex;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.red{background:#ff5f57}
+.dot.yellow{background:#febc2e}
+.dot.green{background:#28c840}
+.code-window-title{
+  font-family:var(--font-mono);font-size:.75rem;
+  color:var(--text-dim);flex:1;text-align:center;
 }
-.code-block{padding:20px 24px;overflow-x:auto}
+.code-window-body{padding:20px 24px;overflow-x:auto}
+.code-window-body pre{margin:0}
+.code-window-body code{font-size:.85rem;color:var(--text);font-family:var(--font-mono);line-height:1.7}
+.code-block{padding:20px 24px;overflow-x:auto;position:relative}
 .code-block pre{margin:0}
 .code-block code{font-size:.85rem;color:var(--text)}
-.code-block--wide{width:100%}
+.code-block--wide{width:100%;position:relative}
+.code-copy{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;color:var(--text-muted);padding:6px 10px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;gap:6px;transition:all .2s ease;z-index:10;font-family:var(--font-sans)}
+.code-window-header .code-copy{position:static;flex-shrink:0}
+.code-copy:hover{background:rgba(255,255,255,.12);color:var(--text);border-color:var(--border-light)}
+.code-copy.copied{color:var(--green);border-color:var(--green);background:rgba(16,185,129,.1)}
 
 /* Syntax highlighting */
 .kw{color:var(--purple)}
