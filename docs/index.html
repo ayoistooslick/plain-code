@@ -6,18 +6,18 @@
   <title>PlainScript - When even a simple sentence can be code</title>
   <meta name="description" content="PlainScript is an Intent-Oriented Programming Language. Write code that reads like plain English and compiles to JavaScript.">
   <meta name="keywords" content="PlainScript, programming language, intent-oriented, JavaScript, compiler, plain English code">
-  <link rel="canonical" href="https://ayoistooslick.github.io/plain-code/">
+  <link rel="canonical" href="https://ayoistooslick.github.io/plainscript/">
 
   <meta property="og:type" content="website">
   <meta property="og:title" content="PlainScript - When even a simple sentence can be code">
   <meta property="og:description" content="PlainScript is an Intent-Oriented Programming Language. Write code that reads like plain English and compiles to JavaScript.">
-  <meta property="og:image" content="https://ayoistooslick.github.io/plain-code/logo.jpg">
-  <meta property="og:url" content="https://ayoistooslick.github.io/plain-code/">
+  <meta property="og:image" content="https://ayoistooslick.github.io/plainscript/logo.jpg">
+  <meta property="og:url" content="https://ayoistooslick.github.io/plainscript/">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="PlainScript - When even a simple sentence can be code">
   <meta name="twitter:description" content="PlainScript is an Intent-Oriented Programming Language. Write code that reads like plain English and compiles to JavaScript.">
-  <meta name="twitter:image" content="https://ayoistooslick.github.io/plain-code/logo.jpg">
+  <meta name="twitter:image" content="https://ayoistooslick.github.io/plainscript/logo.jpg">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,7 +45,7 @@
         <a href="#faq">FAQ</a>
       </div>
       <div class="nav-actions">
-        <a href="https://github.com/ayoistooslick/plain-code" class="btn btn-outline" target="_blank" rel="noopener">
+        <a href="https://github.com/ayoistooslick/plainscript" class="btn btn-outline" target="_blank" rel="noopener">
           <i class="fab fa-github"></i> GitHub
         </a>
         <a href="https://www.npmjs.com/package/plainscript-lang" class="btn btn-primary" target="_blank" rel="noopener">
@@ -68,10 +68,10 @@
       <a href="#faq">FAQ</a>
     </div>
     <div class="mobile-menu-actions">
-      <a href="https://github.com/ayoistooslick/plain-code" class="btn btn-outline" target="_blank" rel="noopener">
+      <a href="https://github.com/ayoistooslick/plainscript" class="btn btn-outline mobile-menu-btn" target="_blank" rel="noopener">
         <i class="fab fa-github"></i> GitHub
       </a>
-      <a href="https://www.npmjs.com/package/plainscript-lang" class="btn btn-primary" target="_blank" rel="noopener">
+      <a href="https://www.npmjs.com/package/plainscript-lang" class="btn btn-primary mobile-menu-btn" target="_blank" rel="noopener">
         <i class="fab fa-npm"></i> npm
       </a>
     </div>
@@ -93,7 +93,7 @@
       </p>
       <div class="hero-actions">
         <a href="#quickstart" class="btn btn-primary btn-lg">Get Started</a>
-        <a href="https://github.com/ayoistooslick/plain-code" class="btn btn-outline btn-lg" target="_blank" rel="noopener">View on GitHub</a>
+        <a href="https://github.com/ayoistooslick/plainscript" class="btn btn-outline btn-lg" target="_blank" rel="noopener">View on GitHub</a>
       </div>
       <div class="hero-code">
         <div class="code-window">
@@ -107,11 +107,11 @@
             <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
           </div>
           <div class="code-window-body">
-            <pre><code><span class="keyword">server</span> on port <span class="number">3000</span>
-  <span class="keyword">when</span> someone <span class="keyword">asks for</span> <span class="string">"/"</span>
-    <span class="keyword">send</span> <span class="string">"Hello, World!"</span>
+            <pre><code>server on port 3000
+  when someone asks for "/"
+    send "Hello, World!"
 
-<span class="keyword">log</span> <span class="string">"Server is running"</span></code></pre>
+log "Server is running"</code></pre>
           </div>
         </div>
         <div class="code-window">
@@ -125,13 +125,13 @@
             <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
           </div>
           <div class="code-window-body">
-            <pre><code><span class="keyword">const</span> express = <span class="function">require</span>(<span class="string">"express"</span>);
-<span class="keyword">const</span> app = <span class="function">express</span>();
-app.<span class="function">get</span>(<span class="string">"/"</span>, (req, res) =&gt; {
-  res.<span class="function">send</span>(<span class="string">"Hello, World!"</span>);
+            <pre><code>const express = require("express");
+const app = express();
+app.get("/", (req, res) => {
+  res.send("Hello, World!");
 });
-app.<span class="function">listen</span>(<span class="number">3000</span>);
-console.<span class="function">log</span>(<span class="string">"Server is running"</span>);</code></pre>
+app.listen(3000);
+console.log("Server is running");</code></pre>
           </div>
         </div>
       </div>
@@ -233,16 +233,16 @@ console.<span class="function">log</span>(<span class="string">"Server is runnin
               <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
             </div>
             <div class="code-window-body">
-              <pre><code><span class="keyword">use</span> express
+              <pre><code>use express
 
-<span class="keyword">server</span> on port <span class="number">3000</span>
-  <span class="keyword">when</span> someone <span class="keyword">asks for</span> <span class="string">"/"</span>
-    <span class="keyword">send</span> <span class="string">"Hello, World!"</span>
+server on port 3000
+  when someone asks for "/"
+    send "Hello, World!"
 
-  <span class="keyword">when</span> someone <span class="keyword">asks for</span> <span class="string">"/users"</span>
-    <span class="keyword">send</span> <span class="function">json</span> of users
+  when someone asks for "/users"
+    send json of users
 
-<span class="keyword">log</span> <span class="string">"Server running on port 3000"</span></code></pre>
+log "Server running on port 3000"</code></pre>
             </div>
           </div>
           <div class="code-window">
@@ -256,19 +256,19 @@ console.<span class="function">log</span>(<span class="string">"Server is runnin
               <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
             </div>
             <div class="code-window-body">
-              <pre><code><span class="keyword">const</span> express = <span class="function">require</span>(<span class="string">"express"</span>);
-<span class="keyword">const</span> app = <span class="function">express</span>();
+              <pre><code>const express = require("express");
+const app = express();
 
-app.<span class="function">get</span>(<span class="string">"/"</span>, (req, res) =&gt; {
-  res.<span class="function">send</span>(<span class="string">"Hello, World!"</span>);
+app.get("/", (req, res) => {
+  res.send("Hello, World!");
 });
 
-app.<span class="function">get</span>(<span class="string">"/users"</span>, (req, res) =&gt; {
-  res.<span class="function">json</span>(users);
+app.get("/users", (req, res) => {
+  res.json(users);
 });
 
-app.<span class="function">listen</span>(<span class="number">3000</span>, () =&gt; {
-  console.<span class="function">log</span>(<span class="string">"Server running on port 3000"</span>);
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
 });</code></pre>
             </div>
           </div>
@@ -292,13 +292,13 @@ app.<span class="function">listen</span>(<span class="number">3000</span>, () =&
               <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
             </div>
             <div class="code-window-body">
-              <pre><code><span class="keyword">database</span> <span class="string">"app.db"</span>
+              <pre><code>database "app.db"
 
-<span class="keyword">query</span> <span class="string">"SELECT * FROM users WHERE active = 1"</span>
-  <span class="keyword">save</span> as results
+query "SELECT * FROM users WHERE active = 1"
+  save as results
 
-<span class="keyword">for each</span> user in results
-  <span class="keyword">log</span> user.name</code></pre>
+for each user in results
+  log user.name</code></pre>
             </div>
           </div>
           <div class="code-window">
@@ -312,15 +312,15 @@ app.<span class="function">listen</span>(<span class="number">3000</span>, () =&
               <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
             </div>
             <div class="code-window-body">
-              <pre><code><span class="keyword">const</span> Database = <span class="function">require</span>(<span class="string">"better-sqlite3"</span>);
-<span class="keyword">const</span> db = <span class="keyword">new</span> <span class="function">Database</span>(<span class="string">"app.db"</span>);
+              <pre><code>const Database = require("better-sqlite3");
+const db = new Database("app.db");
 
-<span class="keyword">const</span> results = db.<span class="function">prepare</span>(
-  <span class="string">"SELECT * FROM users WHERE active = 1"</span>
-).<span class="function">all</span>();
+const results = db.prepare(
+  "SELECT * FROM users WHERE active = 1"
+).all();
 
-results.<span class="function">forEach</span>((user) =&gt; {
-  console.<span class="function">log</span>(user.name);
+results.forEach((user) => {
+  console.log(user.name);
 });</code></pre>
             </div>
           </div>
@@ -436,13 +436,13 @@ results.<span class="function">forEach</span>((user) =&gt; {
       <h2 class="section-title">Works with the npm ecosystem</h2>
       <div class="code-block--wide">
         <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
-        <pre><code><span class="keyword">use</span> express
-<span class="keyword">use</span> sqlite
-<span class="keyword">use</span> fs
-<span class="keyword">use</span> path
-<span class="keyword">use</span> crypto
-<span class="keyword">use</span> axios
-<span class="keyword">use</span> dotenv</code></pre>
+        <pre><code>use express
+use sqlite
+use fs
+use path
+use crypto
+use axios
+use dotenv</code></pre>
       </div>
       <p class="packages-note">
         Any npm package can be imported with the <code>use</code> keyword. PlainScript compiles your code to JavaScript, so the entire npm ecosystem is available to you. No wrappers, no adapters, no limits.
@@ -499,14 +499,15 @@ results.<span class="function">forEach</span>((user) =&gt; {
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container">
-      <div class="footer-grid">
+      <div class="footer-top">
         <div class="footer-brand">
-          <a href="#" class="footer-logo">
-            <img src="logo.jpg" alt="PlainScript Logo">
-            <span class="logo-word">PlainScript</span>
-          </a>
-          <p class="footer-tagline">Write code that reads like plain English.</p>
+          <img src="logo.jpg" alt="PlainScript" class="footer-logo">
+          <span class="footer-name">PlainScript</span>
         </div>
+        <div class="footer-tagline">Write code that reads like plain English.</div>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-grid">
         <div class="footer-col">
           <h4 class="footer-heading">Resources</h4>
           <ul class="footer-links">
@@ -527,14 +528,14 @@ results.<span class="function">forEach</span>((user) =&gt; {
         <div class="footer-col">
           <h4 class="footer-heading">Community</h4>
           <ul class="footer-links">
-            <li><a href="https://github.com/ayoistooslick/plain-code" target="_blank" rel="noopener">GitHub</a></li>
+            <li><a href="https://github.com/ayoistooslick/plainscript" target="_blank" rel="noopener">GitHub</a></li>
             <li><a href="https://www.npmjs.com/package/plainscript-lang" target="_blank" rel="noopener">npm</a></li>
-            <li><a href="https://github.com/ayoistooslick/plain-code/issues" target="_blank" rel="noopener">Issue Tracker</a></li>
+            <li><a href="https://github.com/ayoistooslick/plainscript/issues" target="_blank" rel="noopener">Issue Tracker</a></li>
           </ul>
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2026 PlainScript. All rights reserved.</p>
+        <p>&copy; 2026 PlainScript. Built by Ayokunle.</p>
         <span class="footer-badge">v0.1.7</span>
       </div>
     </div>

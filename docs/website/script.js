@@ -1,3 +1,286 @@
+function initSyntaxHighlighting() {
+  var codeBlocks = document.querySelectorAll('.code-window-body code, .code-block code, .code-block--wide code');
+
+  var PS_KEYWORDS = {
+    'use':1,'server':1,'when':1,'someone':1,'asks':1,'for':1,'send':1,'log':1,
+    'save':1,'as':1,'if':1,'else':1,'then':1,'end':1,'function':1,'returns':1,
+    'return':1,'database':1,'query':1,'insert':1,'into':1,'values':1,'each':1,
+    'in':1,'while':1,'let':1,'be':1,'not':1,'and':1,'or':1,'equals':1,'greater':1,
+    'less':1,'than':1,'true':1,'false':1,'null':1,'none':1,'javascript':1,
+    'import':1,'from':1,'export':1,'class':1,'new':1,'this':1,'with':1,'do':1,
+    'try':1,'catch':1,'throw':1,'async':1,'await':1
+  };
+
+  var JS_KEYWORDS = {
+    'const':1,'let':1,'var':1,'function':1,'return':1,'if':1,'else':1,'for':1,
+    'while':1,'do':1,'switch':1,'case':1,'break':1,'continue':1,'new':1,'this':1,
+    'class':1,'extends':1,'import':1,'from':1,'export':1,'default':1,'try':1,
+    'catch':1,'throw':1,'async':1,'await':1,'typeof':1,'instanceof':1,'in':1,
+    'of':1,'true':1,'false':1,'null':1,'undefined':1,'void':1
+  };
+
+  var JS_BUILTINS = {
+    'console':1,'require':1,'module':1,'exports':1,'Math':1,'JSON':1,'Promise':1,
+    'Array':1,'Object':1,'String':1,'Number':1,'Boolean':1,'Date':1,'RegExp':1,
+    'Error':1,'Map':1,'Set':1
+  };
+
+  var OPERATORS = [
+    '===','!==','=>','>=','<=','&&','||','++','--',
+    '=','>','<','+','-','*','/','%','!'
+  ];
+
+  function esc(ch) {
+    if (ch === '&') return '&amp;';
+    if (ch === '<') return '&lt;';
+    if (ch === '>') return '&gt;';
+    if (ch === '"') return '&quot;';
+    if (ch === "'") return '&#39;';
+    return ch;
+  }
+
+  function escStr(s) {
+    var out = '';
+    for (var k = 0; k < s.length; k++) {
+      out += esc(s[k]);
+    }
+    return out;
+  }
+
+  function span(cls, text) {
+    return '<span class="token ' + cls + '">' + text + '</span>';
+  }
+
+  function tokenize(code, lang) {
+    var isPS = lang === 'plainscript';
+    var keywords = isPS ? PS_KEYWORDS : JS_KEYWORDS;
+    var builtins = isPS ? null : JS_BUILTINS;
+
+    var i = 0;
+    var len = code.length;
+    var out = '';
+
+    while (i < len) {
+      var ch = code[i];
+
+      // --- Template literals (JS only) ---
+      if (!isPS && ch === '`') {
+        var tplStart = i;
+        i++;
+        var tplContent = '`';
+        while (i < len && code[i] !== '`') {
+          if (code[i] === '\\') {
+            tplContent += code[i];
+            i++;
+            if (i < len) {
+              tplContent += code[i];
+              i++;
+            }
+          } else {
+            tplContent += code[i];
+            i++;
+          }
+        }
+        if (i < len) {
+          tplContent += '`';
+          i++;
+        }
+        out += span('string', escStr(tplContent));
+        continue;
+      }
+
+      // --- Strings ---
+      if (ch === '"' || ch === "'") {
+        var q = ch;
+        var strStart = i;
+        i++;
+        var strContent = q;
+        while (i < len && code[i] !== q) {
+          if (code[i] === '\\' && i + 1 < len) {
+            strContent += code[i];
+            i++;
+            strContent += code[i];
+            i++;
+          } else if (code[i] === '\n') {
+            break;
+          } else {
+            strContent += code[i];
+            i++;
+          }
+        }
+        if (i < len && code[i] === q) {
+          strContent += code[i];
+          i++;
+        }
+        out += span('string', escStr(strContent));
+        continue;
+      }
+
+      // --- Single-line comments ---
+      if (ch === '/' && i + 1 < len && code[i + 1] === '/') {
+        var commentEnd = i;
+        while (commentEnd < len && code[commentEnd] !== '\n') {
+          commentEnd++;
+        }
+        var comment = code.substring(i, commentEnd);
+        out += span('comment', escStr(comment));
+        i = commentEnd;
+        continue;
+      }
+
+      // --- Multi-line comments ---
+      if (!isPS && ch === '/' && i + 1 < len && code[i + 1] === '*') {
+        var mEnd = i + 2;
+        while (mEnd < len) {
+          if (mEnd < len - 1 && code[mEnd] === '*' && code[mEnd + 1] === '/') {
+            mEnd += 2;
+            break;
+          }
+          mEnd++;
+        }
+        var mComment = code.substring(i, mEnd);
+        out += span('comment', escStr(mComment));
+        i = mEnd;
+        continue;
+      }
+
+      // --- Hex numbers (JS only) ---
+      if (!isPS && ch === '0' && i + 1 < len && (code[i + 1] === 'x' || code[i + 1] === 'X')) {
+        var hexStart = i;
+        i += 2;
+        while (i < len && /[0-9a-fA-F]/.test(code[i])) {
+          i++;
+        }
+        var hex = code.substring(hexStart, i);
+        out += span('number', escStr(hex));
+        continue;
+      }
+
+      // --- Numbers ---
+      if (/[0-9]/.test(ch)) {
+        var numStart = i;
+        while (i < len && /[0-9]/.test(code[i])) {
+          i++;
+        }
+        if (i < len && code[i] === '.' && i + 1 < len && /[0-9]/.test(code[i + 1])) {
+          i++;
+          while (i < len && /[0-9]/.test(code[i])) {
+            i++;
+          }
+        }
+        var num = code.substring(numStart, i);
+        out += span('number', escStr(num));
+        continue;
+      }
+
+      // --- Words (identifiers, keywords, builtins) ---
+      if (/[a-zA-Z_$]/.test(ch)) {
+        var wordStart = i;
+        while (i < len && /[a-zA-Z0-9_$]/.test(code[i])) {
+          i++;
+        }
+        var word = code.substring(wordStart, i);
+
+        // Look ahead for function call
+        var j = i;
+        while (j < len && (code[j] === ' ' || code[j] === '\t')) {
+          j++;
+        }
+        var isFuncCall = j < len && code[j] === '(';
+
+        // Check for property access (preceded by a dot)
+        var lookBehind = wordStart - 1;
+        while (lookBehind >= 0 && (code[lookBehind] === ' ' || code[lookBehind] === '\t')) {
+          lookBehind--;
+        }
+        var isProperty = lookBehind >= 0 && code[lookBehind] === '.';
+
+        if (keywords[word]) {
+          out += span('keyword', escStr(word));
+        } else if (builtins && builtins[word]) {
+          out += span('builtin', escStr(word));
+        } else if (isProperty) {
+          out += span('property', escStr(word));
+        } else if (isFuncCall) {
+          out += span('function', escStr(word));
+        } else {
+          out += span('default', escStr(word));
+        }
+        continue;
+      }
+
+      // --- Operators ---
+      var matchedOp = '';
+      for (var oi = 0; oi < OPERATORS.length; oi++) {
+        var op = OPERATORS[oi];
+        if (code.indexOf(op, i) === i && op.length > matchedOp.length) {
+          matchedOp = op;
+        }
+      }
+      if (matchedOp) {
+        out += span('operator', escStr(matchedOp));
+        i += matchedOp.length;
+        continue;
+      }
+
+      // --- Punctuation ---
+      if ('(){}[];,'.indexOf(ch) !== -1) {
+        out += span('punctuation', esc(ch));
+        i++;
+        continue;
+      }
+
+      // --- Dot (JS property access) ---
+      if (!isPS && ch === '.') {
+        out += span('punctuation', '.');
+        i++;
+        continue;
+      }
+
+      // --- Anything else (whitespace, newlines, unknown) ---
+      var wsStart = i;
+      while (i < len) {
+        var wc = code[i];
+        if (/[a-zA-Z0-9_$'"`]/.test(wc)) break;
+        if (wc === '/' && i + 1 < len && (code[i + 1] === '/' || code[i + 1] === '*')) break;
+        if (wc === '\\' && !isPS) break;
+        if ('(){}[];,'.indexOf(wc) !== -1) break;
+        if ('=<>+-*/%!&|^~?'.indexOf(wc) !== -1) break;
+        i++;
+      }
+      if (i > wsStart) {
+        out += escStr(code.substring(wsStart, i));
+      }
+    }
+
+    return out;
+  }
+
+  for (var i = 0; i < codeBlocks.length; i++) {
+    var codeEl = codeBlocks[i];
+    var text = codeEl.textContent;
+    if (!text.trim()) continue;
+
+    var win = codeEl.closest('.code-window');
+    var lang = 'plainscript';
+    if (win) {
+      var title = win.querySelector('.code-window-title');
+      if (title) {
+        var titleText = title.textContent.toLowerCase();
+        if (titleText.indexOf('plain') === -1) {
+          lang = 'javascript';
+        }
+      }
+    }
+
+    if (!win) {
+      lang = 'plainscript';
+    }
+
+    codeEl.innerHTML = tokenize(text, lang);
+  }
+}
+
 function initThreeBackground() {
   var canvas = document.getElementById('bg-canvas');
   if (!canvas || typeof THREE === 'undefined') return;
@@ -393,6 +676,7 @@ function initSmoothScroll() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  initSyntaxHighlighting();
   initThreeBackground();
   initMobileMenu();
   initCopyButtons();
