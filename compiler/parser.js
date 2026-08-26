@@ -126,6 +126,14 @@ function parse(tokens) {
   function parseCondition() {
     let left = parseAndCondition();
     while (peek().type === TOKEN.OR) {
+      // v2.2 — nullish coalescing: <expr> or else <expr>  →  expr ?? expr
+      if (peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'else') {
+        advance(); // or
+        advance(); // else
+        const right = parseAndCondition();
+        left = { type: 'NullishCoalescingExpression', left, right };
+        continue;
+      }
       advance();
       const right = parseAndCondition();
       left = { type: 'LogicalCondition', op: 'or', left, right };
@@ -157,29 +165,29 @@ function parse(tokens) {
     // ── Non-"is" operators ──────────────────────────────────────────────────
     if (peek().type === TOKEN.CONTAINS) {
       advance();
-      const right = parseExpression();
+      const right = parseExpression(false);
       return { type: 'StringCondition', left, method: 'includes', right };
     }
 
     if (peek().type === TOKEN.STARTS) {
       advance();
       consume(TOKEN.WITH, makeError('Expected "with" after "starts". Use: starts with', peek()));
-      const right = parseExpression();
+      const right = parseExpression(false);
       return { type: 'StringCondition', left, method: 'startsWith', right };
     }
 
     if (peek().type === TOKEN.ENDS) {
       advance();
       consume(TOKEN.WITH, makeError('Expected "with" after "ends". Use: ends with', peek()));
-      const right = parseExpression();
+      const right = parseExpression(false);
       return { type: 'StringCondition', left, method: 'endsWith', right };
     }
 
     if (peek().type === TOKEN.BETWEEN) {
       advance();
-      const low = parseExpression();
+      const low = parseExpression(false);
       consume(TOKEN.AND, makeError('Expected "and" after the lower bound in "between" expression.\n\nExample:\n  if x between 1 and 10', peek()));
-      const high = parseExpression();
+      const high = parseExpression(false);
       return { type: 'BetweenCondition', left, low, high };
     }
 
@@ -197,8 +205,18 @@ function parse(tokens) {
         advance();
         return { type: 'UnaryCondition', left, op: 'isNotEmpty' };
       }
-      const right = parseExpression();
+      const right = parseExpression(false);
       return { type: 'BinaryCondition', left, op: '!==', right };
+    }
+
+    // v2.2 — type guard: is a text / is a number / is a yes or no
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'a' &&
+        peekAt(1).type === TOKEN.IDENTIFIER) {
+      advance(); // a
+      const typeName = consume(TOKEN.IDENTIFIER, 'Expected a type name after "a".').value;
+      const TYPE_MAP = { text: 'string', number: 'number', 'yes or no': 'boolean' };
+      const jsType = TYPE_MAP[typeName] || typeName;
+      return { type: 'TypeGuardCondition', left, typeName: jsType };
     }
 
     // is empty
@@ -210,14 +228,14 @@ function parse(tokens) {
     // is above  (alias: >)
     if (peek().type === TOKEN.ABOVE) {
       advance();
-      const right = parseExpression();
+      const right = parseExpression(false);
       return { type: 'BinaryCondition', left, op: '>', right };
     }
 
     // is below  (alias: <)
     if (peek().type === TOKEN.BELOW) {
       advance();
-      const right = parseExpression();
+      const right = parseExpression(false);
       return { type: 'BinaryCondition', left, op: '<', right };
     }
 
@@ -226,12 +244,12 @@ function parse(tokens) {
       advance();
       if (peek().type === TOKEN.LEAST) {
         advance();
-        const right = parseExpression();
+        const right = parseExpression(false);
         return { type: 'BinaryCondition', left, op: '>=', right };
       }
       if (peek().type === TOKEN.MOST) {
         advance();
-        const right = parseExpression();
+        const right = parseExpression(false);
         return { type: 'BinaryCondition', left, op: '<=', right };
       }
       throw new Error(makeError('Expected "least" or "most" after "at". Use: is at least / is at most', peek()));
@@ -241,7 +259,7 @@ function parse(tokens) {
     if (peek().type === TOKEN.GREATER) {
       advance();
       consume(TOKEN.THAN, 'Expected "than" after "greater". Use: is greater than');
-      const right = parseExpression();
+      const right = parseExpression(false);
       return { type: 'BinaryCondition', left, op: '>', right };
     }
 
@@ -249,12 +267,12 @@ function parse(tokens) {
     if (peek().type === TOKEN.LESS) {
       advance();
       consume(TOKEN.THAN, 'Expected "than" after "less". Use: is less than');
-      const right = parseExpression();
+      const right = parseExpression(false);
       return { type: 'BinaryCondition', left, op: '<', right };
     }
 
     // is <expr>  (equality)
-    const right = parseExpression();
+    const right = parseExpression(false);
     return { type: 'BinaryCondition', left, op: '===', right };
   }
 
@@ -309,6 +327,16 @@ function parse(tokens) {
     }
     if (token.type === TOKEN.DELETE_KW)   return parseSqlBlock('delete',  'DeleteStatement');
     if (token.type === TOKEN.EXECUTE_KW)  return parseSqlBlock('execute', 'ExecuteStatement');
+
+    if (token.type === TOKEN.SHAPE)       return parseShape();
+    if (token.type === TOKEN.ABSTRACT)    return parseShape();
+    if (token.type === TOKEN.DEFINE)      return parseDefine();
+    if (token.type === TOKEN.EVERYTHING) {
+      advance(); // everything
+      consume(TOKEN.FROM, 'Expected "from" after "everything".');
+      const operand = parseUnary();
+      return { type: 'ExpressionStatement', expression: { type: 'SpreadExpression', operand } };
+    }
 
     if (token.type === TOKEN.EOF) return null;
 
@@ -553,6 +581,16 @@ function parse(tokens) {
 
       const expr = parsePrimary();
 
+      // v2.2 — arrow function as expression statement: <name>(...) giving back expr
+      // parseCallExpression already consumed the call; check for giving back suffix.
+      if (expr.type === 'CallExpression' &&
+          peek().type === TOKEN.GIVING && peekAt(1).type === TOKEN.BACK) {
+        advance(); // giving
+        advance(); // back
+        const arrowBody = parseExpression();
+        return { type: 'ExpressionStatement', expression: { type: 'ArrowFunctionExpression', params: expr.args.map(a => a.type === 'Identifier' ? a.name : '_'), body: arrowBody } };
+      }
+
       if (peek().type === TOKEN.BECOMES) {
         advance();
         const value = parseExpression();
@@ -586,14 +624,77 @@ function parse(tokens) {
   }
 
   // remember <name> as <value>
+  // remember <name> of type <type> as <value>
   // remember <name> as\n  <key> is <val>\n...\ndone   (object literal)
   // remember <name> as javascript\n  <raw JS>\ndone      (v1.1.1 JavaScript block)
+  // remember { name, age } from <source>    (object destructuring)
+  // remember [first, ...rest] from <items>  (array destructuring)
   function parseRemember() {
     consume(TOKEN.REMEMBER);
+
+    // v2.2 — destructuring: remember { name, age } from user
+    if (peek().type === TOKEN.LBRACE) {
+      advance(); // {
+      const names = [];
+      let spread = false;
+      while (peek().type !== TOKEN.RBRACE && peek().type !== TOKEN.EOF) {
+        // Check for ... spread (three DOT tokens)
+        if (peek().type === TOKEN.DOT && peekAt(1).type === TOKEN.DOT && peekAt(2).type === TOKEN.DOT) {
+          advance(); // .
+          advance(); // .
+          advance(); // .
+          names.push(consume(TOKEN.IDENTIFIER, 'Expected a rest variable name after "...".').value);
+          spread = true;
+          break;
+        }
+        names.push(consume(TOKEN.IDENTIFIER, 'Expected a property name.').value);
+        if (peek().type === TOKEN.COMMA) advance();
+      }
+      consume(TOKEN.RBRACE, 'Expected "}" to close the destructuring pattern.');
+      consume(TOKEN.FROM, 'Expected "from" after the destructuring pattern.');
+      const source = consume(TOKEN.IDENTIFIER,
+        'Expected a source variable name after "from".').value;
+      return { type: 'DestructureObject', names, source, spread };
+    }
+
+    // v2.2 — destructuring: remember [first, ...rest] from items
+    if (peek().type === TOKEN.LBRACKET) {
+      advance(); // [
+      const names = [];
+      let spread = false;
+      while (peek().type !== TOKEN.RBRACKET && peek().type !== TOKEN.EOF) {
+        // Check for ... spread (three DOT tokens)
+        if (peek().type === TOKEN.DOT && peekAt(1).type === TOKEN.DOT && peekAt(2).type === TOKEN.DOT) {
+          advance(); // .
+          advance(); // .
+          advance(); // .
+          names.push(consume(TOKEN.IDENTIFIER, 'Expected a rest variable name after "...".').value);
+          spread = true;
+          break;
+        }
+        names.push(consume(TOKEN.IDENTIFIER, 'Expected a variable name.').value);
+        if (peek().type === TOKEN.COMMA) advance();
+      }
+      consume(TOKEN.RBRACKET, 'Expected "]" to close the destructuring pattern.');
+      consume(TOKEN.FROM, 'Expected "from" after the destructuring pattern.');
+      const source = consume(TOKEN.IDENTIFIER,
+        'Expected a source variable name after "from".').value;
+      return { type: 'DestructureArray', names, source, spread };
+    }
+
     const name = consume(
       TOKEN.IDENTIFIER,
       'Expected a variable name after "remember".\n\nExample:\n  remember age as 16'
     ).value;
+
+    // v2.2 — remember <name> of type <type> as <value>
+    let typeAnnotation = null;
+    if (peek().type === TOKEN.OF && peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'type') {
+      advance(); // of
+      advance(); // type
+      typeAnnotation = parseTypeName();
+    }
+
     consume(
       TOKEN.AS,
       'Expected keyword "as" after the variable name.\n\nExample:\n  remember age as 16'
@@ -631,11 +732,38 @@ function parse(tokens) {
 
     // Object literal: next token is IDENTIFIER followed by IS
     if (peek().type === TOKEN.IDENTIFIER && peekAt(1).type === TOKEN.IS) {
-      return { type: 'RememberStatement', name, value: parseObjectLiteral() };
+      const val = parseObjectLiteral();
+      return typeAnnotation
+        ? { type: 'RememberStatement', name, typeName: typeAnnotation, value: val }
+        : { type: 'RememberStatement', name, value: val };
     }
 
     const value = parseExpression();
-    return { type: 'RememberStatement', name, value };
+    return typeAnnotation
+      ? { type: 'RememberStatement', name, typeName: typeAnnotation, value }
+      : { type: 'RememberStatement', name, value };
+  }
+
+  // v2.2 — parse a type name for annotations like "of type text".
+  // Reads identifier tokens, "or" keyword, and "combined with" until we hit something else.
+  // When stopAtNewline is true, stops when the next token is on a new line.
+  function parseTypeName(stopAtNewline) {
+    const parts = [];
+    const startLine = peek().line;
+    while (true) {
+      if (stopAtNewline && parts.length > 0 && peek().line !== startLine) break;
+      if (peek().type === TOKEN.IDENTIFIER) {
+        parts.push(consume(TOKEN.IDENTIFIER, 'Expected a type name.').value);
+      } else if (peek().type === TOKEN.OR && parts.length > 0) {
+        parts.push(advance().value); // consume "or" keyword
+      } else if (peek().type === TOKEN.COMBINED && peekAt(1).type === TOKEN.WITH) {
+        parts.push(advance().value); // "combined"
+        parts.push(advance().value); // "with"
+      } else {
+        break;
+      }
+    }
+    return parts.join(' ');
   }
 
   // ask <variable>
@@ -741,8 +869,14 @@ function parse(tokens) {
   }
 
   // make name(params) ... done
+  // make (params) giving back expr   (arrow function)
+  // make name(params) giving back expr  (arrow function with named params)
   function parseMake() {
     consume(TOKEN.MAKE);
+    // v2.2 — arrow function: make (params) giving back expr
+    if (peek().type === TOKEN.LPAREN && peekAt(1).type !== TOKEN.RPAREN) {
+      return parseArrowFunction();
+    }
     const name = consume(
       TOKEN.IDENTIFIER,
       'Expected a function name after "make".\n\nExample:\n  make greet()\n    show "Hello"\n  done'
@@ -750,8 +884,23 @@ function parse(tokens) {
     consume(TOKEN.LPAREN, `Expected "(" after function name "${name}".`);
     const params = parseParamList();
     consume(TOKEN.RPAREN, 'Expected ")" to close the parameter list.');
+    // v2.2 — named arrow function: make name(params) giving back expr
+    if (peek().type === TOKEN.GIVING && peekAt(1).type === TOKEN.BACK) {
+      advance(); // giving
+      advance(); // back
+      const arrowBody = parseExpression();
+      return { type: 'ArrowFunctionExpression', params, body: arrowBody };
+    }
+    // v2.2 — return type: make name(params) returning <type> ... done
+    let returnType = null;
+    if (peek().type === TOKEN.RETURNING) {
+      advance(); // returning
+      returnType = parseTypeName();
+    }
     const body = parseBody(`function "${name}"`);
-    return { type: 'FunctionDeclaration', name, params, body };
+    return returnType
+      ? { type: 'FunctionDeclaration', name, params, body, returnType }
+      : { type: 'FunctionDeclaration', name, params, body };
   }
 
   function parseParamList() {
@@ -765,10 +914,117 @@ function parse(tokens) {
     return params;
   }
 
+  // v2.2 — make (params) giving back expr   (arrow function expression)
+  function parseArrowFunction() {
+    consume(TOKEN.LPAREN, 'Expected "(" after "make" for arrow function.');
+    const params = [];
+    if (peek().type !== TOKEN.RPAREN) {
+      params.push(consume(TOKEN.IDENTIFIER, 'Expected a parameter name.').value);
+      while (peek().type === TOKEN.COMMA) {
+        advance();
+        params.push(consume(TOKEN.IDENTIFIER, 'Expected a parameter name after ",".').value);
+      }
+    }
+    consume(TOKEN.RPAREN, 'Expected ")" to close the parameter list.');
+    consume(TOKEN.GIVING, 'Expected "giving back" after arrow function parameters.');
+    consume(TOKEN.BACK, 'Expected "back" after "giving".');
+    const body = parseExpression();
+    return { type: 'ArrowFunctionExpression', params, body };
+  }
+
   function parseGive() {
     consume(TOKEN.GIVE);
     const value = parseExpression();
     return { type: 'GiveStatement', value };
+  }
+
+  // v2.2 — shape Name ... done  /  abstract shape Name ... done
+  // Parses a class/interface block with properties and methods.
+  function parseShape() {
+    let isAbstract = false;
+    if (peek().type === TOKEN.ABSTRACT) {
+      isAbstract = true;
+      advance();
+    }
+    consume(TOKEN.SHAPE, 'Expected "shape" keyword.');
+    const name = consume(TOKEN.IDENTIFIER, 'Expected a shape name after "shape".').value;
+    const body = [];
+    while (peek().type !== TOKEN.DONE) {
+      if (peek().type === TOKEN.EOF) {
+        throw new Error(makeError(
+          `Expected keyword "done" to close the "shape" block before end of file.`,
+          peek()
+        ));
+      }
+      // Parse modifiers: maybe, hidden, frozen
+      let optional = false;
+      let hidden = false;
+      let frozen = false;
+      while (peek().type === TOKEN.MAYBE || peek().type === TOKEN.HIDDEN || peek().type === TOKEN.FROZEN) {
+        if (peek().type === TOKEN.MAYBE)  { optional = true; advance(); }
+        if (peek().type === TOKEN.HIDDEN) { hidden = true; advance(); }
+        if (peek().type === TOKEN.FROZEN) { frozen = true; advance(); }
+      }
+      // Parse property: name is type
+      if (peek().type === TOKEN.IDENTIFIER && peekAt(1).type === TOKEN.IS) {
+        const propName = consume(TOKEN.IDENTIFIER).value;
+        advance(); // is
+        const typeName = parseTypeName(true);
+        body.push({ type: 'ShapeProperty', name: propName, typeName, optional, hidden, frozen });
+        continue;
+      }
+      // Parse method: make name(params) ... done
+      if (peek().type === TOKEN.MAKE) {
+        advance(); // make
+        const methodName = consume(TOKEN.IDENTIFIER, 'Expected a method name after "make".').value;
+        consume(TOKEN.LPAREN, `Expected "(" after method name "${methodName}".`);
+        const params = parseParamList();
+        consume(TOKEN.RPAREN, 'Expected ")" to close the parameter list.');
+        const methodBody = parseBody(`method "${methodName}"`);
+        body.push({ type: 'ShapeMethod', name: methodName, params, body: methodBody, hidden, frozen });
+        continue;
+      }
+      throw new Error(makeError(
+        'Expected a property (name is type) or method (make name(...) ... done) inside a shape block.',
+        peek()
+      ));
+    }
+    advance(); // done
+    return { type: 'ShapeStatement', name, abstract: isAbstract, body };
+  }
+
+  // v2.2 — define Name as <type>  /  define Name as one of ... done
+  // Type alias or enum definition.
+  function parseDefine() {
+    consume(TOKEN.DEFINE, 'Expected "define" keyword.');
+    const name = consume(TOKEN.IDENTIFIER, 'Expected a name after "define".').value;
+    consume(TOKEN.AS, `Expected "as" after name "${name}".`);
+
+    // Enum: define Direction as one of ... done
+    if (peek().type === TOKEN.ONE &&
+        peekAt(1).type === TOKEN.OF) {
+      advance(); // one
+      advance(); // of
+      const values = [];
+      while (peek().type !== TOKEN.DONE) {
+        if (peek().type === TOKEN.EOF) {
+          throw new Error(makeError(
+            'Expected "done" to close the enum block before end of file.',
+            peek()
+          ));
+        }
+        values.push(consume(TOKEN.IDENTIFIER, 'Expected an enum value.').value);
+        if (peek().type === TOKEN.IDENTIFIER && peek().value === 'also') {
+          advance(); // also (alias for separator)
+        }
+      }
+      advance(); // done
+      return { type: 'EnumStatement', name, values };
+    }
+
+    // Type alias: define Name as <type expression>
+    const typeName = parseTypeName();
+    return { type: 'TypeAliasStatement', name, typeName };
   }
 
   // for each <item> in <collection> ... done
@@ -1481,12 +1737,21 @@ function parse(tokens) {
   //   multiplicative ("term") := unary (("*" | "/" | "%") unary)*
   //   unary        := "-" unary | "wait for" unary | primary
   //   primary      := atom with postfix chains (indexing, members, of, length)
-  function parseExpression() {
+  function parseExpression(includeNullish) {
     let left = parseTerm();
     while (peek().type === TOKEN.PLUS || peek().type === TOKEN.MINUS) {
       const operator = advance().value;
       const right = parseTerm();
       left = { type: 'BinaryExpression', operator, left, right };
+    }
+    // v2.2 — nullish coalescing at expression level: <expr> or else <expr>
+    if (includeNullish !== false) {
+      while (peek().type === TOKEN.OR && peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'else') {
+        advance(); // or
+        advance(); // else
+        const right = parseTerm();
+        left = { type: 'NullishCoalescingExpression', left, right };
+      }
     }
     return left;
   }
@@ -1509,6 +1774,12 @@ function parse(tokens) {
     if (peek().type === TOKEN.MINUS) {
       advance();
       return { type: 'UnaryExpression', operator: '-', operand: parseUnary() };
+    }
+    // v2.2 — spread expression: everything from <expr>
+    if (peek().type === TOKEN.EVERYTHING && peekAt(1).type === TOKEN.FROM) {
+      advance(); // everything
+      advance(); // from
+      return { type: 'SpreadExpression', operand: parseUnary() };
     }
     // v2.1.1 — await semantics: "wait for <value>" awaits an async operation.
     // The operand binds tightly (a full postfix chain), so
@@ -1538,7 +1809,7 @@ function parse(tokens) {
         advance();
         const property = consume(TOKEN.IDENTIFIER, 'Expected a property name after ".".').value;
         node = { type: 'MemberExpression', object: node, property };
-      } else if (peek().type === TOKEN.IDENTIFIER && peek().value === 'of') {
+      } else if (peek().type === TOKEN.OF) {
         if (node.type !== 'Identifier') {
           throw new Error(makeError(
             'Expected a property name before "of".\n\nExample:\n  name of user',
@@ -1546,11 +1817,29 @@ function parse(tokens) {
           ));
         }
         advance();
-        const object = parsePrimary();
-        node = { type: 'OfExpression', property: node, object };
+        // v2.2 — optional chaining: name of user (or empty) → user?.name
+        // Detect the pattern BEFORE parsePrimary so it doesn't eat ( or empty ) as a call.
+        if (peek().type === TOKEN.IDENTIFIER &&
+            peekAt(1).type === TOKEN.LPAREN && peekAt(2).type === TOKEN.OR &&
+            peekAt(3).type === TOKEN.EMPTY && peekAt(4).type === TOKEN.RPAREN) {
+          const objToken = advance();
+          const object = { type: 'Identifier', name: objToken.value, line: objToken.line };
+          advance(); // (
+          advance(); // or
+          advance(); // empty
+          advance(); // )
+          node = { type: 'OptionalChainExpression', object, property: node };
+        } else {
+          const object = parsePrimary();
+          node = { type: 'OfExpression', property: node, object };
+        }
       } else if (peek().type === TOKEN.IDENTIFIER && peek().value === 'length') {
         advance();
         node = { type: 'LengthExpression', object: node };
+      // v2.2 — expression-level arrow: make(x) giving back x * 2
+      } else if (node.type === 'Identifier' && node.name === 'make' &&
+                 peek().type === TOKEN.LPAREN) {
+        node = parseArrowFunction();
       } else {
         break;
       }
@@ -1568,8 +1857,11 @@ function parse(tokens) {
     const second = peekAt(1);
     const third  = peekAt(2);
     if (first.type  !== TOKEN.IDENTIFIER) return null;
-    if (second.type !== TOKEN.IDENTIFIER) return null;
-    if (third.type  !== TOKEN.IDENTIFIER) return null;
+    // second can be IDENTIFIER (noun like "player"), ONE (for "player one from"),
+    // or FROM (for "first from players" which should error with a noun hint)
+    if (second.type !== TOKEN.IDENTIFIER && second.type !== TOKEN.ONE && second.type !== TOKEN.FROM) return null;
+    // third can be IDENTIFIER or FROM (keyword)
+    if (third.type  !== TOKEN.IDENTIFIER && third.type !== TOKEN.FROM) return null;
 
     // "first from players" / "last from players" — missing noun
     if ((first.value === 'first' || first.value === 'last') && second.value === 'from') {
@@ -1579,7 +1871,7 @@ function parse(tokens) {
       ));
     }
 
-    if (third.value !== 'from') return null;
+    if (third.value !== 'from' && third.type !== TOKEN.FROM) return null;
 
     if (first.value === 'first') {
       advance(); // first
@@ -1641,6 +1933,12 @@ function parse(tokens) {
     const httpMethod = httpMethodWord(token);
     if (httpMethod && peekAt(1).type !== TOKEN.LPAREN && tokenStartsValue(peekAt(1))) {
       return parseHttpCall(httpMethod);
+    }
+
+    // v2.2 — arrow function expression: make (params) giving back expr
+    if (token.type === TOKEN.MAKE && peekAt(1).type === TOKEN.LPAREN) {
+      advance(); // consume MAKE
+      return parseArrowFunction();
     }
 
     if (token.type === TOKEN.IDENTIFIER) {
@@ -2035,8 +2333,9 @@ function parse(tokens) {
       args.push(parseExpression());
     }
     // v1.1 — collection expressions: add(item to list) / remove(item from list) / write(data to "file")
-    if (args.length === 1 && peek().type === TOKEN.IDENTIFIER &&
-        (peek().value === 'to' || peek().value === 'from')) {
+    if (args.length === 1 && (
+        (peek().type === TOKEN.IDENTIFIER && peek().value === 'to') ||
+        peek().type === TOKEN.FROM)) {
       separator = peek().value;
       advance();
       if (peek().type === TOKEN.EOF) {

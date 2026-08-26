@@ -1229,6 +1229,9 @@ function generateCondition(cond, context) {
       return `${generateCondition(cond.left, context)} ${jsOp} ${generateCondition(cond.right, context)}`;
     }
 
+    case 'TypeGuardCondition':
+      return `${node.operator} ${generateExpr(node.operand, context)} === ${JSON.stringify(node.targetType)}`;
+
     default:
       throw new Error(`Unknown condition type "${cond.type}".`);
   }
@@ -1865,6 +1868,81 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       ensureBuiltin(context, 'websocket');
       return `${indent}__wsBroadcast(__wsServer, ${generateExpr(node.value, context)});`;
 
+    // ── TypeScript-equivalent features ─────────────────────────────────────
+
+    case 'ShapeStatement': {
+      const name = node.name;
+      const isAbstract = node.abstract || node.isAbstract;
+      const body = node.body || [];
+      const hasMethods = body.some(b => b.type === 'ShapeMethod');
+      if (!hasMethods) {
+        const fields = body.filter(b => b.type === 'ShapeProperty').map(b => `${b.name}: any`).join(', ');
+        return `${indent}/** @typedef {{ ${fields} }} ${name} */`;
+      }
+      const props = body.filter(b => b.type === 'ShapeProperty');
+      const methods = body.filter(b => b.type === 'ShapeMethod');
+      const params = props.map(p => p.name).join(', ');
+      const typeDefaults = { text: '""', number: '0', 'yes or no': 'false' };
+      const inits = props.map(p => {
+        const init = p.optional ? 'undefined' : (typeDefaults[p.typeName] || 'null');
+        return `${indent}  this.${p.name} = ${init};`;
+      }).join('\n');
+      const abstractCheck = isAbstract
+        ? `${indent}  if (new.target === ${name}) throw new Error("Cannot instantiate abstract class ${name}");\n`
+        : '';
+      const lines = [
+        `${indent}function ${name}(${params}) {`,
+        `${abstractCheck}${inits}`,
+        `${indent}}`,
+      ];
+      for (const m of methods) {
+        const mParams = m.params.join(', ');
+        const mBody = (m.body || []).map(s => generateStatement(s, indent + '  ', context)).join('\n');
+        const prefix = m.hidden ? '/** @private */ ' : '';
+        lines.push(`${indent}${prefix}${name}.prototype.${m.name} = function(${mParams}) {\n${mBody}\n${indent}};`);
+      }
+      return lines.join('\n');
+    }
+
+    case 'EnumStatement': {
+      const name = node.name;
+      const values = node.values || node.members || [];
+      let idx = 0;
+      const entries = values.map(v => {
+        if (typeof v === 'object') return `${JSON.stringify(v.name)}: ${JSON.stringify(v.value)}`;
+        return `${JSON.stringify(v)}: ${idx++}`;
+      }).join(', ');
+      const destructured = values.map(v => typeof v === 'object' ? v.name : v).join(', ');
+      return [
+        `${indent}const ${name} = { ${entries} };`,
+        `${indent}const { ${destructured} } = ${name};`,
+      ].join('\n');
+    }
+
+    case 'TypeAliasStatement': {
+      const alias = node.alias || node.name;
+      const body = node.value ? generateExpr(node.value, context) : (node.typeName || 'any');
+      return `${indent}/** @typedef {${body}} ${alias} */`;
+    }
+
+    case 'DestructureObject': {
+      const names = node.names.join(', ');
+      const src = typeof node.source === 'string' ? node.source : generateExpr(node.source, context);
+      return `${indent}const { ${names} } = ${src};`;
+    }
+
+    case 'DestructureArray': {
+      const parts = node.names.map(n => n).join(', ');
+      const src = typeof node.source === 'string' ? node.source : generateExpr(node.source, context);
+      return `${indent}const [${parts}] = ${src};`;
+    }
+
+    case 'ArrowFunctionStatement': {
+      const params = node.params.join(', ');
+      const expr = generateExpr(node.body, context);
+      return `${indent}const ${node.name} = (${params}) => ${expr};`;
+    }
+
     default:
       throw new Error(`Unknown statement type "${node.type}".`);
   }
@@ -2023,6 +2101,34 @@ function generateExpr(node, context = createGenerationContext()) {
     case 'WriteCall':
       ensureBuiltin(context, 'fs');
       return `fs.writeFileSync(${generateExpr(node.data, context)}, ${generateExpr(node.file, context)}, 'utf8')`;
+
+    // ── TypeScript-equivalent expression types ──────────────────────────────
+
+    case 'ArrowFunctionExpression': {
+      const params = node.params.join(', ');
+      const expr = generateExpr(node.body, context);
+      return `(${params}) => ${expr}`;
+    }
+
+    case 'OptionalChainExpression': {
+      const obj = generateExpr(node.object, context);
+      const prop = generateExpr(node.property, context);
+      return `${obj}?.${prop}`;
+    }
+
+    case 'NullishCoalescingExpression': {
+      const left = generateExpr(node.left, context);
+      const right = generateExpr(node.right, context);
+      return `${left} ?? ${right}`;
+    }
+
+    case 'SpreadExpression': {
+      return `...${generateExpr(node.operand, context)}`;
+    }
+
+    case 'TypeGuardExpression': {
+      return `${node.operator} ${generateExpr(node.operand, context)} === ${JSON.stringify(node.targetType)}`;
+    }
 
     default:
       throw new Error(`Unknown expression type "${node.type}".`);

@@ -2000,7 +2000,7 @@ test('plainscript new creates package.json with build scripts and does NOT creat
   if (fs.existsSync(path.join(projectDir, 'plainscript.config.json'))) throw new Error('plainscript.config.json must NOT be created');
   const pkg = JSON.parse(fs.readFileSync(path.join(projectDir, 'package.json'), 'utf8'));
   if (!pkg.scripts || pkg.scripts.build !== 'plainscript build') throw new Error('expected npm build script "plainscript build"');
-  if (!pkg.devDependencies || !pkg.devDependencies.plainscript) throw new Error('expected plainscript devDependency');
+  if (!pkg.devDependencies || !pkg.devDependencies['plainscript-lang']) throw new Error('expected plainscript-lang devDependency');
   if (!fs.existsSync(path.join(projectDir, 'src', 'app.ps'))) throw new Error('expected src/app.ps scaffold');
   fs.rmSync(projectDir, { recursive: true, force: true });
 });

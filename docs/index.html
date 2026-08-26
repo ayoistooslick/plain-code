@@ -110,7 +110,7 @@
           </div>
           <div class="code-window-body">
             <pre><code>server on port 3000
-  when someone asks for "/"
+  when someone visits "/"
     send "Hello, World!"
 
 log "Server is running"</code></pre>
@@ -238,10 +238,10 @@ console.log("Server is running");</code></pre>
               <pre><code>use express
 
 server on port 3000
-  when someone asks for "/"
+  when someone visits "/"
     send "Hello, World!"
 
-  when someone asks for "/users"
+  when someone visits "/users"
     send json of users
 
 log "Server running on port 3000"</code></pre>
@@ -493,6 +493,8 @@ use dotenv</code></pre>
           <button class="lib-filter" data-cat="email">Email</button>
           <button class="lib-filter" data-cat="upload">Uploads</button>
           <button class="lib-filter" data-cat="cli">CLI</button>
+          <button class="lib-filter" data-cat="types">Types</button>
+          <button class="lib-filter" data-cat="ai">AI</button>
         </div>
       </div>
 

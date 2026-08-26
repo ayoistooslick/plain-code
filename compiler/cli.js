@@ -554,7 +554,7 @@ done
       start: 'node dist/app.js',
     },
     devDependencies: {
-      plainscript: `^${VERSION}`,
+      'plainscript-lang': `^${VERSION}`,
     },
     dependencies: {
       express: '^4.18.2',
