@@ -2,7 +2,7 @@
 
 Version: 2.1.1
 Status: Stable
-File Extension: .pln
+File Extension: .ps
 
 Tagline: "When even a simple sentence can be code."
 
@@ -230,10 +230,10 @@ Notes:
 
 ## PlainScript Imports
 
-Split a project across multiple `.pln` files:
+Split a project across multiple `.ps` files:
 
-    import "./math.pln"
-    import "./utils.pln"
+    import "./math.ps"
+    import "./utils.ps"
 
 Rules:
 
@@ -245,20 +245,20 @@ Rules:
 
 Example project layout:
 
-    app.pln
-    math.pln
-    utils.pln
+    app.ps
+    math.ps
+    utils.ps
 
-`math.pln`:
+`math.ps`:
 
     remember PI as 3.14
 
-`app.pln`:
+`app.ps`:
 
-    import "./math.pln"
+    import "./math.ps"
     show PI
 
-Output: one combined JavaScript file with `math.pln` code before `app.pln` code.
+Output: one combined JavaScript file with `math.ps` code before `app.ps` code.
 
 ---
 
@@ -341,11 +341,11 @@ filesystem.
 ```bash
 npm install --save-dev plainscript
 plainscript install
-plainscript build app.pln
-plainscript run app.pln
+plainscript build app.ps
+plainscript run app.ps
 ```
 
-`plainscript start` builds `src/app.pln` (or `src/index.pln`) into the output
+`plainscript start` builds `src/app.ps` (or `src/index.ps`) into the output
 directory and runs it. `plainscript doctor` reports missing tools, source files,
 or dependencies. Generated JavaScript remains standard
 Node.js-compatible JavaScript and runtime `require()` declarations are emitted
@@ -916,7 +916,7 @@ __whatsappOnMessage(async (__waCtx) => {
 
 Format a PlainScript file in-place:
 
-    plainscript fmt app.pln
+    plainscript fmt app.ps
 
 Formatting rules:
 
@@ -930,7 +930,7 @@ Formatting rules:
 
 Check syntax without generating JavaScript or running anything:
 
-    plainscript check app.pln
+    plainscript check app.ps
 
 Exits with code 0 if no errors are found. Exits with code 1 and prints a
 friendly error (with line, column, and suggestion where possible) if the
@@ -941,7 +941,7 @@ file contains a syntax error.
 Install `plainscript-vscode` for:
 
 - Syntax highlighting
-- File icon for `.pln` files
+- File icon for `.ps` files
 - Auto-closing pairs: `()` `[]` `{}` `""`
 - Comment toggling (`//`)
 - Bracket matching
@@ -952,7 +952,7 @@ See `plainscript-vscode/README.md` for installation instructions.
 
 ### Acode Editor
 
-Acode support (`plainscript-acode/`) provides syntax highlighting and `.pln` file
+Acode support (`plainscript-acode/`) provides syntax highlighting and `.ps` file
 recognition in the [Acode](https://acode.app) Android editor, using Acode's
 modern CodeMirror 6 `editorLanguages` API.
 
@@ -993,13 +993,13 @@ For projects that need custom output or source directories, add an optional
 
 | Command                 | Behaviour                                            |
 |-------------------------|------------------------------------------------------|
-| `plainscript run <file.pln>`   | Install dependencies, compile and execute            |
+| `plainscript run <file.ps>`   | Install dependencies, compile and execute            |
 | `plainscript build [file]`     | Compile to dist/ preserving names; no arg builds all|
-| `plainscript check <file.pln>` | Check syntax only (no output, no execution)          |
-| `plainscript fmt <file.pln>`   | Format a PlainScript file in-place                          |
+| `plainscript check <file.ps>` | Check syntax only (no output, no execution)          |
+| `plainscript fmt <file.ps>`   | Format a PlainScript file in-place                          |
 | `plainscript new [name]`       | Create a new PlainScript project                            |
 | `plainscript install`          | Detect and install dependencies from source files     |
-| `plainscript start`            | Build src/app.pln and run its dist/ output            |
+| `plainscript start`            | Build src/app.ps and run its dist/ output            |
 | `plainscript doctor`           | Check the PlainScript project environment                   |
 | `plainscript add <pkg>`        | Install a package into the project                     |
 | `plainscript remove <pkg>`     | Uninstall a package from the project                   |

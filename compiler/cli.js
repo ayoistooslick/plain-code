@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-// CLI: compile and run PlainScript (.pln) files.
+// CLI: compile and run PlainScript (.ps) files.
 //
 // Usage:
-//   plainscript run    <file.pln>   install missing dependencies, compile and execute
-//   plainscript build  [file.pln]   compile src/ (or one file) to dist/, names preserved
-//   plainscript check  <file.pln>   check syntax only (no JS generated, no execution)
-//   plainscript fmt    <file.pln>   format a PlainScript file in-place
+//   plainscript run    <file.ps>   install missing dependencies, compile and execute
+//   plainscript build  [file.ps]   compile src/ (or one file) to dist/, names preserved
+//   plainscript check  <file.ps>   check syntax only (no JS generated, no execution)
+//   plainscript fmt    <file.ps>   format a PlainScript file in-place
 //   plainscript new    [name]       scaffold a new PlainScript project
 //   plainscript install            install dependencies detected in the project's sources
-//   plainscript start              build src/app.pln (or index.pln) and run its dist output
+//   plainscript start              build src/app.ps (or index.ps) and run its dist output
 //   plainscript doctor             check the PlainScript project environment
 //   plainscript add    <package>   install a package into the project
 //   plainscript remove <package>   uninstall a package from the project
@@ -49,18 +49,18 @@ function warn(message) {
 const section = (title) => `\n${clrCyan(clrBold(title))}`;
 
 const HELP = `
-${clrBold(`PlainScript v${VERSION}`)} ${clrDim('· .pln compiles to readable Node.js')}
+${clrBold(`PlainScript v${VERSION}`)} ${clrDim('· .ps compiles to readable Node.js')}
 
 ${section('START')}
-  plainscript new [name]        Scaffold a new project with a working app.pln
-  plainscript run <file.pln>    Install missing deps, compile, execute
-  plainscript start             Build src/app.pln and run it from dist/
+  plainscript new [name]        Scaffold a new project with a working app.ps
+  plainscript run <file.ps>    Install missing deps, compile, execute
+  plainscript start             Build src/app.ps and run it from dist/
 
 ${section('BUILD & CHECK')}
-  plainscript build             Compile every .pln under src/ into dist/
-  plainscript build <file.pln>  Compile one file into dist/ (name preserved)
-  plainscript check <file.pln>  Syntax-check only — fastest feedback loop
-  plainscript fmt <file.pln>    Format a file in place
+  plainscript build             Compile every .ps under src/ into dist/
+  plainscript build <file.ps>  Compile one file into dist/ (name preserved)
+  plainscript check <file.ps>  Syntax-check only — fastest feedback loop
+  plainscript fmt <file.ps>    Format a file in place
 
 ${section('PACKAGES')}
   plainscript install           Install everything your source needs
@@ -92,7 +92,7 @@ ${section('ALSO SHIPPED')}
 
 ${section('FIRST RUN')}
   plainscript new hello               scaffolds hello/ with a live web app
-  plainscript run hello/app.pln       serves it at http://localhost:3000
+  plainscript run hello/app.ps       serves it at http://localhost:3000
 `.trim();
 
 // ── npm invocation ────────────────────────────────────────────────────────────
@@ -145,8 +145,8 @@ function isValidPackageName(name) {
 //       "exclude": ["vendor"] } }
 //
 //   Filenames and folder structure are always preserved:
-//       src/messi.pln     → dist/messi.js
-//       src/helpers/math.pln → dist/helpers/math.js
+//       src/messi.ps     → dist/messi.js
+//       src/helpers/math.ps → dist/helpers/math.js
 const SOURCE_DIR = 'src';
 const DEFAULT_OUT_DIR = 'dist';
 
@@ -179,7 +179,7 @@ function resolveOutDir(opts) {
   return DEFAULT_OUT_DIR;
 }
 
-// Every .pln file under srcDir, recursively, as paths relative to srcDir.
+// Every .ps file under srcDir, recursively, as paths relative to srcDir.
 // Deterministic order (sorted); node_modules, hidden directories, the output
 // directory, and any user-specified exclude patterns are skipped.
 function discoverSources(srcDir, outDir, exclude) {
@@ -202,7 +202,7 @@ function discoverSources(srcDir, outDir, exclude) {
       try { stat = fs.statSync(full); } catch (_) { continue; }
       if (stat.isDirectory()) {
         walk(full);
-      } else if (name.endsWith('.pln')) {
+      } else if (name.endsWith('.ps')) {
         found.push(path.relative(root, full));
       }
     }
@@ -399,7 +399,7 @@ function nodeModulesSearchPaths(entryDir) {
 
 async function cmdRun(filePath, extraArgs = []) {
   if (!filePath) {
-    console.error('Usage: plainscript run <file.pln>');
+    console.error('Usage: plainscript run <file.ps>');
     process.exit(1);
   }
   const js = compile(filePath);
@@ -436,8 +436,8 @@ function buildOne(filePath, srcDir, outDir) {
   }
   const js = compile(absFile);
   const srcRoot = path.resolve(srcDir);
-  let rel = path.relative(srcRoot, absFile).replace(/\.pln$/, '.js');
-  if (rel.startsWith('..') || path.isAbsolute(rel)) rel = path.basename(absFile).replace(/\.pln$/, '.js');
+  let rel = path.relative(srcRoot, absFile).replace(/\.ps$/, '.js');
+  if (rel.startsWith('..') || path.isAbsolute(rel)) rel = path.basename(absFile).replace(/\.ps$/, '.js');
   const outPath = path.join(path.resolve(outDir), rel);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, js, 'utf8');
@@ -447,16 +447,16 @@ function buildOne(filePath, srcDir, outDir) {
 // `plainscript build` — TypeScript-style production build:
 //
 //   Zero config (default):
-//     messi.pln        → dist/messi.js       (project-root sources)
-//     src/index.pln    → dist/index.js       (src/ is the source root)
-//     src/a/b.pln      → dist/a/b.js         (structure preserved)
+//     messi.ps        → dist/messi.js       (project-root sources)
+//     src/index.ps    → dist/index.js       (src/ is the source root)
+//     src/a/b.ps      → dist/a/b.js         (structure preserved)
 //
 //   With plainscript.config.json:
 //     { "compilerOptions": { "outDir": "./build", "rootDir": "./lib" } }
-//     lib/app.pln → build/app.js
+//     lib/app.ps → build/app.js
 //
 // With an explicit file argument only that entry is compiled; without one,
-// every .pln under the discovered source root builds to the output directory.
+// every .ps under the discovered source root builds to the output directory.
 async function cmdBuild(filePath) {
   const opts = readCompilerOptions();
   const srcDir = resolveSrcDir(opts);
@@ -469,7 +469,7 @@ async function cmdBuild(filePath) {
   }
   const sources = discoverSources(srcDir, outDir, exclude);
   if (sources.length === 0) {
-    console.error(`No .pln files found under "${srcDir}".`);
+    console.error(`No .ps files found under "${srcDir}".`);
     process.exit(1);
   }
   QUIET_STAGES = true;
@@ -494,7 +494,7 @@ async function cmdStart(extraArgs = []) {
   const outDir = resolveOutDir(opts);
   const entryPath = findEntry(opts);
   if (!entryPath) {
-    console.error('No entry file found. Expected "src/app.pln" or "src/index.pln".');
+    console.error('No entry file found. Expected "src/app.ps" or "src/index.ps".');
     process.exit(1);
   }
   const outFile = buildOne(entryPath, srcDir, outDir);
@@ -519,8 +519,8 @@ function cmdNew(projectName) {
   fs.mkdirSync(path.join(dir, 'public'));
   fs.mkdirSync(path.join(dir, 'src'));
 
-  // src/app.pln — starter Express app
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), `use express
+  // src/app.ps — starter Express app
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), `use express
 
 remember app as express()
 
@@ -578,7 +578,7 @@ Then open http://localhost:3000 in your browser.
 `);
 
   console.log(`✓ Created project "${name}"`);
-  console.log(`\nNext steps:\n  cd ${name}\n  npm install\n  npx plainscript run src/app.pln`);
+  console.log(`\nNext steps:\n  cd ${name}\n  npm install\n  npx plainscript run src/app.ps`);
 }
 
 // ── plainscript install ────────────────────────────────────────────────────────────
@@ -588,11 +588,11 @@ Then open http://localhost:3000 in your browser.
 function findEntry(opts) {
   const srcDir = resolveSrcDir(opts);
   const candidates = [
-    path.join(srcDir, 'app.pln'),
-    path.join(srcDir, 'index.pln'),
+    path.join(srcDir, 'app.ps'),
+    path.join(srcDir, 'index.ps'),
   ];
   if (srcDir !== '.') {
-    candidates.push('app.pln', 'index.pln');
+    candidates.push('app.ps', 'index.ps');
   }
   return candidates.find((c) => fs.existsSync(path.resolve(c))) || null;
 }
@@ -607,7 +607,7 @@ function collectSourceAsts() {
   const exclude = opts && opts.exclude;
   const sources = discoverSources(srcDir, outDir, exclude);
   if (sources.length === 0) {
-    console.error(`No .pln source files found under "${srcDir}".`);
+    console.error(`No .ps source files found under "${srcDir}".`);
     process.exit(1);
   }
   const root = path.resolve(srcDir);
@@ -663,14 +663,14 @@ function cmdDoctor() {
   check('Runtime', fs.existsSync(path.join(__dirname, 'generator.js')));
   console.log('');
 
-  // Source discovery check: does the project have any .pln files?
+  // Source discovery check: does the project have any .ps files?
   const opts = readCompilerOptions();
   const srcDir = resolveSrcDir(opts);
   const outDir = resolveOutDir(opts);
   const exclude = opts && opts.exclude;
   const sources = discoverSources(srcDir, outDir, exclude);
   check('Source files', sources.length > 0,
-    sources.length > 0 ? `"${srcDir}/" discovered (${sources.length} file(s))` : `no .pln files under "${srcDir}"`);
+    sources.length > 0 ? `"${srcDir}/" discovered (${sources.length} file(s))` : `no .ps files under "${srcDir}"`);
   if (sources.length === 0) return;
 
   // Dependency check: scan every source file for npm imports
@@ -747,7 +747,7 @@ function cmdUpdate() {
 // Check syntax of a PlainScript file without generating JavaScript or executing.
 function cmdCheck(filePath) {
   if (!filePath) {
-    console.error('Usage: plainscript check <file.pln>');
+    console.error('Usage: plainscript check <file.ps>');
     process.exit(1);
   }
   const absPath = path.resolve(filePath);
@@ -769,7 +769,7 @@ function cmdCheck(filePath) {
 // Format a PlainScript file in-place.
 function cmdFmt(filePath) {
   if (!filePath) {
-    console.error('Usage: plainscript fmt <file.pln>');
+    console.error('Usage: plainscript fmt <file.ps>');
     process.exit(1);
   }
   const absPath = path.resolve(filePath);
@@ -828,7 +828,7 @@ async function main() {
     case 'help':    cmdHelp();                    break;
     default:
       // Backwards-compatible: treat the first arg as a file to run directly
-      if (command && command.endsWith('.pln')) {
+      if (command && command.endsWith('.ps')) {
         await cmdRun(command);
       } else {
         console.error(`Unknown command: "${command}". Run "plainscript help" for usage.`);

@@ -1,6 +1,6 @@
 // PlainScript Language — Acode plugin
 //
-// Registers a CodeMirror 6 language for `.pln` files through Acode's modern
+// Registers a CodeMirror 6 language for `.ps` files through Acode's modern
 // `editorLanguages` API, with a documented fallback to the legacy `aceModes`
 // API for Acode builds that do not expose `editorLanguages` yet (e.g. the
 // older Ace-based builds). The highlighting rules live in stream-spec.js
@@ -48,7 +48,7 @@ class PlainscriptLanguagePlugin {
     this.registration = null; // { path: 'editorLanguages' | 'aceModes', module }
   }
 
-  // Register the .pln language, preferring the modern editorLanguages API and
+  // Register the .ps language, preferring the modern editorLanguages API and
   // falling back to the legacy aceModes API. Throws (rejecting the returned
   // promise) with a descriptive message when neither API is available, so the
   // failure is never the raw "Cannot read properties of undefined (reading
@@ -59,7 +59,7 @@ class PlainscriptLanguagePlugin {
       ? this.acode.require.bind(this.acode)
       : null;
     if (!requireFn) {
-      const message = '[PlainScript] acode.require is unavailable; cannot register the .pln language.';
+      const message = '[PlainScript] acode.require is unavailable; cannot register the .ps language.';
       console.error(message);
       throw new Error(message);
     }
@@ -83,7 +83,7 @@ class PlainscriptLanguagePlugin {
       return this.registration.path;
     }
 
-    const message = '[PlainScript] Acode does not expose "editorLanguages" or "aceModes" via acode.require; cannot register the .pln language.';
+    const message = '[PlainScript] Acode does not expose "editorLanguages" or "aceModes" via acode.require; cannot register the .ps language.';
     console.error(message);
     throw new Error(message);
   }

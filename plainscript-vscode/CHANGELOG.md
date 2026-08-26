@@ -6,5 +6,5 @@
 - Syntax highlighting for all PlainScript keywords via the bundled TextMate grammar (`source.plainscript`)
 - Snippets for common PlainScript patterns
 - Language configuration: auto-closing pairs, comment toggling, bracket matching, code folding
-- File icon for `.pln` files
-- Language registration for `.pln` as PlainScript source
+- File icon for `.ps` files
+- Language registration for `.ps` as PlainScript source

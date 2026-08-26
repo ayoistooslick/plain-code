@@ -33,15 +33,15 @@ only its generated `dist/` output and normal npm dependencies — the `plainscri
 compiler itself is a devDependency and does not ship to production.
 
 ```plainscript
-// app.pln — a complete program
+// app.ps — a complete program
 remember name as "World"
 remember greeting as `Hello ${name}!`
 show greeting
 ```
 
 ```bash
-npx plainscript run app.pln     # installs missing deps, compiles, runs (from a scratch dir)
-npx plainscript build app.pln   # writes dist/app.js — read it to see exactly what happens
+npx plainscript run app.ps     # installs missing deps, compiles, runs (from a scratch dir)
+npx plainscript build app.ps   # writes dist/app.js — read it to see exactly what happens
 ```
 
 ---
@@ -53,15 +53,15 @@ A PlainScript project is a plain npm package. Typical layout:
 ```
 my-app/
 ├── package.json          # normal npm semantics; plainscript is a devDependency
-├── src/                  # sources (.pln) — the default source root
+├── src/                  # sources (.ps) — the default source root
 └── dist/                 # generated JavaScript (never edited, safe to gitignore)
 ```
 
 `plainscript build` follows a TypeScript-style model with zero configuration:
 
-- `plainscript build` (no argument) discovers every `.pln` file under `src/` and
+- `plainscript build` (no argument) discovers every `.ps` file under `src/` and
   compiles each to `dist/` preserving file names and folder structure.
-- `plainscript build <file.pln>` compiles a single file into `dist/`.
+- `plainscript build <file.ps>` compiles a single file into `dist/`.
 - When no `src/` directory exists, the project root is scanned instead.
 
 Source discovery skips `node_modules`, hidden directories, and the `dist/`
@@ -96,12 +96,12 @@ All commands also work through `npx` and npm scripts.
 
 | Command                 | Behaviour                                                        |
 |-------------------------|------------------------------------------------------------------|
-| `plainscript new <name>`       | Scaffold a complete npm project (`src/app.pln`, Express starter)  |
+| `plainscript new <name>`       | Scaffold a complete npm project (`src/app.ps`, Express starter)  |
 | `plainscript build [file]`     | Compile `src/` to `dist/`; no argument builds all source files    |
-| `plainscript run <file.pln>`   | Install missing deps → compile → execute from a scratch directory |
-| `plainscript start [args...]`  | Build `src/app.pln` into `dist/`, then run that file              |
-| `plainscript check <file.pln>` | Syntax/compile check only — no execution                          |
-| `plainscript fmt <file.pln>`   | Rewrite the file in canonical style, in place                     |
+| `plainscript run <file.ps>`   | Install missing deps → compile → execute from a scratch directory |
+| `plainscript start [args...]`  | Build `src/app.ps` into `dist/`, then run that file              |
+| `plainscript check <file.ps>` | Syntax/compile check only — no execution                          |
+| `plainscript fmt <file.ps>`   | Rewrite the file in canonical style, in place                     |
 | `plainscript install`          | Detect every dependency in source files and install what is missing|
 | `plainscript add <pkg>`        | Install a package into the project                                |
 | `plainscript remove <pkg>`     | Uninstall a package from the project                              |
@@ -114,9 +114,9 @@ All commands also work through `npx` and npm scripts.
 
 - Output goes to `outDir` (default `dist/`) and **source names and folder
   structure are preserved relative to the source root**:
-  - `messi.pln` (project root) → `dist/messi.js`
-  - `src/index.pln` → `dist/index.js`
-  - `src/helpers/math.pln` → `dist/helpers/math.js`
+  - `messi.ps` (project root) → `dist/messi.js`
+  - `src/index.ps` → `dist/index.js`
+  - `src/helpers/math.ps` → `dist/helpers/math.js`
 - Imports are bundled into each output: every file in `dist/` runs standalone
   under Node.
 - Compilation is deterministic: identical sources produce byte-identical
@@ -145,7 +145,7 @@ if finished is true          // correct
 6. **No method calls on values.** `list.push(1)` is invalid — use builtins
    (`add(1 to list)`, `length(list)`), user functions, or a JavaScript block.
 7. **Packages come from `use`, never `import`.** `import` is only for local
-   `.pln` files.
+   `.ps` files.
 8. **One WhatsApp bot per program.** `when nothing matches` goes last inside
    its `web app` block.
 9. **Route-only helpers** (`param`, `query`, `header`, cookies, sessions,
@@ -791,15 +791,15 @@ Async handled automatically; top-level use wraps the whole program.
 ## 16. Multi-file projects
 
 ```plainscript
-// index.pln
-import "./math.pln"
-import "./utils/plural.pln"
+// index.ps
+import "./math.ps"
+import "./utils/plural.ps"
 
 show double(21)
 ```
 
 ```plainscript
-// math.pln
+// math.ps
 make double(n)
 give n * 2
 done
@@ -816,7 +816,7 @@ done
 ## 17. Building and publishing an npm package written in PlainScript
 
 PlainScript libraries ship like any Node package: you publish the generated
-`dist/` output; consumers never see `.pln` files or the compiler. Every
+`dist/` output; consumers never see `.ps` files or the compiler. Every
 top-level `make` function is exported automatically from the built file —
 `require('./dist/index.js')` returns an object with those functions.
 
@@ -846,7 +846,7 @@ before publishing:
 }
 ```
 
-`src/index.pln`:
+`src/index.ps`:
 
 ```plainscript
 make greet(who)
@@ -861,7 +861,7 @@ done
 Build and inspect:
 
 ```bash
-npx plainscript build          # src/index.pln -> dist/index.js
+npx plainscript build          # src/index.ps -> dist/index.js
 node -e "console.log(require('./dist/index.js').greet('Ada'))"
 ```
 
@@ -886,8 +886,8 @@ Node can use the result without knowing PlainScript was involved.
 ## 18. Verification workflow (do this after generating code)
 
 ```bash
-npx plainscript check app.pln   # fast syntax gate — run this before anything else
-npx plainscript run app.pln     # full pipeline
+npx plainscript check app.ps   # fast syntax gate — run this before anything else
+npx plainscript run app.ps     # full pipeline
 ```
 
 If `check` reports `Line N, Column M: ...`, fix that exact spot. Errors
@@ -897,7 +897,7 @@ include suggestions ("Did you mean ...") — trust them.
 
 ## 19. Copy-paste prompt for your AI
 
-> You are writing PlainScript (`.pln`) source that compiles with the `plainscript`
+> You are writing PlainScript (`.ps`) source that compiles with the `plainscript`
 > compiler v0.1.7. Follow these rules strictly:
 >
 > - Every block ends with `done`. No braces, no semicolons.
@@ -918,7 +918,7 @@ include suggestions ("Did you mean ...") — trust them.
 > - Packages: `use pkg`, `use pkg as alias`, `use pkg@^1.2.0`; never import
 >   implementation packages (express/pg/better-sqlite3/sql.js/nodemailer/
 >   croner/ws/redis/multer/tesseract.js/baileys/qrcode-terminal).
-> - Local modules: `import "./util.pln"` only.
+> - Local modules: `import "./util.ps"` only.
 > - Web: `web app ... done` containing `allow cors`, `enable sessions`,
 >   `accept uploads ...`, `limit requests to N per minute`,
 >   `require api key from env(...)`, `google oauth ... done`,
@@ -953,7 +953,7 @@ include suggestions ("Did you mean ...") — trust them.
 >   `login pairing <value>`, and `on message ... done` handlers using
 >   `message.text` and `reply "..."`.
 > - OCR: `ocr "img.png" as text` (optional `using "deu"`).
-> - After writing code, run `npx plainscript check app.pln` and fix reported lines.
+> - After writing code, run `npx plainscript check app.ps` and fix reported lines.
 
 ---
 

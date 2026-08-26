@@ -1,3 +1,0 @@
-import "./diamond_left.pln"
-import "./diamond_right.pln"
-show "top"

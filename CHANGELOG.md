@@ -10,7 +10,7 @@ All notable changes to PlainScript are documented here.
 
 PlainScript is an Intent-Oriented Programming Language (IOPL): you describe **what**
 you want, and the deterministic compiler decides **how** to implement it in
-JavaScript. The `.pln` extension and the whole language ship complete in this
+JavaScript. The `.ps` extension and the whole language ship complete in this
 release.
 
 - **npm package `plainscript`.** Installs per project as a devDependency:
@@ -31,13 +31,13 @@ release.
 
 - **`plainscript build` compiles a real production build.** Sources compile into
   `dist/`, preserving source file names and directory structure relative to
-  the source root (`src/messi.pln` → `dist/messi.js`,
-  `src/a/b.pln` → `dist/a/b.js`). Every entry is bundled with its imports,
+  the source root (`src/messi.ps` → `dist/messi.js`,
+  `src/a/b.ps` → `dist/a/b.js`). Every entry is bundled with its imports,
   so each file in `dist/` runs standalone. Compilation is deterministic:
   identical sources produce byte-identical output.
-- **Zero-config production build** — `plainscript build` auto-discovers `.pln` files
+- **Zero-config production build** — `plainscript build` auto-discovers `.ps` files
   under `src/` and compiles each to `dist/`, preserving file names and directory
-  structure (`src/messi.pln` → `dist/messi.js`, `src/a/b.pln` → `dist/a/b.js`).
+  structure (`src/messi.ps` → `dist/messi.js`, `src/a/b.ps` → `dist/a/b.js`).
   Every entry is bundled with its imports, so each file in `dist/` runs standalone.
   Compilation is deterministic: identical sources produce byte-identical output.
 - **Full CLI:** `plainscript build | run | start | new | install | add | remove |

@@ -211,7 +211,7 @@ function token(stream, state) {
       if (word === 'web') state.afterWeb = true;
       if (word === 'visits' || word === 'route' || word === 'sends' || word === 'clicks') state.pendingRoute = true;
       // `javascript` begins a gateway block when the rest of the line is
-      // blank (the only form the compiler collects — fixture gateway_js.pln).
+      // blank (the only form the compiler collects — fixture gateway_js.ps).
       if (word === 'javascript' && stream.match(/[ \t]*$/)) state.inJavaScript = true;
       // SQL block keywords likewise require a blank rest of line.
       if (SQL_BLOCK_WORDS.has(word) && stream.match(/[ \t]*$/)) state.inSQL = true;

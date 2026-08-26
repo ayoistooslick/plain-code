@@ -792,12 +792,12 @@ function parse(tokens) {
     return { type: 'WhileStatement', condition, body };
   }
 
-  // import "./file.pln"
+  // import "./file.ps"
   function parseImport() {
     consume(TOKEN.IMPORT);
     const filePath = consume(
       TOKEN.STRING,
-      'Expected a file path string after "import".\n\nExample:\n  import "./math.pln"'
+      'Expected a file path string after "import".\n\nExample:\n  import "./math.ps"'
     ).value;
     return { type: 'ImportStatement', path: filePath };
   }

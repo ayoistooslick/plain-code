@@ -240,18 +240,18 @@ const QR_SOURCE = [
 // ── 1. Compiler / check ─────────────────────────────────────────────────────
 
 test('check: the finalized pairing example passes plainscript check', () => {
-  const file = path.join(__dirname, '..', 'examples', 'whatsapp-bot', 'pairing.pln');
+  const file = path.join(__dirname, '..', 'examples', 'whatsapp-bot', 'pairing.ps');
   resolveDependencies(path.resolve(file)); // same gate cmdCheck runs
 });
 
 test('check: the QR example passes plainscript check', () => {
-  const file = path.join(__dirname, '..', 'examples', 'whatsapp-bot', 'qr.pln');
+  const file = path.join(__dirname, '..', 'examples', 'whatsapp-bot', 'qr.ps');
   resolveDependencies(path.resolve(file));
 });
 
 test('cli: node compiler/cli.js check exits cleanly for both examples', () => {
   const cli = path.join(__dirname, '..', 'compiler', 'cli.js');
-  for (const name of ['pairing.pln', 'qr.pln']) {
+  for (const name of ['pairing.ps', 'qr.ps']) {
     execFileSync(process.execPath, [cli, 'check', path.join(__dirname, '..', 'examples', 'whatsapp-bot', name)], { stdio: 'pipe' });
   }
 });
@@ -600,8 +600,8 @@ testAsync('reply failure teaches instead of crashing the process', async () => {
 });
 
 testAsync('acceptance: the compiled example files boot against real-shaped events', async () => {
-  const pairingJs = compileFile(path.join(__dirname, '..', 'examples', 'whatsapp-bot', 'pairing.pln'));
-  const qrJs = compileFile(path.join(__dirname, '..', 'examples', 'whatsapp-bot', 'qr.pln'));
+  const pairingJs = compileFile(path.join(__dirname, '..', 'examples', 'whatsapp-bot', 'pairing.ps'));
+  const qrJs = compileFile(path.join(__dirname, '..', 'examples', 'whatsapp-bot', 'qr.ps'));
 
   const recPairing = await runWhatsAppProgram(pairingJs);
   recPairing.events['messages.upsert']({ type: 'notify', messages: [mockMessage('/start')] });

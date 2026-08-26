@@ -1,14 +1,14 @@
 # PlainScript Language — VS Code Extension
 
-Syntax highlighting and language support for the [PlainScript programming language](https://github.com/ayoistooslick/plain-code) (`.pln` files).
+Syntax highlighting and language support for the [PlainScript programming language](https://github.com/ayoistooslick/plain-code) (`.ps` files).
 
 ---
 
 ## Features
 
 - **Syntax highlighting** — keywords, strings, numbers, comments, operators, and function names
-- **File icon** — `.pln` files get a distinctive icon in the file tree
-- **Language registration** — VS Code recognises `.pln` as PlainScript source
+- **File icon** — `.ps` files get a distinctive icon in the file tree
+- **Language registration** — VS Code recognises `.ps` as PlainScript source
 - **Auto-closing pairs** — `()`, `[]`, `{}`, `""`
 - **Comment toggling** — `Ctrl+/` / `Cmd+/` toggles `//` line comments
 - **Bracket matching** — highlights matching brackets
@@ -41,7 +41,7 @@ Syntax highlighting and language support for the [PlainScript programming langua
 
 1. Open the `plainscript-vscode` folder in VS Code.
 2. Press `F5` to launch the **Extension Development Host** — a new VS Code window opens with the extension active.
-3. Open any `.pln` file to see syntax highlighting immediately.
+3. Open any `.ps` file to see syntax highlighting immediately.
 
 ---
 

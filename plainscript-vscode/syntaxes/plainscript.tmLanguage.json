@@ -2,7 +2,7 @@
     "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     "name": "PlainScript",
     "scopeName": "source.plainscript",
-    "fileTypes": [".pln"],
+    "fileTypes": [".ps"],
     "patterns": [
         { "include": "#comments" },
         { "include": "#strings" },

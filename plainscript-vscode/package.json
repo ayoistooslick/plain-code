@@ -1,7 +1,7 @@
 {
     "name": "plainscript-language",
     "displayName": "PlainScript Language",
-    "description": "Syntax highlighting and language support for the PlainScript programming language (.pln files)",
+    "description": "Syntax highlighting and language support for the PlainScript programming language (.ps files)",
     "version": "0.1.7",
     "publisher": "ayoistooslick",
     "engines": {
@@ -15,7 +15,7 @@
             {
                 "id": "plainscript",
                 "aliases": ["PlainScript", "plainscript"],
-                "extensions": [".pln"],
+                "extensions": [".ps"],
                 "configuration": "./language-configuration.json",
                 "icon": {
                     "light": "./icons/plainscript-file.svg",

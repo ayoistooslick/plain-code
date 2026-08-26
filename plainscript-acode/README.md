@@ -1,12 +1,12 @@
 # PlainScript for Acode
 
-Syntax highlighting for the PlainScript programming language (`.pln`) in
+Syntax highlighting for the PlainScript programming language (`.ps`) in
 [Acode](https://acode.app), implemented with Acode's modern CodeMirror 6
 `editorLanguages` API.
 
 ## Features
 
-- Automatic `.pln` file recognition
+- Automatic `.ps` file recognition
 - Syntax highlighting derived from the PlainScript compiler itself
   (`compiler/lexer.js`, `compiler/parser.js`, `compiler/generator.js`)
 - Structural keywords (declarations, control flow, web, database, gateway)
@@ -30,18 +30,18 @@ Syntax highlighting for the PlainScript programming language (`.pln`) in
 1. Zip the contents of this directory (`plugin.json`, `main.js`,
    `stream-spec.js`, `README.md`).
 2. Open Acode → Settings → Plugins → "+" and select the zip.
-3. Open any `.pln` file — highlighting applies automatically.
+3. Open any `.ps` file — highlighting applies automatically.
 
 ## What this plugin does not do
 
-PlainScript for Acode only provides syntax highlighting and `.pln` file
+PlainScript for Acode only provides syntax highlighting and `.ps` file
 recognition. It does **not** run the PlainScript compiler, provide LSP
 diagnostics, autocomplete, formatting, or terminal integration.
 
 ## Compatibility
 
 - Requires Acode's CodeMirror 6 editor (`minVersionCode` 290).
-- Registers the `.pln` language through `acode.require("editorLanguages")`
+- Registers the `.ps` language through `acode.require("editorLanguages")`
   (modern API). If `editorLanguages` is missing (older Ace-based Acode
   builds), the plugin falls back to the legacy `aceModes` API. If neither
   API is available, the plugin fails gracefully with a descriptive console

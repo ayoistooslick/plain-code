@@ -795,27 +795,27 @@ test('sqlite() call compiles to new Database()', () => {
 console.log('\nv0.4.1 â€” Multi-file imports');
 
 test('tokenizes import keyword', () => {
-  const tokens = tokenize('import "./math.pln"');
+  const tokens = tokenize('import "./math.ps"');
   if (tokens[0].type !== TOKEN.IMPORT) throw new Error('import token wrong');
   if (tokens[1].type !== TOKEN.STRING) throw new Error('path token wrong');
-  if (tokens[1].value !== './math.pln') throw new Error('path value wrong');
+  if (tokens[1].value !== './math.ps') throw new Error('path value wrong');
 });
 
 test('import parses to ImportStatement', () => {
-  const tokens = tokenize('import "./math.pln"');
+  const tokens = tokenize('import "./math.ps"');
   const ast    = parse(tokens);
   const node   = ast.body[0];
   if (node.type !== 'ImportStatement')   throw new Error('wrong node type');
-  if (node.path !== './math.pln')        throw new Error('wrong path');
+  if (node.path !== './math.ps')        throw new Error('wrong path');
 });
 
 test('ImportStatement generates no output', () => {
-  const js = generate(parse(tokenize('import "./math.pln"')));
+  const js = generate(parse(tokenize('import "./math.ps"')));
   if (js.trim() !== '') throw new Error('import should generate empty string');
 });
 
 test('simple import â€” imported file compiles first', () => {
-  const js = bundleFixture('uses_math.pln');
+  const js = bundleFixture('uses_math.ps');
   // PI must be declared before it is used in show
   const piIdx   = js.indexOf('let PI');
   const showIdx = js.indexOf('console.log(PI)');
@@ -825,19 +825,19 @@ test('simple import â€” imported file compiles first', () => {
 });
 
 test('simple import â€” output contains imported code', () => {
-  const js = bundleFixture('uses_math.pln');
+  const js = bundleFixture('uses_math.ps');
   if (!js.includes('let PI = 3.14'))  throw new Error('PI missing');
   if (!js.includes('let TAU = 6.28')) throw new Error('TAU missing');
 });
 
 test('two imports â€” both files included in output', () => {
-  const js = bundleFixture('uses_both.pln');
+  const js = bundleFixture('uses_both.ps');
   if (!js.includes('let PI'))        throw new Error('PI missing');
   if (!js.includes('function double')) throw new Error('double missing');
 });
 
 test('nested imports â€” deepest dependency compiled first', () => {
-  const js = bundleFixture('nested_a.pln');
+  const js = bundleFixture('nested_a.ps');
   // nested_c defines deepValue, must appear before nested_b and nested_a output
   const deepIdx = js.indexOf('let deepValue');
   const aIdx    = js.indexOf('"a loaded"');
@@ -850,7 +850,7 @@ test('nested imports â€” deepest dependency compiled first', () => {
 });
 
 test('duplicate imports â€” code included exactly once', () => {
-  const js = bundleFixture('duplicate_a.pln');
+  const js = bundleFixture('duplicate_a.ps');
   // PI should appear only once in the output
   const firstIdx  = js.indexOf('let PI');
   const secondIdx = js.indexOf('let PI', firstIdx + 1);
@@ -859,7 +859,7 @@ test('duplicate imports â€” code included exactly once', () => {
 });
 
 test('diamond imports â€” shared file included exactly once', () => {
-  const js = bundleFixture('diamond_top.pln');
+  const js = bundleFixture('diamond_top.ps');
   const firstIdx  = js.indexOf('let sharedValue');
   const secondIdx = js.indexOf('let sharedValue', firstIdx + 1);
   if (firstIdx === -1)  throw new Error('sharedValue missing');
@@ -871,22 +871,22 @@ test('diamond imports â€” shared file included exactly once', () => {
 
 bundleThrows(
   'circular imports give friendly error',
-  'circular_a.pln',
+  'circular_a.ps',
   'circular'
 );
 
 bundleThrows(
   'circular import error mentions the file name',
-  'circular_a.pln',
+  'circular_a.ps',
   'circular_a'
 );
 
 test('missing imported file gives friendly error', () => {
-  const tokens = tokenize('import "./does_not_exist.pln"');
+  const tokens = tokenize('import "./does_not_exist.ps"');
   const ast = parse(tokens);
   // Write a temp entry file referencing a non-existent file
-  const tmpPath = path.join(__dirname, 'fixtures', 'missing_import_entry.pln');
-  require('fs').writeFileSync(tmpPath, 'import "./no_such_file_xyz.pln"\n');
+  const tmpPath = path.join(__dirname, 'fixtures', 'missing_import_entry.ps');
+  require('fs').writeFileSync(tmpPath, 'import "./no_such_file_xyz.ps"\n');
   try {
     bundle(tmpPath);
     require('fs').unlinkSync(tmpPath);
@@ -900,8 +900,8 @@ test('missing imported file gives friendly error', () => {
 });
 
 test('import path preserved correctly in AST', () => {
-  const ast = parse(tokenize('import "./sub/module.pln"'));
-  if (ast.body[0].path !== './sub/module.pln') throw new Error('wrong path');
+  const ast = parse(tokenize('import "./sub/module.ps"'));
+  if (ast.body[0].path !== './sub/module.ps') throw new Error('wrong path');
 });
 
 // â”€â”€ v0.4.2 â€” Package Manager & Project Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -997,15 +997,15 @@ test('plainscript install reports no sources when src/ is empty', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   const out = runCli(['install'], dir);
-  if (!out.toLowerCase().includes('no .pln source files')) {
-    throw new Error(`Expected "no .pln source files" error but got: ${out}`);
+  if (!out.toLowerCase().includes('no .ps source files')) {
+    throw new Error(`Expected "no .ps source files" error but got: ${out}`);
   }
 });
 
 test('plainscript install with no external dependencies shows correct message', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "hello"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'show "hello"\n');
   const out = runCli(['install'], dir);
   if (!out.includes('This project has no external dependencies.')) {
     throw new Error(`Expected "This project has no external dependencies." but got: ${out}`);
@@ -1015,7 +1015,7 @@ test('plainscript install with no external dependencies shows correct message', 
 test('plainscript install with built-in modules only shows no external dependencies', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use fs\nuse path\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use fs\nuse path\nshow "ok"\n');
   const out = runCli(['install'], dir);
   if (!out.includes('This project has no external dependencies.')) {
     throw new Error(`Expected "This project has no external dependencies." but got: ${out}`);
@@ -1025,7 +1025,7 @@ test('plainscript install with built-in modules only shows no external dependenc
 test('plainscript install installs missing dependencies and reports success', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use semver\nshow "ok"\n');
   const out = runCli(['install'], dir);
   // Check that it found and installed the package
   if (!out.includes('Found 1 required package(s).')) {
@@ -1047,7 +1047,7 @@ test('plainscript install installs missing dependencies and reports success', ()
 test('plainscript install skips already installed dependencies', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use semver\nshow "ok"\n');
   // First install
   runCli(['install'], dir);
   // Second install should say all installed
@@ -1060,7 +1060,7 @@ test('plainscript install skips already installed dependencies', () => {
 test('plainscript install handles multiple dependencies', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nuse express\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use semver\nuse express\nshow "ok"\n');
   const out = runCli(['install'], dir);
   if (!out.includes('Found 2 required package(s).')) {
     throw new Error(`Expected "Found 2 required package(s)." but got: ${out}`);
@@ -1072,7 +1072,7 @@ test('plainscript install handles multiple dependencies', () => {
 test('plainscript install fails when no source files found', () => {
   const dir = tmpDir();
   const out = runCli(['install'], dir);
-  if (!out.toLowerCase().includes('no .pln source files')) {
+  if (!out.toLowerCase().includes('no .ps source files')) {
     throw new Error(`Expected no-sources error but got: ${out}`);
   }
 });
@@ -1081,8 +1081,8 @@ test('plainscript install parses source files directly (no entry-file resolution
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   // write two files that both declare deps; install scans every source file
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nshow "ok"\n');
-  fs.writeFileSync(path.join(dir, 'src', 'util.pln'), 'use lodash\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use semver\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'util.ps'), 'use lodash\nshow "ok"\n');
   const out = runCli(['install'], dir);
   if (!out.includes('semver')) throw new Error(`Expected semver in output but got: ${out}`);
   if (!out.includes('lodash')) throw new Error(`Expected lodash in output but got: ${out}`);
@@ -1229,7 +1229,7 @@ console.log('\nv0.5 â€” plainscript check');
 
 test('plainscript check exits 0 on valid file', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'ok.pln');
+  const plnFile = path.join(dir, 'ok.ps');
   fs.writeFileSync(plnFile, 'remember x as 1\nshow x\n');
   const out = runCli(['check', plnFile], dir);
   if (!out.includes('no errors found')) {
@@ -1239,7 +1239,7 @@ test('plainscript check exits 0 on valid file', () => {
 
 test('plainscript check reports error on invalid file', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'bad.pln');
+  const plnFile = path.join(dir, 'bad.ps');
   fs.writeFileSync(plnFile, 'remembr x as 1\n');
   const out = runCli(['check', plnFile], dir);
   if (!out.toLowerCase().includes('did you mean')) {
@@ -1249,7 +1249,7 @@ test('plainscript check reports error on invalid file', () => {
 
 test('plainscript check includes line number in error', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'bad.pln');
+  const plnFile = path.join(dir, 'bad.ps');
   fs.writeFileSync(plnFile, 'remember x as 1\nremembr y as 2\n');
   const out = runCli(['check', plnFile], dir);
   if (!out.toLowerCase().includes('line')) {
@@ -1259,11 +1259,11 @@ test('plainscript check includes line number in error', () => {
 
 test('plainscript check includes filename in error', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'bad.pln');
+  const plnFile = path.join(dir, 'bad.ps');
   fs.writeFileSync(plnFile, 'remember x as 1\nremembr y as 2\n');
   const out = runCli(['check', plnFile], dir);
-  if (!out.includes('bad.pln')) {
-    throw new Error(`Expected filename "bad.pln" in error but got: ${out}`);
+  if (!out.includes('bad.ps')) {
+    throw new Error(`Expected filename "bad.ps" in error but got: ${out}`);
   }
 });
 
@@ -1277,7 +1277,7 @@ test('plainscript check errors without file argument', () => {
 
 test('plainscript check errors on missing file', () => {
   const dir = tmpDir();
-  const out = runCli(['check', 'does_not_exist.pln'], dir);
+  const out = runCli(['check', 'does_not_exist.ps'], dir);
   if (!out.toLowerCase().includes('not found')) {
     throw new Error(`Expected "not found" error but got: ${out}`);
   }
@@ -1289,7 +1289,7 @@ console.log('\nv0.5 â€” plainscript fmt');
 
 test('plainscript fmt formats file in-place', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'app.pln');
+  const plnFile = path.join(dir, 'app.ps');
   fs.writeFileSync(plnFile, 'make add(a, b)\ngive a + b\ndone\n');
   runCli(['fmt', plnFile], dir);
   const result = fs.readFileSync(plnFile, 'utf8');
@@ -1300,7 +1300,7 @@ test('plainscript fmt formats file in-place', () => {
 
 test('plainscript fmt reports success message', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'app.pln');
+  const plnFile = path.join(dir, 'app.ps');
   fs.writeFileSync(plnFile, 'show "hello"\n');
   const out = runCli(['fmt', plnFile], dir);
   if (!out.toLowerCase().includes('formatted')) {
@@ -1318,7 +1318,7 @@ test('plainscript fmt errors without file argument', () => {
 
 test('plainscript fmt errors on missing file', () => {
   const dir = tmpDir();
-  const out = runCli(['fmt', 'does_not_exist.pln'], dir);
+  const out = runCli(['fmt', 'does_not_exist.ps'], dir);
   if (!out.toLowerCase().includes('not found')) {
     throw new Error(`Expected "not found" error but got: ${out}`);
   }
@@ -1983,12 +1983,12 @@ test('plainscript new creates the project directory', () => {
   fs.rmSync(projectDir, { recursive: true, force: true });
 });
 
-test('plainscript new creates src/app.pln', () => {
+test('plainscript new creates src/app.ps', () => {
   const dir = tmpDir();
   const projectName = 'test-new-pln';
   const projectDir = path.join(dir, projectName);
   runCli(['new', projectName], dir);
-  if (!fs.existsSync(path.join(projectDir, 'src', 'app.pln'))) throw new Error('src/app.pln not created');
+  if (!fs.existsSync(path.join(projectDir, 'src', 'app.ps'))) throw new Error('src/app.ps not created');
   fs.rmSync(projectDir, { recursive: true, force: true });
 });
 
@@ -2001,13 +2001,13 @@ test('plainscript new creates package.json with build scripts and does NOT creat
   const pkg = JSON.parse(fs.readFileSync(path.join(projectDir, 'package.json'), 'utf8'));
   if (!pkg.scripts || pkg.scripts.build !== 'plainscript build') throw new Error('expected npm build script "plainscript build"');
   if (!pkg.devDependencies || !pkg.devDependencies.plainscript) throw new Error('expected plainscript devDependency');
-  if (!fs.existsSync(path.join(projectDir, 'src', 'app.pln'))) throw new Error('expected src/app.pln scaffold');
+  if (!fs.existsSync(path.join(projectDir, 'src', 'app.ps'))) throw new Error('expected src/app.ps scaffold');
   fs.rmSync(projectDir, { recursive: true, force: true });
 });
 
 test('plainscript build writes .js output into dist/, preserving the file name', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'hello.pln');
+  const plnFile = path.join(dir, 'hello.ps');
   fs.writeFileSync(plnFile, 'show "hello"\n');
   runCli(['build', plnFile], dir);
   const jsFile = path.join(dir, 'dist', 'hello.js');
@@ -2017,7 +2017,7 @@ test('plainscript build writes .js output into dist/, preserving the file name',
 
 test('plainscript build output file contains valid JS', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'prog.pln');
+  const plnFile = path.join(dir, 'prog.ps');
   fs.writeFileSync(plnFile, 'remember x as 42\nshow x\n');
   runCli(['build', plnFile], dir);
   const js = fs.readFileSync(path.join(dir, 'dist', 'prog.js'), 'utf8');
@@ -2040,7 +2040,7 @@ test('unknown command shows an error message', () => {
 
 test('plainscript run on a nonexistent file exits with a friendly error', () => {
   const dir = tmpDir();
-  const out = runCli(['run', 'no_such_file.pln'], dir);
+  const out = runCli(['run', 'no_such_file.ps'], dir);
   if (!out.includes('File not found')) {
     throw new Error(`Expected "File not found" error but got: ${out}`);
   }
@@ -2522,7 +2522,7 @@ test('node-fetch is detected as a dependency', () => {
 });
 
 test('generic packages imported from other files are deduplicated at bundle time', () => {
-  const js = bundleFixture('gateway_imports_axios.pln');
+  const js = bundleFixture('gateway_imports_axios.ps');
   const count = (js.match(/require\('axios'\)/g) || []).length;
   if (count !== 1) throw new Error(`expected one axios require but got ${count}`);
   if (!js.includes('"gateway loaded"')) throw new Error('entry output missing');
@@ -2636,20 +2636,20 @@ test('ask result used in expressions', () => {
 // â”€â”€ Async runtime wrapper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('bundle wraps programs containing JavaScript blocks in an async runtime', () => {
-  const js = bundleFixture('gateway_js.pln');
+  const js = bundleFixture('gateway_js.ps');
   if (!js.includes('(async () => {')) throw new Error('missing async wrapper');
   if (!js.includes('let response = await (async () => {')) throw new Error('missing JS block');
   if (!js.includes('console.log(response)')) throw new Error('missing show');
 });
 
 test('bundle wraps programs containing ask in an async runtime', () => {
-  const js = bundleFixture('gateway_ask.pln');
+  const js = bundleFixture('gateway_ask.ps');
   if (!js.includes('(async () => {')) throw new Error('missing async wrapper');
   if (!js.includes('await __ask("Name?")')) throw new Error('missing ask');
 });
 
 test('bundle does not wrap programs without async features', () => {
-  const js = bundleFixture('uses_math.pln');
+  const js = bundleFixture('uses_math.ps');
   if (js.includes('(async () => {')) throw new Error('unexpected async wrapper');
 });
 
@@ -2721,14 +2721,14 @@ test('hyphenated and scoped packages compile alongside regular packages', () => 
 });
 
 test('bundle: generic npm packages are detected and required', () => {
-  const js = bundleFixture('uses_npm.pln');
+  const js = bundleFixture('uses_npm.ps');
   if (!js.includes("require('node-fetch');")) throw new Error('missing node-fetch');
   if (!js.includes("require('@scope/package-name');")) throw new Error('missing scoped package');
   if (!js.includes("require('dotenv');")) throw new Error('missing dotenv');
 });
 
 test('bundle: hyphenated packages imported from other files are deduplicated', () => {
-  const js = bundleFixture('gateway_imports_npm.pln');
+  const js = bundleFixture('gateway_imports_npm.ps');
   const count = (js.match(/require\('node-fetch'\)/g) || []).length;
   if (count !== 1) throw new Error(`expected one node-fetch require but got ${count}`);
   if (!js.includes('"gateway loaded"')) throw new Error('entry output missing');
@@ -2837,7 +2837,7 @@ test('plainscript version shows the compiler version', () => {
 
 test('plainscript build produces executable async output for a JavaScript block', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'gw.pln');
+  const plnFile = path.join(dir, 'gw.ps');
   fs.writeFileSync(plnFile, 'remember x as javascript\n  return 1\ndone\nshow x\n');
   runCli(['build', plnFile], dir);
   const js = fs.readFileSync(path.join(dir, 'dist', 'gw.js'), 'utf8');
@@ -2847,7 +2847,7 @@ test('plainscript build produces executable async output for a JavaScript block'
 
 test('plainscript run on a nonexistent file reports a friendly error and does not invoke AI', () => {
   const dir = tmpDir();
-  const out = runCli(['run', 'missing.pln'], dir);
+  const out = runCli(['run', 'missing.ps'], dir);
   if (!out.includes('File not found')) {
     throw new Error(`Expected a "File not found" error but got: ${out}`);
   }
@@ -2873,8 +2873,8 @@ function writeLocalPackage(projectDir, pkgName, mainSrc) {
 test('plainscript run resolves dependencies from the project node_modules, not the global install', () => {
   const dir = tmpDir();
   writeLocalPackage(dir, 'plainscriptlocaltest', 'module.exports = "resolved-from-project-node_modules";\n');
-  fs.writeFileSync(path.join(dir, 'app.pln'), 'use plainscriptlocaltest\nshow plainscriptlocaltest\n');
-  const out = runCli(['run', 'app.pln'], dir);
+  fs.writeFileSync(path.join(dir, 'app.ps'), 'use plainscriptlocaltest\nshow plainscriptlocaltest\n');
+  const out = runCli(['run', 'app.ps'], dir);
   if (!out.includes('resolved-from-project-node_modules')) {
     throw new Error(`local dependency did not resolve from the project. Output:\n${out}`);
   }
@@ -2888,7 +2888,7 @@ test('plainscript start resolves project-local dependencies from src/', () => {
   const dir = tmpDir();
   writeLocalPackage(dir, 'plainscriptlocaltest', 'module.exports = "start-resolved-locally";\n');
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use plainscriptlocaltest\nshow plainscriptlocaltest\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use plainscriptlocaltest\nshow plainscriptlocaltest\n');
   const out = runCli(['start'], dir);
   if (!out.includes('start-resolved-locally')) {
     throw new Error(`plainscript start did not resolve the local dependency. Output:\n${out}`);
@@ -2900,8 +2900,8 @@ test('hyphenated packages resolve at runtime from the project node_modules', () 
   const marker = path.join(dir, 'hyphenated-loaded.txt');
   writeLocalPackage(dir, 'plainscript-fake-fetch',
     `require('fs').writeFileSync(${JSON.stringify(marker)}, 'ok');\nmodule.exports = {};\n`);
-  fs.writeFileSync(path.join(dir, 'app.pln'), 'use plainscript-fake-fetch\nshow "hyphenated-ok"\n');
-  const out = runCli(['run', 'app.pln'], dir);
+  fs.writeFileSync(path.join(dir, 'app.ps'), 'use plainscript-fake-fetch\nshow "hyphenated-ok"\n');
+  const out = runCli(['run', 'app.ps'], dir);
   if (!out.includes('hyphenated-ok')) throw new Error(`run failed. Output:\n${out}`);
   if (!fs.existsSync(marker)) {
     throw new Error('hyphenated package was not loaded from the project node_modules');
@@ -2913,8 +2913,8 @@ test('scoped packages resolve at runtime from the project node_modules', () => {
   const marker = path.join(dir, 'scoped-loaded.txt');
   writeLocalPackage(dir, '@fakescope/pkg',
     `require('fs').writeFileSync(${JSON.stringify(marker)}, 'ok');\nmodule.exports = {};\n`);
-  fs.writeFileSync(path.join(dir, 'app.pln'), 'use @fakescope/pkg\nshow "scoped-ok"\n');
-  const out = runCli(['run', 'app.pln'], dir);
+  fs.writeFileSync(path.join(dir, 'app.ps'), 'use @fakescope/pkg\nshow "scoped-ok"\n');
+  const out = runCli(['run', 'app.ps'], dir);
   if (!out.includes('scoped-ok')) throw new Error(`run failed. Output:\n${out}`);
   if (!fs.existsSync(marker)) {
     throw new Error('scoped package was not loaded from the project node_modules');
@@ -2925,28 +2925,28 @@ test('multiple project-local dependencies resolve at runtime', () => {
   const dir = tmpDir();
   writeLocalPackage(dir, 'plainscriptfirst', 'module.exports = "first";\n');
   writeLocalPackage(dir, 'plainscriptsecond', 'module.exports = "second";\n');
-  fs.writeFileSync(path.join(dir, 'app.pln'),
+  fs.writeFileSync(path.join(dir, 'app.ps'),
     'use plainscriptfirst\nuse plainscriptsecond\nshow plainscriptfirst + " " + plainscriptsecond\n');
-  const out = runCli(['run', 'app.pln'], dir);
+  const out = runCli(['run', 'app.ps'], dir);
   if (!out.includes('first second')) throw new Error(`multiple deps did not resolve. Output:\n${out}`);
 });
 
 test('multi-file projects resolve project-local dependencies at runtime', () => {
   const dir = tmpDir();
   writeLocalPackage(dir, 'plainscriptlocaltest', 'module.exports = "from-multifile";\n');
-  fs.writeFileSync(path.join(dir, 'lib.pln'), 'make version()\n  give "v2"\ndone\n');
-  fs.writeFileSync(path.join(dir, 'app.pln'),
-    'import "./lib.pln"\nuse plainscriptlocaltest\nshow plainscriptlocaltest + " " + version()\n');
-  const out = runCli(['run', 'app.pln'], dir);
+  fs.writeFileSync(path.join(dir, 'lib.ps'), 'make version()\n  give "v2"\ndone\n');
+  fs.writeFileSync(path.join(dir, 'app.ps'),
+    'import "./lib.ps"\nuse plainscriptlocaltest\nshow plainscriptlocaltest + " " + version()\n');
+  const out = runCli(['run', 'app.ps'], dir);
   if (!out.includes('from-multifile v2')) throw new Error(`multi-file run failed. Output:\n${out}`);
 });
 
 test('built-in modules still execute after the dependency-resolution fix', () => {
   const dir = tmpDir();
   fs.writeFileSync(path.join(dir, 'note.txt'), 'hello-builtin');
-  fs.writeFileSync(path.join(dir, 'app.pln'),
+  fs.writeFileSync(path.join(dir, 'app.ps'),
     'use fs\nremember content as readFile("note.txt")\nshow content\n');
-  const out = runCli(['run', 'app.pln'], dir);
+  const out = runCli(['run', 'app.ps'], dir);
   if (!out.includes('hello-builtin')) throw new Error(`built-in fs failed. Output:\n${out}`);
 });
 
@@ -2972,33 +2972,33 @@ test('plainscript doctor does not report a Complex Compilation layer', () => {
   if (out.includes('Complex Compilation')) throw new Error(`Complex Compilation must be gone. Output:\n${out}`);
 });
 
-test('plainscript doctor reports source files when src/ contains .pln files', () => {
+test('plainscript doctor reports source files when src/ contains .ps files', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "hello"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'show "hello"\n');
   const out = runCli(['doctor'], dir);
   if (!out.includes('Source files')) throw new Error(`Expected "Source files" check but got: ${out}`);
   if (!out.includes('src')) throw new Error(`Expected "src" in source check detail but got: ${out}`);
 });
 
-test('plainscript doctor reports no sources when no .pln files exist', () => {
+test('plainscript doctor reports no sources when no .ps files exist', () => {
   const dir = tmpDir();
   const out = runCli(['doctor'], dir);
   if (!out.includes('Source files')) throw new Error(`Expected "Source files" check but got: ${out}`);
-  if (!out.includes('no .pln files')) throw new Error(`Expected "no .pln files" detail but got: ${out}`);
+  if (!out.includes('no .ps files')) throw new Error(`Expected "no .ps files" detail but got: ${out}`);
 });
 
 test('plainscript doctor reports no sources when src/ is empty', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   const out = runCli(['doctor'], dir);
-  if (!out.includes('no .pln files')) throw new Error(`Expected "no .pln files" detail but got: ${out}`);
+  if (!out.includes('no .ps files')) throw new Error(`Expected "no .ps files" detail but got: ${out}`);
 });
 
 test('plainscript doctor reports ready dependencies when all installed', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "hello"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'show "hello"\n');
   const out = runCli(['doctor'], dir);
   if (!out.includes('ready')) throw new Error(`Expected "ready" for dependencies but got: ${out}`);
 });
@@ -3018,7 +3018,7 @@ test('plainscript start errors when no entry file found', () => {
   }
 });
 
-test('plainscript start errors when src/app.pln is missing', () => {
+test('plainscript start errors when src/app.ps is missing', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   const out = runCli(['start'], dir);
@@ -3027,10 +3027,10 @@ test('plainscript start errors when src/app.pln is missing', () => {
   }
 });
 
-test('plainscript start runs src/app.pln by default', () => {
+test('plainscript start runs src/app.ps by default', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "started-from-src"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'show "started-from-src"\n');
   const out = runCli(['start'], dir);
   if (!out.includes('started-from-src')) {
     throw new Error(`Expected "started-from-src" output but got: ${out}`);
@@ -3040,10 +3040,10 @@ test('plainscript start runs src/app.pln by default', () => {
   }
 });
 
-test('plainscript start defaults to src/app.pln when no entry configured', () => {
+test('plainscript start defaults to src/app.ps when no entry configured', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "default-entry"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'show "default-entry"\n');
   const out = runCli(['start'], dir);
   if (!out.includes('default-entry')) {
     throw new Error(`Expected "default-entry" output but got: ${out}`);
@@ -3472,12 +3472,12 @@ test('highlight: template string closing backtick resets to PlainScript', () => 
 
 test('highlight: every emitted token type is a known legacy token', () => {
   const files = [
-    'hello.pln', 'variables.pln', 'conditions.pln', 'expressions.pln',
-    'loops.pln', 'functions.pln', 'stdlib.pln', 'web-server.pln',
-    'database.pln',
+    'hello.ps', 'variables.ps', 'conditions.ps', 'expressions.ps',
+    'loops.ps', 'functions.ps', 'stdlib.ps', 'web-server.ps',
+    'database.ps',
   ].map((name) => path.join(__dirname, '..', 'samples', name)).concat([
-    path.join(__dirname, 'fixtures', 'gateway_js.pln'),
-    path.join(__dirname, 'fixtures', 'gateway_ask.pln'),
+    path.join(__dirname, 'fixtures', 'gateway_js.ps'),
+    path.join(__dirname, 'fixtures', 'gateway_ask.ps'),
   ]);
   for (const file of files) {
     const source = fs.readFileSync(file, 'utf8');

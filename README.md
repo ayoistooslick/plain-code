@@ -16,7 +16,7 @@ PlainScript is an Intent-Oriented Programming Language (IOPL). You describe **wh
 ## Quick start
 
 ```bash
-npx plainscript new myapp     # scaffolds src/app.pln and package.json
+npx plainscript new myapp     # scaffolds src/app.ps and package.json
 cd myapp
 npm install            # installs plainscript as a devDependency plus runtime packages
 npm run build          # compiles src/ -> dist/ (plainscript build)
@@ -27,7 +27,7 @@ Adding PlainScript to an existing project:
 
 ```bash
 npm install --save-dev plainscript
-# start writing src/*.pln files — plainscript build auto-discovers them
+# start writing src/*.ps files — plainscript build auto-discovers them
 ```
 
 No global install is needed anywhere — everything runs through npm scripts
@@ -38,17 +38,17 @@ and `npx`.
 ## CLI
 
 ```
-plainscript run    <file.pln>   Install missing dependencies, compile and execute
+plainscript run    <file.ps>   Install missing dependencies, compile and execute
                          (executes from a scratch dir — nothing is written
                          into your project)
-plainscript build  [file.pln]   Compile to dist/. With no argument, builds every
-                         .pln file under the source root, preserving names
+plainscript build  [file.ps]   Compile to dist/. With no argument, builds every
+                         .ps file under the source root, preserving names
                          and folder structure
-plainscript check  <file.pln>   Check syntax only (no output, no execution)
-plainscript fmt    <file.pln>   Format a PlainScript file in-place
+plainscript check  <file.ps>   Check syntax only (no output, no execution)
+plainscript fmt    <file.ps>   Format a PlainScript file in-place
 plainscript new    [name]       Create a new PlainScript project (npm-ready)
 plainscript install             Install dependencies detected in the project's sources
-plainscript start               Build src/app.pln and run its dist/ output
+plainscript start               Build src/app.ps and run its dist/ output
 plainscript doctor              Check the PlainScript project environment
 plainscript add    <package>    Install a package into the project
 plainscript remove <package>    Uninstall a package from the project
@@ -62,13 +62,13 @@ plainscript help                Print help text
 ## Building and configuration
 
 `plainscript build` is a deterministic production build, TypeScript-style but for
-`.pln` sources — **zero configuration required**:
+`.ps` sources — **zero configuration required**:
 
-- `plainscript build` (no argument) discovers every `.pln` file under `src/` and
+- `plainscript build` (no argument) discovers every `.ps` file under `src/` and
   compiles each to `dist/` **preserving source file names and folder structure**:
-  `src/messi.pln` → `dist/messi.js`,
-  `src/helpers/math.pln` → `dist/helpers/math.js`.
-- `plainscript build <file.pln>` compiles a single file into `dist/`.
+  `src/messi.ps` → `dist/messi.js`,
+  `src/helpers/math.ps` → `dist/helpers/math.js`.
+- `plainscript build <file.ps>` compiles a single file into `dist/`.
 - Imports are bundled into each output, so every file in `dist/` runs
   standalone under Node.
 - Rebuilds are byte-identical — safe to commit, diff, and cache.
@@ -112,7 +112,7 @@ For projects that need custom output or source directories, add a
 }
 ```
 
-`src/index.pln` builds to `dist/index.js`; consumers install and `require()`
+`src/index.ps` builds to `dist/index.js`; consumers install and `require()`
 it like any Node package. There is no PlainScript-specific registry or format —
 standard `package.json` semantics apply.
 
@@ -634,8 +634,8 @@ cacheDelete("greeting")
 ## Multi-file projects
 
 ```plainscript
-import "./math.pln"
-import "./utils.pln"
+import "./math.ps"
+import "./utils.ps"
 
 show PI
 
@@ -731,7 +731,7 @@ plainscript install           # Install all detected dependencies
 plainscript add express       # Add a package
 plainscript remove express    # Remove a package
 plainscript update            # Update all packages
-plainscript start             # Build src/app.pln and run its dist/ output
+plainscript start             # Build src/app.ps and run its dist/ output
 plainscript doctor            # Check project environment
 ```
 
@@ -774,27 +774,27 @@ plainscript/
 │   └── cli.js                — command-line entry point
 │
 ├── examples/
-│   ├── hello.pln
-│   ├── day2.pln
-│   ├── day3.pln
-│   ├── arrays.pln
-│   ├── objects.pln
-│   ├── loops.pln
-│   ├── expressions.pln
-│   ├── stdlib.pln
-│   ├── server.pln
-│   ├── web-app.pln
-│   ├── start.pln
-│   ├── database.pln
-│   ├── deployment.pln
+│   ├── hello.ps
+│   ├── day2.ps
+│   ├── day3.ps
+│   ├── arrays.ps
+│   ├── objects.ps
+│   ├── loops.ps
+│   ├── expressions.ps
+│   ├── stdlib.ps
+│   ├── server.ps
+│   ├── web-app.ps
+│   ├── start.ps
+│   ├── database.ps
+│   ├── deployment.ps
 │   ├── football-backend/     — acceptance example (SQLite + auth + sessions)
-│   │   └── app.pln
+│   │   └── app.ps
 │   ├── id-verification/      — acceptance example (uploads + OCR matching)
-│   │   ├── app.pln
+│   │   ├── app.ps
 │   │   └── make-sample-id.js
 │   └── whatsapp-bot/         — WhatsApp bots (QR and pairing linking)
-│       ├── qr.pln
-│       └── pairing.pln
+│       ├── qr.ps
+│       └── pairing.ps
 │
 ├── tests/
 │   ├── compiler.test.js      — language, CLI and formatter coverage

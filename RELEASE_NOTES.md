@@ -24,13 +24,13 @@ editor tooling ship together.
 ### Production builds (`plainscript build`)
 
 - Sources compile to `dist/` preserving names and structure:
-  `src/messi.pln` → `dist/messi.js`, nested folders included.
+  `src/messi.ps` → `dist/messi.js`, nested folders included.
 - Imports are bundled into each output, so every file in `dist/` runs
   standalone under Node.
 - Deterministic output: rebuilds are byte-identical — safe to commit,
   diff, and cache.
 
-- `plainscript build` discovers all `.pln` files under `src/` and compiles each to
+- `plainscript build` discovers all `.ps` files under `src/` and compiles each to
   `dist/`, preserving file names and folder structure. No configuration file needed.
 - Source discovery skips `node_modules`, hidden directories, and the output
   directory itself.
@@ -80,7 +80,7 @@ engine, no AI, no hidden codegen:
 ## Editor support
 
 - `plainscript-vscode/`: syntax highlighting, snippets, folding, and a file icon
-  for `.pln` sources.
+  for `.ps` sources.
 - `plainscript-acode/`: a zero-dependency Acode plugin whose tokenizer mirrors
   the compiler's token table.
 
