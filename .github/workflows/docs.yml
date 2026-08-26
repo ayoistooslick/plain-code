@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "docs/website/**"
+      - "docs/**"
 
   workflow_dispatch:
 
@@ -33,7 +33,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/website
+          path: docs
 
       - id: deployment
         uses: actions/deploy-pages@v4
