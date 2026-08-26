@@ -40,6 +40,7 @@
       <div class="nav-links">
         <a href="#language">Language</a>
         <a href="#examples">Examples</a>
+        <a href="#library">Library</a>
         <a href="#cli">CLI</a>
         <a href="#packages">Packages</a>
         <a href="#faq">FAQ</a>
@@ -63,6 +64,7 @@
     <div class="mobile-menu-links">
       <a href="#language">Language</a>
       <a href="#examples">Examples</a>
+      <a href="#library">Library</a>
       <a href="#cli">CLI</a>
       <a href="#packages">Packages</a>
       <a href="#faq">FAQ</a>
@@ -447,6 +449,58 @@ use dotenv</code></pre>
       <p class="packages-note">
         Any npm package can be imported with the <code>use</code> keyword. PlainScript compiles your code to JavaScript, so the entire npm ecosystem is available to you. No wrappers, no adapters, no limits.
       </p>
+    </div>
+  </section>
+
+  <!-- Language Library Section -->
+  <section id="library" class="section">
+    <div class="container">
+      <div class="section-tag">Language Reference</div>
+      <h2 class="section-title">PlainScript Feature Library</h2>
+      <p class="section-lead">Every feature of PlainScript with working code examples. Search to find exactly what you need.</p>
+
+      <div class="lib-search-wrap">
+        <div class="lib-search">
+          <i class="fas fa-search lib-search-icon"></i>
+          <input type="text" id="lib-search" class="lib-search-input" placeholder='Search features... (e.g. "database", "loop", "server")'>
+          <span class="lib-search-count" id="lib-count"></span>
+        </div>
+        <div class="lib-filters" id="lib-filters">
+          <button class="lib-filter active" data-cat="all">All</button>
+          <button class="lib-filter" data-cat="variables">Variables</button>
+          <button class="lib-filter" data-cat="strings">Strings</button>
+          <button class="lib-filter" data-cat="numbers">Numbers</button>
+          <button class="lib-filter" data-cat="booleans">Booleans</button>
+          <button class="lib-filter" data-cat="conditionals">Conditionals</button>
+          <button class="lib-filter" data-cat="loops">Loops</button>
+          <button class="lib-filter" data-cat="functions">Functions</button>
+          <button class="lib-filter" data-cat="arrays">Arrays</button>
+          <button class="lib-filter" data-cat="objects">Objects</button>
+          <button class="lib-filter" data-cat="imports">Imports</button>
+          <button class="lib-filter" data-cat="server">Server</button>
+          <button class="lib-filter" data-cat="database">Database</button>
+          <button class="lib-filter" data-cat="cache">Cache</button>
+          <button class="lib-filter" data-cat="http">HTTP</button>
+          <button class="lib-filter" data-cat="filesystem">File System</button>
+          <button class="lib-filter" data-cat="logging">Logging</button>
+          <button class="lib-filter" data-cat="datetime">Date & Time</button>
+          <button class="lib-filter" data-cat="errors">Error Handling</button>
+          <button class="lib-filter" data-cat="async">Async</button>
+          <button class="lib-filter" data-cat="auth">Auth & Security</button>
+          <button class="lib-filter" data-cat="telegram">Telegram</button>
+          <button class="lib-filter" data-cat="whatsapp">WhatsApp</button>
+          <button class="lib-filter" data-cat="websocket">WebSocket</button>
+          <button class="lib-filter" data-cat="email">Email</button>
+          <button class="lib-filter" data-cat="upload">Uploads</button>
+          <button class="lib-filter" data-cat="cli">CLI</button>
+        </div>
+      </div>
+
+      <div class="lib-grid" id="lib-grid"></div>
+      <div class="lib-empty" id="lib-empty" style="display:none">
+        <i class="fas fa-search"></i>
+        <p>No features match your search.</p>
+      </div>
     </div>
   </section>
 
