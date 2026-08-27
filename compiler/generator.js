@@ -234,6 +234,39 @@ const BUILTIN_DECLARATIONS = {
   mapset: [
     `function __mapSet(map, key, value) { map.set(key, value); return map; }`,
   ].join('\n'),
+  // v2.2.0 — collection primitives (flatten / pick / omit / groupBy).
+  coll: [
+    `function __flatten(list) {`,
+    `  const out = [];`,
+    `  (function rec(x) {`,
+    `    if (Array.isArray(x)) { for (const i of x) rec(i); }`,
+    `    else out.push(x);`,
+    `  })(list);`,
+    `  return out;`,
+    `}`,
+    `function __pick(obj) {`,
+    `  const out = {};`,
+    `  for (let i = 1; i < arguments.length; i++) {`,
+    `    const k = arguments[i];`,
+    `    if (obj != null && Object.prototype.hasOwnProperty.call(obj, k)) out[k] = obj[k];`,
+    `  }`,
+    `  return out;`,
+    `}`,
+    `function __omit(obj) {`,
+    `  const skip = new Set([].slice.call(arguments, 1));`,
+    `  const out = {};`,
+    `  if (obj != null) for (const k of Object.keys(obj)) if (!skip.has(k)) out[k] = obj[k];`,
+    `  return out;`,
+    `}`,
+    `function __groupBy(list, keyFn) {`,
+    `  const out = {};`,
+    `  for (const item of (list || [])) {`,
+    `    const k = typeof keyFn === 'function' ? keyFn(item) : (item == null ? undefined : item[keyFn]);`,
+    `    (out[k] = out[k] || []).push(item);`,
+    `  }`,
+    `  return out;`,
+    `}`,
+  ].join('\n'),
   // v1.0.0 — dynamic module loader.
   loadmodule: [
     `function __loadModule(spec) {`,
@@ -1096,6 +1129,47 @@ const STDLIB = {
   values:   (args, context) => `Object.values(${generateExpr(args[0], context)})`,
   hasKey:   (args, context) => `Object.prototype.hasOwnProperty.call(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
   merge:    (args, context) => `{ ...${generateExpr(args[0], context)}, ...${generateExpr(args[1], context)} }`,
+
+  // ── v2.2.0 — collection & string primitives (IOPL-native, dependency-free).
+  // A numeric range [start..end], stepping by 1 (or `step` when given).
+  range: (args, context) => {
+    const start = generateExpr(args[0], context);
+    const end = args.length > 1 ? generateExpr(args[1], context) : null;
+    const step = args.length > 2 ? generateExpr(args[2], context) : null;
+    if (end === null) return `Array.from({ length: Math.max(0, ${start}) }, (_, i) => i)`;
+    const s = step === null ? `(${start} <= ${end} ? 1 : -1)` : `Math.abs(${step}) * (${start} <= ${end} ? 1 : -1)`;
+    return `Array.from((() => { const __r = []; for (let __i = ${start}; ${start} <= ${end} ? __i < ${end} : __i > ${end}; __i += ${s}) __r.push(__i); return __r; })())`;
+  },
+  clamp: (args, context) => `Math.min(Math.max(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)}), ${generateExpr(args[2], context)})`,
+  first: (args, context) => `(${generateExpr(args[0], context)})[0]`,
+  last: (args, context) => `(${generateExpr(args[0], context)})[(${generateExpr(args[0], context)}).length - 1]`,
+  flatten: (args, context) => {
+    ensureBuiltin(context, 'coll');
+    return `__flatten(${generateExpr(args[0], context)})`;
+  },
+  includes: (args, context) => `(${generateExpr(args[0], context)}).includes(${generateExpr(args[1], context)})`,
+  pick: (args, context) => {
+    ensureBuiltin(context, 'coll');
+    return `__pick(${generateExpr(args[0], context)}, ${args.slice(1).map(a => generateExpr(a, context)).join(', ')})`;
+  },
+  omit: (args, context) => {
+    ensureBuiltin(context, 'coll');
+    return `__omit(${generateExpr(args[0], context)}, ${args.slice(1).map(a => generateExpr(a, context)).join(', ')})`;
+  },
+  groupBy: (args, context) => {
+    ensureBuiltin(context, 'coll');
+    return `__groupBy(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`;
+  },
+  startsWith: (args, context) => `String(${generateExpr(args[0], context)}).startsWith(String(${generateExpr(args[1], context)}))`,
+  endsWith: (args, context) => `String(${generateExpr(args[0], context)}).endsWith(String(${generateExpr(args[1], context)}))`,
+  truncate: (args, context) => {
+    const text = `String(${generateExpr(args[0], context)})`;
+    const n = generateExpr(args[1], context);
+    const suffix = args.length > 2 ? generateExpr(args[2], context) : '"…"';
+    return `(${text}.length <= ${n} ? ${text} : ${text}.slice(0, ${n}) + ${suffix})`;
+  },
+  padStart: (args, context) => `String(${generateExpr(args[0], context)}).padStart(${generateExpr(args[1], context)}, String(${args.length > 2 ? generateExpr(args[2], context) : '" "'}))`,
+  padEnd: (args, context) => `String(${generateExpr(args[0], context)}).padEnd(${generateExpr(args[1], context)}, String(${args.length > 2 ? generateExpr(args[2], context) : '" "'}))`,
 
   // ── v1.0.0 — nullable / regex / date helpers (IOPL-native).
   // first non-null, non-undefined argument — IOPL null-coalescing.

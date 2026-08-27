@@ -537,6 +537,88 @@ test('export marks a symbol for module.exports', () => {
   assertIncludes(js, 'module.exports.configVersion = configVersion;');
 });
 
+console.log('\nv2.2.0 core collection/string primitives');
+
+test('range ascends from start to end by 1', () => {
+  const r = run('show range(1, 6)');
+  assert(r.stdout, '[ 1, 2, 3, 4, 5 ]');
+  assert(r.code, 0);
+});
+
+test('range with one arg counts from zero', () => {
+  const r = run('show range(4)');
+  assert(r.stdout, '[ 0, 1, 2, 3 ]');
+  assert(r.code, 0);
+});
+
+test('range descends when start exceeds end', () => {
+  const r = run('show range(3, 0)');
+  assert(r.stdout, '[ 3, 2, 1 ]');
+  assert(r.code, 0);
+});
+
+test('clamp bounds a value', () => {
+  assert(run('show clamp(15, 0, 10)').stdout, '10');
+  assert(run('show clamp(-3, 0, 10)').stdout, '0');
+  assert(run('show clamp(5, 0, 10)').stdout, '5');
+});
+
+test('flatten collapses nested arrays', () => {
+  const r = run('remember a as [1, [2, 3], [4, [5]]]\nshow flatten(a)');
+  assert(r.stdout, '[ 1, 2, 3, 4, 5 ]');
+  assert(r.code, 0);
+});
+
+test('first and last index a list', () => {
+  assert(run('show first([10, 20, 30])').stdout, '10');
+  assert(run('show last([10, 20, 30])').stdout, '30');
+});
+
+test('includes tests list membership', () => {
+  assert(run('show includes([1, 2, 3], 2)').stdout, 'true');
+  assert(run('show includes([1, 2, 3], 9)').stdout, 'false');
+});
+
+test('pick keeps only the named fields', () => {
+  const r = run('remember u as {name: "Ada", age: 36, secret: "x"}\nshow pick(u, "name", "age")');
+  assertIncludes(r.stdout, "name: 'Ada'");
+  assertIncludes(r.stdout, 'age: 36');
+  assert(r.code, 0);
+});
+
+test('omit drops the named fields', () => {
+  const r = run('remember u as {name: "Ada", secret: "x"}\nshow omit(u, "secret")');
+  assertIncludes(r.stdout, "name: 'Ada'");
+  assert(r.code, 0);
+});
+
+test('groupBy buckets a list by a field or key function', () => {
+  const r = run([
+    'remember people as [{team: "a", n: 1}, {team: "b", n: 2}, {team: "a", n: 3}]',
+    'show groupBy(people, "team")',
+  ].join('\n'));
+  assertIncludes(r.stdout, 'a:');
+  assertIncludes(r.stdout, 'b:');
+  assertIncludes(r.stdout, "team: 'a'");
+  assert(r.code, 0);
+});
+
+test('startsWith / endsWith test string prefixes and suffixes', () => {
+  assert(run('show startsWith("hello", "he")').stdout, 'true');
+  assert(run('show endsWith("hello", "lo")').stdout, 'true');
+  assert(run('show startsWith("hello", "lo")').stdout, 'false');
+});
+
+test('truncate shortens text and appends a suffix', () => {
+  assert(run('show truncate("abcdefghij", 4)').stdout, 'abcd…');
+  assert(run('show truncate("abc", 4)').stdout, 'abc');
+});
+
+test('padStart / padEnd pad text', () => {
+  assert(run('show padStart("7", 3, "0")').stdout, '007');
+  assert(run('show padEnd("7", 3, "0")').stdout, '700');
+});
+
 console.log('\n── audit suite summary ────────────────────────────────────────\n');
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exitCode = 1;
