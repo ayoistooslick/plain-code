@@ -88,7 +88,7 @@ test('parser: ocr with language pack', () => {
 });
 
 test('parser: image may be an expression', () => {
-  const node = parse(tokenize('remember shot as "a.png"\nocr shot as total')).body[1];
+  const node = parse(tokenize('remember shot as "a.png"\nocr shot as theText')).body[1];
   if (node.type !== 'OcrStatement') throw new Error(`type: ${node.type}`);
   if (node.image.type !== 'Identifier' || node.image.name !== 'shot') {
     throw new Error(`image: ${JSON.stringify(node.image)}`);
