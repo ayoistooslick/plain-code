@@ -2076,7 +2076,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
         const recoverBody = node.recoverBody.map(s => generateStatement(s, indent + '  ', context)).join('\n');
         out += ` catch (${errorName}) {\n${recoverBody}\n${indent}}`;
       } else {
-        out += ' catch (__plainError) {}';
+        out += `${indent}} catch (__plainError) {}`;
       }
       return out;
     }
