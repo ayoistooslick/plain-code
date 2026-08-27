@@ -619,6 +619,54 @@ test('padStart / padEnd pad text', () => {
   assert(run('show padEnd("7", 3, "0")').stdout, '700');
 });
 
+console.log('\nv2.2.0 web/full-stack compile checks');
+
+test('body("field") reads one JSON request-body field', () => {
+  const js = compile([
+    'web app',
+    'route post "/items"',
+    '    remember n as body("name")',
+    '    reply n',
+    'done',
+  ].join('\n'));
+  assertIncludes(js, 'req.body["name"]');
+});
+
+test('body() reads the whole JSON request body', () => {
+  const js = compile([
+    'web app',
+    'route post "/items"',
+    '    remember whole as body()',
+    '    reply whole',
+    'done',
+  ].join('\n'));
+  assertIncludes(js, 'req.body');
+});
+
+test('body rejects use outside a route handler', () => {
+  let threw = false;
+  try { compile('remember x as body("a")'); }
+  catch (e) { threw = /route handler/.test(e.message); }
+  assert(threw, true);
+});
+
+test('redirect to sends an HTTP redirect from a route', () => {
+  const js = compile([
+    'web app',
+    'route get "/old"',
+    '    redirect to "/new"',
+    'done',
+  ].join('\n'));
+  assertIncludes(js, 'res.redirect("/new");');
+});
+
+test('redirect to rejects use outside a route handler', () => {
+  let threw = false;
+  try { compile('redirect to "/x"'); }
+  catch (e) { threw = /route handler/.test(e.message); }
+  assert(threw, true);
+});
+
 console.log('\n── audit suite summary ────────────────────────────────────────\n');
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exitCode = 1;

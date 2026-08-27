@@ -1075,6 +1075,18 @@ const STDLIB = {
   param:   (args, context) => routeAccessor('param',   'params',   args, context),
   query:   (args, context) => routeAccessor('query',   'query',    args, context),
   header:  (args, context) => routeAccessor('header',  'headers',  args, context),
+  // The parsed JSON request body (from `web app`'s express.json()). With no
+  // argument returns the whole body record; with one, that field's value.
+  body: (args, context) => {
+    if (!_inRoute) {
+      throw new Error(
+        `"body(...)" can only be used inside a route handler.\n\nExample:\n  route post "/items"\n    show body("name")\n  done`
+      );
+    }
+    const base = 'req.body';
+    if (!args || args.length === 0) return base;
+    return `${base}[${generateExpr(args[0], context)}]`;
+  },
   // v2.1.0 — request validation. Returns the list of missing required fields.
   validate: (args, context) => {
     ensureBuiltin(context, 'validation');
@@ -2002,6 +2014,13 @@ function generateStatement(node, indent = '', context = createGenerationContext(
         throw new Error('"status" can only be used inside a route handler, where a response exists.\n\nExample:\n  route get "/missing"\n    status 404\n    reply "Not found"\n  done');
       }
       return `${indent}res.status(${generateExpr(node.value, context)});`;
+
+    // v2.2.0 — redirect to "<url>": sends an HTTP redirect from a route.
+    case 'RedirectStatement':
+      if (!_inRoute) {
+        throw new Error('"redirect to" can only be used inside a route handler.\n\nExample:\n  route get "/old"\n    redirect to "/new"\n  done');
+      }
+      return `${indent}res.redirect(${generateExpr(node.url, context)});`;
 
     // v2.1.0 — allow cors: enables cross-origin requests on the current app.
     // Applies to routes registered after this statement.

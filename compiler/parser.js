@@ -492,6 +492,15 @@ function parse(tokens) {
         return { type: 'StatusStatement', value };
       }
 
+      // v2.2.0 — redirect to "<url>": sends an HTTP redirect from a route
+      // handler. "redirect(...)" calls and "redirect becomes x" stay ordinary.
+      if (token.value === 'redirect' && peekAt(1).value === 'to') {
+        advance(); // redirect
+        advance(); // to
+        const url = parseExpression();
+        return { type: 'RedirectStatement', url };
+      }
+
       // ── v2.1.1 statements (all contextual, following the v2.1.0 pattern) ──
 
       // try … [recover [as <name>]] … done: deterministic error handling.
