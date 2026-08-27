@@ -377,3 +377,63 @@ The audit is **complete** only when:
    capability.
 
 Until then the package version remains **below 1.0.0**.
+
+---
+
+## 22. v2.2.0 — AI/ML, data/storage & web additions
+
+The v2.0–v2.2 releases close further gaps beyond the 1.0.0 audit across the
+AI/ML, data/storage and web/full-stack surface. All features below are
+IOPL-native (intent-oriented) rather than TypeScript-syntax clones.
+
+### AI / ML (module `ai`)
+
+| Capability                                   | IOPL stdlib                                                                 |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| LLM chat completion                          | `chat(model, messages, {options})` → text, async, OpenAI-compatible API     |
+| Text embeddings                              | `embedText(model, text, {options})` → vector, async                         |
+| Vector similarity (cosine)                   | `similarity(a, b)` → -1..1 (identical → 1, orthogonal → 0, opposite → -1)   |
+| Auto-tagging convenience                     | `ai_tags(text)` → topic/category tags                                       |
+| Post / content generation                    | `ai_post(subject, ideas, options)` → generated prose                         |
+| Auth                                            | `OPENAI_API_KEY` env (override via `options.apiKey`/`options.baseURL`)       |
+
+**Audit status:** chat, embeddings, similarity ship with runtime tests; tag/post
+compose the same runtime. **Gap closed.**
+
+### Data / storage
+
+| Capability           | IOPL stdlib                                                                 |
+| -------------------- | --------------------------------------------------------------------------- |
+| SQLite persistence   | `http`+`db` runtime, `sql` queries, `table`/`row`/`query` DSL (existing)     |
+| In-memory cache fallback | `cacheGet/cacheSet/cacheDelete` use a Map-based store with TTL when no Redis is configured |
+| Server-managed cache  | Redis-backed cache when configured (existing)                               |
+| Redis cache           | existing TTL semantics, now with graceful no-config fallback                 |
+| Pagination           | `paginate(list, page, perPage)` → `{items, count, page, pages, perPage, hasNext, hasPrev}` |
+
+**Audit status:** paginate + in-memory cache fallback ship and are tested.
+**Gap closed.**
+
+### Web / full-stack
+
+| Capability    | IOPL stdlib                                                        |
+| ------------- | ------------------------------------------------------------------ |
+| Request body  | route-scoped `body(...)` accessor: `body()` → raw, `body("field")` → field |
+| Redirect      | `redirect to "<url>"` statement inside a route handler (`res.redirect`) |
+| (existing)    | routes, status, sessions, uploads, cookies, WebSocket, OAuth, email, schedules |
+
+**Audit status:** `body` + `redirect to` ship, route-guarded with teaching
+errors, compile-verified. **Gap closed.**
+
+### Core collections & string primitives (module `coll`)
+
+`range`, `clamp`, `first`, `last`, `flatten`, `includes`, `pick`, `omit`,
+`groupBy`, `startsWith`, `endsWith`, `truncate`, `padStart`, `padEnd` — all
+runtime-tested. `contains` is a reserved lexer keyword, so the membership helper
+is named `includes`.
+
+**Audit status:** shipped + tested. **Gap closed.**
+
+> **Note on v2.2.0 testing:** `npm test` may not fully run in constrained
+> sandboxes where native deps (`express`, `sql.js`, `ws`) cannot be installed;
+> web/HTTP features are therefore **compile-verified** there. Core language,
+> collections, AI (with a live key), and cache fallback run with real tests.

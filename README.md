@@ -583,7 +583,9 @@ start env("PORT")
 ```
 
 `param("id")`, `query("page")` and `header("x-token")` read request data;
-`group` composes path prefixes; `status <n>` sets the response code.
+`body()` / `body("field")` read the JSON request body; `group` composes path
+prefixes; `status <n>` sets the response code and `redirect to "<url>"` issues a
+redirect.
 
 ### Databases with parameters and transactions
 
@@ -645,14 +647,45 @@ websocket server on 8080
 done
 ```
 
-### Cache (Redis)
+### Cache (Redis with in-memory fallback)
 
 ```plainscript
-cache env("REDIS_URL")
+cache env("REDIS_URL")          // omit for an in-memory Map store with TTL
 remember token as cacheGet("token")
 cacheSet("greeting", "hi", 60)
 cacheDelete("greeting")
 ```
+
+Without a configured Redis, `cacheGet`/`cacheSet`/`cacheDelete` transparently fall
+back to an in-memory store, so naive caching works out of the box.
+
+### AI / ML
+
+```plainscript
+remember reply as chat("gpt-4o-mini", [
+    { role: "user", content: "Say hello in two words" }
+])
+
+remember vec as embedText("text-embedding-3-small", "PlainScript rocks")
+remember score as similarity(vec, embedText("text-embedding-3-small", "I love PlainScript"))
+
+remember tags as ai_tags("PlainScript is an intent-oriented language")
+remember article as ai_post("Welcome to PlainScript", ["why IOPL", "quick start"])
+```
+
+`chat` and `embedText` are async OpenAI-compatible calls (from `OPENAI_API_KEY`,
+override with `options.apiKey`/`options.baseURL`); `similarity` returns -1..1.
+
+### Pagination
+
+```plainscript
+remember page as paginate(allUsers, 2, 10)
+show page.items          # second page of 10
+show page.hasNext        # true if another page exists
+```
+
+`paginate(list, page, perPage)` returns
+`{ items, count, page, pages, perPage, hasNext, hasPrev }`.
 
 ---
 

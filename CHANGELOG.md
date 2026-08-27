@@ -4,6 +4,31 @@ All notable changes to PlainScript are documented here.
 
 ---
 
+## [2.2.0] — 2026
+
+### AI / ML and data / storage & web additions
+
+Broadens the intent-oriented surface with AI/ML, data/storage and web features.
+
+- **AI / ML (builtin `ai`):** `chat(model, messages, options)` — OpenAI-compatible
+  LLM chat completion (async); `embedText(model, text, options)` — text embeddings;
+  `similarity(a, b)` — cosine vector similarity (-1..1); plus `ai_tags(text)` and
+  `ai_post(subject, ideas, options)` conveniences. Reads `OPENAI_API_KEY`/
+  `OPENAI_BASE_URL`, overridable via options.
+- **Data / storage:** `paginate(list, page, perPage)` returns
+  `{ items, count, page, pages, perPage, hasNext, hasPrev }`; the `cache` builtin
+  now falls back to an in-memory Map store with TTL (`__cacheGet/__cacheSet/__cacheDelete`)
+  when no Redis is configured, so naive caching works out of the box.
+- **Web / full-stack:** route-scoped `body(...)` accessor (`body()` raw,
+  `body("field")` field) with route-guarded teaching errors; `redirect to "<url>"`
+  statement maps to `res.redirect(...)`.
+- **Collections & strings (`coll`):** `range`, `clamp`, `first`, `last`, `flatten`,
+  `includes`, `pick`, `omit`, `groupBy`, `startsWith`, `endsWith`, `truncate`,
+  `padStart`, `padEnd`. (`contains` is a reserved lexer keyword, so the membership
+  helper is `includes`.)
+
+---
+
 ## [1.0.0-beta] — 2026
 
 ### Capability-gap audit vs. TypeScript + Node.js
