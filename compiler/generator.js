@@ -266,6 +266,16 @@ const BUILTIN_DECLARATIONS = {
     `  }`,
     `  return out;`,
     `}`,
+    `function __paginate(list, page, perPage) {`,
+    `  const items = (list || []);`,
+    `  const total = items.length;`,
+    `  perPage = Math.max(1, perPage == null ? 10 : Number(perPage));`,
+    `  const pages = Math.max(1, Math.ceil(total / perPage));`,
+    `  page = Math.min(Math.max(1, page == null ? 1 : Number(page)), pages);`,
+    `  const start = (page - 1) * perPage;`,
+    `  const slice = items.slice(start, start + perPage);`,
+    `  return { items: slice, count: total, page, pages, perPage, hasNext: page < pages, hasPrev: page > 1 };`,
+    `}`,
   ].join('\n'),
   // v1.0.0 — dynamic module loader.
   loadmodule: [
@@ -348,10 +358,27 @@ const BUILTIN_DECLARATIONS = {
   // created by the "cache" statement; accessors fail with a teaching error
   // when no cache was configured.
   cache: [
-    `let __cache = null;`,
+    `let __cache = null; // optional Redis client, set by the "cache" statement`,
+    `const __memCache = new Map(); // in-memory fallback cache: key -> { value, exp }`,
     `function __cacheClient() {`,
-    `  if (!__cache) throw new Error('Cache: no cache configured. Add a cache "<redis-url>" statement first.');`,
     `  return __cache;`,
+    `}`,
+    `async function __cacheGet(key) {`,
+    `  if (__cache) return __cache.get(key);`,
+    `  const entry = __memCache.get(key);`,
+    `  if (!entry) return null;`,
+    `  if (entry.exp != null && Date.now() > entry.exp) { __memCache.delete(key); return null; }`,
+    `  return entry.value;`,
+    `}`,
+    `async function __cacheSet(key, value, ttlSeconds) {`,
+    `  if (__cache) return __cache.set(key, value, ttlSeconds == null ? undefined : { EX: ttlSeconds });`,
+    `  const exp = ttlSeconds == null ? null : Date.now() + ttlSeconds * 1000;`,
+    `  __memCache.set(key, { value, exp });`,
+    `  return 'OK';`,
+    `}`,
+    `async function __cacheDelete(key) {`,
+    `  if (__cache) return __cache.del(key);`,
+    `  return __memCache.delete(key) ? 1 : 0;`,
     `}`,
   ].join('\n'),
   // v2.1.1 — WhatsApp runtime (@whiskeysockets/baileys behind the
@@ -1207,6 +1234,10 @@ const STDLIB = {
     return `__flatten(${generateExpr(args[0], context)})`;
   },
   includes: (args, context) => `(${generateExpr(args[0], context)}).includes(${generateExpr(args[1], context)})`,
+  paginate: (args, context) => {
+    ensureBuiltin(context, 'coll');
+    return `__paginate(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)}, ${args.length > 2 ? generateExpr(args[2], context) : '10'})`;
+  },
   pick: (args, context) => {
     ensureBuiltin(context, 'coll');
     return `__pick(${generateExpr(args[0], context)}, ${args.slice(1).map(a => generateExpr(a, context)).join(', ')})`;
@@ -1252,7 +1283,7 @@ const STDLIB = {
   cacheGet: (args, context) => {
     ensureBuiltin(context, 'cache');
     markAsync(context);
-    return `await __cacheClient().get(String(${generateExpr(args[0], context)}))`;
+    return `await __cacheGet(String(${generateExpr(args[0], context)}))`;
   },
   cacheSet: (args, context) => {
     ensureBuiltin(context, 'cache');
@@ -1260,14 +1291,14 @@ const STDLIB = {
     const key = `String(${generateExpr(args[0], context)})`;
     const value = `String(${generateExpr(args[1], context)})`;
     if (args.length > 2) {
-      return `await __cacheClient().set(${key}, ${value}, { EX: ${generateExpr(args[2], context)} })`;
+      return `await __cacheSet(${key}, ${value}, ${generateExpr(args[2], context)})`;
     }
-    return `await __cacheClient().set(${key}, ${value})`;
+    return `await __cacheSet(${key}, ${value})`;
   },
   cacheDelete: (args, context) => {
     ensureBuiltin(context, 'cache');
     markAsync(context);
-    return `await __cacheClient().del(String(${generateExpr(args[0], context)}))`;
+    return `await __cacheDelete(String(${generateExpr(args[0], context)}))`;
   },
 
   // v2.1.0 — email sending helper (statement form uses this too).

@@ -612,16 +612,29 @@ show token
   assert(logs[0], 'abc');
 });
 
-testAsync('cache: accessors without configuration fail with a teaching error', async () => {
+testAsync('cache: accessors fall back to an in-memory store without configuration', async () => {
+  // No "cache" statement: the runtime silently uses an in-memory Map, so a
+  // missing key reads as null and set/delete round-trip in-process.
   let errored = null;
+  let value = null;
   try {
-    await runGeneratedAsync(compileProgram(`remember x as cacheGet("k")`));
+    const logs = await runGeneratedAsync(compileProgram(`
+cacheSet("k", "v")
+remember x as cacheGet("k")
+cacheDelete("k")
+remember y as cacheGet("k")
+show x
+show y
+`));
+    value = logs.join('\n');
   } catch (e) {
     errored = e;
   }
-  if (!errored || !String(errored.message).includes('no cache configured')) {
-    throw new Error('Expected teaching error about missing cache, got: ' + (errored && errored.message));
+  if (errored) {
+    throw new Error('Expected in-memory cache fallback, got error: ' + errored.message);
   }
+  assertIncludes(value, 'v');
+  assertIncludes(value, 'null');
 });
 
 // ── Formatter ────────────────────────────────────────────────────────────────

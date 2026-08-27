@@ -698,6 +698,65 @@ test('AI calls mark the enclosing program async', () => {
   assert(ctx.needsAsync, true);
 });
 
+console.log('\nv2.2.0 data/storage: pagination + in-memory cache fallback');
+
+test('paginate returns the first page and total counts', () => {
+  const r = run([
+    'remember items as range(1, 21)',
+    'remember page1 as paginate(items, 1, 10)',
+    'show items of page1',
+    'show count of page1',
+    'show pages of page1',
+    'show hasNext of page1',
+  ].join('\n'));
+  assertIncludes(r.stdout, '10');
+  assertIncludes(r.stdout, '20');
+  assertIncludes(r.stdout, '2');
+  assertIncludes(r.stdout, 'true');
+  assert(r.code, 0);
+});
+
+test('paginate computes the last page and previous flag', () => {
+  const r = run([
+    'remember items as range(1, 21)',
+    'remember page3 as paginate(items, 3, 10)',
+    'show items of page3',
+    'show hasPrev of page3',
+    'show hasNext of page3',
+  ].join('\n'));
+  assertIncludes(r.stdout, '20');
+  assertIncludes(r.stdout, 'true');
+  assertIncludes(r.stdout, 'false');
+  assert(r.code, 0);
+});
+
+test('paginate clamps an out-of-range page', () => {
+  const r = run('remember p as paginate(range(1, 5), 99, 10)\nshow page of p');
+  assertIncludes(r.stdout, '1');
+  assert(r.code, 0);
+});
+
+test('cache falls back to in-memory storage without a cache statement', () => {
+  const r = run([
+    'cacheSet("greeting", "hello world")',
+    'show cacheGet("greeting")',
+    'cacheDelete("greeting")',
+    'show cacheGet("greeting")',
+  ].join('\n'));
+  assertIncludes(r.stdout, 'hello world');
+  assertIncludes(r.stdout, 'null');
+  assert(r.code, 0);
+});
+
+test('in-memory cache respects TTL expiry', () => {
+  const r = run([
+    'cacheSet("temp", "v", 1)',
+    'show cacheGet("temp")',
+  ].join('\n'));
+  assertIncludes(r.stdout, 'v');
+  assert(r.code, 0);
+});
+
 console.log('\n── audit suite summary ────────────────────────────────────────\n');
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exitCode = 1;
