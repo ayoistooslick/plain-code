@@ -89,6 +89,8 @@ ${section('ALSO SHIPPED')}
   WhatsApp bots (v2.1.1) ·
   email · schedules · WebSocket · cache (v2.1) ·
   sessions · uploads · cookies · rate limits · api keys · OAuth (v2.1.1)
+  JSON body · redirect · AI chat/embeddings · vector similarity ·
+  paginate · collection & string primitives (v2.2)
 
 ${section('FIRST RUN')}
   plainscript new hello               scaffolds hello/ with a live web app
