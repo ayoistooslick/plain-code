@@ -667,6 +667,37 @@ test('redirect to rejects use outside a route handler', () => {
   assert(threw, true);
 });
 
+console.log('\nv2.2.0 AI/ML helpers');
+
+test('similarity is 1 for identical vectors', () => {
+  assert(run('show similarity([1, 2, 3], [1, 2, 3])').stdout, '1');
+  assert(run('show similarity([1, 2, 3], [1, 2, 3])').code, 0);
+});
+
+test('similarity is 0 for orthogonal vectors', () => {
+  assert(run('show similarity([1, 0], [0, 1])').stdout, '0');
+});
+
+test('similarity is -1 for opposite vectors', () => {
+  assert(run('show similarity([1, 2, 3], [-1, -2, -3])').stdout, '-1');
+});
+
+test('chat compiles to an awaited AI completion call', () => {
+  const js = compile('remember r as chat("gpt-4o-mini", "hello")');
+  assertIncludes(js, 'await __aiChat("gpt-4o-mini", "hello", undefined)');
+});
+
+test('embedText compiles to an awaited AI embeddings call', () => {
+  const js = compile('remember e as embedText("text-embedding-3-small", "cat")');
+  assertIncludes(js, 'await __aiEmbed("text-embedding-3-small", "cat", undefined)');
+});
+
+test('AI calls mark the enclosing program async', () => {
+  const ctx = createGenerationContext();
+  generate(parse(tokenize('remember r as chat("m", "hi")')), ctx);
+  assert(ctx.needsAsync, true);
+});
+
 console.log('\n── audit suite summary ────────────────────────────────────────\n');
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exitCode = 1;

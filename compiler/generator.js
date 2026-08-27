@@ -549,6 +549,53 @@ const BUILTIN_DECLARATIONS = {
     `  return { ok: response.ok, status: response.status, headers: Object.fromEntries(response.headers.entries()), data };`,
     `}`,
   ].join('\n'),
+  // v2.2.0 — AI/ML runtime. `chat` and `embeddings` talk to any OpenAI-compatible
+  // completions/embeddings endpoint (API key and base URL from options or env),
+  // while `similarity` is pure vector math and runs fully offline.
+  ai: [
+    `function __aiTags() {`,
+    `  return { key: process.env.OPENAI_API_KEY, base: (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\\/$/, '') };`,
+    `}`,
+    `async function __aiPost(tags, path, body) {`,
+    `  if (typeof fetch !== 'function') {`,
+    `    throw new Error('AI calls need Node.js 18 or newer (global fetch is missing): ' + process.version);`,
+    `  }`,
+    `  if (!tags.key) throw new Error('No API key for AI. Set env OPENAI_API_KEY.');`,
+    `  const response = await fetch(tags.base + path, {`,
+    `    method: 'POST',`,
+    `    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tags.key },`,
+    `    body: JSON.stringify(body),`,
+    `  });`,
+    `  const text = await response.text();`,
+    `  let data = text;`,
+    `  try { data = JSON.parse(text); } catch (_) {}`,
+    `  if (!response.ok) throw new Error('AI request failed (' + response.status + '): ' + (data && data.error && data.error.message ? data.error.message : text));`,
+    `  return data;`,
+    `}`,
+    `async function __aiChat(model, messages, options) {`,
+    `  const tags = __aiTags();`,
+    `  if (options && options.key) tags.key = options.key;`,
+    `  if (options && options.base) tags.base = (options.base || '').replace(/\\/$/, '');`,
+    `  if (typeof messages === 'string') messages = [{ role: 'user', content: messages }];`,
+    `  const data = await __aiPost(tags, '/chat/completions', { model: model, messages: messages });`,
+    `  const choice = data.choices && data.choices[0];`,
+    `  return choice && choice.message ? choice.message.content : '';`,
+    `}`,
+    `async function __aiEmbed(model, text, options) {`,
+    `  const tags = __aiTags();`,
+    `  if (options && options.key) tags.key = options.key;`,
+    `  if (options && options.base) tags.base = (options.base || '').replace(/\\/$/, '');`,
+    `  const data = await __aiPost(tags, '/embeddings', { model: model, input: String(text) });`,
+    `  return (data.data && data.data[0] && data.data[0].embedding) || [];`,
+    `}`,
+    `function __aiSimilarity(a, b) {`,
+    `  if (!Array.isArray(a) || !Array.isArray(b) || !a.length || a.length !== b.length) return 0;`,
+    `  let dot = 0, na = 0, nb = 0;`,
+    `  for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }`,
+    `  if (na === 0 || nb === 0) return 0;`,
+    `  return dot / (Math.sqrt(na) * Math.sqrt(nb));`,
+    `}`,
+  ].join('\n'),
   // v2.1.1 — file upload runtime (multer behind "accept uploads"). Files are
   // held in memory by default or written to disk when a folder is given.
   // Normalised records expose: name, type, size, data (buffer) and path.
@@ -1342,6 +1389,30 @@ const STDLIB = {
     return `__loadModule(${generateExpr(args[0], context)})`;
   },
 
+  // ── v2.2.0 — AI/ML. `chat`/`embedText` call an OpenAI-compatible endpoint
+  // (key from OPENAI_API_KEY, base from OPENAI_BASE_URL); `similarity` runs
+  // offline cosine similarity over any two equal-length numeric vectors.
+  chat: (args, context) => {
+    ensureBuiltin(context, 'ai');
+    markAsync(context);
+    const model = generateExpr(args[0], context);
+    const messages = generateExpr(args[1], context);
+    const options = args.length > 2 && args[2] != null ? generateExpr(args[2], context) : 'undefined';
+    return `await __aiChat(${model}, ${messages}, ${options})`;
+  },
+  embedText: (args, context) => {
+    ensureBuiltin(context, 'ai');
+    markAsync(context);
+    const model = generateExpr(args[0], context);
+    const text = generateExpr(args[1], context);
+    const options = args.length > 2 && args[2] != null ? generateExpr(args[2], context) : 'undefined';
+    return `await __aiEmbed(${model}, ${text}, ${options})`;
+  },
+  similarity: (args, context) => {
+    ensureBuiltin(context, 'ai');
+    return `__aiSimilarity(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`;
+  },
+
   // Map / Set
   keyMap: (_args) => `new Map()`,
   mapSet: (args, context) => { ensureBuiltin(context, 'mapset'); return `__mapSet(${args.map(a => generateExpr(a, context)).join(', ')})`; },
@@ -1556,6 +1627,8 @@ function ensureBuiltin(context, moduleName) {
 const ASYNC_CALL_NAMES = new Set([
   // v2.1.0 — cache and email
   'cacheGet', 'cacheSet', 'cacheDelete', 'sendMail',
+  // v2.2.0 — AI/ML calls await their model endpoint
+  'chat', 'embedText',
   // v1.2 — Telegram helpers (await their API transport)
   'bot', 'sendMessage', 'sendPhoto', 'editMessage', 'getChat', 'getMyChats',
 ]);
