@@ -558,6 +558,16 @@ const BUILTIN_DECLARATIONS = {
   retry: [
     `const __retrySleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));`,
   ].join('\n'),
+  // IOPL-native — event emitter runtime.
+  __emitter: 'const __emitter = new (require("events").EventEmitter)();',
+  // IOPL-native — line-by-line file streaming runtime.
+  __streamFile: [
+    `async function __streamFile(path, fn) {`,
+    `  const fs = require('fs');`,
+    `  const rl = require('readline').createInterface({ input: fs.createReadStream(path), crlfDelay: Infinity });`,
+    `  for await (const line of rl) await fn(line);`,
+    `}`,
+  ].join('\n'),
   // v2.1.1 — SQLite runtime with a portable engine chain. Default order:
   // better-sqlite3 (native binding) first, sql.js (WebAssembly) as fallback.
   // Both engines are wrapped in the same tiny synchronous surface that PlainScript
@@ -1229,9 +1239,6 @@ function generateCondition(cond, context) {
       return `${generateCondition(cond.left, context)} ${jsOp} ${generateCondition(cond.right, context)}`;
     }
 
-    case 'TypeGuardCondition':
-      return `${node.operator} ${generateExpr(node.operand, context)} === ${JSON.stringify(node.targetType)}`;
-
     default:
       throw new Error(`Unknown condition type "${cond.type}".`);
   }
@@ -1324,12 +1331,18 @@ function generateStatement(node, indent = '', context = createGenerationContext(
 
     case 'FunctionDeclaration': {
       const isAsync = containsAsyncBlock(node.body) ? 'async ' : '';
-      const params = node.params.join(', ');
+      const paramStr = node.params.map(p => {
+        if (typeof p === 'object') {
+          if (p.defaultValue) return `${p.name} = ${generateExpr(p.defaultValue, context)}`;
+          return p.name;
+        }
+        return p;
+      }).join(', ');
       const prevInFunction = context.inFunction;
       context.inFunction = true;
       const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
       context.inFunction = prevInFunction;
-      return `${indent}${isAsync}function ${node.name}(${params}) {\n${body}\n${indent}}`;
+      return `${indent}${isAsync}function ${node.name}(${paramStr}) {\n${body}\n${indent}}`;
     }
 
     case 'IfStatement': {
@@ -1553,15 +1566,39 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // ── v2.1.1 — error handling and retries
 
     case 'TryStatement': {
-      const tryBody = node.tryBody.map(s => generateStatement(s, indent + '  ', context)).join('\n');
-      let out = `${indent}try {\n${tryBody}\n${indent}}`;
+      const tryBody = (node.tryBody || node.body || []).map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      const tryBlock = `${indent}try {\n${tryBody}\n${indent}`;
+      if (node.catches && node.catches.length > 0) {
+        const lines = [tryBlock];
+        for (let i = 0; i < node.catches.length; i++) {
+          const c = node.catches[i];
+          const catchBody = c.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+          const errorName = c.name || c.param || '__plainError';
+          if (c.errorType) {
+            if (i === 0) {
+              lines.push(`${indent}} catch (${errorName}) {`);
+              lines.push(`${indent}  if (${errorName} instanceof ${c.errorType}) {`);
+              lines.push(catchBody);
+              lines.push(`${indent}  }`);
+            } else {
+              lines.push(`${indent}  else if (${errorName} instanceof ${c.errorType}) {`);
+              lines.push(catchBody);
+              lines.push(`${indent}  }`);
+            }
+          } else {
+            lines.push(`${indent}  else {`);
+            lines.push(catchBody);
+            lines.push(`${indent}  }`);
+          }
+        }
+        return lines.join('\n');
+      }
+      let out = tryBlock;
       if (node.recoverBody) {
         const errorName = node.catchName || '__plainError';
         const recoverBody = node.recoverBody.map(s => generateStatement(s, indent + '  ', context)).join('\n');
         out += ` catch (${errorName}) {\n${recoverBody}\n${indent}}`;
       } else {
-        // A bare try {} is invalid JavaScript: without "recover", errors are
-        // swallowed through an empty catch block.
         out += ' catch (__plainError) {}';
       }
       return out;
@@ -1868,79 +1905,77 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       ensureBuiltin(context, 'websocket');
       return `${indent}__wsBroadcast(__wsServer, ${generateExpr(node.value, context)});`;
 
-    // ── TypeScript-equivalent features ─────────────────────────────────────
+    // ── IOPL-native features ──────────────────────────────────────────────
 
-    case 'ShapeStatement': {
-      const name = node.name;
-      const isAbstract = node.abstract || node.isAbstract;
-      const body = node.body || [];
-      const hasMethods = body.some(b => b.type === 'ShapeMethod');
-      if (!hasMethods) {
-        const fields = body.filter(b => b.type === 'ShapeProperty').map(b => `${b.name}: any`).join(', ');
-        return `${indent}/** @typedef {{ ${fields} }} ${name} */`;
+    case 'GatherStatement': {
+      const coll = generateExpr(node.collection, context);
+      const body = generateExpr(node.body, context);
+      return `${indent}${coll} = ${coll}.map(${node.item} => ${body});`;
+    }
+
+    case 'FilterStatement': {
+      const coll = generateExpr(node.collection, context);
+      const cond = generateCondition(node.condition, context);
+      return `${indent}${coll} = ${coll}.filter(${node.item} => ${cond});`;
+    }
+
+    case 'TotalStatement': {
+      const coll = generateExpr(node.collection, context);
+      const body = generateExpr(node.body, context);
+      return `${indent}${coll} = ${coll}.reduce((__sum, ${node.item}) => __sum + ${body}, 0);`;
+    }
+
+    case 'MatchStatement': {
+      const value = generateExpr(node.value, context);
+      const lines = [`${indent}switch (${value}) {`];
+      for (const c of node.cases) {
+        const testVal = generateExpr(c.test, context);
+        lines.push(`${indent}  case ${testVal}:`);
+        for (const s of c.body) lines.push(generateStatement(s, indent + '    ', context));
+        lines.push(`${indent}    break;`);
       }
-      const props = body.filter(b => b.type === 'ShapeProperty');
-      const methods = body.filter(b => b.type === 'ShapeMethod');
-      const params = props.map(p => p.name).join(', ');
-      const typeDefaults = { text: '""', number: '0', 'yes or no': 'false' };
-      const inits = props.map(p => {
-        const init = p.optional ? 'undefined' : (typeDefaults[p.typeName] || 'null');
-        return `${indent}  this.${p.name} = ${init};`;
-      }).join('\n');
-      const abstractCheck = isAbstract
-        ? `${indent}  if (new.target === ${name}) throw new Error("Cannot instantiate abstract class ${name}");\n`
-        : '';
-      const lines = [
-        `${indent}function ${name}(${params}) {`,
-        `${abstractCheck}${inits}`,
-        `${indent}}`,
-      ];
-      for (const m of methods) {
-        const mParams = m.params.join(', ');
-        const mBody = (m.body || []).map(s => generateStatement(s, indent + '  ', context)).join('\n');
-        const prefix = m.hidden ? '/** @private */ ' : '';
-        lines.push(`${indent}${prefix}${name}.prototype.${m.name} = function(${mParams}) {\n${mBody}\n${indent}};`);
+      if (node.defaultCase) {
+        lines.push(`${indent}  default:`);
+        for (const s of node.defaultCase) lines.push(generateStatement(s, indent + '    ', context));
+        lines.push(`${indent}    break;`);
       }
+      lines.push(`${indent}}`);
       return lines.join('\n');
     }
 
-    case 'EnumStatement': {
-      const name = node.name;
-      const values = node.values || node.members || [];
-      let idx = 0;
-      const entries = values.map(v => {
-        if (typeof v === 'object') return `${JSON.stringify(v.name)}: ${JSON.stringify(v.value)}`;
-        return `${JSON.stringify(v)}: ${idx++}`;
-      }).join(', ');
-      const destructured = values.map(v => typeof v === 'object' ? v.name : v).join(', ');
-      return [
-        `${indent}const ${name} = { ${entries} };`,
-        `${indent}const { ${destructured} } = ${name};`,
-      ].join('\n');
+    case 'RegexMatchStatement': {
+      const source = generateExpr(node.source, context);
+      const pattern = typeof node.pattern === 'string' ? JSON.stringify(node.pattern) : generateExpr(node.pattern, context);
+      return `${indent}const ${node.name} = ${source}.match(new RegExp(${pattern}));`;
     }
 
-    case 'TypeAliasStatement': {
-      const alias = node.alias || node.name;
-      const body = node.value ? generateExpr(node.value, context) : (node.typeName || 'any');
-      return `${indent}/** @typedef {${body}} ${alias} */`;
+    case 'EmitStatement': {
+      ensureBuiltin(context, '__emitter');
+      const event = typeof node.event === 'string' ? JSON.stringify(node.event) : generateExpr(node.event, context);
+      const data = node.data ? generateExpr(node.data, context) : '';
+      return `${indent}__emitter.emit(${event}${data ? ', ' + data : ''});`;
     }
 
-    case 'DestructureObject': {
-      const names = node.names.join(', ');
-      const src = typeof node.source === 'string' ? node.source : generateExpr(node.source, context);
-      return `${indent}const { ${names} } = ${src};`;
+    case 'WhenHappensStatement': {
+      ensureBuiltin(context, '__emitter');
+      const event = typeof node.event === 'string' ? JSON.stringify(node.event) : generateExpr(node.event, context);
+      const body = (node.body || []).map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      return `${indent}__emitter.on(${event}, (${node.paramName}) => {\n${body}\n${indent}});`;
     }
 
-    case 'DestructureArray': {
-      const parts = node.names.map(n => n).join(', ');
-      const src = typeof node.source === 'string' ? node.source : generateExpr(node.source, context);
-      return `${indent}const [${parts}] = ${src};`;
+    case 'StreamStatement': {
+      ensureBuiltin(context, '__streamFile');
+      markAsync(context);
+      const filename = generateExpr(node.filename, context);
+      const body = (node.body || []).map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      return `${indent}await __streamFile(${filename}, async (${node.paramName}) => {\n${body}\n${indent}});`;
     }
 
-    case 'ArrowFunctionStatement': {
-      const params = node.params.join(', ');
-      const expr = generateExpr(node.body, context);
-      return `${indent}const ${node.name} = (${params}) => ${expr};`;
+    case 'RunParallelStatement': {
+      markAsync(context);
+      const body = (node.body || []).map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      const resultName = node.resultName || '__parallelResults';
+      return `${indent}const ${resultName} = await Promise.all([(async () => {\n${body}\n${indent}})()]);`;
     }
 
     default:
@@ -2101,34 +2136,6 @@ function generateExpr(node, context = createGenerationContext()) {
     case 'WriteCall':
       ensureBuiltin(context, 'fs');
       return `fs.writeFileSync(${generateExpr(node.data, context)}, ${generateExpr(node.file, context)}, 'utf8')`;
-
-    // ── TypeScript-equivalent expression types ──────────────────────────────
-
-    case 'ArrowFunctionExpression': {
-      const params = node.params.join(', ');
-      const expr = generateExpr(node.body, context);
-      return `(${params}) => ${expr}`;
-    }
-
-    case 'OptionalChainExpression': {
-      const obj = generateExpr(node.object, context);
-      const prop = generateExpr(node.property, context);
-      return `${obj}?.${prop}`;
-    }
-
-    case 'NullishCoalescingExpression': {
-      const left = generateExpr(node.left, context);
-      const right = generateExpr(node.right, context);
-      return `${left} ?? ${right}`;
-    }
-
-    case 'SpreadExpression': {
-      return `...${generateExpr(node.operand, context)}`;
-    }
-
-    case 'TypeGuardExpression': {
-      return `${node.operator} ${generateExpr(node.operand, context)} === ${JSON.stringify(node.targetType)}`;
-    }
 
     default:
       throw new Error(`Unknown expression type "${node.type}".`);

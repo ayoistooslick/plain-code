@@ -65,30 +65,17 @@ const TOKEN = {
   ASK:           'ASK',           // interactive input: ask name / ask "prompt" as name
   OCR_KW:        'OCR_KW',        // v2.0.1 — ocr "<image>" as <name> [using "<lang>"]
   PACKAGE:       'PACKAGE',       // bare npm package name after "use" (may contain -, _, ., /, @)
-  // v2.2 — Extended type system & OOP tokens
-  SHAPE:        'SHAPE',        // shape keyword for classes/interfaces
-  DEFINE:       'DEFINE',       // define keyword for type aliases
-  MAYBE:        'MAYBE',        // maybe keyword for optional properties
-  OF:           'OF',           // of keyword for property access
-  SORT:         'SORT',         // sort keyword for generics
-  RETURNING:    'RETURNING',    // returning keyword for function return types
-  ABSTRACT:     'ABSTRACT',     // abstract keyword for abstract classes
-  HIDDEN:       'HIDDEN',       // hidden keyword for private access
-  PROTECTED:    'PROTECTED',    // protected keyword for protected access
-  FROZEN:       'FROZEN',       // frozen keyword for readonly
-  GIVING:       'GIVING',       // giving keyword for arrow functions
-  EVERYTHING:   'EVERYTHING',   // everything keyword for spread
-  FROM:         'FROM',         // from keyword for destructuring
-  CONFIRMING:   'CONFIRMING',   // confirming keyword for satisfies
-  FIXED:        'FIXED',        // fixed keyword for as const
-  ONE:          'ONE',          // one keyword for enums
-  COMBINED:     'COMBINED',     // combined keyword for intersection types
-  PARTIAL_KW:   'PARTIAL_KW',   // partial keyword for utility types
-  RECORD_KW:    'RECORD_KW',    // record keyword for utility types
-  NONE:         'NONE',         // none keyword for void/never
-  BACK:         'BACK',         // back keyword for "giving back"
-  GIVING_BACK:  'GIVING_BACK',  // giving back keyword for return types
-  ALSO:         'ALSO',         // also keyword for "and" in unions
+  GATHER:       'GATHER',       // gather each item in list giving expr (functional map)
+  FILTER_KW:    'FILTER_KW',    // filter each item in list when condition (functional filter)
+  TOTAL:        'TOTAL',        // total each item in list giving expr (functional reduce)
+  MATCH:        'MATCH',        // match expr against ... done (pattern matching)
+  AGAINST:      'AGAINST',      // match ... against keyword
+  PATTERN_KW:   'PATTERN_KW',   // match pattern "regex" in text (regex matching)
+  PARALLEL:     'PARALLEL',     // run in parallel ... done (worker threads)
+  STREAM:       'STREAM',       // stream "file" as line ... done (line-by-line processing)
+  EMIT:         'EMIT',         // emit "event.name" with data (event emitter)
+  HAPPENS:      'HAPPENS',      // when "event.name" happens as data (event listener)
+  CATCHES:      'CATCHES',      // recover when err catches "TypeError" (typed error recovery)
   // Punctuation
   LBRACE:      'LBRACE',   // { — inline object literal (v1.2)
   RBRACE:      'RBRACE',   // }
@@ -181,29 +168,18 @@ const KEYWORDS = {
   ask:        TOKEN.ASK,
   // v2.0.1 — OCR capability
   ocr:        TOKEN.OCR_KW,
-  // v2.2 — Extended type system & OOP
-  shape:      TOKEN.SHAPE,
-  define:     TOKEN.DEFINE,
-  maybe:      TOKEN.MAYBE,
-  of:         TOKEN.OF,
-  sort:       TOKEN.SORT,
-  returning:  TOKEN.RETURNING,
-  abstract:   TOKEN.ABSTRACT,
-  hidden:     TOKEN.HIDDEN,
-  protected:  TOKEN.PROTECTED,
-  frozen:     TOKEN.FROZEN,
-  giving:     TOKEN.GIVING,
-  everything: TOKEN.EVERYTHING,
-  from:       TOKEN.FROM,
-  confirming: TOKEN.CONFIRMING,
-  fixed:      TOKEN.FIXED,
-  one:        TOKEN.ONE,
-  combined:   TOKEN.COMBINED,
-  partial:    TOKEN.PARTIAL_KW,
-  record:     TOKEN.RECORD_KW,
-  none:       TOKEN.NONE,
-  back:       TOKEN.BACK,
-  also:       TOKEN.ALSO,
+  // IOPL-native features
+  gather:     TOKEN.GATHER,
+  filter:     TOKEN.FILTER_KW,
+  total:      TOKEN.TOTAL,
+  match:      TOKEN.MATCH,
+  against:    TOKEN.AGAINST,
+  pattern:    TOKEN.PATTERN_KW,
+  parallel:   TOKEN.PARALLEL,
+  stream:     TOKEN.STREAM,
+  emit:       TOKEN.EMIT,
+  happens:    TOKEN.HAPPENS,
+  catches:    TOKEN.CATCHES,
 };
 
 // Keywords that introduce raw SQL blocks (content up to "done" is collected verbatim).
