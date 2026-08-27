@@ -38,7 +38,27 @@ const JS_RESERVED = new Set([
 
 const BUILTIN_DECLARATIONS = {
   fs: `const fs = require('fs');`,
+  path: `const path = require('path');`,
   crypto: `const crypto = require('crypto');`,
+  // v1.0.0 — env-file runtime. Applies KEY=VALUE pairs from a .env file to
+  // process.env. Blank lines and `#` comment lines are skipped.
+  dotenv: [
+    `function __loadEnvFile(path) {`,
+    `  const fs = require('fs');`,
+    `  let raw;`,
+    `  try { raw = fs.readFileSync(path, 'utf8'); } catch (e) { return; }`,
+    `  for (const line of raw.split(/\\r?\\n/)) {`,
+    `    const trimmed = line.trim();`,
+    `    if (!trimmed || trimmed.startsWith('#')) continue;`,
+    `    const eq = trimmed.indexOf('=');`,
+    `    if (eq < 0) continue;`,
+    `    const k = trimmed.slice(0, eq).trim();`,
+    `    let v = trimmed.slice(eq + 1).trim();`,
+    `    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith('\\'') && v.endsWith('\\''))) v = v.slice(1, -1);`,
+    `    if (process.env[k] === undefined) process.env[k] = v;`,
+    `  }`,
+    `}`,
+  ].join('\n'),
   // v1.1.1 — ask runtime (RFC-0011 §14)
   ask: [
     `const readline = require('readline');`,
@@ -64,6 +84,166 @@ const BUILTIN_DECLARATIONS = {
     `  } finally {`,
     `    await worker.terminate();`,
     `  }`,
+    `}`,
+  ].join('\n'),
+  // v1.0.0 — shared runtime helpers for reflection, binary-size, YAML subset
+  // parsing/emitting, spread of timeouts, and set/map helpers. Injected lazily
+  // when any feature that needs them is used.
+  core: [
+    `function __typeOf(x) {`,
+    `  if (x === null) return 'null';`,
+    `  if (x === undefined) return 'undefined';`,
+    `  const t = typeof x;`,
+    `  if (t === 'string') return 'text';`,
+    `  if (t === 'number') return 'number';`,
+    `  if (t === 'boolean') return 'boolean';`,
+    `  if (Array.isArray(x)) return 'array';`,
+    `  if (t === 'object') return 'record';`,
+    `  if (t === 'function') return 'function';`,
+    `  return t;`,
+    `}`,
+    `function __sizeOf(x) {`,
+    `  if (x == null) return 0;`,
+    `  if (typeof x === 'string' || Array.isArray(x)) return x.length;`,
+    `  if (x instanceof Map || x instanceof Set) return x.size;`,
+    `  if (typeof x === 'object') return Object.keys(x).length;`,
+    `  return 0;`,
+    `}`,
+    `function __yamlStringify(v, indent) {`,
+    `  const pad = ' '.repeat(indent || 0);`,
+    `  if (v === null || v === undefined) return 'null';`,
+    `  if (typeof v === 'string') return '"' + String(v).replace(/\\\\/g, '\\\\\\\\').replace(/"/g, '\\\\"') + '"';`,
+    `  if (typeof v === 'number' || typeof v === 'boolean') return String(v);`,
+    `  if (Array.isArray(v)) {`,
+    `    const childPad = pad + '  ';`,
+    `    return v.map(x => {`,
+    `      if (typeof x === 'object' && x !== null && !Array.isArray(x)) {`,
+    `        const inner = __yamlStringify(x, indent + 2).split('\\n')[0];`,
+    `        return pad + '- ' + inner + __yamlStringify(x, indent + 4).split('\\n').slice(1).map(l => '\\n' + l).join('');`,
+    `      }`,
+    `      return pad + '- ' + __yamlStringify(x, indent + 2);`,
+    `    }).join('\\n');`,
+    `  }`,
+    `  if (typeof v === 'object') {`,
+    `    return Object.keys(v).map(k => {`,
+    `      const val = __yamlStringify(v[k], 0);`,
+    `      if (typeof v[k] === 'object' && v[k] !== null && !Array.isArray(v[k])) {`,
+    `        return pad + k + ':\\n' + __yamlStringify(v[k], indent + 2);`,
+    `      }`,
+    `      return pad + k + ': ' + val;`,
+    `    }).join('\\n');`,
+    `  }`,
+    `  return String(v);`,
+    `}`,
+    `function __yamlParse(text) {`,
+    `  const lines = String(text).split(/\\r?\\n/);`,
+    `  const root = {};`,
+    `  let seq = null;`,
+    `  let seqIndent = -1;`,
+    `  const stack = [{ indent: -1, node: root }];`,
+    `  for (const line0 of lines) {`,
+    `    const trimmed = line0.trim();`,
+    `    if (!trimmed || trimmed.startsWith('#')) continue;`,
+    `    const indent = line0.length - line0.trimStart().length;`,
+    `    const scalar = (s) => {`,
+    `      const t = s.trim();`,
+    `      if (t.length >= 2 && ((t[0] === '"' && t[t.length - 1] === '"') || (t[0] === "'" && t[t.length - 1] === "'"))) return t.slice(1, -1);`,
+    `      if (t === 'true') return true;`,
+    `      if (t === 'false') return false;`,
+    `      if (t === 'null' || t === '~') return null;`,
+    `      if (t !== '' && !isNaN(Number(t))) return Number(t);`,
+    `      return t;`,
+    `    };`,
+    `    const m = trimmed.match(/^([^:#]+):(.*)$/);`,
+    `    if (m) {`,
+    `      const key = m[1].replace(/^['"]|['"]$/g, '').trim();`,
+    `      const rest = m[2].trim();`,
+    `      while (stack.length > 1 && stack[stack.length - 1].indent >= indent) stack.pop();`,
+    `      const parent = stack[stack.length - 1].node;`,
+    `      if (rest === '' || rest === '|') { const node = {}; parent[key] = node; stack.push({ indent, node }); }`,
+    `      else if (rest === '[]') { parent[key] = []; }`,
+    `      else { parent[key] = scalar(rest); }`,
+    `      continue;`,
+    `    }`,
+    `    const lm = trimmed.match(/^-\\s*(.*)$/);`,
+    `    if (lm) {`,
+    `      while (seq && seqIndent >= indent) { seq = null; seqIndent = -1; }`,
+    `      while (!seq && stack.length > 1 && stack[stack.length - 1].indent >= indent) stack.pop();`,
+    `      const parent = stack[stack.length - 1].node;`,
+    `      if (lm[1] && lm[1].includes(':')) {`,
+    `        const km = lm[1].match(/^([^:]+):\\s*(.*)$/);`,
+    `        if (seq) {`,
+    `          const m2 = {}; seq[seq.length - 1] = typeof seq[seq.length - 1] === 'object' && seq[seq.length - 1] !== null ? seq[seq.length - 1] : m2;`,
+    `          const node = seq[seq.length - 1];`,
+    `          node[km[1].trim()] = km[2] ? scalar(km[2]) : {};`,
+    `        } else {`,
+    `          const node = {}; parent[km[1].trim()] = km[2] ? scalar(km[2]) : node; stack.push({ indent, node });`,
+    `        }`,
+    `      } else if (seq) {`,
+    `        seq.push(scalar(lm[1]));`,
+    `      } else if (Array.isArray(parent)) {`,
+    `        parent.push(scalar(lm[1])); seq = parent; seqIndent = indent;`,
+    `      } else {`,
+    `        const lastKey = Object.keys(parent)[Object.keys(parent).length - 1];`,
+    `        const arr = [];`,
+    `        if (lastKey != null) parent[lastKey] = arr; else parent.__rootArray = arr;`,
+    `        arr.push(scalar(lm[1]));`,
+    `        seq = arr; seqIndent = indent;`,
+    `      }`,
+    `      continue;`,
+    `    }`,
+    `  }`,
+    `  if (root.__rootArray) return root.__rootArray;`,
+    `  return root;`,
+    `}`,
+    `function __withTimeout(promise, ms) {`,
+    `  const timeout = ms == null ? 10000 : ms;`,
+    `  return new Promise((resolve, reject) => {`,
+    `    const timer = setTimeout(() => reject(new Error('Timed out after ' + timeout + 'ms.')), timeout);`,
+    `    Promise.resolve(promise).then(v => { clearTimeout(timer); resolve(v); }, e => { clearTimeout(timer); reject(e); });`,
+    `  });`,
+    `}`,
+  ].join('\n'),
+  // v1.0.0 — process execution (child processes).
+  process: [
+    `const { execFile } = require('child_process');`,
+    `function __runCommand(command, args) {`,
+    `  return new Promise((resolve) => {`,
+    `    execFile(command, args || [], { maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {`,
+    `      resolve({ ok: !error, code: error ? (error.code == null ? -1 : error.code) : 0, stdout: String(stdout), stderr: String(stderr) });`,
+    `    });`,
+    `  });`,
+    `}`,
+  ].join('\n'),
+  // v1.0.0 — Map helpers.
+  mapset: [
+    `function __mapSet(map, key, value) { map.set(key, value); return map; }`,
+  ].join('\n'),
+  // v1.0.0 — dynamic module loader.
+  loadmodule: [
+    `function __loadModule(spec) {`,
+    `  const path = require('path');`,
+    `  const target = (spec[0] === '.' ) ? path.resolve(process.cwd(), spec) : spec;`,
+    `  try { return require(target); }`,
+    `  catch (e) { if (spec[0] !== '.') return require(spec); throw e; }`,
+    `}`,
+  ].join('\n'),
+  // v1.0.0 — recursive directory walker (returns full paths, files first).
+  walk: [
+    `function __walkFolder(dir) {`,
+    `  const fs = require('fs');`,
+    `  const path = require('path');`,
+    `  const out = [];`,
+    `  function rec(d) {`,
+    `    for (const entry of fs.readdirSync(d)) {`,
+    `      const full = path.join(d, entry);`,
+    `      const st = fs.statSync(full);`,
+    `      if (st.isDirectory()) rec(full);`,
+    `      else out.push(full);`,
+    `    }`,
+    `  }`,
+    `  rec(dir);`,
+    `  return out;`,
     `}`,
   ].join('\n'),
   // v2.1.0 — request validation runtime. Returns the names of required
@@ -974,6 +1154,130 @@ const STDLIB = {
     ensureBuiltin(context, 'auth');
     return `readToken(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
   },
+
+  // ── v1.0.0 — capability-gap stdlib (reflection, binary, concurrency, ...) ──
+
+  // Reflection
+  typeOf: (args, context) => { ensureBuiltin(context, 'core'); return `__typeOf(${generateExpr(args[0], context)})`; },
+  fieldsOf: (args, context) => `Object.keys(${generateExpr(args[0], context)})`,
+  hasField: (args, context) => `Object.prototype.hasOwnProperty.call(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  valueOf: (args, context) => {
+    const [rec, key] = args.map(a => generateExpr(a, context));
+    const fallback = args[2] != null ? generateExpr(args[2], context) : 'undefined';
+    return `((__tmp) => (__tmp != null && Object.prototype.hasOwnProperty.call(__tmp, ${key})) ? __tmp[${key}] : ${fallback})(${rec})`;
+  },
+  sizeOf: (args, context) => { ensureBuiltin(context, 'core'); return `__sizeOf(${generateExpr(args[0], context)})`; },
+
+  // Binary
+  base64Encode: (args, context) => `Buffer.from(String(${generateExpr(args[0], context)})).toString('base64')`,
+  base64Decode: (args, context) => `Buffer.from(String(${generateExpr(args[0], context)}), 'base64').toString('utf8')`,
+  textToBytes: (args, context) => `Buffer.from(String(${generateExpr(args[0], context)}), 'utf8')`,
+  bytesToText: (args, context) => `Buffer.from(${generateExpr(args[0], context)}).toString('utf8')`,
+  sha256: (args, context) => {
+    ensureBuiltin(context, 'crypto');
+    return `crypto.createHash('sha256').update(String(${generateExpr(args[0], context)})).digest('hex')`;
+  },
+  sha1: (args, context) => {
+    ensureBuiltin(context, 'crypto');
+    return `crypto.createHash('sha1').update(String(${generateExpr(args[0], context)})).digest('hex')`;
+  },
+  md5: (args, context) => {
+    ensureBuiltin(context, 'crypto');
+    return `crypto.createHash('md5').update(String(${generateExpr(args[0], context)})).digest('hex')`;
+  },
+
+  // Serialization — minimal dependency-free YAML subset (see __yamlParse).
+  yamlDecode: (args, context) => { ensureBuiltin(context, 'core'); return `__yamlParse(${generateExpr(args[0], context)})`; },
+  yamlEncode: (args, context) => { ensureBuiltin(context, 'core'); return `__yamlStringify(${generateExpr(args[0], context)})`; },
+
+  // Configuration
+  loadEnvFile: (_args, context) => {
+    ensureBuiltin(context, 'dotenv');
+    return `__loadEnvFile(${generateExpr(_args[0], context)})`;
+  },
+
+  // CLI + process
+  args: (_args) => `process.argv.slice(2)`,
+  runCommand: (args, context) => {
+    ensureBuiltin(context, 'process');
+    markAsync(context);
+    const bin = args[0] != null ? generateExpr(args[0], context) : 'undefined';
+    const rest = args.slice(1).map(a => generateExpr(a, context));
+    const call = `__runCommand(${bin}${rest.length ? ', [' + rest.join(', ') + ']' : ''})`;
+    return `(await ${call})`;
+  },
+  withTimeout: (args, context) => {
+    ensureBuiltin(context, 'core');
+    markAsync(context);
+    const ms = args[1] != null ? `, ${generateExpr(args[1], context)}` : '';
+    return `(await __withTimeout(${generateExpr(args[0], context)}${ms}))`;
+  },
+
+  // Generators / iterables
+  spread: (args, context) => `[...${generateExpr(args[0], context)}]`,
+
+  // v1.0.0 — dynamic module loading (the runtime companion to `import "./x.ps"`).
+  // Resolves relative to the bundler's CWD so `loadModule("./m")` behaves like
+  // `require.resolve` from the program root.
+  loadModule: (args, context) => {
+    ensureBuiltin(context, 'loadmodule');
+    return `__loadModule(${generateExpr(args[0], context)})`;
+  },
+
+  // Map / Set
+  keyMap: (_args) => `new Map()`,
+  mapSet: (args, context) => { ensureBuiltin(context, 'mapset'); return `__mapSet(${args.map(a => generateExpr(a, context)).join(', ')})`; },
+  mapGet: (args, context) => `(${generateExpr(args[0], context)}).get(${generateExpr(args[1], context)})`,
+  mapHas: (args, context) => `(${generateExpr(args[0], context)}).has(${generateExpr(args[1], context)})`,
+  mapDelete: (args, context) => `(${generateExpr(args[0], context)}).delete(${generateExpr(args[1], context)})`,
+  newSet: (_args) => `new Set()`,
+  addToSet: (args, context) => `(${generateExpr(args[0], context)}).add(${generateExpr(args[1], context)})`,
+  removeFromSet: (args, context) => `(${generateExpr(args[0], context)}).delete(${generateExpr(args[1], context)})`,
+  setHas: (args, context) => `(${generateExpr(args[0], context)}).has(${generateExpr(args[1], context)})`,
+
+  // Filesystem metadata, walking, and path helpers
+  fileSize: (args, context) => {
+    ensureBuiltin(context, 'fs');
+    return `fs.statSync(${generateExpr(args[0], context)}).size`;
+  },
+  fileType: (args, context) => {
+    ensureBuiltin(context, 'fs');
+    return `fs.statSync(${generateExpr(args[0], context)}).isDirectory() ? 'directory' : 'file'`;
+  },
+  lastModified: (args, context) => {
+    ensureBuiltin(context, 'fs');
+    return `new Date(fs.statSync(${generateExpr(args[0], context)}).mtimeMs).toISOString()`;
+  },
+  walkFolder: (args, context) => {
+    ensureBuiltin(context, 'walk');
+    return `__walkFolder(${generateExpr(args[0], context)})`;
+  },
+  joinPath: (_args, context) => {
+    ensureBuiltin(context, 'path');
+    return `path.join(${_args.map(a => generateExpr(a, context)).join(', ')})`;
+  },
+  baseName: (_args, context) => {
+    ensureBuiltin(context, 'path');
+    return `path.basename(${generateExpr(_args[0], context)})`;
+  },
+  folderOf: (_args, context) => {
+    ensureBuiltin(context, 'path');
+    return `path.dirname(${generateExpr(_args[0], context)})`;
+  },
+  extensionOf: (_args, context) => {
+    ensureBuiltin(context, 'path');
+    return `path.extname(${generateExpr(_args[0], context)})`;
+  },
+
+  // Streams
+  writeLine: (args, context) => {
+    ensureBuiltin(context, 'fs');
+    return `fs.appendFileSync(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)} + '\\n', 'utf8')`;
+  },
+  appendLine: (args, context) => {
+    ensureBuiltin(context, 'fs');
+    return `fs.appendFileSync(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)} + '\\n', 'utf8')`;
+  },
 };
 
 // Mark the enclosing program async when a call awaits at the top level.
@@ -1193,10 +1497,31 @@ function containsAsyncBlock(statements) {
   return false;
 }
 
-function generate(ast, context = createGenerationContext()) {
-  if (ast.type !== 'Program') {
+// True when any statement in a block (recursively, skipping nested function
+// declarations) contains a `yield`, which marks the enclosing function as a
+// generator (function*).
+function containsYield(statements) {
+  for (const stmt of statements || []) {
+    if (stmt.type === 'YieldStatement') return true;
+    if (stmt.type === 'IfStatement') {
+      if (containsYield(stmt.consequent)) return true;
+      if (stmt.alternate && containsYield(stmt.alternate)) return true;
+    } else if (stmt.type !== 'FunctionDeclaration' && stmt.body && Array.isArray(stmt.body)) {
+      if (containsYield(stmt.body)) return true;
+    }
+  }
+  return false;
+}
+
+function generate(ast, context = createGenerationContext()) {  if (ast.type !== 'Program') {
     throw new Error(`Expected a Program node but got "${ast.type}".`);
   }
+  // v1.0.0 — reset per-program test bookkeeping so repeated generate() calls
+  // (build pipeline) start clean.
+  __testCount = 0;
+  __testCatchers = [];
+  __inTest = false;
+
   const preludeStart = context.pendingPrelude.length;
   const body = ast.body.map(node => generateStatement(node, '', context)).filter(Boolean).join('\n');
   const lines = context.pendingPrelude.slice(preludeStart).concat(body).filter(Boolean);
@@ -1206,11 +1531,52 @@ function generate(ast, context = createGenerationContext()) {
   const exported = ast.body
     .filter(node => node.type === 'FunctionDeclaration')
     .map(node => node.name);
-  if (exported.length > 0) {
+  const hasExplicitExport = ast.body.some(node => node.type === 'ExportStatement');
+  // When the author uses explicit `export <name>`, they control the module
+  // surface; skip the automatic function export so it does not clobber it.
+  if (exported.length > 0 && !hasExplicitExport) {
     lines.push(`if (typeof module !== 'undefined') { module.exports = { ${exported.join(', ')} }; }`);
   }
+
+  // v1.0.0 — native test runner. When any "test ... done" block exists, emit
+  // the runner helper, register each test after its function declaration, and
+  // execute them. Each failure prints a message and sets process.exitCode = 1.
+  if (__testCatchers.length > 0) {
+    const runner = [
+      `const __tests = [];`,
+      `function __check(op, a, b) {`,
+      `  const ok = op === 'contains'`,
+      `    ? String(a).includes(String(b))`,
+      `    : op === 'is'`,
+      `      ? a === b`,
+      `      : op === 'raises'`,
+      `        ? (() => { try { a(); } catch (e) { return String(e && e.message || '').includes(String(b)); } return false; })()`,
+      `        : a === b;`,
+      `  if (!ok) throw new Error('check failed: ' + op + ' ' + JSON.stringify(a) + ' vs ' + JSON.stringify(b));`,
+      `}`,
+      `function __runTests() {`,
+      `  let __passed = 0; let __failed = 0;`,
+      `  for (const __t of __tests) {`,
+      `    try { __t.fn(); console.log('PASS  ' + __t.name); __passed++; }`,
+      `    catch (__e) { console.error('FAIL  ' + __t.name + '\\n      ' + (__e && __e.message)); __failed++; process.exitCode = 1; }`,
+      `  }`,
+      `  console.log(__passed + ' passed, ' + __failed + ' failed');`,
+      `}`,
+    ].join('\n');
+    lines.unshift(runner);
+    for (const t of __testCatchers) {
+      lines.push(`__tests.push({ name: ${JSON.stringify(t.name)}, fn: ${t.fnName} });`);
+    }
+    lines.push(`__runTests();`);
+  }
+
   return lines.join('\n');
 }
+
+// ── v1.0.0 — test DSL bookkeeping ───────────────────────────────────────────
+let __testCount = 0;
+let __testCatchers = [];
+let __inTest = false;
 
 // ── Condition generation ────────────────────────────────────────────────────
 
@@ -1259,6 +1625,78 @@ function generateStatement(node, indent = '', context = createGenerationContext(
 
     case 'BecomeStatement':
       return `${indent}${generateLValue(node.target, context)} = ${generateExpr(node.value, context)};`;
+
+    // v1.0.0 — record kinds: `define a kind called "Person" with ... done`.
+    // Names are emitted as a JS factory that returns a fresh plain object with
+    // declared defaults. Constructors prompt for required fields at compile
+    // time via `create a Person with ...` (see GenerateExpr CreateKind).
+    case 'DefineKindStatement': {
+      const members = node.fields.map(f =>
+        `${JSON.stringify(f.key)}: ${f.value ? generateExpr(f.value, context) : 'undefined'}`
+      );
+      const defaults = `{ ${members.join(', ')} }`;
+      return [
+        `${indent}function __makeKind_${node.name}(${node.name}Fields) {`,
+        `${indent}  const __rec = ${defaults};`,
+        `${indent}  if (${node.name}Fields != null) {`,
+        `${indent}    for (const __k in ${node.name}Fields) {`,
+        `${indent}      if (!(Object.prototype.hasOwnProperty.call(__rec, __k))) throw new Error(${JSON.stringify('"' + node.name + '" has no field named "')} + __k + ${JSON.stringify('".')});`,
+        `${indent}      __rec[__k] = ${node.name}Fields[__k];`,
+        `${indent}    }`,
+        `${indent}  }`,
+        `${indent}  return __rec;`,
+        `${indent}}`,
+        `${indent}const ${node.name} = __makeKind_${node.name};`,
+      ].join('\n');
+    }
+
+    // v1.0.0 — load env file "<path>": apply KEY=VALUE pairs to process.env.
+    // Blank lines and `#` comments are skipped; values keep their text.
+    case 'LoadEnvFileStatement': {
+      ensureBuiltin(context, 'dotenv');
+      return `${indent}__loadEnvFile(${JSON.stringify(node.path)});`;
+    }
+
+    // v1.0.0 — native test DSL. `test "<name>" ... done` registers a runnable
+    // unit; all tests are executed after the program body with a tiny runner.
+    case 'TestStatement': {
+      __testCount++;
+      const fnName = `__testFn_${__testCount}`;
+      const prevInTest = __inTest;
+      __inTest = true;
+      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      __inTest = prevInTest;
+      __testCatchers.push({ name: node.name, fnName });
+      return `${indent}function ${fnName}() {\n${body}\n${indent}}`;
+    }
+
+    // v1.0.0 — assertion `check <a> (equals|is|contains|raises) <b>`.
+    // For `raises`, `a` is wrapped in a thunk so the expression is evaluated
+    // inside the runner's try/catch (its thrown error is the subject).
+    case 'CheckStatement': {
+      if (!__inTest) {
+        throw new Error('"check" can only be used inside a "test ... done" block.\n\nExample:\n  test "addition"\n    check 2 + 2 equals 4\n  done');
+      }
+      const a = node.op === 'raises'
+        ? `(() => (${generateExpr(node.a, context)}))`
+        : generateExpr(node.a, context);
+      const b = generateExpr(node.b, context);
+      return `${indent}__check(${JSON.stringify(node.op)}, ${a}, ${b});`;
+    }
+
+    // v1.0.0 — export <name>: mark a top-level symbol for module.exports.
+    case 'ExportStatement':
+      return `${indent}module.exports.${node.name} = ${node.name};`;
+
+    // v1.0.0 — generators: `yield <expr>` (or bare `yield`).
+    case 'YieldStatement': {
+      if (!context.inFunction) {
+        throw new Error('"yield" can only be used inside a function created with "make".\n\nExample:\n  make countUp(n)\n    let i = 0\n    while i less than n\n      i = i + 1\n      yield i\n    done\n  done');
+      }
+      return node.value != null
+        ? `${indent}yield ${generateExpr(node.value, context)};`
+        : `${indent}yield;`;
+    }
 
     case 'ExpressionStatement':
       return `${indent}${generateExpr(node.expression, context)};`;
@@ -1331,6 +1769,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
 
     case 'FunctionDeclaration': {
       const isAsync = containsAsyncBlock(node.body) ? 'async ' : '';
+      const isGen = containsYield(node.body) ? '*' : '';
       const paramStr = node.params.map(p => {
         if (typeof p === 'object') {
           if (p.defaultValue) return `${p.name} = ${generateExpr(p.defaultValue, context)}`;
@@ -1342,7 +1781,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       context.inFunction = true;
       const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
       context.inFunction = prevInFunction;
-      return `${indent}${isAsync}function ${node.name}(${paramStr}) {\n${body}\n${indent}}`;
+      return `${indent}${isAsync}function${isGen} ${node.name}(${paramStr}) {\n${body}\n${indent}}`;
     }
 
     case 'IfStatement': {
@@ -2136,6 +2575,29 @@ function generateExpr(node, context = createGenerationContext()) {
     case 'WriteCall':
       ensureBuiltin(context, 'fs');
       return `fs.writeFileSync(${generateExpr(node.data, context)}, ${generateExpr(node.file, context)}, 'utf8')`;
+
+    // v1.0.0 — record constructor: `create a Person with name "Ada" and age 17`
+    // calls the kind factory that `define a kind called "Person"` registered.
+    case 'CreateKindExpression': {
+      const fields = node.pairs
+        .map(p => `${JSON.stringify(p.key)}: ${generateExpr(p.value, context)}`)
+        .join(', ');
+      return `${node.kind}({ ${fields} })`;
+    }
+
+    // v1.0.0 — concurrency combinators: `all of [...]` / `any of [...]` /
+    // `settled of [...]`. All are awaited; `settled` returns status records.
+    case 'ConcurrencyExpression': {
+      markAsync(context);
+      const rhs = generateExpr(node.items, context);
+      if (node.combo === 'any') return `(await Promise.race(${rhs}))`;
+      if (node.combo === 'settled') return `(await Promise.allSettled(${rhs}))`;
+      return `(await Promise.all(${rhs}))`;
+    }
+
+    // v1.0.0 — `spread of <collection>` → a fresh array from an iterable.
+    case 'SpreadExpression':
+      return `[...${generateExpr(node.collection, context)}]`;
 
     default:
       throw new Error(`Unknown expression type "${node.type}".`);

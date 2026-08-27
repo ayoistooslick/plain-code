@@ -297,6 +297,31 @@ use node-fetch
 use @scope/package-name
 ```
 
+### TypeScript-parity capabilities (1.0.0-beta)
+
+The full capability-gap audit lives in [`docs/CAPABILITY_GAP_AUDIT.md`](docs/CAPABILITY_GAP_AUDIT.md).
+These features close it in PlainScript's own grammar:
+
+- **Record kinds (classes):** `define a kind called "Person" with name is "" done`
+  + `create a Person with name "Ada" and age 17`. Plain-object instances; unknown
+  fields throw.
+- **Concurrency:** `all of [...]`, `any of [...]`, `settled of [...]`,
+  `withTimeout(promise, ms)`.
+- **Generators:** `yield` inside `make ... done`; consumed with `for each` or
+  `spread of`.
+- **Reflection:** `typeOf`, `fieldsOf`, `valueOf`, `hasField`, `sizeOf`.
+- **Binary:** `base64Encode/Decode`, `textToBytes/bytesToText`, `sha256/sha1/md5`.
+- **Config:** `yamlDecode/yamlEncode`, `load env file ".env"`.
+- **CLI & processes:** `args()`, `runCommand(cmd, [args])`.
+- **Filesystem & paths:** `fileSize`, `fileType`, `lastModified`, `walkFolder`,
+  `joinPath`, `baseName`, `folderOf`, `extensionOf`.
+- **Streams:** `writeLine`, `appendLine`.
+- **Collections:** `keyMap/mapSet/mapGet/mapHas/mapDelete`, `newSet/addToSet`.
+- **Dynamic modules:** `loadModule("./m")`.
+- **Native tests:** `test "name" ... done` with `check a equals b`,
+  `check a contains b`, `check a is b`, `check <expr> raises "msg"`.
+- **Exports:** `export <name>`.
+
 ---
 
 ## Backend Services

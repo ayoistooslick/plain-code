@@ -1,13 +1,13 @@
 {
   "name": "plainscript-lang",
-  "version": "0.1.7-rc",
+  "version": "1.0.0-beta",
   "description": "PlainScript — an Intent-Oriented Programming Language. When even a simple sentence can be code.",
   "main": "compiler/cli.js",
   "bin": {
     "plainscript": "./compiler/cli.js"
   },
   "scripts": {
-    "test": "node tests/compiler.test.js && node tests/build.test.js && node tests/telegram.test.js && node tests/ocr.test.js && node tests/backend.test.js && node tests/runtime.test.js && node tests/acceptance.test.js && node tests/whatsapp.test.js"
+    "test": "node tests/compiler.test.js && node tests/build.test.js && node tests/telegram.test.js && node tests/ocr.test.js && node tests/backend.test.js && node tests/runtime.test.js && node tests/acceptance.test.js && node tests/whatsapp.test.js && node tests/audit.test.js"
   },
   "files": [
     "compiler",

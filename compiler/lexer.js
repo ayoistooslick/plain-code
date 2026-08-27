@@ -76,6 +76,9 @@ const TOKEN = {
   EMIT:         'EMIT',         // emit "event.name" with data (event emitter)
   HAPPENS:      'HAPPENS',      // when "event.name" happens as data (event listener)
   CATCHES:      'CATCHES',      // recover when err catches "TypeError" (typed error recovery)
+  // v1.0.0 — generators. "yield" is a JavaScript reserved word, so it becomes a
+  // real keyword token (a variable named `yield` is illegal in JS anyway).
+  YIELD:        'YIELD',
   // Punctuation
   LBRACE:      'LBRACE',   // { — inline object literal (v1.2)
   RBRACE:      'RBRACE',   // }
@@ -180,6 +183,7 @@ const KEYWORDS = {
   emit:       TOKEN.EMIT,
   happens:    TOKEN.HAPPENS,
   catches:    TOKEN.CATCHES,
+  yield:      TOKEN.YIELD,
 };
 
 // Keywords that introduce raw SQL blocks (content up to "done" is collected verbatim).
@@ -320,7 +324,7 @@ function tokenize(source) {
       while (i < source.length && /[a-zA-Z0-9_]/.test(source[i])) word += source[i++];
 
       // SQL block keywords: collect raw content up to "done"
-      if (SQL_BLOCK_WORDS[word]) {
+      if (Object.prototype.hasOwnProperty.call(SQL_BLOCK_WORDS, word)) {
         const kwType = SQL_BLOCK_WORDS[word];
         tokens.push({ type: kwType, value: word, line: tokenLine, col: tokenCol });
 
@@ -400,7 +404,9 @@ function tokenize(source) {
         continue;
       }
 
-      const type = KEYWORDS[word] || TOKEN.IDENTIFIER;
+      const type = Object.prototype.hasOwnProperty.call(KEYWORDS, word)
+        ? KEYWORDS[word]
+        : TOKEN.IDENTIFIER;
       if (type === TOKEN.USE) pendingUse = true;
       tokens.push({ type, value: word, line: tokenLine, col: tokenCol });
       continue;

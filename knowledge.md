@@ -895,10 +895,77 @@ include suggestions ("Did you mean ...") — trust them.
 
 ---
 
-## 19. Copy-paste prompt for your AI
+## 19. 1.0.0-beta: TypeScript-parity capabilities
+
+These complete the capability-gap audit (`docs/CAPABILITY_GAP_AUDIT.md`). They are
+IOPL-native — PlainScript grammar, not TypeScript syntax.
+
+- **Record kinds (classes):** declare a schema, then build instances.
+  ```plainscript
+  define a kind called "Person" with
+      name is ""
+      age is 0
+  done
+  remember ada as create a Person with name "Ada" and age 17
+  show name of ada          # "Ada"
+  ```
+  `create` passes any value; unknown fields throw at runtime. Kinds are plain
+  objects — `jsonEncode`, `send mail`, DB rows all work unchanged. For different
+  shapes, compose with `merge(a, b)` instead of `extends`.
+- **Concurrency:** `all of [e1, e2]`, `any of [e1, e2]`, `settled of [e1, e2]`
+  (returns `{ status, value | reason }` records), and `withTimeout(promise, ms)`.
+  Example: `remember both as all of [fetchPage(), fetchApi()]`.
+- **Generators:** use `yield` inside `make ... done`; the function becomes a
+  generator. Consume with `for each` or `spread of`.
+  ```plainscript
+  make countUp(n)
+    remember i as 0
+    while i is less than n
+      i becomes i + 1
+      yield i
+    done
+  done
+  show spread of countUp(3)   # [ 1, 2, 3 ]
+  ```
+- **Reflection:** `typeOf(x)` → `text|number|boolean|array|record|null|function|undefined`;
+  `fieldsOf(x)`, `valueOf(x, key, fallback)`, `hasField(x, key)`, `sizeOf(x)`.
+- **Binary:** `base64Encode(s)`, `base64Decode(s)`, `textToBytes(s)`,
+  `bytesToText(b)`, `sha256(s)`, `sha1(s)`, `md5(s)`.
+- **Serialization / config:**
+  ```plainscript
+  remember cfg as yamlDecode("name: Ada\nport: 3000\n")
+  show cfg.name                       # "Ada"
+  load env file ".env"                # applies KEY=value to process.env
+  show env("PORT")
+  ```
+- **CLI & processes:** `args()` returns `process.argv.slice(2)`;
+  `remember r as runCommand("node", ["-v"])` → `r.ok`, `r.code`, `r.stdout`, `r.stderr`.
+- **Filesystem & paths:** `fileSize(p)`, `fileType(p)` (`file`/`directory`),
+  `lastModified(p)`, `walkFolder(dir)` (recursive file list); `joinPath(a, b)`,
+  `baseName(p)`, `folderOf(p)`, `extensionOf(p)`.
+- **Streams:** `writeLine(file, text)` / `appendLine(file, text)` (newline-appended).
+- **Collections:** `keyMap()` + `mapSet(m,k,v)`/`mapGet`/`mapHas`/`mapDelete`;
+  `newSet()` + `addToSet`/`removeFromSet`/`setHas`, or `unique(list)`.
+  `spread of x` makes a fresh array from any iterable.
+- **Dynamic modules:** `loadModule("./util")` requires a module at runtime.
+- **Native tests** (run the whole file — a built-in runner prints results):
+  ```plainscript
+  test "addition"
+    check add(2, 3) equals 5
+    check "hello" contains "ell"
+    check jsonDecode("nope") raises "JSON"
+  done
+  ```
+  A failing `check` prints `FAIL`, shows the line, and exits `1`.
+- **Exports:** `export <name>` marks a top-level symbol for `module.exports`
+  (use when you control the module surface; overrides auto-export of functions).
+
+---
+
+## 20. Copy-paste prompt for your AI
 
 > You are writing PlainScript (`.ps`) source that compiles with the `plainscript`
-> compiler v0.1.7. Follow these rules strictly:
+> compiler v1.0.0-beta. Follow these rules strictly:
 >
 > - Every block ends with `done`. No braces, no semicolons.
 > - Variables: `remember x as V`, reassign `x becomes V`. Print with
@@ -957,5 +1024,5 @@ include suggestions ("Did you mean ...") — trust them.
 
 ---
 
-*Every claim in this file reflects the deterministic `plainscript` compiler v0.1.7.
+*Every claim in this file reflects the deterministic `plainscript` compiler v1.0.0-beta.
 When in doubt: `plainscript check` is ground truth.*

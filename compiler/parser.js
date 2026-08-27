@@ -269,6 +269,9 @@ function parse(tokens) {
     if (token.type === TOKEN.IF)          return parseIf();
     if (token.type === TOKEN.MAKE)        return parseMake();
     if (token.type === TOKEN.GIVE)        return parseGive();
+    // v1.0.0 — generators: `yield <expr>` is only meaningful inside a function
+    // body; the generator marks the enclosing `make ... done` as a function*.
+    if (token.type === TOKEN.YIELD)       return parseYield();
     if (token.type === TOKEN.FOR)         return parseForEach();
     // v2.1.0 — every <n> <unit>s … done: interval scheduling. "every" also
     // lexes as TOKEN.EACH (the "for every" alias), so only the number+unit
@@ -566,6 +569,45 @@ function parse(tokens) {
         return { type: 'GoogleOAuthStatement', options: parsePropertyList('"google oauth" block') };
       }
 
+      // ── v1.0.0 — capability-gap features (all contextual, IOPL-native) ──
+
+      // define a kind called "Person" with … done  → record schema (classes)
+      if (token.value === 'define' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'a') {
+        return parseDefineKind();
+      }
+
+      // load env file "<path>" → apply .env KEY=VALUE pairs to process.env
+      if (token.value === 'load' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'env' &&
+          peekAt(2).type === TOKEN.IDENTIFIER && peekAt(2).value === 'file') {
+        advance(); // load
+        advance(); // env
+        advance(); // file
+        const path = consume(TOKEN.STRING,
+          'Expected an env file path string after "load env file".\n\nExample:\n  load env file ".env"');
+        return { type: 'LoadEnvFileStatement', path: path.value };
+      }
+
+      // test "<name>" … done  → native test DSL
+      if (token.value === 'test' && peekAt(1).type === TOKEN.STRING) {
+        return parseTestStatement();
+      }
+
+      // check …  → assertion, only valid inside a test block
+      if (token.value === 'check') {
+        return parseCheckStatement();
+      }
+
+      // export <name>  → mark a top-level symbol for module.exports
+      if (token.value === 'export' &&
+          peekAt(1).type === TOKEN.IDENTIFIER &&
+          peekAt(2).type !== TOKEN.LPAREN) {
+        advance(); // export
+        const name = advance().value;
+        return { type: 'ExportStatement', name };
+      }
+
       const expr = parsePrimary();
 
       if (peek().type === TOKEN.BECOMES) {
@@ -823,6 +865,97 @@ function parse(tokens) {
     consume(TOKEN.GIVE);
     const value = parseExpression();
     return { type: 'GiveStatement', value };
+  }
+
+  // v1.0.0 — generators: `yield <expr>` (optionally bare `yield`).
+  function parseYield() {
+    consume(TOKEN.YIELD);
+    let value = null;
+    if (peek().type !== TOKEN.DONE && peek().type !== TOKEN.EOF) {
+      value = parseExpression();
+    }
+    return { type: 'YieldStatement', value };
+  }
+
+  // v1.0.0 — record kinds: `define a kind called "Person" with … done`
+  // The field block reuses the property-list grammar (`age is 0`), so each
+  // field gets a default expression just like an object literal.
+  function parseDefineKind() {
+    advance(); // define
+    const art = advance(); // "a" / "an"
+    // `define a kind called "Person"` — the word "kind" is optional prose.
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'kind') {
+      advance(); // kind
+    } else if (peek().type === TOKEN.IDENTIFIER && peek().value === 'called') {
+      advance(); // (implicit 'kind' omitted)
+    } else {
+      throw new Error(makeError(
+        'Expected "kind" (or "called") after "define a ' + art.value + '".\n\nExample:\n  define a kind called "Person" with\n    name is ""\n  done',
+        peek()
+      ));
+    }
+    const called = peek();
+    if (called.type !== TOKEN.IDENTIFIER || called.value !== 'called') {
+      throw new Error(makeError(
+        'Expected "called" after "define a kind".\n\nExample:\n  define a kind called "Person" with\n    name is ""\n  done',
+        called
+      ));
+    }
+    advance(); // called
+    let name;
+    if (peek().type === TOKEN.STRING) {
+      name = advance().value;
+    } else {
+      const t = consume(TOKEN.IDENTIFIER, 'Expected a kind name after "kind called".');
+      name = t.value;
+    }
+    consume(TOKEN.WITH, 'Expected "with" after the kind name.\n\nExample:\n  define a kind called "Person" with\n    name is ""\n  done');
+    const fields = parsePropertyList('kind "' + name + '" definition');
+    return { type: 'DefineKindStatement', name, fields };
+  }
+
+  // v1.0.0 — record constructor (expression): `create a Person with name "Ada" and age 17`
+  function parseCreateKind() {
+    advance(); // create
+    advance(); // a / an
+    const kind = consume(TOKEN.IDENTIFIER, 'Expected a kind name after "create a".').value;
+    consume(TOKEN.WITH, 'Expected "with" after the kind name.\n\nExample:\n  create a Person with name "Ada" and age 17');
+    const pairs = [];
+    while (true) {
+      const key = consume(TOKEN.IDENTIFIER, 'Expected a field name in "create a ' + kind + ' with ...".').value;
+      const value = parsePrimary();
+      pairs.push({ key, value });
+      if (peek().type === TOKEN.AND) {
+        advance();
+        continue;
+      }
+      break;
+    }
+    return { type: 'CreateKindExpression', kind, pairs };
+  }
+
+  // v1.0.0 — native test DSL: `test "name" … done`
+  function parseTestStatement() {
+    advance(); // test
+    const name = consume(TOKEN.STRING, 'Expected a test name string after "test".').value;
+    const body = parseBody('"test" block');
+    return { type: 'TestStatement', name, body };
+  }
+
+  // v1.0.0 — assertions: `check <a> (equals|is|contains|raises) <b>`
+  function parseCheckStatement() {
+    advance(); // check
+    const a = parseExpression();
+    const opToken = peek();
+    if (!['equals', 'is', 'contains', 'raises'].includes(opToken.value)) {
+      throw new Error(makeError(
+        'Expected "equals", "is", "contains" or "raises" after the value in a "check".\n\nExample:\n  check score equals 42',
+        opToken
+      ));
+    }
+    const op = advance().value;
+    const b = parseExpression();
+    return { type: 'CheckStatement', a, op, b };
   }
 
   // for each <item> in <collection> ... done
@@ -1613,6 +1746,41 @@ function parse(tokens) {
 
   // primary → itemExpr | atom (postfix)*
   function parsePrimary() {
+    // v1.0.0 — record constructor: `create a Person with name "Ada" and age 17`.
+    // `create` then an article ("a"/"an") then a kind name then "with" pairs.
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'create') {
+      const a1 = peekAt(1);
+      const a2 = peekAt(2);
+      const a3 = peekAt(3);
+      if (a1.type === TOKEN.IDENTIFIER &&
+          (a1.value === 'a' || a1.value === 'an') &&
+          a2.type === TOKEN.IDENTIFIER &&
+          (a3.value === 'with')) {
+        return parseCreateKind();
+      }
+    }
+
+    // v1.0.0 — concurrency combinators: `all of [a(), b()]`, `any of [...]`,
+    // `settled of [...]`. Guard on the identifier + "of" lookahead so plain
+    // property reads like `all of the_list` still work as well as prose.
+    if (peek().type === TOKEN.IDENTIFIER &&
+        (peek().value === 'all' || peek().value === 'any' || peek().value === 'settled') &&
+        peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'of') {
+      const comboKw = advance().value; // all | any | settled
+      advance(); // of
+      const items = parseExpression();
+      return { type: 'ConcurrencyExpression', combo: comboKw, items };
+    }
+
+    // v1.0.0 — `spread of <collection>` unfolds an iterable into a new array.
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'spread' &&
+        peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'of') {
+      advance(); // spread
+      advance(); // of
+      const collection = parsePrimary();
+      return { type: 'SpreadExpression', collection };
+    }
+
     const item = tryParseItemExpression();
     if (item) return item;
     let node = parseAtom();

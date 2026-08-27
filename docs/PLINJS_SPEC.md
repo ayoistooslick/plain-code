@@ -1,4 +1,4 @@
-# PlainScript Language Specification (v0.1.7)
+# PlainScript Language Specification (v1.0.0-beta)
 
 Version: 2.1.1
 Status: Stable
@@ -152,6 +152,106 @@ While:
     while age is less than 18
         age becomes age + 1
     done
+
+---
+
+## Record Kinds, Classes & Concurrency (v1.0.0-beta)
+
+These features close the capability-gap audit (`docs/CAPABILITY_GAP_AUDIT.md`) in
+PlainScript's own intent-oriented grammar.
+
+### Record kinds (classes)
+
+Declare a schema with defaults, then build instances.
+
+    define a kind called "Person" with
+        name is ""
+        age is 0
+    done
+
+    remember ada as create a Person with name "Ada" and age 17
+    show name of ada          # "Ada"
+    show ada.age              # 17
+
+- `create a <Kind> with <field> <value> and <field> <value> ...` builds an
+  instance. `and` separates field pairs.
+- Unknown constructor fields throw at runtime (`"Person" has no field named "x"`).
+- Instances are plain objects: they serialize with `jsonEncode`, pass unchanged
+  to `send mail`, DB statements, routes, etc.
+- For optional extensions, compose with `merge(a, b)` instead of `extends`.
+  Methods are plain `make` functions receiving the record.
+
+### Concurrency combinators
+
+    remember both as all of [pageFetch(), apiFetch()]
+    remember winner as any of [slow(), fast()]
+    remember results as settled of [maybeFails(), other()]
+
+- `all of [...]` → `Promise.all` (all must resolve).
+- `any of [...]` → `Promise.race` (first to settle).
+- `settled of [...]` → `Promise.allSettled`; each item is a record with
+  `status` (`fulfilled`/`rejected`), `value`, and `reason`.
+- `withTimeout(promise, ms)` rejects the promise after `ms` if it has not settled.
+
+### Generators
+
+    make countUp(n)
+        remember i as 0
+        while i is less than n
+            i becomes i + 1
+            yield i
+        done
+    done
+
+    show spread of countUp(3)   # [ 1, 2, 3 ]
+
+A `make ... done` containing `yield` compiles to a generator (`function*`).
+Sequences are consumed lazily with `for each` or eagerly with `spread of`.
+
+### Reflection, binary & configuration (stdlib)
+
+| PlainScript                               | Behaviour                                |
+|-------------------------------------------|------------------------------------------|
+| `typeOf(x)`                                | `text\|number\|boolean\|array\|record\|null\|function\|undefined` |
+| `fieldsOf(x)` / `sizeOf(x)`                | record keys / length                     |
+| `valueOf(x, key, fallback)` / `hasField`   | safe access / key check                  |
+| `base64Encode(s)` / `base64Decode(s)`      | base64 round-trip                        |
+| `textToBytes(s)` / `bytesToText(b)`        | UTF-8 bytes round-trip                   |
+| `sha256(s)` / `sha1(s)` / `md5(s)`         | hex digests (`crypto`)                   |
+| `yamlDecode(s)` / `yamlEncode(v)`          | dependency-free YAML subset              |
+| `load env file "path"` (statement)         | applies `KEY=value` to `process.env`     |
+| `args()`                                   | `process.argv.slice(2)`                  |
+| `runCommand(cmd, [args])`                  | awaits `{ ok, code, stdout, stderr }`    |
+| `withTimeout(promise, ms)`                 | rejects on timeout                       |
+| `loadModule("./m")`                        | dynamic `require` at runtime             |
+| `walkFolder(dir)`                          | recursive list of file paths             |
+| `fileSize(p)` / `fileType(p)` / `lastModified(p)` | fs metadata                       |
+| `joinPath` / `baseName` / `folderOf` / `extensionOf` | path helpers                    |
+| `writeLine(f, t)` / `appendLine(f, t)`     | newline-terminated appends               |
+| `keyMap()` + `mapSet/mapGet/mapHas/mapDelete` | JS `Map` helpers                      |
+| `newSet()` + `addToSet/removeFromSet/setHas`  | JS `Set` helpers                      |
+
+### Native test DSL
+
+    test "addition"
+        check add(2, 3) equals 5
+        check "hello" contains "ell"
+        check typeOf({}) equals "record"
+        check jsonDecode("not json") raises "JSON"
+    done
+
+A built-in runner registers every `test "name" ... done` block, prints
+`PASS`/`FAIL`, reports a count, and exits `1` if any assertion fails. `check`
+is only valid inside a `test` block.
+
+### Exports
+
+    remember configVersion as 3
+    export configVersion
+
+`export <name>` marks a top-level symbol for `module.exports`. When any explicit
+`export` exists, the automatic top-level function export is suppressed so the
+author controls the module surface.
 
 ---
 
