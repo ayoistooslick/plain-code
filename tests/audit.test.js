@@ -464,6 +464,72 @@ test('parseDate / formatDate round-trip a date', () => {
   assert(r.code, 0);
 });
 
+console.log('\n`otherwise if` chain');
+
+test('otherwise if chains without nesting a second if', () => {
+  const js = compile([
+    'remember score as 85',
+    'if score is above 90',
+    '    show "A"',
+    'otherwise if score is above 80',
+    '    show "B"',
+    'otherwise if score is above 70',
+    '    show "C"',
+    'otherwise',
+    '    show "F"',
+    'done',
+  ].join('\n'));
+  assertIncludes(js, 'if (score > 90)');
+  assertIncludes(js, 'score > 80');
+  assertIncludes(js, 'score > 70');
+});
+
+test('otherwise if runs the matching branch at runtime', () => {
+  const r = run([
+    'remember score as 85',
+    'if score is above 90',
+    '    show "A"',
+    'otherwise if score is above 80',
+    '    show "B"',
+    'otherwise if score is above 70',
+    '    show "C"',
+    'otherwise',
+    '    show "F"',
+    'done',
+  ].join('\n'));
+  assert(r.stdout, 'B');
+  assert(r.code, 0);
+});
+
+test('otherwise if passes control to the trailing otherwise', () => {
+  const r = run([
+    'remember score as 40',
+    'if score is above 90',
+    '    show "A"',
+    'otherwise if score is above 80',
+    '    show "B"',
+    'otherwise if score is above 70',
+    '    show "C"',
+    'otherwise',
+    '    show "F"',
+    'done',
+  ].join('\n'));
+  assert(r.stdout, 'F');
+  assert(r.code, 0);
+});
+
+console.log('\nOCR buffers');
+
+test('ocr accepts an in-memory buffer expression', () => {
+  const js = compile([
+    'remember buf as readBytes("img.png")',
+    'ocr buf as text',
+    'show text',
+  ].join('\n'));
+  assertIncludes(js, 'let buf = fs.readFileSync("img.png");');
+  assertIncludes(js, 'let text = await __ocr(buf);');
+});
+
 console.log('\nExports');
 
 test('export marks a symbol for module.exports', () => {
