@@ -1147,5 +1147,5 @@ If a package is missing, the compiler prints a friendly error and stops:
 
 ---
 
-This document is the single source of truth for PlainScript v0.1.7.
+This document is the single source of truth for PlainScript v1.0.0-beta.
 Every compiler implementation must follow this specification.

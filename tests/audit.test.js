@@ -387,6 +387,83 @@ test('check with raises passes when the expression throws', () => {
   assertIncludes(r.stdout, '1 passed, 0 failed');
 });
 
+console.log('\nDocs & control-flow regression');
+
+test('nested if inside otherwise closes on its own done', () => {
+  const r = run([
+    'remember a as 2',
+    'if a is 1',
+    '  show "one"',
+    'otherwise',
+    '  if a is 2',
+    '    show "two"',
+    '  done',
+    'done',
+  ].join('\n'));
+  assert(r.stdout, 'two');
+  assert(r.code, 0);
+});
+
+test('nested if inside otherwise still runs statements after the nested if', () => {
+  const r = run([
+    'remember a as 2',
+    'if a is 1',
+    '  show "one"',
+    'otherwise',
+    '  if a is 2',
+    '    show "two"',
+    '  done',
+    '  show "tail"',
+    'done',
+  ].join('\n'));
+  assert(r.stdout, 'two\ntail');
+  assert(r.code, 0);
+});
+
+test('match supports numeric and boolean literal cases', () => {
+  const r = run([
+    'remember n as 2',
+    'match n against',
+    '  1 -> show "one"',
+    '  2 -> show "two"',
+    '  otherwise -> show "many"',
+    'done',
+    'remember flag as true',
+    'match flag against',
+    '  true -> show "yes"',
+    '  false -> show "no"',
+    'done',
+  ].join('\n'));
+  assertIncludes(r.stdout, 'two');
+  assertIncludes(r.stdout, 'yes');
+  assert(r.code, 0);
+});
+
+test('regexReplace replaces every regex match', () => {
+  const r = run('show regexReplace("a1b2c3", "\\\\d", "#")');
+  assert(r.stdout, 'a#b#c#');
+  assert(r.code, 0);
+});
+
+test('coalesce picks the first non-null non-undefined value', () => {
+  const r = run([
+    'remember cfg as {theme: null}',
+    'remember opt as undefined',
+    'show coalesce(theme of cfg, opt, "light")',
+  ].join('\n'));
+  assert(r.stdout, 'light');
+  assert(r.code, 0);
+});
+
+test('parseDate / formatDate round-trip a date', () => {
+  const r = run([
+    'remember ms as parseDate("2020-01-02")',
+    'show formatDate(ms, "DD/MM/YYYY")',
+  ].join('\n'));
+  assert(r.stdout, '02/01/2020');
+  assert(r.code, 0);
+});
+
 console.log('\nExports');
 
 test('export marks a symbol for module.exports', () => {

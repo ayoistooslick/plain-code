@@ -1659,21 +1659,73 @@ function parse(tokens) {
 
     let alternate = null;
     if (peek().type === TOKEN.OTHERWISE) {
+      // `otherwise if` is an else-if chain (sharing one `done`) ONLY when `if`
+      // sits on the same line as `otherwise`; a newline-separated `if` is a
+      // nested if statement with its own `done`.
+      const otherwiseLine = peek().line;
       advance();
-      alternate = [];
-      while (peek().type !== TOKEN.DONE) {
-        if (peek().type === TOKEN.EOF) {
-          throw new Error(makeError(
-            'Expected keyword "done" before end of file to close the "otherwise" block.',
-            peek()
-          ));
+      if (peek().type === TOKEN.IF && peek().line === otherwiseLine) {
+        alternate = [parseElseIfChain()];
+      } else {
+        alternate = [];
+        while (peek().type !== TOKEN.DONE) {
+          if (peek().type === TOKEN.EOF) {
+            throw new Error(makeError(
+              'Expected keyword "done" before end of file to close the "otherwise" block.',
+              peek()
+            ));
+          }
+          const stmt = parseStatement();
+          if (stmt) alternate.push(stmt);
         }
-        const stmt = parseStatement();
-        if (stmt) alternate.push(stmt);
       }
     }
 
     advance(); // consume DONE
+    return { type: 'IfStatement', condition, consequent, alternate };
+  }
+
+  // `otherwise if <condition> ... [otherwise if ...] [otherwise ...] done`
+  // Parses a single else-if branch; a following `otherwise if` recurses, and a
+  // trailing `otherwise` supplies the final else. The trailing `done` belongs to
+  // the outermost `if` and is consumed there, not here.
+  function parseElseIfChain() {
+    advance(); // consume IF
+    const condition = parseCondition();
+
+    const consequent = [];
+    while (peek().type !== TOKEN.OTHERWISE && peek().type !== TOKEN.DONE) {
+      if (peek().type === TOKEN.EOF) {
+        throw new Error(makeError(
+          'Expected keyword "done" before end of file to close the "otherwise if" block.',
+          peek()
+        ));
+      }
+      const stmt = parseStatement();
+      if (stmt) consequent.push(stmt);
+    }
+
+    let alternate = null;
+    if (peek().type === TOKEN.OTHERWISE) {
+      const otherwiseLine = peek().line;
+      advance();
+      if (peek().type === TOKEN.IF && peek().line === otherwiseLine) {
+        alternate = [parseElseIfChain()];
+      } else {
+        alternate = [];
+        while (peek().type !== TOKEN.DONE) {
+          if (peek().type === TOKEN.EOF) {
+            throw new Error(makeError(
+              'Expected keyword "done" before end of file to close the "otherwise" block.',
+              peek()
+            ));
+          }
+          const stmt = parseStatement();
+          if (stmt) alternate.push(stmt);
+        }
+      }
+    }
+
     return { type: 'IfStatement', condition, consequent, alternate };
   }
 
@@ -2396,7 +2448,9 @@ function parse(tokens) {
         'Expected "->" after the case expression.\n\nExample:\n  "red" → show "stop"');
       const caseBody = [];
       while (peek().type !== TOKEN.DONE && peek().type !== TOKEN.OTHERWISE &&
-             !(peek().type === TOKEN.STRING)) {
+             !(peek().type === TOKEN.STRING || peek().type === TOKEN.NUMBER ||
+               peek().type === TOKEN.TRUE_KW || peek().type === TOKEN.FALSE_KW ||
+               peek().type === TOKEN.NULL_KW)) {
         if (peek().type === TOKEN.EOF) {
           throw new Error(makeError(
             'Expected keyword "done" to close the "match" block before end of file.',

@@ -16,3 +16,9 @@ _plain_out.js
 
 # Logs
 *.log
+
+# Scratch / ad-hoc test artifacts
+data
+out.bin
+output.txt
+log.txt

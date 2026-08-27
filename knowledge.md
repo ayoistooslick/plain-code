@@ -3,7 +3,7 @@
 > **Purpose:** PlainScript is a small language with sharp edges that trip up code
 > generators (LLMs included). This file documents the language, the CLI, and
 > the project model **exactly as implemented in the `plainscript` npm package
-> v0.1.7**. Every example below was verified against the real compiler.
+> v1.0.0-beta**. Every example below was verified against the real compiler.
 >
 > **How to use:**
 > 1. Paste this entire file into your AI chat before asking it to write PlainScript.
@@ -107,7 +107,7 @@ All commands also work through `npx` and npm scripts.
 | `plainscript remove <pkg>`     | Uninstall a package from the project                              |
 | `plainscript update`           | `npm update` for all installed packages                           |
 | `plainscript doctor`           | Environment + project health report                               |
-| `plainscript version`          | Print `PlainScript v0.1.7`                                               |
+| `plainscript version`          | Print `PlainScript v1.0.0-beta`                                               |
 | `plainscript help`             | Command reference                                                 |
 
 ### Build semantics (the important one)
@@ -841,7 +841,7 @@ before publishing:
         "prepare": "plainscript build"
     },
     "devDependencies": {
-        "plainscript": "^0.1.7"
+        "plainscript": "^1.0.0-beta"
     }
 }
 ```

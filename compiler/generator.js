@@ -109,6 +109,21 @@ const BUILTIN_DECLARATIONS = {
     `  if (typeof x === 'object') return Object.keys(x).length;`,
     `  return 0;`,
     `}`,
+    `function __formatDate(x, pattern) {`,
+    `  const p = pattern || 'YYYY-MM-DD HH:mm:ss';`,
+    `  let d = x instanceof Date ? x : new Date(x);`,
+    `  if (Number.isNaN(d.getTime())) return '';`,
+    `  const pad = (n, l) => String(n).padStart(l || 2, '0');`,
+    `  const map = {`,
+    `    YYYY: String(d.getFullYear()),`,
+    `    MM: pad(d.getMonth() + 1),`,
+    `    DD: pad(d.getDate()),`,
+    `    HH: pad(d.getHours()),`,
+    `    mm: pad(d.getMinutes()),`,
+    `    ss: pad(d.getSeconds()),`,
+    `  };`,
+    `  return p.replace(/YYYY|MM|DD|HH|mm|ss/g, k => map[k]);`,
+    `}`,
     `function __yamlStringify(v, indent) {`,
     `  const pad = ' '.repeat(indent || 0);`,
     `  if (v === null || v === undefined) return 'null';`,
@@ -1082,6 +1097,23 @@ const STDLIB = {
   hasKey:   (args, context) => `Object.prototype.hasOwnProperty.call(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
   merge:    (args, context) => `{ ...${generateExpr(args[0], context)}, ...${generateExpr(args[1], context)} }`,
 
+  // ── v1.0.0 — nullable / regex / date helpers (IOPL-native).
+  // first non-null, non-undefined argument — IOPL null-coalescing.
+  coalesce: (args, context) =>
+    `(() => { const __vals = [${args.map(a => generateExpr(a, context)).join(', ')}]; for (const __v of __vals) if (__v !== null && __v !== undefined) return __v; return undefined; })()`,
+  // regex-aware replace (replace() is literal-only).
+  regexReplace: (args, context) =>
+    `String(${generateExpr(args[0], context)}).replace(new RegExp(${generateExpr(args[1], context)}, 'g'), ${args.length > 2 ? generateExpr(args[2], context) : '""'})`,
+  // ISO/date-string → milliseconds since the Unix epoch (NaN on failure).
+  parseDate: (args, context) => `Date.parse(String(${generateExpr(args[0], context)}))`,
+  // milliseconds/Date → formatted text (YYYY-MM-DD HH:mm:ss by default).
+  formatDate: (args, context) => {
+    ensureBuiltin(context, 'core');
+    const value = generateExpr(args[0], context);
+    const pattern = args.length > 1 ? generateExpr(args[1], context) : '"YYYY-MM-DD HH:mm:ss"';
+    return `__formatDate(${value}, ${pattern})`;
+  },
+
   // ── v2.1.0 — cache (Redis) accessors. All async.
 
   cacheGet: (args, context) => {
@@ -2011,23 +2043,29 @@ function generateStatement(node, indent = '', context = createGenerationContext(
         const lines = [tryBlock];
         for (let i = 0; i < node.catches.length; i++) {
           const c = node.catches[i];
-          const catchBody = c.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
           const errorName = c.name || c.param || '__plainError';
+          const catchBody = c.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+          const isFirst = i === 0;
+          const isLast = i === node.catches.length - 1;
+          if (isFirst) {
+            lines.push(`${indent}} catch (${errorName}) {`);
+          }
           if (c.errorType) {
-            if (i === 0) {
-              lines.push(`${indent}} catch (${errorName}) {`);
-              lines.push(`${indent}  if (${errorName} instanceof ${c.errorType}) {`);
-              lines.push(catchBody);
-              lines.push(`${indent}  }`);
-            } else {
-              lines.push(`${indent}  else if (${errorName} instanceof ${c.errorType}) {`);
-              lines.push(catchBody);
-              lines.push(`${indent}  }`);
-            }
-          } else {
-            lines.push(`${indent}  else {`);
+            const cond = isFirst ? 'if' : 'else if';
+            lines.push(`${indent}  ${cond} (${errorName} instanceof ${c.errorType}) {`);
             lines.push(catchBody);
             lines.push(`${indent}  }`);
+            if (isLast) lines.push(`${indent}}`);
+          } else {
+            if (isFirst && isLast) {
+              lines.push(catchBody);
+              lines.push(`${indent}}`);
+            } else {
+              lines.push(`${indent}  else {`);
+              lines.push(catchBody);
+              lines.push(`${indent}  }`);
+              if (isLast) lines.push(`${indent}}`);
+            }
           }
         }
         return lines.join('\n');
