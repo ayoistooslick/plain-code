@@ -29,16 +29,12 @@ Broadens the intent-oriented surface with AI/ML, data/storage and web features.
 
 ---
 
-## [1.0.0-beta] — 2026
-
 ### Capability-gap audit vs. TypeScript + Node.js
 
 This release closes a systematic audit of TypeScript/Node.js capabilities from an
 **Intent-Oriented** point of view — every gap is addressed *in PlainScript's own
 grammar* or explicitly documented as unnecessary. The full audit, with per-area
-status and rationale, lives in `docs/CAPABILITY_GAP_AUDIT.md`. PlainScript is
-deliberately **not** declared 1.0.0-ready until that audit is complete; `1.0.0-beta`
-reflects that it now is.
+status and rationale, lives in `docs/CAPABILITY_GAP_AUDIT.md`.
 
 ### New IOPL-native capabilities
 
@@ -76,7 +72,7 @@ reflects that it now is.
 ### New tests
 
 - `tests/audit.test.js` exercises every new capability via compile-time and
-  runtime assertions (36 tests). Total suite remains green (457 compiler + 36 audit).
+  runtime assertions (75 tests). Total suite remains green (457 compiler + 75 audit).
 
 ---
 

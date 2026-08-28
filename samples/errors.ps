@@ -1,0 +1,29 @@
+// PlainScript v1.0.0 — Error handling
+
+make risky(text)
+    remember decoded as jsonDecode(text)
+    give decoded
+done
+
+try
+    remember config as risky("not valid json")
+    show config
+recover as err
+    show "Recovered: " + message of err
+done
+
+// Without "recover", errors are swallowed silently
+try
+    remember ignored as risky("still not json")
+done
+
+// Retry a flaky operation a few times before giving up
+remember attempts as 0
+
+retry 3 times every 1 second
+    attempts becomes attempts + 1
+    remember probe as read("missing-notes.txt")
+    show probe
+done
+
+show "attempts made: " + attempts

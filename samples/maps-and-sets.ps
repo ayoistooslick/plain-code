@@ -1,0 +1,23 @@
+// PlainScript v1.0.0 — Maps and Sets
+
+remember users as keyMap()
+mapSet(users, "ada", { role: "admin" })
+mapSet(users, "bo", { role: "viewer" })
+
+show mapGet(users, "ada")
+show mapHas(users, "bo")     // true
+show mapHas(users, "cy")     // false
+
+mapDelete(users, "bo")
+show mapHas(users, "bo")     // false
+
+remember tags as newSet()
+addToSet(tags, "plainscript")
+addToSet(tags, "iopl")
+addToSet(tags, "plainscript")
+
+show setHas(tags, "iopl")         // true
+show setHas(tags, "other")        // false
+removeFromSet(tags, "iopl")
+show setHas(tags, "iopl")         // false
+show sizeOf(tags)                 // 1

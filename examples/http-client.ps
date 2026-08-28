@@ -1,0 +1,44 @@
+// PlainScript v1.0.0 — HTTP client: every method, headers and timeouts
+//
+// Run with:  plainscript run examples/http-client.ps
+//
+// Uses the public JSONPlaceholder API. Every call returns a record with
+// ok / status / headers / data; JSON bodies are parsed automatically.
+
+// GET with an explicit timeout
+remember users as get "https://jsonplaceholder.typicode.com/users" timeout 8000
+show "GET users -> " + text(status of users) + ", count " + text(length(data of users))
+
+// POST an inline object, sent as JSON
+remember created as post "https://jsonplaceholder.typicode.com/posts" with {
+    title: "Hello from PlainScript",
+    userId: 1
+}
+show "POST -> status " + text(status of created)
+if ok of created is true
+    show "new post id " + text(id of data of created)
+done
+
+// PUT replaces the whole resource
+remember replaced as put "https://jsonplaceholder.typicode.com/posts/1" with {
+    title: "Updated",
+    body: "new body",
+    userId: 1
+}
+show "PUT -> status " + text(status of replaced)
+
+// PATCH merges into the resource
+remember patched as patch "https://jsonplaceholder.typicode.com/posts/1" with {
+    title: "Patched title"
+}
+show "PATCH -> status " + text(status of patched)
+
+// DELETE
+remember removed as delete "https://jsonplaceholder.typicode.com/posts/1"
+show "DELETE -> ok " + text(ok of removed)
+
+// Custom headers and error surfacing
+remember guarded as get "https://api.example.com/private" headers {
+    Authorization: "Bearer test"
+} timeout 3000
+show "guard called? " + text(ok of guarded) + " (status " + text(status of guarded) + ")"

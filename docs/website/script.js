@@ -766,7 +766,7 @@ var LIBRARY = [
   {cat:"server",name:"404 Catch-All",desc:"Handle unmatched routes",ps:'when nothing matches\n  status 404\n  reply "Page not found"\ndone',js:'app.use((req, res) => {\n  res.status(404);\n  res.send("Page not found");\n});',skipRun:true},
   {cat:"server",name:"Validate Request Body",desc:"Require specific fields in the request body",ps:'route post "/users"\n  validate(body of request, ["name", "email"])\n  reply "Created"\ndone',js:'app.post("/users", (req, res) => {\n  __validate(req.body, ["name", "email"]);\n  res.send("Created");\n});',skipRun:true},
   {cat:"auth",name:"Google OAuth",desc:"Add Google login to your app",ps:'web app\ngoogle oauth\n  id is env("GOOGLE_CLIENT_ID")\n  secret is env("GOOGLE_CLIENT_SECRET")\n  callback is "/auth/google/callback"\n  landing is "/dashboard"\ndone',js:'__googleOAuth(app, {\n  clientId: process.env["GOOGLE_CLIENT_ID"],\n  clientSecret: process.env["GOOGLE_CLIENT_SECRET"],\n  callbackUrl: "/auth/google/callback",\n  afterLogin: "/dashboard"\n});'},
-  {cat:"cli",name:"CLI: version",desc:"Print the PlainScript version",ps:'plainscript version',js:'// Prints v1.0.0-beta',skipRun:true},
+  {cat:"cli",name:"CLI: version",desc:"Print the PlainScript version",ps:'plainscript version',js:'// Prints v1.0.0',skipRun:true},
   {cat:"cli",name:"CLI: help",desc:"Show available commands",ps:'plainscript help',js:'// Lists all CLI commands',skipRun:true},
   {cat:"cli",name:"CLI: info",desc:"Display platform and runtime info",ps:'plainscript info',js:'// Shows version, Node version, OS',skipRun:true},
   {cat:"cli",name:"CLI: clean",desc:"Remove compiled output",ps:'plainscript clean',js:'// Deletes dist/ folder',skipRun:true},

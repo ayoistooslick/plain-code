@@ -3,7 +3,7 @@
 > **Purpose:** PlainScript is a small language with sharp edges that trip up code
 > generators (LLMs included). This file documents the language, the CLI, and
 > the project model **exactly as implemented in the `plainscript` npm package
-> v1.0.0-beta**. Every example below was verified against the real compiler.
+> v1.0.0**. Every example below was verified against the real compiler.
 >
 > **How to use:**
 > 1. Paste this entire file into your AI chat before asking it to write PlainScript.
@@ -107,7 +107,7 @@ All commands also work through `npx` and npm scripts.
 | `plainscript remove <pkg>`     | Uninstall a package from the project                              |
 | `plainscript update`           | `npm update` for all installed packages                           |
 | `plainscript doctor`           | Environment + project health report                               |
-| `plainscript version`          | Print `PlainScript v1.0.0-beta`                                               |
+| `plainscript version`          | Print `PlainScript v1.0.0`                                               |
 | `plainscript help`             | Command reference                                                 |
 
 ### Build semantics (the important one)
@@ -841,7 +841,7 @@ before publishing:
         "prepare": "plainscript build"
     },
     "devDependencies": {
-        "plainscript": "^1.0.0-beta"
+        "plainscript": "^1.0.0"
     }
 }
 ```
@@ -895,7 +895,7 @@ include suggestions ("Did you mean ...") — trust them.
 
 ---
 
-## 19. 1.0.0-beta: TypeScript-parity capabilities
+## 19. 1.0.0: TypeScript-parity capabilities
 
 These complete the capability-gap audit (`docs/CAPABILITY_GAP_AUDIT.md`). They are
 IOPL-native — PlainScript grammar, not TypeScript syntax.
@@ -965,7 +965,7 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
 ## 20. Copy-paste prompt for your AI
 
 > You are writing PlainScript (`.ps`) source that compiles with the `plainscript`
-> compiler v1.0.0-beta. Follow these rules strictly:
+> compiler v1.0.0. Follow these rules strictly:
 >
 > - Every block ends with `done`. No braces, no semicolons.
 > - Variables: `remember x as V`, reassign `x becomes V`. Print with
@@ -1024,5 +1024,5 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
 
 ---
 
-*Every claim in this file reflects the deterministic `plainscript` compiler v1.0.0-beta.
+*Every claim in this file reflects the deterministic `plainscript` compiler v1.0.0.
 When in doubt: `plainscript check` is ground truth.*

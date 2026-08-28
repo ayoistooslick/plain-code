@@ -70,6 +70,27 @@ engine, no AI, no hidden codegen:
   per-IP rate limiting, email via SMTP, cron schedules and background jobs,
   WebSocket servers, and Redis-backed caching.
 
+## AI / ML and data / storage
+
+- **AI (builtin `ai`):** `chat(model, messages, options)` for OpenAI-compatible LLM
+  chat completions, `embedText(model, text, options)` for text embeddings, and
+  `similarity(a, b)` returning cosine vector similarity (-1..1). Conveniences
+  `ai_tags(text)` and `ai_post(subject, ideas, options)` compose the same runtime.
+  Auth reads `OPENAI_API_KEY`/`OPENAI_BASE_URL`, overridable per-call via options.
+- **Data / storage:** `paginate(list, page, perPage)` returns
+  `{ items, count, page, pages, perPage, hasNext, hasPrev }`; the `cache` builtin
+  falls back to an in-memory Map store with TTL when no Redis is configured.
+- **Web / full-stack:** route-scoped `body()` / `body("field")` accessor and a
+  `redirect to "<url>"` statement inside route handlers.
+
+## Collections & string primitives
+
+- `range`, `clamp`, `first`, `last`, `flatten`, `includes`, `pick`, `omit`,
+  `groupBy`, `startsWith`, `endsWith`, `truncate`, `padStart`, `padEnd`.
+- Record kinds (classes), concurrency combinators (`all of`/`any of`/`settled of`),
+  generators (`yield`), reflection, binary data, YAML, CLI/process helpers,
+  Map/Set wrappers, and the JS Gateway escape hatch.
+
 ## WhatsApp bots
 
 - QR or pairing-code linking with compile-time pairing-number validation;
