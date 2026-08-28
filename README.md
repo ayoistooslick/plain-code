@@ -1,8 +1,9 @@
 # PlainScript
 
 [![CI](https://github.com/ayoistooslick/plainscript/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/ayoistooslick/plainscript/actions/workflows/npm-publish.yml)
-[![npm version]()](https://www.npmjs.com/package/plainscript-lang)
-[![Downloads](https://i.ibb.co/Kj5jRCC1/5e14e1cf3b20.jpg)](https://www.npmjs.com/package/plainscript-lang)
+[![npm version](https://badge.fury.io/js/typescript.svg)](https://www.npmjs.com/package/plainscript-lang)
+[![Downloads](https://img.shields.io/npm/dm/typescript.svg)](https://www.npmjs.com/package/plainscript-lang)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/microsoft/TypeScript/badge)](https://securityscorecards.dev/viewer/?uri=github.com/ayoistooslick/plainscript)
 
 <p align="center">
   <img src="https://github.com/ayoistooslick/plainscript/blob/main/docs/logo.jpg" alt="PlainScript Logo" width="200" />
