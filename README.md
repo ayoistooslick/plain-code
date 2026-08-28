@@ -1,8 +1,8 @@
 # PlainScript
 
 [![CI](https://github.com/ayoistooslick/plainscript/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/ayoistooslick/plainscript/actions/workflows/npm-publish.yml)
-[![npm version](https://github.com/ayoistooslick/plainscript/blob/main/docs/logo.png)](https://www.npmjs.com/package/plainscript-lang)
-[![Downloads](https://github.com/ayoistooslick/plainscript/blob/main/docs/logo.png)](https://www.npmjs.com/package/plainscript-lang)
+[![npm version](https://i.ibb.co/Kj5jRCC1/5e14e1cf3b20.jpg)](https://www.npmjs.com/package/plainscript-lang)
+[![Downloads](https://i.ibb.co/Kj5jRCC1/5e14e1cf3b20.jpg)](https://www.npmjs.com/package/plainscript-lang)
 
 <p align="center">
   <img src="https://github.com/ayoistooslick/plainscript/blob/main/docs/logo.jpg" alt="PlainScript Logo" width="200" />
