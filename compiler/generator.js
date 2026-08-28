@@ -40,7 +40,7 @@ const BUILTIN_DECLARATIONS = {
   fs: `const fs = require('fs');`,
   path: `const path = require('path');`,
   crypto: `const crypto = require('crypto');`,
-  // v1.0.0 — env-file runtime. Applies KEY=VALUE pairs from a .env file to
+  // v1.0.0-latest — env-file runtime. Applies KEY=VALUE pairs from a .env file to
   // process.env. Blank lines and `#` comment lines are skipped.
   dotenv: [
     `function __loadEnvFile(path) {`,
@@ -86,7 +86,7 @@ const BUILTIN_DECLARATIONS = {
     `  }`,
     `}`,
   ].join('\n'),
-  // v1.0.0 — shared runtime helpers for reflection, binary-size, YAML subset
+  // v1.0.0-latest — shared runtime helpers for reflection, binary-size, YAML subset
   // parsing/emitting, spread of timeouts, and set/map helpers. Injected lazily
   // when any feature that needs them is used.
   core: [
@@ -219,7 +219,7 @@ const BUILTIN_DECLARATIONS = {
     `  });`,
     `}`,
   ].join('\n'),
-  // v1.0.0 — process execution (child processes).
+  // v1.0.0-latest — process execution (child processes).
   process: [
     `const { execFile } = require('child_process');`,
     `function __runCommand(command, args) {`,
@@ -230,7 +230,7 @@ const BUILTIN_DECLARATIONS = {
     `  });`,
     `}`,
   ].join('\n'),
-  // v1.0.0 — Map helpers.
+  // v1.0.0-latest — Map helpers.
   mapset: [
     `function __mapSet(map, key, value) { map.set(key, value); return map; }`,
   ].join('\n'),
@@ -277,7 +277,7 @@ const BUILTIN_DECLARATIONS = {
     `  return { items: slice, count: total, page, pages, perPage, hasNext: page < pages, hasPrev: page > 1 };`,
     `}`,
   ].join('\n'),
-  // v1.0.0 — dynamic module loader.
+  // v1.0.0-latest — dynamic module loader.
   loadmodule: [
     `function __loadModule(spec) {`,
     `  const path = require('path');`,
@@ -286,7 +286,7 @@ const BUILTIN_DECLARATIONS = {
     `  catch (e) { if (spec[0] !== '.') return require(spec); throw e; }`,
     `}`,
   ].join('\n'),
-  // v1.0.0 — recursive directory walker (returns full paths, files first).
+  // v1.0.0-latest — recursive directory walker (returns full paths, files first).
   walk: [
     `function __walkFolder(dir) {`,
     `  const fs = require('fs');`,
@@ -1261,7 +1261,7 @@ const STDLIB = {
   padStart: (args, context) => `String(${generateExpr(args[0], context)}).padStart(${generateExpr(args[1], context)}, String(${args.length > 2 ? generateExpr(args[2], context) : '" "'}))`,
   padEnd: (args, context) => `String(${generateExpr(args[0], context)}).padEnd(${generateExpr(args[1], context)}, String(${args.length > 2 ? generateExpr(args[2], context) : '" "'}))`,
 
-  // ── v1.0.0 — nullable / regex / date helpers (IOPL-native).
+  // ── v1.0.0-latest — nullable / regex / date helpers (IOPL-native).
   // first non-null, non-undefined argument — IOPL null-coalescing.
   coalesce: (args, context) =>
     `(() => { const __vals = [${args.map(a => generateExpr(a, context)).join(', ')}]; for (const __v of __vals) if (__v !== null && __v !== undefined) return __v; return undefined; })()`,
@@ -1351,7 +1351,7 @@ const STDLIB = {
     return `readToken(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
   },
 
-  // ── v1.0.0 — capability-gap stdlib (reflection, binary, concurrency, ...) ──
+  // ── v1.0.0-latest — capability-gap stdlib (reflection, binary, concurrency, ...) ──
 
   // Reflection
   typeOf: (args, context) => { ensureBuiltin(context, 'core'); return `__typeOf(${generateExpr(args[0], context)})`; },
@@ -1412,7 +1412,7 @@ const STDLIB = {
   // Generators / iterables
   spread: (args, context) => `[...${generateExpr(args[0], context)}]`,
 
-  // v1.0.0 — dynamic module loading (the runtime companion to `import "./x.ps"`).
+  // v1.0.0-latest — dynamic module loading (the runtime companion to `import "./x.ps"`).
   // Resolves relative to the bundler's CWD so `loadModule("./m")` behaves like
   // `require.resolve` from the program root.
   loadModule: (args, context) => {
@@ -1739,7 +1739,7 @@ function containsYield(statements) {
 function generate(ast, context = createGenerationContext()) {  if (ast.type !== 'Program') {
     throw new Error(`Expected a Program node but got "${ast.type}".`);
   }
-  // v1.0.0 — reset per-program test bookkeeping so repeated generate() calls
+  // v1.0.0-latest — reset per-program test bookkeeping so repeated generate() calls
   // (build pipeline) start clean.
   __testCount = 0;
   __testCatchers = [];
@@ -1761,7 +1761,7 @@ function generate(ast, context = createGenerationContext()) {  if (ast.type !== 
     lines.push(`if (typeof module !== 'undefined') { module.exports = { ${exported.join(', ')} }; }`);
   }
 
-  // v1.0.0 — native test runner. When any "test ... done" block exists, emit
+  // v1.0.0-latest — native test runner. When any "test ... done" block exists, emit
   // the runner helper, register each test after its function declaration, and
   // execute them. Each failure prints a message and sets process.exitCode = 1.
   if (__testCatchers.length > 0) {
@@ -1796,7 +1796,7 @@ function generate(ast, context = createGenerationContext()) {  if (ast.type !== 
   return lines.join('\n');
 }
 
-// ── v1.0.0 — test DSL bookkeeping ───────────────────────────────────────────
+// ── v1.0.0-latest — test DSL bookkeeping ───────────────────────────────────────────
 let __testCount = 0;
 let __testCatchers = [];
 let __inTest = false;
@@ -1849,7 +1849,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     case 'BecomeStatement':
       return `${indent}${generateLValue(node.target, context)} = ${generateExpr(node.value, context)};`;
 
-    // v1.0.0 — record kinds: `define a kind called "Person" with ... done`.
+    // v1.0.0-latest — record kinds: `define a kind called "Person" with ... done`.
     // Names are emitted as a JS factory that returns a fresh plain object with
     // declared defaults. Constructors prompt for required fields at compile
     // time via `create a Person with ...` (see GenerateExpr CreateKind).
@@ -1873,14 +1873,14 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       ].join('\n');
     }
 
-    // v1.0.0 — load env file "<path>": apply KEY=VALUE pairs to process.env.
+    // v1.0.0-latest — load env file "<path>": apply KEY=VALUE pairs to process.env.
     // Blank lines and `#` comments are skipped; values keep their text.
     case 'LoadEnvFileStatement': {
       ensureBuiltin(context, 'dotenv');
       return `${indent}__loadEnvFile(${JSON.stringify(node.path)});`;
     }
 
-    // v1.0.0 — native test DSL. `test "<name>" ... done` registers a runnable
+    // v1.0.0-latest — native test DSL. `test "<name>" ... done` registers a runnable
     // unit; all tests are executed after the program body with a tiny runner.
     case 'TestStatement': {
       __testCount++;
@@ -1893,7 +1893,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       return `${indent}function ${fnName}() {\n${body}\n${indent}}`;
     }
 
-    // v1.0.0 — assertion `check <a> (equals|is|contains|raises) <b>`.
+    // v1.0.0-latest — assertion `check <a> (equals|is|contains|raises) <b>`.
     // For `raises`, `a` is wrapped in a thunk so the expression is evaluated
     // inside the runner's try/catch (its thrown error is the subject).
     case 'CheckStatement': {
@@ -1907,11 +1907,11 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       return `${indent}__check(${JSON.stringify(node.op)}, ${a}, ${b});`;
     }
 
-    // v1.0.0 — export <name>: mark a top-level symbol for module.exports.
+    // v1.0.0-latest — export <name>: mark a top-level symbol for module.exports.
     case 'ExportStatement':
       return `${indent}module.exports.${node.name} = ${node.name};`;
 
-    // v1.0.0 — generators: `yield <expr>` (or bare `yield`).
+    // v1.0.0-latest — generators: `yield <expr>` (or bare `yield`).
     case 'YieldStatement': {
       if (!context.inFunction) {
         throw new Error('"yield" can only be used inside a function created with "make".\n\nExample:\n  make countUp(n)\n    let i = 0\n    while i less than n\n      i = i + 1\n      yield i\n    done\n  done');
@@ -2860,7 +2860,7 @@ function generateExpr(node, context = createGenerationContext()) {
       ensureBuiltin(context, 'fs');
       return `fs.writeFileSync(${generateExpr(node.data, context)}, ${generateExpr(node.file, context)}, 'utf8')`;
 
-    // v1.0.0 — record constructor: `create a Person with name "Ada" and age 17`
+    // v1.0.0-latest — record constructor: `create a Person with name "Ada" and age 17`
     // calls the kind factory that `define a kind called "Person"` registered.
     case 'CreateKindExpression': {
       const fields = node.pairs
@@ -2869,7 +2869,7 @@ function generateExpr(node, context = createGenerationContext()) {
       return `${node.kind}({ ${fields} })`;
     }
 
-    // v1.0.0 — concurrency combinators: `all of [...]` / `any of [...]` /
+    // v1.0.0-latest — concurrency combinators: `all of [...]` / `any of [...]` /
     // `settled of [...]`. All are awaited; `settled` returns status records.
     case 'ConcurrencyExpression': {
       markAsync(context);
@@ -2879,7 +2879,7 @@ function generateExpr(node, context = createGenerationContext()) {
       return `(await Promise.all(${rhs}))`;
     }
 
-    // v1.0.0 — `spread of <collection>` → a fresh array from an iterable.
+    // v1.0.0-latest — `spread of <collection>` → a fresh array from an iterable.
     case 'SpreadExpression':
       return `[...${generateExpr(node.collection, context)}]`;
 

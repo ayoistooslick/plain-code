@@ -1,4 +1,4 @@
-# PlainScript Language Specification (v1.0.0)
+# PlainScript Language Specification (v1.0.0-latest)
 
 Version: 2.1.1
 Status: Stable
@@ -155,7 +155,7 @@ While:
 
 ---
 
-## Record Kinds, Classes & Concurrency (v1.0.0)
+## Record Kinds, Classes & Concurrency (v1.0.0-latest)
 
 These features close the capability-gap audit (`docs/CAPABILITY_GAP_AUDIT.md`) in
 PlainScript's own intent-oriented grammar.
@@ -1147,5 +1147,5 @@ If a package is missing, the compiler prints a friendly error and stops:
 
 ---
 
-This document is the single source of truth for PlainScript v1.0.0.
+This document is the single source of truth for PlainScript v1.0.0-latest.
 Every compiler implementation must follow this specification.

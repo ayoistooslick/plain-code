@@ -76,7 +76,7 @@ const TOKEN = {
   EMIT:         'EMIT',         // emit "event.name" with data (event emitter)
   HAPPENS:      'HAPPENS',      // when "event.name" happens as data (event listener)
   CATCHES:      'CATCHES',      // recover when err catches "TypeError" (typed error recovery)
-  // v1.0.0 — generators. "yield" is a JavaScript reserved word, so it becomes a
+  // v1.0.0-latest — generators. "yield" is a JavaScript reserved word, so it becomes a
   // real keyword token (a variable named `yield` is illegal in JS anyway).
   YIELD:        'YIELD',
   // Punctuation

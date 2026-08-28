@@ -305,7 +305,7 @@ test('integration: an npm-package-style project builds src/index.ps -> dist/inde
   const dir = tmpDir();
   write(dir, 'package.json', JSON.stringify({
     name: 'my-plainscript-package',
-    version: '1.0.0',
+    version: '1.0.0-latest',
     main: 'dist/index.js',
     scripts: { build: 'plainscript build' },
     devDependencies: { plainscript: '^0.1.7' },

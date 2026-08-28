@@ -1,4 +1,4 @@
-// PlainScript v1.0.0 — Filesystem and configuration helpers
+// PlainScript v1.0.0-latest — Filesystem and configuration helpers
 
 writeFile("sample-notes.txt", "Hello from PlainScript files")
 show readFile("sample-notes.txt")
@@ -23,7 +23,7 @@ deleteFile("sample-notes-copy.txt")
 deleteFolder("sample-folder")
 
 // YAML subset
-remember config as yamlDecode("name: PlainScript\nversion: 1.0.0\n")
+remember config as yamlDecode("name: PlainScript\nversion: 1.0.0-latest\n")
 show name of config
 show version of config
 
