@@ -269,7 +269,7 @@ function parse(tokens) {
     if (token.type === TOKEN.IF)          return parseIf();
     if (token.type === TOKEN.MAKE)        return parseMake();
     if (token.type === TOKEN.GIVE)        return parseGive();
-    // v1.0.0-latest — generators: `yield <expr>` is only meaningful inside a function
+    // v1.0.1 — generators: `yield <expr>` is only meaningful inside a function
     // body; the generator marks the enclosing `make ... done` as a function*.
     if (token.type === TOKEN.YIELD)       return parseYield();
     if (token.type === TOKEN.FOR)         return parseForEach();
@@ -578,7 +578,7 @@ function parse(tokens) {
         return { type: 'GoogleOAuthStatement', options: parsePropertyList('"google oauth" block') };
       }
 
-      // ── v1.0.0-latest — capability-gap features (all contextual, IOPL-native) ──
+      // ── v1.0.1 — capability-gap features (all contextual, IOPL-native) ──
 
       // define a kind called "Person" with … done  → record schema (classes)
       if (token.value === 'define' &&
@@ -899,7 +899,7 @@ function parse(tokens) {
     return { type: 'GiveStatement', value };
   }
 
-  // v1.0.0-latest — generators: `yield <expr>` (optionally bare `yield`).
+  // v1.0.1 — generators: `yield <expr>` (optionally bare `yield`).
   function parseYield() {
     consume(TOKEN.YIELD);
     let value = null;
@@ -909,7 +909,7 @@ function parse(tokens) {
     return { type: 'YieldStatement', value };
   }
 
-  // v1.0.0-latest — record kinds: `define a kind called "Person" with … done`
+  // v1.0.1 — record kinds: `define a kind called "Person" with … done`
   // The field block reuses the property-list grammar (`age is 0`), so each
   // field gets a default expression just like an object literal.
   function parseDefineKind() {
@@ -946,7 +946,7 @@ function parse(tokens) {
     return { type: 'DefineKindStatement', name, fields };
   }
 
-  // v1.0.0-latest — record constructor (expression): `create a Person with name "Ada" and age 17`
+  // v1.0.1 — record constructor (expression): `create a Person with name "Ada" and age 17`
   function parseCreateKind() {
     advance(); // create
     advance(); // a / an
@@ -966,7 +966,7 @@ function parse(tokens) {
     return { type: 'CreateKindExpression', kind, pairs };
   }
 
-  // v1.0.0-latest — native test DSL: `test "name" … done`
+  // v1.0.1 — native test DSL: `test "name" … done`
   function parseTestStatement() {
     advance(); // test
     const name = consume(TOKEN.STRING, 'Expected a test name string after "test".').value;
@@ -974,7 +974,7 @@ function parse(tokens) {
     return { type: 'TestStatement', name, body };
   }
 
-  // v1.0.0-latest — assertions: `check <a> (equals|is|contains|raises) <b>`
+  // v1.0.1 — assertions: `check <a> (equals|is|contains|raises) <b>`
   function parseCheckStatement() {
     advance(); // check
     const a = parseExpression();
@@ -1902,7 +1902,7 @@ function parse(tokens) {
 
   // primary → itemExpr | atom (postfix)*
   function parsePrimary() {
-    // v1.0.0-latest — record constructor: `create a Person with name "Ada" and age 17`.
+    // v1.0.1 — record constructor: `create a Person with name "Ada" and age 17`.
     // `create` then an article ("a"/"an") then a kind name then "with" pairs.
     if (peek().type === TOKEN.IDENTIFIER && peek().value === 'create') {
       const a1 = peekAt(1);
@@ -1916,7 +1916,7 @@ function parse(tokens) {
       }
     }
 
-    // v1.0.0-latest — concurrency combinators: `all of [a(), b()]`, `any of [...]`,
+    // v1.0.1 — concurrency combinators: `all of [a(), b()]`, `any of [...]`,
     // `settled of [...]`. Guard on the identifier + "of" lookahead so plain
     // property reads like `all of the_list` still work as well as prose.
     if (peek().type === TOKEN.IDENTIFIER &&
@@ -1928,7 +1928,7 @@ function parse(tokens) {
       return { type: 'ConcurrencyExpression', combo: comboKw, items };
     }
 
-    // v1.0.0-latest — `spread of <collection>` unfolds an iterable into a new array.
+    // v1.0.1 — `spread of <collection>` unfolds an iterable into a new array.
     if (peek().type === TOKEN.IDENTIFIER && peek().value === 'spread' &&
         peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'of') {
       advance(); // spread

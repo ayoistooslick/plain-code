@@ -143,6 +143,43 @@ test('generate: ocr inside an if block stays awaited', () => {
   }
 });
 
+test('generate: ocr inside a route makes the handler async', () => {
+  const js = compileProgram('web app\nroute post "/verify"\n  ocr "scan.png" as text\n  reply text\ndone\nstart 0');
+  if (!js.includes('app.post("/verify", async (req, res) => {')) {
+    throw new Error(`route handler not async:\n${js}`);
+  }
+  if (!js.includes('let text = await __ocr("scan.png");')) {
+    throw new Error(`__ocr call missing:\n${js}`);
+  }
+});
+
+test('generate: ocr nested in if/otherwise inside a route keeps the handler async', () => {
+  const js = compileProgram('web app\nroute post "/v"\n  if count is 0\n    reply "none"\n  otherwise\n    ocr "b.png" as s\n    reply s\n  done\ndone\nstart 0');
+  if (!js.includes('app.post("/v", async (req, res) => {')) {
+    throw new Error(`route handler not async:\n${js}`);
+  }
+  if (!js.includes('let s = await __ocr("b.png");')) {
+    throw new Error(`__ocr call missing:\n${js}`);
+  }
+});
+
+test('generate: a route without any await stays synchronous (no churn)', () => {
+  const js = compileProgram('web app\nroute get "/h"\n  reply "hi"\ndone\nstart 0');
+  if (!js.includes('app.get("/h", (req, res) => {')) {
+    throw new Error(`plain route changed shape unexpectedly:\n${js}`);
+  }
+});
+
+test('generate: ocr inside a function inside another function only marks the inner one async', () => {
+  const js = generate(parse(tokenize('make outer()\n  make inner()\n    ocr "a.png" as t\n    give t\n  done\n  give 1\ndone')));
+  if (!js.includes('function outer() {')) {
+    throw new Error(`outer function should stay synchronous:\n${js}`);
+  }
+  if (!js.includes('async function inner() {')) {
+    throw new Error(`inner function should be async:\n${js}`);
+  }
+});
+
 // ── Dependency detection ───────────────────────────────────────────────────
 
 test('detect: ocr maps to tesseract.js', () => {

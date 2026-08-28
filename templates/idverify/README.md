@@ -21,7 +21,7 @@ templates/idverify/
 ## Run it
 
 ```bash
-npm install --save-dev plainscript   # install the compiler
+npm install --save-dev plainscript-lang   # install the compiler
 plainscript build                    # src/ → dist/
 plainscript run src/demo.ps          # run the demo
 node -e "console.log(require('./dist/index.js').verifyDocument({ holder: 'ADA LOVELACE' }))"

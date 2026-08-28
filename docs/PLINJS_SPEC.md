@@ -1,4 +1,4 @@
-# PlainScript Language Specification (v1.0.0-latest)
+# PlainScript Language Specification (v1.0.1)
 
 Version: 2.1.1
 Status: Stable
@@ -155,7 +155,7 @@ While:
 
 ---
 
-## Record Kinds, Classes & Concurrency (v1.0.0-latest)
+## Record Kinds, Classes & Concurrency (v1.0.1)
 
 These features close the capability-gap audit (`docs/CAPABILITY_GAP_AUDIT.md`) in
 PlainScript's own intent-oriented grammar.
@@ -439,7 +439,7 @@ filesystem.
 ### Deployment workflow
 
 ```bash
-npm install --save-dev plainscript
+npm install --save-dev plainscript-lang
 plainscript install
 plainscript build app.ps
 plainscript run app.ps
@@ -1147,5 +1147,5 @@ If a package is missing, the compiler prints a friendly error and stops:
 
 ---
 
-This document is the single source of truth for PlainScript v1.0.0-latest.
+This document is the single source of truth for PlainScript v1.0.1.
 Every compiler implementation must follow this specification.

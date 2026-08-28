@@ -4,6 +4,28 @@ All notable changes to PlainScript are documented here.
 
 ---
 
+## [1.0.1] — 2026
+
+### Fixed
+
+- **Async keywords now work inside routes, listeners, and functions.** `ocr`,
+  `ask`, HTTP calls, cache, mail, and every other await-producing construct used
+  to rely on a hand-maintained list of statement types to decide whether an
+  enclosing handler should be `async`. That made some keywords work only at the
+  top level of a program while silently breaking inside a route. The compiler now
+  decides a handler's `async`-ness by observing what it actually emits, so any
+  keyword — existing or future — works anywhere a statement is allowed.
+- **Package identity.** The npm library is `plainscript-lang`; docs, templates,
+  and examples now use `plainscript-lang` for `devDependencies` and install
+  commands (previously spelled as `plainscript`).
+
+### Changed
+
+- Version bumped to **v1.0.1** across the compiler, package metadata, templates,
+  fixtures, examples, samples, and documentation.
+
+---
+
 ## [2.2.0] — 2026
 
 ### AI / ML and data / storage & web additions

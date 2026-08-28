@@ -40,7 +40,7 @@ const BUILTIN_DECLARATIONS = {
   fs: `const fs = require('fs');`,
   path: `const path = require('path');`,
   crypto: `const crypto = require('crypto');`,
-  // v1.0.0-latest — env-file runtime. Applies KEY=VALUE pairs from a .env file to
+  // v1.0.1 — env-file runtime. Applies KEY=VALUE pairs from a .env file to
   // process.env. Blank lines and `#` comment lines are skipped.
   dotenv: [
     `function __loadEnvFile(path) {`,
@@ -86,7 +86,7 @@ const BUILTIN_DECLARATIONS = {
     `  }`,
     `}`,
   ].join('\n'),
-  // v1.0.0-latest — shared runtime helpers for reflection, binary-size, YAML subset
+  // v1.0.1 — shared runtime helpers for reflection, binary-size, YAML subset
   // parsing/emitting, spread of timeouts, and set/map helpers. Injected lazily
   // when any feature that needs them is used.
   core: [
@@ -219,7 +219,7 @@ const BUILTIN_DECLARATIONS = {
     `  });`,
     `}`,
   ].join('\n'),
-  // v1.0.0-latest — process execution (child processes).
+  // v1.0.1 — process execution (child processes).
   process: [
     `const { execFile } = require('child_process');`,
     `function __runCommand(command, args) {`,
@@ -230,7 +230,7 @@ const BUILTIN_DECLARATIONS = {
     `  });`,
     `}`,
   ].join('\n'),
-  // v1.0.0-latest — Map helpers.
+  // v1.0.1 — Map helpers.
   mapset: [
     `function __mapSet(map, key, value) { map.set(key, value); return map; }`,
   ].join('\n'),
@@ -277,7 +277,7 @@ const BUILTIN_DECLARATIONS = {
     `  return { items: slice, count: total, page, pages, perPage, hasNext: page < pages, hasPrev: page > 1 };`,
     `}`,
   ].join('\n'),
-  // v1.0.0-latest — dynamic module loader.
+  // v1.0.1 — dynamic module loader.
   loadmodule: [
     `function __loadModule(spec) {`,
     `  const path = require('path');`,
@@ -286,7 +286,7 @@ const BUILTIN_DECLARATIONS = {
     `  catch (e) { if (spec[0] !== '.') return require(spec); throw e; }`,
     `}`,
   ].join('\n'),
-  // v1.0.0-latest — recursive directory walker (returns full paths, files first).
+  // v1.0.1 — recursive directory walker (returns full paths, files first).
   walk: [
     `function __walkFolder(dir) {`,
     `  const fs = require('fs');`,
@@ -1121,7 +1121,7 @@ const STDLIB = {
   // v1.2 — Telegram runtime helpers
   bot:         (args, context) => {
     ensureBuiltin(context, 'telegram');
-    if (!context.inFunction) context.needsAsync = true;
+    markAsync(context);
     return `BOT = await Telegram.createTelegramBot(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
   },
   sendMessage: (args, context) => {
@@ -1261,7 +1261,7 @@ const STDLIB = {
   padStart: (args, context) => `String(${generateExpr(args[0], context)}).padStart(${generateExpr(args[1], context)}, String(${args.length > 2 ? generateExpr(args[2], context) : '" "'}))`,
   padEnd: (args, context) => `String(${generateExpr(args[0], context)}).padEnd(${generateExpr(args[1], context)}, String(${args.length > 2 ? generateExpr(args[2], context) : '" "'}))`,
 
-  // ── v1.0.0-latest — nullable / regex / date helpers (IOPL-native).
+  // ── v1.0.1 — nullable / regex / date helpers (IOPL-native).
   // first non-null, non-undefined argument — IOPL null-coalescing.
   coalesce: (args, context) =>
     `(() => { const __vals = [${args.map(a => generateExpr(a, context)).join(', ')}]; for (const __v of __vals) if (__v !== null && __v !== undefined) return __v; return undefined; })()`,
@@ -1351,7 +1351,7 @@ const STDLIB = {
     return `readToken(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
   },
 
-  // ── v1.0.0-latest — capability-gap stdlib (reflection, binary, concurrency, ...) ──
+  // ── v1.0.1 — capability-gap stdlib (reflection, binary, concurrency, ...) ──
 
   // Reflection
   typeOf: (args, context) => { ensureBuiltin(context, 'core'); return `__typeOf(${generateExpr(args[0], context)})`; },
@@ -1412,7 +1412,7 @@ const STDLIB = {
   // Generators / iterables
   spread: (args, context) => `[...${generateExpr(args[0], context)}]`,
 
-  // v1.0.0-latest — dynamic module loading (the runtime companion to `import "./x.ps"`).
+  // v1.0.1 — dynamic module loading (the runtime companion to `import "./x.ps"`).
   // Resolves relative to the bundler's CWD so `loadModule("./m")` behaves like
   // `require.resolve` from the program root.
   loadModule: (args, context) => {
@@ -1500,9 +1500,41 @@ const STDLIB = {
   },
 };
 
-// Mark the enclosing program async when a call awaits at the top level.
+// Mark the enclosing program async when a call awaits at the top level, and
+// record that this scope emitted an `await` so handler and function bodies can
+// decide their own async-ness at generation time (see generateBlock). Routing
+// every await-emitting construct through this single function removes the need
+// for a separate hand-maintained registry of async statement types — so a new
+// async keyword can never silently break when used inside a route, listener, or
+// function.
 function markAsync(context) {
-  if (!context.inFunction) context.needsAsync = true;
+  context.emittedAwait = true;
+  // Only a construct that awaits at the true top level needs the program
+  // wrapped in an async IIFE. Awaits emitted inside a user function (inFunction)
+  // or inside a route/listener/404 handler (inHandler) are handled by marking
+  // that function/handler async instead — they must not drag the whole program
+  // into an async wrapper, or "top-level use wraps the whole program" would be
+  // the only safe nesting level for a new async keyword.
+  if (!context.inFunction && !context.inHandler) context.needsAsync = true;
+}
+
+// Generate a body of statements and report whether it emitted an `await`.
+//
+// This is the single source of truth for whether a route handler, listener,
+// 404 handler, or user function must be declared `async`. Previously this was
+// decided by a separate AST walker (containsAsyncBlock) that had to be kept in
+// sync by hand with every construct that compiles down to `await` — the exact
+// fragility that made "top-level use wraps the whole program" the only place
+// certain keywords (like ocr) were guaranteed to work. By observing the output
+// of generation instead, whatever a body contains is handled correctly, even if
+// it uses a brand-new async keyword.
+function generateBlock(statements, indent, context) {
+  const prev = context.emittedAwait;
+  context.emittedAwait = false;
+  const out = statements.map(s => generateStatement(s, indent, context)).join('\n');
+  const emitted = context.emittedAwait;
+  context.emittedAwait = prev;
+  return { out, emitted };
 }
 
 // v2.1.0 — generate a request accessor (param/query/header). These compile to
@@ -1574,6 +1606,7 @@ function emitSqlCall(kind, sql, params, indent, context) {
     let n = 0;
     const pgSql = String(sql).replace(/\?/g, () => (++n <= params.length ? `$${n}` : '?'));
     const call = `${_sqlClientVar}.query(\`${pgSql}\`, [${args}])`;
+    markAsync(context);
     return kind === 'query' ? `(await ${call}).rows` : `await ${call}`;
   }
   switch (kind) {
@@ -1589,7 +1622,9 @@ function createGenerationContext() {
     requires: new Set(),
     pendingPrelude: [],
     needsAsync: false, // true when top-level code emits await (js blocks / ask)
+    emittedAwait: false, // true when the current generateBlock emitted an await
     inFunction: false, // true while generating inside a function-like scope
+    inHandler: false,  // true while generating a route/listener/404 response body
     loopDepth: 0,       // >0 while generating inside a for-each / for-index / while loop
   };
 }
@@ -1654,72 +1689,6 @@ function ensureBuiltin(context, moduleName) {
   }
 }
 
-// Builtins whose calls await. A statement containing one of these anywhere in
-// its expressions must compile into an async context.
-const ASYNC_CALL_NAMES = new Set([
-  // v2.1.0 — cache and email
-  'cacheGet', 'cacheSet', 'cacheDelete', 'sendMail',
-  // v2.2.0 — AI/ML calls await their model endpoint
-  'chat', 'embedText',
-  // v1.2 — Telegram helpers (await their API transport)
-  'bot', 'sendMessage', 'sendPhoto', 'editMessage', 'getChat', 'getMyChats',
-]);
-
-// Collect async builtin call names reachable from an AST fragment.
-function findAsyncCalls(node, found) {
-  if (!node || typeof node !== 'object') return found;
-  if (Array.isArray(node)) {
-    for (const item of node) findAsyncCalls(item, found);
-    return found;
-  }
-  if (node.type === 'CallExpression' && ASYNC_CALL_NAMES.has(node.name)) {
-    found.add(node.name);
-  }
-  // v2.1.1 — HTTP client calls await; "wait for <expr>" awaits explicitly.
-  if (node.type === 'HttpCall' || node.type === 'AwaitExpression') {
-    found.add(node.type);
-  }
-  for (const value of Object.values(node)) {
-    if (value && typeof value === 'object') findAsyncCalls(value, found);
-  }
-  return found;
-}
-
-// True when any statement in the block emits `await` (a JavaScript block,
-// `ask`, or `ocr`), including inside nested if / loop bodies. Nested PlainScript
-// function declarations are handled independently, so they are not descended
-// into.
-function containsAsyncBlock(statements) {
-  for (const stmt of statements || []) {
-    if (stmt.type === 'AskStatement' || stmt.type === 'JavaScriptBlock' || stmt.type === 'OcrStatement') return true;
-    // v2.1.0 — transactions always await; PostgreSQL SQL statements await;
-    // mail sends, cache setup and websocket handlers await.
-    if (stmt.type === 'TransactionStatement') return true;
-    if (stmt.type === 'SendMailStatement' || stmt.type === 'CacheStatement') return true;
-    // v2.1.1 — opening the database awaits (native/wasm engine probe);
-    // retry loops pause between attempts; try/recover recurse.
-    if (stmt.type === 'DatabaseStatement' || stmt.type === 'RetryStatement') return true;
-    if (stmt.type === 'TryStatement') {
-      if (containsAsyncBlock(stmt.tryBody)) return true;
-      if (stmt.recoverBody && containsAsyncBlock(stmt.recoverBody)) return true;
-      continue;
-    }
-    if (_sqlDriver === 'pg' && (
-      stmt.type === 'QueryStatement' || stmt.type === 'InsertStatement' ||
-      stmt.type === 'UpdateStatement' || stmt.type === 'DeleteStatement' ||
-      stmt.type === 'ExecuteStatement' || stmt.type === 'RememberSqlStatement'
-    )) return true;
-    if (findAsyncCalls(stmt, new Set()).size > 0) return true;
-    if (stmt.type === 'IfStatement') {
-      if (containsAsyncBlock(stmt.consequent)) return true;
-      if (stmt.alternate && containsAsyncBlock(stmt.alternate)) return true;
-    } else if (stmt.type !== 'FunctionDeclaration' && stmt.body && Array.isArray(stmt.body)) {
-      if (containsAsyncBlock(stmt.body)) return true;
-    }
-  }
-  return false;
-}
-
 // True when any statement in a block (recursively, skipping nested function
 // declarations) contains a `yield`, which marks the enclosing function as a
 // generator (function*).
@@ -1739,7 +1708,7 @@ function containsYield(statements) {
 function generate(ast, context = createGenerationContext()) {  if (ast.type !== 'Program') {
     throw new Error(`Expected a Program node but got "${ast.type}".`);
   }
-  // v1.0.0-latest — reset per-program test bookkeeping so repeated generate() calls
+  // v1.0.1 — reset per-program test bookkeeping so repeated generate() calls
   // (build pipeline) start clean.
   __testCount = 0;
   __testCatchers = [];
@@ -1761,7 +1730,7 @@ function generate(ast, context = createGenerationContext()) {  if (ast.type !== 
     lines.push(`if (typeof module !== 'undefined') { module.exports = { ${exported.join(', ')} }; }`);
   }
 
-  // v1.0.0-latest — native test runner. When any "test ... done" block exists, emit
+  // v1.0.1 — native test runner. When any "test ... done" block exists, emit
   // the runner helper, register each test after its function declaration, and
   // execute them. Each failure prints a message and sets process.exitCode = 1.
   if (__testCatchers.length > 0) {
@@ -1796,7 +1765,7 @@ function generate(ast, context = createGenerationContext()) {  if (ast.type !== 
   return lines.join('\n');
 }
 
-// ── v1.0.0-latest — test DSL bookkeeping ───────────────────────────────────────────
+// ── v1.0.1 — test DSL bookkeeping ───────────────────────────────────────────
 let __testCount = 0;
 let __testCatchers = [];
 let __inTest = false;
@@ -1849,7 +1818,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     case 'BecomeStatement':
       return `${indent}${generateLValue(node.target, context)} = ${generateExpr(node.value, context)};`;
 
-    // v1.0.0-latest — record kinds: `define a kind called "Person" with ... done`.
+    // v1.0.1 — record kinds: `define a kind called "Person" with ... done`.
     // Names are emitted as a JS factory that returns a fresh plain object with
     // declared defaults. Constructors prompt for required fields at compile
     // time via `create a Person with ...` (see GenerateExpr CreateKind).
@@ -1873,14 +1842,14 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       ].join('\n');
     }
 
-    // v1.0.0-latest — load env file "<path>": apply KEY=VALUE pairs to process.env.
+    // v1.0.1 — load env file "<path>": apply KEY=VALUE pairs to process.env.
     // Blank lines and `#` comments are skipped; values keep their text.
     case 'LoadEnvFileStatement': {
       ensureBuiltin(context, 'dotenv');
       return `${indent}__loadEnvFile(${JSON.stringify(node.path)});`;
     }
 
-    // v1.0.0-latest — native test DSL. `test "<name>" ... done` registers a runnable
+    // v1.0.1 — native test DSL. `test "<name>" ... done` registers a runnable
     // unit; all tests are executed after the program body with a tiny runner.
     case 'TestStatement': {
       __testCount++;
@@ -1893,7 +1862,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       return `${indent}function ${fnName}() {\n${body}\n${indent}}`;
     }
 
-    // v1.0.0-latest — assertion `check <a> (equals|is|contains|raises) <b>`.
+    // v1.0.1 — assertion `check <a> (equals|is|contains|raises) <b>`.
     // For `raises`, `a` is wrapped in a thunk so the expression is evaluated
     // inside the runner's try/catch (its thrown error is the subject).
     case 'CheckStatement': {
@@ -1907,11 +1876,11 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       return `${indent}__check(${JSON.stringify(node.op)}, ${a}, ${b});`;
     }
 
-    // v1.0.0-latest — export <name>: mark a top-level symbol for module.exports.
+    // v1.0.1 — export <name>: mark a top-level symbol for module.exports.
     case 'ExportStatement':
       return `${indent}module.exports.${node.name} = ${node.name};`;
 
-    // v1.0.0-latest — generators: `yield <expr>` (or bare `yield`).
+    // v1.0.1 — generators: `yield <expr>` (or bare `yield`).
     case 'YieldStatement': {
       if (!context.inFunction) {
         throw new Error('"yield" can only be used inside a function created with "make".\n\nExample:\n  make countUp(n)\n    let i = 0\n    while i less than n\n      i = i + 1\n      yield i\n    done\n  done');
@@ -1960,13 +1929,13 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       // body is emitted verbatim: JavaScript indentation, template literals,
       // and line structure are preserved as written (RFC-0011 §31).
       if (node.name) {
-        if (!context.inFunction) context.needsAsync = true;
+        markAsync(context);
         return `${indent}let ${node.name} = await (async () => {\n${node.body}\n${indent}})();`;
       }
       // Statement-level blocks inside functions/routes/loops, or that need
       // top-level await, retain the async-context wrapper.
       if (context.inFunction || hasTopLevelAwait) {
-        if (!context.inFunction) context.needsAsync = true;
+        markAsync(context);
         return `${indent}await (async () => {\n${node.body}\n${indent}})();`;
       }
       // Synchronous statement-level block: emit its body directly/verbatim.
@@ -1976,7 +1945,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // ask name  /  ask "<prompt>" as name
     case 'AskStatement': {
       ensureBuiltin(context, 'ask');
-      if (!context.inFunction) context.needsAsync = true;
+      markAsync(context);
       const prompt = node.prompt != null ? JSON.stringify(node.prompt) : '"> "';
       return `${indent}let ${node.variable} = await __ask(${prompt});`;
     }
@@ -1984,14 +1953,18 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // v2.0.1 — ocr "<image>" as <variable> [using "<lang>"]
     case 'OcrStatement': {
       ensureBuiltin(context, 'ocr');
-      if (!context.inFunction) context.needsAsync = true;
+      markAsync(context);
       const image = generateExpr(node.image, context);
       const langArg = node.lang != null ? `, ${JSON.stringify(node.lang)}` : '';
       return `${indent}let ${node.variable} = await __ocr(${image}${langArg});`;
     }
 
     case 'FunctionDeclaration': {
-      const isAsync = containsAsyncBlock(node.body) ? 'async ' : '';
+      const prevInFunction = context.inFunction;
+      context.inFunction = true;
+      const block = generateBlock(node.body, indent + '  ', context);
+      context.inFunction = prevInFunction;
+      const isAsync = block.emitted ? 'async ' : '';
       const isGen = containsYield(node.body) ? '*' : '';
       const paramStr = node.params.map(p => {
         if (typeof p === 'object') {
@@ -2000,11 +1973,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
         }
         return p;
       }).join(', ');
-      const prevInFunction = context.inFunction;
-      context.inFunction = true;
-      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
-      context.inFunction = prevInFunction;
-      return `${indent}${isAsync}function${isGen} ${node.name}(${paramStr}) {\n${body}\n${indent}}`;
+      return `${indent}${isAsync}function${isGen} ${node.name}(${paramStr}) {\n${block.out}\n${indent}}`;
     }
 
     case 'IfStatement': {
@@ -2074,24 +2043,32 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // v0.3 — Express runtime
 
     case 'ListenStatement': {
-      const handlerAsync = containsAsyncBlock(node.body) ? 'async ' : '';
-      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
-      return `${indent}app.listen(${generateExpr(node.port, context)}, ${handlerAsync}() => {\n${body}\n${indent}});`;
+      const prevInHandler = context.inHandler;
+      context.inHandler = true;
+      const block = generateBlock(node.body, indent + '  ', context);
+      context.inHandler = prevInHandler;
+      const handlerAsync = block.emitted ? 'async ' : '';
+      return `${indent}app.listen(${generateExpr(node.port, context)}, ${handlerAsync}() => {\n${block.out}\n${indent}});`;
     }
 
     case 'RouteStatement': {
       _inRoute = true;
-      const handlerAsync = containsAsyncBlock(node.body) ? 'async ' : '';
-      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      const prevInHandler = context.inHandler;
+      context.inHandler = true;
+      const block = generateBlock(node.body, indent + '  ', context);
+      context.inHandler = prevInHandler;
       _inRoute = false;
-      return `${indent}app.get(${JSON.stringify(routePath(node.path))}, ${handlerAsync}(req, res) => {\n${body}\n${indent}});`;
+      const handlerAsync = block.emitted ? 'async ' : '';
+      return `${indent}app.get(${JSON.stringify(routePath(node.path))}, ${handlerAsync}(req, res) => {\n${block.out}\n${indent}});`;
     }
 
     case 'ReplyStatement':
       if (_inTelegram) {
+        markAsync(context);
         return `${indent}await Telegram.sendMessage(ctx.chatId, ${generateExpr(node.value, context)});`;
       }
       if (_inWhatsApp) {
+        markAsync(context);
         ensureBuiltin(context, 'whatsapp');
         return `${indent}await __whatsappReply(__waCtx.chat, ${generateExpr(node.value, context)});`;
       }
@@ -2102,9 +2079,11 @@ function generateStatement(node, indent = '', context = createGenerationContext(
         .map(p => `${JSON.stringify(p.key)}: ${generateExpr(p.value, context)}`)
         .join(', ');
       if (_inTelegram) {
+        markAsync(context);
         return `${indent}await Telegram.sendMessage(ctx.chatId, JSON.stringify({ ${props} }));`;
       }
       if (_inWhatsApp) {
+        markAsync(context);
         ensureBuiltin(context, 'whatsapp');
         return `${indent}await __whatsappReply(__waCtx.chat, JSON.stringify({ ${props} }));`;
       }
@@ -2117,6 +2096,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // button is rendered as [text, data] and rows are merged into that list.
     case 'ReplyWithButtonsStatement': {
       ensureBuiltin(context, 'telegram');
+      markAsync(context);
       const pairs = node.buttons.flat().map(({ text, data }) => [text, data]);
       return `${indent}await Telegram.sendMessage(ctx.chatId, ${generateExpr(node.value, context)}, ${JSON.stringify(pairs)});`;
     }
@@ -2138,10 +2118,13 @@ function generateStatement(node, indent = '', context = createGenerationContext(
 
     case 'SimpleRouteStatement': {
       _inRoute = true;
-      const handlerAsync = containsAsyncBlock(node.body) ? 'async ' : '';
-      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      const prevInHandler = context.inHandler;
+      context.inHandler = true;
+      const block = generateBlock(node.body, indent + '  ', context);
+      context.inHandler = prevInHandler;
       _inRoute = false;
-      return `${indent}app.${node.method}(${JSON.stringify(routePath(node.path))}, ${handlerAsync}(req, res) => {\n${body}\n${indent}});`;
+      const handlerAsync = block.emitted ? 'async ' : '';
+      return `${indent}app.${node.method}(${JSON.stringify(routePath(node.path))}, ${handlerAsync}(req, res) => {\n${block.out}\n${indent}});`;
     }
 
     // v2.1.0 — group "<prefix>" ... done: composes routes under a shared
@@ -2268,10 +2251,13 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // in registration order).
     case 'NotFoundStatement': {
       _inRoute = true;
-      const handlerAsync = containsAsyncBlock(node.body) ? 'async ' : '';
-      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      const prevInHandler = context.inHandler;
+      context.inHandler = true;
+      const block = generateBlock(node.body, indent + '  ', context);
+      context.inHandler = prevInHandler;
       _inRoute = false;
-      return `${indent}app.use((${handlerAsync}req, res) => {\n${body}\n${indent}});`;
+      const handlerAsync = block.emitted ? 'async ' : '';
+      return `${indent}app.use((${handlerAsync}req, res) => {\n${block.out}\n${indent}});`;
     }
 
     // ── v2.1.1 — error handling and retries
@@ -2364,7 +2350,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     case 'PostgresStatement': {
       _sqlDriver = 'pg';
       _sqlClientVar = 'db';
-      if (!context.inFunction) context.needsAsync = true;
+      markAsync(context);
       return [
         emitRequire(context, 'postgres'),
         `${indent}const db = new Pool({ connectionString: ${generateExpr(node.connection, context)} });`,
@@ -2395,7 +2381,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       if (_sqlDriver === 'pg') {
         const prevClient = _sqlClientVar;
         _sqlClientVar = '__txClient';
-        if (!context.inFunction) context.needsAsync = true;
+        markAsync(context);
         const body = node.body.map(s => generateStatement(s, indent + '      ', context)).join('\n');
         _sqlClientVar = prevClient;
         return [
@@ -2428,7 +2414,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
 
     case 'TelegramCommandStatement': {
       ensureBuiltin(context, 'telegram');
-      if (!context.inFunction) context.needsAsync = true;
+      markAsync(context);
       _inTelegram = true;
       const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
       _inTelegram = false;
@@ -2440,7 +2426,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
 
     case 'TelegramCallbackStatement': {
       ensureBuiltin(context, 'telegram');
-      if (!context.inFunction) context.needsAsync = true;
+      markAsync(context);
       _inTelegram = true;
       const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
       _inTelegram = false;
@@ -2449,7 +2435,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
 
     case 'TelegramStartStatement': {
       ensureBuiltin(context, 'telegram');
-      if (!context.inFunction) context.needsAsync = true;
+      markAsync(context);
       return `${indent}await BOT.start();`;
     }
 
@@ -2488,7 +2474,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // WhatsApp message as a normalized PlainScript record on `message`.
     case 'WhatsAppOnMessageStatement': {
       ensureBuiltin(context, 'whatsapp');
-      if (!context.inFunction) context.needsAsync = true;
+      markAsync(context);
       const prevInWhatsApp = _inWhatsApp;
       _inWhatsApp = true;
       const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
@@ -2860,7 +2846,7 @@ function generateExpr(node, context = createGenerationContext()) {
       ensureBuiltin(context, 'fs');
       return `fs.writeFileSync(${generateExpr(node.data, context)}, ${generateExpr(node.file, context)}, 'utf8')`;
 
-    // v1.0.0-latest — record constructor: `create a Person with name "Ada" and age 17`
+    // v1.0.1 — record constructor: `create a Person with name "Ada" and age 17`
     // calls the kind factory that `define a kind called "Person"` registered.
     case 'CreateKindExpression': {
       const fields = node.pairs
@@ -2869,7 +2855,7 @@ function generateExpr(node, context = createGenerationContext()) {
       return `${node.kind}({ ${fields} })`;
     }
 
-    // v1.0.0-latest — concurrency combinators: `all of [...]` / `any of [...]` /
+    // v1.0.1 — concurrency combinators: `all of [...]` / `any of [...]` /
     // `settled of [...]`. All are awaited; `settled` returns status records.
     case 'ConcurrencyExpression': {
       markAsync(context);
@@ -2879,7 +2865,7 @@ function generateExpr(node, context = createGenerationContext()) {
       return `(await Promise.all(${rhs}))`;
     }
 
-    // v1.0.0-latest — `spread of <collection>` → a fresh array from an iterable.
+    // v1.0.1 — `spread of <collection>` → a fresh array from an iterable.
     case 'SpreadExpression':
       return `[...${generateExpr(node.collection, context)}]`;
 

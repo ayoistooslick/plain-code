@@ -3,7 +3,7 @@
 > **Purpose:** This file is a coding guide. If you are an AI (or a human) asked
 > to write PlainScript source, read this file — it teaches you **how to code in
 > PlainScript**. It documents the language, the CLI, and the project model
-> **exactly as implemented in the `plainscript` npm package v1.0.0-latest**. Every
+> **exactly as implemented in the `plainscript-lang` npm package v1.0.1**. Every
 > example below was verified against the real compiler.
 >
 > **Resources:**
@@ -39,7 +39,7 @@ Install PlainScript **per project** as a devDependency (never globally), and
 drive it with npm scripts or `npx`:
 
 ```bash
-npm install --save-dev plainscript
+npm install --save-dev plainscript-lang
 ```
 
 ```plainscript
@@ -62,7 +62,7 @@ A PlainScript project is a plain npm package. Typical layout:
 
 ```
 my-app/
-├── package.json          # normal npm semantics; plainscript is a devDependency
+├── package.json          # normal npm semantics; plainscript-lang is a devDependency
 ├── src/                  # sources (.ps) — the default source root
 └── dist/                 # generated JavaScript (never edited, safe to gitignore)
 ```
@@ -117,7 +117,7 @@ All commands also work through `npx` and npm scripts.
 | `plainscript remove <pkg>`     | Uninstall a package from the project                              |
 | `plainscript update`           | `npm update` for all installed packages                           |
 | `plainscript doctor`           | Environment + project health report                               |
-| `plainscript version`          | Print `PlainScript v1.0.0-latest`                                               |
+| `plainscript version`          | Print `PlainScript v1.0.1`                                               |
 | `plainscript help`             | Command reference                                                 |
 
 ### Build semantics (the important one)
@@ -794,7 +794,13 @@ show text
 ocr "scan.png" as german using "deu"
 ```
 
-Async handled automatically; top-level use wraps the whole program.
+Async handled automatically — inside a route, listener, or function the
+enclosing handler is made `async`, and at the very top of a program the whole
+program is wrapped (nested awaits never wrap the program). This is not
+OCR-specific: every keyword that compiles to an `await` (`ask`, `send mail`,
+`database`/`postgres`, `transaction`, `stream`, `cache`, `get`/`post`,
+`wait for`, `retry`, `run in parallel`, …) is derived from actual generation
+output, so it works anywhere a statement is allowed — at any nesting level.
 
 ---
 
@@ -835,7 +841,7 @@ Complete walkthrough for a package called `greet-pkg`:
 ```bash
 mkdir greet-pkg && cd greet-pkg
 npm init -y
-npm install --save-dev plainscript
+npm install --save-dev plainscript-lang
 ```
 
 `package.json` — note `main` points at the built output and `prepare` builds
@@ -844,14 +850,14 @@ before publishing:
 ```json
 {
     "name": "greet-pkg",
-    "version": "1.0.0-latest",
+    "version": "1.0.1",
     "main": "dist/index.js",
     "scripts": {
         "build": "plainscript build",
         "prepare": "plainscript build"
     },
     "devDependencies": {
-        "plainscript": "^1.0.0-latest"
+        "plainscript-lang": "^1.0.1"
     }
 }
 ```
@@ -905,7 +911,7 @@ include suggestions ("Did you mean ...") — trust them.
 
 ---
 
-## 19. 1.0.0-latest: TypeScript-parity capabilities
+## 19. 1.0.1: TypeScript-parity capabilities
 
 These complete the capability-gap audit (`docs/CAPABILITY_GAP_AUDIT.md`). They are
 IOPL-native — PlainScript grammar, not TypeScript syntax.
@@ -975,7 +981,7 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
 ## 20. Copy-paste prompt for your AI
 
 > You are writing PlainScript (`.ps`) source that compiles with the `plainscript`
-> compiler v1.0.0-latest. Follow these rules strictly:
+> compiler v1.0.1. Follow these rules strictly:
 >
 > - Every block ends with `done`. No braces, no semicolons.
 > - Variables: `remember x as V`, reassign `x becomes V`. Print with
@@ -1034,5 +1040,5 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
 
 ---
 
-*Every claim in this file reflects the deterministic `plainscript` compiler v1.0.0-latest.
+*Every claim in this file reflects the deterministic `plainscript` compiler v1.0.1.
 When in doubt: `plainscript check` is ground truth.*
