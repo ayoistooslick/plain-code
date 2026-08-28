@@ -1232,8 +1232,33 @@ test('plainscript check exits 0 on valid file', () => {
   const plnFile = path.join(dir, 'ok.ps');
   fs.writeFileSync(plnFile, 'remember x as 1\nshow x\n');
   const out = runCli(['check', plnFile], dir);
-  if (!out.includes('no errors found')) {
-    throw new Error(`Expected "no errors found" but got: ${out}`);
+  if (!out.includes('ok.ps') || !out.toLowerCase().includes('validated')) {
+    throw new Error(`Expected success report but got: ${out}`);
+  }
+});
+
+test('plainscript check validates a whole directory', () => {
+  const dir = tmpDir();
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'src', 'a.ps'), 'remember x as 1\n');
+  fs.writeFileSync(path.join(dir, 'src', 'b.ps'), 'show "hi"\n');
+  const out = runCli(['check', path.join(dir, 'src')], dir);
+  if (!out.includes('a.ps') || !out.includes('b.ps')) {
+    throw new Error(`Expected both files reported but got: ${out}`);
+  }
+});
+
+test('plainscript check --json emits deterministic machine-readable output', () => {
+  const dir = tmpDir();
+  const plnFile = path.join(dir, 'ok.ps');
+  fs.writeFileSync(plnFile, 'remember x as 1\nshow x\n');
+  const out = runCli(['check', '--json', plnFile], dir);
+  const parsed = JSON.parse(out);
+  if (!parsed.ok || parsed.summary.total !== 1 || parsed.summary.passed !== 1 || parsed.summary.failed !== 0) {
+    throw new Error(`Expected a passing JSON summary but got: ${out}`);
+  }
+  if (!parsed.sources[0] || !parsed.sources[0].ok) {
+    throw new Error(`Expected ok source record but got: ${out}`);
   }
 });
 
@@ -1267,11 +1292,12 @@ test('plainscript check includes filename in error', () => {
   }
 });
 
-test('plainscript check errors without file argument', () => {
+test('plainscript check with no argument scans the project sources', () => {
   const dir = tmpDir();
+  // An empty project (no src/, no .ps in the root) reports no sources.
   const out = runCli(['check'], dir);
-  if (!out.toLowerCase().includes('usage')) {
-    throw new Error(`Expected usage message but got: ${out}`);
+  if (!out.toLowerCase().includes('no .ps files found')) {
+    throw new Error(`Expected a project-scan report but got: ${out}`);
   }
 });
 

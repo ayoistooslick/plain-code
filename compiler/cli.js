@@ -4,7 +4,8 @@
 // Usage:
 //   plainscript run    <file.ps>   install missing dependencies, compile and execute
 //   plainscript build  [file.ps]   compile src/ (or one file) to dist/, names preserved
-//   plainscript check  <file.ps>   check syntax only (no JS generated, no execution)
+//   plainscript check  [target]   fully validate source(s): imports + generate + JS syntax
+//                                 (target: a .ps file, a directory, or none to scan the project)
 //   plainscript fmt    <file.ps>   format a PlainScript file in-place
 //   plainscript new    [name]       scaffold a new PlainScript project
 //   plainscript install            install dependencies detected in the project's sources
@@ -18,6 +19,7 @@
 
 const fs   = require('fs');
 const path = require('path');
+const vm   = require('vm');
 const { execFileSync } = require('child_process');
 const { tokenize } = require('./lexer');
 const { parse }    = require('./parser');
@@ -59,7 +61,9 @@ ${section('START')}
 ${section('BUILD & CHECK')}
   plainscript build             Compile every .ps under src/ into dist/
   plainscript build <file.ps>  Compile one file into dist/ (name preserved)
-  plainscript check <file.ps>  Syntax-check only — fastest feedback loop
+  plainscript check [target]  Validate imports + generate + JS output (no writes)
+                               target: a .ps file, a directory, or none = project scan
+                               --json  emits deterministic machine-readable output
   plainscript fmt <file.ps>    Format a file in place
 
 ${section('PACKAGES')}
@@ -747,24 +751,126 @@ function cmdUpdate() {
 }
 
 // Check syntax of a PlainScript file without generating JavaScript or executing.
-function cmdCheck(filePath) {
-  if (!filePath) {
-    console.error('Usage: plainscript check <file.ps>');
-    process.exit(1);
-  }
-  const absPath = path.resolve(filePath);
-  if (!fs.existsSync(absPath)) {
-    console.error(`File not found: ${filePath}`);
-    process.exit(1);
-  }
+// Full validation of a single .ps entry: resolve imports, parse+generate every
+// file in dependency order, and verify the emitted JavaScript is syntactically
+// valid — all without writing anything to disk. Returns a deterministic
+// result record; `deps` are the npm packages the sources require.
+function validateSource(absPath) {
+  const rel = path.relative(process.cwd(), absPath) || absPath;
   const t0 = Date.now();
   try {
-    resolveDependencies(absPath);
-    const ms = Date.now() - t0;
-    console.log(`${clrGreen('✓')} ${filePath} — no errors found.${clrDim(` (${ms}ms)`)}`);
+    // resolveDependencies parses each file too, so a parse error anywhere in
+    // the import graph surfaces here with a "file.ps — Line:Col" prefix.
+    const files = resolveDependencies(absPath);
+    const context = createGenerationContext();
+    let js = files.map(({ ast }) => generate(ast, context)).filter(s => s.trim()).join('\n');
+    if (context.needsAsync) js = wrapAsync(js);
+
+    // The compiler must never emit broken JavaScript. Parsing the output with
+    // the V8 compiler catches generator regressions at check time.
+    new vm.Script(js);
+
+    // Collect unique npm dependencies across the file and its imports.
+    const deps = [];
+    for (const { absPath: f } of files) {
+      let source;
+      try { source = fs.readFileSync(f, 'utf8'); } catch (_) { continue; }
+      for (const d of detectDependencies(source)) {
+        if (!deps.includes(d)) deps.push(d);
+      }
+    }
+    return { file: rel, ok: true, deps, ms: Date.now() - t0 };
   } catch (err) {
-    console.error(err.message);
+    return { file: rel, ok: false, error: err.message, ms: Date.now() - t0 };
+  }
+}
+
+// `plainscript check [target] [--json]`
+//
+// Fully validates one .ps file, every .ps under a directory, or (with no
+// target) the project sources, deterministically and non-interactively:
+// resolve imports, parse + generate, and confirm the JS output parses. Never
+// prompts, never writes files, never installs packages.
+//
+//   plainscript check             validate every .ps in the project source root
+//   plainscript check app.ps      validate one file (and its imports)
+//   plainscript check src/        validate every .ps under a directory
+//   plainscript check --json      machine-readable JSON on stdout
+function cmdCheck(target, json) {
+  const opts = readCompilerOptions();
+  const srcDir = resolveSrcDir(opts);
+  const outDir = resolveOutDir(opts);
+  const exclude = opts && opts.exclude;
+
+  let sources;
+  if (target) {
+    const abs = path.resolve(target);
+    if (fs.existsSync(abs) && fs.statSync(abs).isDirectory()) {
+      sources = discoverSources(abs, outDir, exclude).map(r => path.join(abs, r));
+    } else if (/\.ps$/.test(target) && !fs.existsSync(abs)) {
+      if (json) {
+        console.log(JSON.stringify({
+          plainscript: VERSION, ok: false,
+          sources: [], summary: { total: 0, passed: 0, failed: 1 },
+          errors: [{ file: target, error: `File not found: ${target}` }],
+        }));
+      } else {
+        console.error(`File not found: ${target}`);
+      }
+      process.exit(1);
+    } else {
+      sources = [abs];
+    }
+  } else {
+    const root = path.resolve(srcDir);
+    sources = discoverSources(srcDir, outDir, exclude).map(r => path.join(root, r));
+    if (sources.length === 0) {
+      const msg = `No .ps files found under "${srcDir}".`;
+      if (json) console.log(JSON.stringify({ plainscript: VERSION, ok: false, sources: [], summary: { total: 0, passed: 0, failed: 1 }, errors: [{ file: srcDir, error: msg }] }));
+      else console.error(msg);
+      process.exit(1);
+    }
+  }
+
+  sources.sort(); // deterministic regardless of filesystem order
+  const results = sources.map(validateSource);
+  const passed = results.filter(r => r.ok);
+  const failed = results.filter(r => !r.ok);
+
+  if (json) {
+    const dependencySummary = [];
+    const depIndex = new Map();
+    for (const r of passed) {
+      for (const d of r.deps) {
+        if (!depIndex.has(d)) { depIndex.set(d, []); dependencySummary.push(d); }
+        depIndex.get(d).push(r.file);
+      }
+    }
+    console.log(JSON.stringify({
+      plainscript: VERSION,
+      ok: failed.length === 0,
+      sources: results,
+      summary: { total: results.length, passed: passed.length, failed: failed.length },
+      dependencySummary: dependencySummary.map(d => ({ package: d, usedBy: depIndex.get(d) })),
+    }));
+    process.exit(failed.length ? 1 : 0);
+  }
+
+  for (const r of results) {
+    if (r.ok) {
+      console.log(`${clrGreen('✓')} ${r.file} — ok${clrDim(` (${r.ms}ms)`)}`);
+    } else {
+      console.log(`${clrRed('✗')} ${r.file}`);
+      console.error(r.error);
+    }
+  }
+
+  if (failed.length > 0) {
+    console.error(`\n${failed.length} of ${results.length} file(s) failed validation.`);
     process.exit(1);
+  }
+  if (results.length > 0) {
+    console.log(clrGreen(`\n✓ ${results.length} file(s) validated.`));
   }
 }
 
@@ -805,6 +911,7 @@ async function main() {
   // Global flags — recognized anywhere in the argument list.
   const quiet   = args.includes('--quiet');
   const verbose = args.includes('--verbose');
+  const json    = args.includes('--json');
   if (quiet)   { stage = stageQuiet;   QUIET_STAGES = true; }
   if (verbose) { stage = stageVerbose;  VERBOSE = true; }
 
@@ -817,7 +924,7 @@ async function main() {
   switch (command) {
     case 'run':     await cmdRun(fileArg, positional.slice(2)); break;
     case 'build':   await cmdBuild(fileArg);      break;
-    case 'check':   cmdCheck(fileArg);            break;
+    case 'check':   cmdCheck(fileArg, json);    break;
     case 'fmt':     cmdFmt(fileArg);              break;
     case 'new':     cmdNew(fileArg);              break;
     case 'install': cmdInstall();                 break;

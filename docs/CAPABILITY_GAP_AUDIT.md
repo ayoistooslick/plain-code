@@ -110,7 +110,7 @@ define a kind called "Person" with
     age is 0
 done
 
-make a Person with name "Ada" and age 17
+remember ada as create a Person with name "Ada" and age 17
 show name of ada                // "Ada"
 ```
 
@@ -126,7 +126,7 @@ show name of ada                // "Ada"
 
 | TypeScript              | PlainScript resolution |
 |-------------------------|------------------------|
-| `class`, constructor     | **IOPL-native `kind` + `make a X with ...`** (this release). |
+| `class`, constructor     | **IOPL-native `kind` + `create a X with ...`** (this release). |
 | Fields / properties      | `kind` fields; access via `name of x` / `x.name`. |
 | Methods                  | Top-level `make` functions taking the record. |
 | `this`                   | **Rationale: unnecessary** — functions receive the record explicitly (no context bugs). |

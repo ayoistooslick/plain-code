@@ -13,6 +13,7 @@ ai-cache/
 # Build output
 _plain_out.js
 *.js.map
+dist/
 
 # Logs
 *.log

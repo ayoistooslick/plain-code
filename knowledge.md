@@ -1,9 +1,14 @@
-# knowledge.md — Teach any AI to write PlainScript
+# knowledge.md — Teach any AI how to code in PlainScript
 
-> **Purpose:** PlainScript is a small language with sharp edges that trip up code
-> generators (LLMs included). This file documents the language, the CLI, and
-> the project model **exactly as implemented in the `plainscript` npm package
-> v1.0.0**. Every example below was verified against the real compiler.
+> **Purpose:** This file is a coding guide. If you are an AI (or a human) asked
+> to write PlainScript source, read this file — it teaches you **how to code in
+> PlainScript**. It documents the language, the CLI, and the project model
+> **exactly as implemented in the `plainscript` npm package v1.0.0**. Every
+> example below was verified against the real compiler.
+>
+> **Resources:**
+> - Repository: https://github.com/ayoistooslick/plainscript
+> - Documentation site: https://ayoistooslick.github.io/plainscript
 >
 > **How to use:**
 > 1. Paste this entire file into your AI chat before asking it to write PlainScript.
@@ -15,22 +20,27 @@
 
 ---
 
-## 1. What PlainScript is and how it installs
+## 1. Reading PlainScript source (the mental model)
 
-PlainScript is an Intent-Oriented Programming Language (IOPL). You describe **what**
-you want; a fully deterministic compiler decides **how** to implement it in
-JavaScript. There is no AI step, no rules engine, no hidden code generation:
-the same source always produces the same JavaScript.
+Every PlainScript program is a sequence of English-like **statements**. You read
+a line, it does what it says; blocks open on a phrase and end with `done`.
+Variables and functions are declared in plain words, and the compiler turns the
+whole file into deterministic JavaScript.
 
-PlainScript is an npm package used **per project**, never globally:
+The most important thing to absorb before writing code:
+
+- **`remember x as V`** declares a variable; **`x becomes V`** reassigns it.
+- **`show X`** (or **`print(X)`**) prints a value to the console.
+- **`make name(args)` ... `done`** declares a function; **`give V`** returns a value.
+- Every block — `if`, `for`, `make`, `web app`, `try`, `database`, ... — closes
+  with **`done`**. No braces, no semicolons.
+
+Install PlainScript **per project** as a devDependency (never globally), and
+drive it with npm scripts or `npx`:
 
 ```bash
 npm install --save-dev plainscript
 ```
-
-Everything runs through npm scripts or `npx`. A deployed application needs
-only its generated `dist/` output and normal npm dependencies — the `plainscript`
-compiler itself is a devDependency and does not ship to production.
 
 ```plainscript
 // app.ps — a complete program
@@ -172,9 +182,9 @@ print(age)                  // same as show
 `+ - * / %` with standard precedence, parentheses, unary minus. No `**`.
 
 ```plainscript
-remember total as (3 + 4) * 2
+remember sum as (3 + 4) * 2
 remember rest as 10 % 3
-show total + rest
+show sum + rest
 ```
 
 ### Strings and templates
@@ -484,7 +494,7 @@ accept uploads limit "5 MB" allow ["image/png", "image/jpeg"] folder "uploads"
 
 route post "/scan"
 remember file as upload("doc")
-reply `got ${name of file} (${size of file} bytes)`
+reply `got ${file.name} (${file.size} bytes)`
 done
 
 start 3000
@@ -907,7 +917,7 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
       age is 0
   done
   remember ada as create a Person with name "Ada" and age 17
-  show name of ada          # "Ada"
+  show name of ada          // "Ada"
   ```
   `create` passes any value; unknown fields throw at runtime. Kinds are plain
   objects — `jsonEncode`, `send mail`, DB rows all work unchanged. For different
@@ -925,7 +935,7 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
       yield i
     done
   done
-  show spread of countUp(3)   # [ 1, 2, 3 ]
+  show spread of countUp(3)   // [ 1, 2, 3 ]
   ```
 - **Reflection:** `typeOf(x)` → `text|number|boolean|array|record|null|function|undefined`;
   `fieldsOf(x)`, `valueOf(x, key, fallback)`, `hasField(x, key)`, `sizeOf(x)`.
@@ -934,8 +944,8 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
 - **Serialization / config:**
   ```plainscript
   remember cfg as yamlDecode("name: Ada\nport: 3000\n")
-  show cfg.name                       # "Ada"
-  load env file ".env"                # applies KEY=value to process.env
+  show cfg.name                       // "Ada"
+  load env file ".env"                // applies KEY=value to process.env
   show env("PORT")
   ```
 - **CLI & processes:** `args()` returns `process.argv.slice(2)`;

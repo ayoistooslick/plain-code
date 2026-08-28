@@ -109,11 +109,12 @@
             <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
           </div>
           <div class="code-window-body">
-            <pre><code>server on port 3000
-  when someone visits "/"
-    send "Hello, World!"
+            <pre><code>web app
+route get "/"
+  reply "Hello, World!"
+done
 
-log "Server is running"</code></pre>
+show "Server is running"</code></pre>
           </div>
         </div>
         <div class="code-window">
@@ -235,16 +236,18 @@ console.log("Server is running");</code></pre>
               <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
             </div>
             <div class="code-window-body">
-              <pre><code>use express
+              <pre><code>web app
+route get "/"
+  reply "Hello, World!"
+done
 
-server on port 3000
-  when someone visits "/"
-    send "Hello, World!"
+route get "/users"
+  reply json
+    count is 3
+  done
+done
 
-  when someone visits "/users"
-    send json of users
-
-log "Server running on port 3000"</code></pre>
+show "Server running on port 3000"</code></pre>
             </div>
           </div>
           <div class="code-window">
@@ -296,11 +299,13 @@ app.listen(3000, () => {
             <div class="code-window-body">
               <pre><code>database "app.db"
 
-query "SELECT * FROM users WHERE active = 1"
-  save as results
+remember results as query
+SELECT * FROM users WHERE active = 1
+done
 
 for each user in results
-  log user.name</code></pre>
+  show user.name
+done</code></pre>
             </div>
           </div>
           <div class="code-window">

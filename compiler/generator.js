@@ -1590,6 +1590,7 @@ function createGenerationContext() {
     pendingPrelude: [],
     needsAsync: false, // true when top-level code emits await (js blocks / ask)
     inFunction: false, // true while generating inside a function-like scope
+    loopDepth: 0,       // >0 while generating inside a for-each / for-index / while loop
   };
 }
 
@@ -1712,7 +1713,7 @@ function containsAsyncBlock(statements) {
     if (stmt.type === 'IfStatement') {
       if (containsAsyncBlock(stmt.consequent)) return true;
       if (stmt.alternate && containsAsyncBlock(stmt.alternate)) return true;
-    } else if (stmt.type !== 'FunctionDeclaration' && stmt.body) {
+    } else if (stmt.type !== 'FunctionDeclaration' && stmt.body && Array.isArray(stmt.body)) {
       if (containsAsyncBlock(stmt.body)) return true;
     }
   }
@@ -2018,15 +2019,57 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     }
 
     case 'ForEachStatement': {
+      context.loopDepth++;
       const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      context.loopDepth--;
       return `${indent}for (const ${node.item} of ${generateExpr(node.collection, context)}) {\n${body}\n${indent}}`;
+    }
+
+    case 'ForIndexStatement': {
+      context.loopDepth++;
+      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      context.loopDepth--;
+      // for index <name> in <collection> — zero-based index over a list.
+      if (node.over != null) {
+        const coll = generateExpr(node.over, context);
+        return `${indent}for (let ${node.name} = 0; ${node.name} < ${coll}.length; ${node.name}++) {\n${body}\n${indent}}`;
+      }
+      const start = generateExpr(node.start, context);
+      const end   = generateExpr(node.end, context);
+      // Explicit step uses the user's sign; otherwise the increment follows
+      // the direction of the bounds (from 5 to 1 counts down automatically).
+      const inc = node.step ? generateExpr(node.step, context)
+                            : `(${start} <= ${end} ? 1 : -1)`;
+      // Direction-aware: "from 5 to 1" counts down even without an explicit
+      // "by", while "from 1 to 5" counts up.
+      const test = `(${start} <= ${end} ? ${node.name} <= ${end} : ${node.name} >= ${end})`;
+      return `${indent}for (let ${node.name} = ${start}; ${test}; ${node.name} += ${inc}) {\n${body}\n${indent}}`;
     }
 
     case 'WhileStatement': {
       const condition = generateCondition(node.condition, context);
-      const body      = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      context.loopDepth++;
+      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      context.loopDepth--;
       return `${indent}while (${condition}) {\n${body}\n${indent}}`;
     }
+
+    case 'BreakStatement': {
+      if (context.loopDepth <= 0) {
+        throw new Error('"break" can only be used inside a loop (for each, for index, or while).\n\nExample:\n  for each item in list\n    if done(item)\n      break\n    done\n  done');
+      }
+      return `${indent}break;`;
+    }
+
+    case 'ContinueStatement': {
+      if (context.loopDepth <= 0) {
+        throw new Error('"continue" can only be used inside a loop (for each, for index, or while).\n\nExample:\n  for each item in list\n    if skip(item)\n      continue\n    done\n  done');
+      }
+      return `${indent}continue;`;
+    }
+
+    case 'ThrowStatement':
+      return `${indent}throw ${generateExpr(node.value, context)};`;
 
     // v0.3 — Express runtime
 
@@ -2548,7 +2591,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
 
     case 'RunBackgroundStatement':
       return [
-        `${indent}setImmediate(() => {`,
+        `${indent}setImmediate(async () => {`,
         `${indent}  try {`,
         `${indent}    Promise.resolve(${generateExpr(node.call, context)}).catch((error) => console.error(error));`,
         `${indent}  } catch (error) { console.error(error); }`,
@@ -2755,6 +2798,12 @@ function generateExpr(node, context = createGenerationContext()) {
       return `${generateExpr(node.object, context)}.${node.property}`;
 
     case 'CallExpression': {
+      // Method call: receiver.method(args). Member access invoked with parens —
+      // e.g. path.join("a", "b"), mrz.parse(line), fs.existsSync(("x")).
+      if (node.callee) {
+        const args = node.args.map(arg => generateExpr(arg, context)).join(', ');
+        return `${generateExpr(node.callee, context)}(${args})`;
+      }
       if (STDLIB[node.name]) {
         if (node.name === 'readFile' || node.name === 'writeFile' ||
             node.name === 'fileExists' || node.name === 'read') {

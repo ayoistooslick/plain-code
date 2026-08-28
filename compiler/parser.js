@@ -617,6 +617,29 @@ function parse(tokens) {
         return { type: 'ExportStatement', name };
       }
 
+      // throw <value>  → raise an error for the caller's try/recover to catch.
+      // "throw(...)" calls and "throw becomes x" keep their ordinary meaning.
+      if (token.value === 'throw' &&
+          peekAt(1).type !== TOKEN.LPAREN && peekAt(1).type !== TOKEN.BECOMES) {
+        advance(); // throw
+        const value = parseExpression();
+        return { type: 'ThrowStatement', value };
+      }
+
+      // break / continue → loop control flow. Contextual keywords: a variable
+      // literally named break/continue is rejected by the teaching guard in
+      // generateStatement when not inside a loop.
+      if (token.value === 'break' &&
+          peekAt(1).type !== TOKEN.BECOMES && peekAt(1).type !== TOKEN.LPAREN) {
+        advance(); // break
+        return { type: 'BreakStatement' };
+      }
+      if (token.value === 'continue' &&
+          peekAt(1).type !== TOKEN.BECOMES && peekAt(1).type !== TOKEN.LPAREN) {
+        advance(); // continue
+        return { type: 'ContinueStatement' };
+      }
+
       const expr = parsePrimary();
 
       if (peek().type === TOKEN.BECOMES) {
@@ -971,8 +994,49 @@ function parse(tokens) {
   // for every <item> in <collection> ... done  (alias — "every" maps to EACH token)
   function parseForEach() {
     consume(TOKEN.FOR);
+
+    // for index <name> from <start> to <end> [by <step>] ... done
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'index') {
+      advance(); // index
+      const name = consume(
+        TOKEN.IDENTIFIER,
+        'Expected an index name after "for index".\n\nExample:\n  for index i from 0 to 9\n    show i\n  done'
+      ).value;
+      if (peek().type === TOKEN.IN || (peek().type === TOKEN.IDENTIFIER && peek().value === 'in')) {
+        // for index <name> in <collection> — zero-based index over a list.
+        advance(); // in
+        const collection = parseExpression();
+        const body = parseBody('"for index" loop');
+        return { type: 'ForIndexStatement', name, start: null, end: collection, step: null, over: collection, body };
+      }
+      if (peek().type !== TOKEN.IDENTIFIER || peek().value !== 'from') {
+        throw new Error(makeError(
+          'Expected "from" or "in" after the "for index" name.\n\nExample:\n  for index i from 0 to 9\n  for index i in players',
+          peek()
+        ));
+      }
+      advance(); // from
+      const start = parseExpression();
+      if (peek().type === TOKEN.IDENTIFIER && peek().value === 'to') {
+        advance(); // to
+      } else {
+        throw new Error(makeError(
+          'Expected "to" between the start and end of a "for index" loop.\n\nExample:\n  for index i from 0 to 9',
+          peek()
+        ));
+      }
+      const end = parseExpression();
+      let step = null;
+      if (peek().type === TOKEN.IDENTIFIER && peek().value === 'by') {
+        advance(); // by
+        step = parseExpression();
+      }
+      const body = parseBody('"for index" loop');
+      return { type: 'ForIndexStatement', name, start, end, step, over: null, body };
+    }
+
     consume(TOKEN.EACH,
-      'Expected "each" or "every" after "for".\n\nExample:\n  for each item in players\n    show item\n  done');
+      'Expected "each", "every" or "index" after "for".\n\nExample:\n  for each item in players\n    show item\n  done');
     const item = consume(TOKEN.IDENTIFIER, 'Expected an item name after "each" or "every".').value;
     consume(TOKEN.IN, `Expected "in" after "${item}".\n\nExample:\n  for each item in players`);
     const collection = parseExpression();
@@ -989,8 +1053,39 @@ function parse(tokens) {
   }
 
   // import "./file.ps"
+  // import { name1, name2 } from "./file.ps"  (named imports — binds only the
+  //   listed symbols; the whole file is still bundled as a dependency)
   function parseImport() {
     consume(TOKEN.IMPORT);
+
+    // Named-import form: import { a, b } from "./file.ps"
+    if (peek().type === TOKEN.LBRACE) {
+      advance(); // {
+      const names = [];
+      while (true) {
+        names.push(consume(
+          TOKEN.IDENTIFIER,
+          'Expected an exported name inside the import braces.\n\nExample:\n  import { helper } from "./util.ps"'
+        ).value);
+        if (peek().type === TOKEN.COMMA) { advance(); continue; }
+        break;
+      }
+      consume(TOKEN.RBRACE,
+        'Expected "}" to close the import braces.\n\nExample:\n  import { helper } from "./util.ps"');
+      // The "from" is a plain identifier; tolerate its optional presence so
+      // both "import { x } from "./f.ps"" and "import { x } "./f.ps"" read
+      // naturally, but require it for the documented form.
+      if (peek().type === TOKEN.IDENTIFIER && peek().value === 'from') {
+        advance(); // from
+      }
+      const filePath = consume(
+        TOKEN.STRING,
+        'Expected a file path string after the import.\n\nExample:\n  import { helper } from "./util.ps"'
+      ).value;
+      return { type: 'ImportStatement', path: filePath, names };
+    }
+
+    // Whole-module form: import "./file.ps"
     const filePath = consume(
       TOKEN.STRING,
       'Expected a file path string after "import".\n\nExample:\n  import "./math.ps"'
@@ -1853,8 +1948,31 @@ function parse(tokens) {
         node = { type: 'IndexExpression', object: node, index };
       } else if (peek().type === TOKEN.DOT) {
         advance();
-        const property = consume(TOKEN.IDENTIFIER, 'Expected a property name after ".".').value;
+        // After ".", any word is a valid JS property/method name — including
+        // words that are PlainScript keywords in other contexts (e.g. crypto
+        // .update(...), obj .delete()). So accept any word token, not just an
+        // identifier.
+        const propToken = peek();
+        if (propToken.type === TOKEN.EOF || !/^[A-Za-z_$]/.test(propToken.value)) {
+          throw new Error(makeError('Expected a property name after ".".', propToken));
+        }
+        advance();
+        const property = propToken.value;
         node = { type: 'MemberExpression', object: node, property };
+        // Method call: object.method(args). Only member access may introduce
+        // a call here; plain `name(args)` is handled in parseAtom.
+        if (peek().type === TOKEN.LPAREN) {
+          advance(); // (
+          const { separator, args } = parseArgList();
+          consume(TOKEN.RPAREN, 'Expected ")" to close the method call.');
+          if (separator) {
+            throw new Error(makeError(
+              'Method calls cannot use "to"/"from" arguments.\n\nExample:\n  mrz.parse(line)',
+              peek()
+            ));
+          }
+          node = { type: 'CallExpression', callee: node, args };
+        }
       } else if (peek().type === TOKEN.IDENTIFIER && peek().value === 'of') {
         if (node.type !== 'Identifier') {
           throw new Error(makeError(

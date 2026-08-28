@@ -1,0 +1,23 @@
+// idverify · src/mrz.ps
+// A small, dependency-free parser for machine-readable document lines
+// (MRZ-line-1 style). Strips angle-bracket fillers and normalises the holder.
+
+make cleanField(raw)
+    give uppercase(replace(raw, "<", " "))
+done
+
+make parseMrz(lines)
+    remember firstLine as first player from lines
+    if firstLine is null
+        throw "empty MRZ lines"
+    done
+    remember charCells as split(firstLine, "")
+    remember fields as
+        documentType is first player from charCells
+        holder is cleanField(firstLine)
+    done
+    give fields
+done
+
+export cleanField
+export parseMrz

@@ -1,0 +1,31 @@
+// oauth · src/oauth.ps
+// The unified OAuth flow: build an authorization URL, exchange an authorization
+// code for access+refresh tokens, and validate tokens — all behind one API.
+
+import "./crypto.ps"
+import "./providers.ps"
+
+make buildAuthUrl(name, clientId, redirectUri, state)
+    remember cfg as providerConfig(name)
+    remember queryString as "client_id=" + clientId + "&redirect_uri=" + redirectUri + "&scope=" + cfg.scopes + "&state=" + state
+    give cfg.authorizeUrl + "?" + queryString
+done
+
+make exchangeCode(name, code, clientId, secret, ttl)
+    if length(code) is 0
+        throw "empty authorization code"
+    done
+    remember access as issueAccessToken(name, clientId, secret, ttl)
+    remember refresh as issueRefreshToken(name, clientId, secret)
+    remember outcome as
+        provider is name
+        ok is true
+        accessToken is access
+        refreshToken is refresh
+        scope is providerConfig(name).scopes
+    done
+    give outcome
+done
+
+export buildAuthUrl
+export exchangeCode

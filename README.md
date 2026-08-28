@@ -1,7 +1,7 @@
 # PlainScript
 
 <p align="center">
-  <img src="docs/logo.jpg" alt="PlainScript Logo" width="200" />
+  <img src="https://github.com/ayoistooslick/plainscript/blob/main/docs/logo.jpg" alt="PlainScript Logo" width="200" />
 </p>
 
 > "When even a simple sentence can be code."
@@ -299,7 +299,7 @@ use @scope/package-name
 
 ### TypeScript-parity capabilities (1.0.0)
 
-The full capability-gap audit lives in [`docs/CAPABILITY_GAP_AUDIT.md`](docs/CAPABILITY_GAP_AUDIT.md).
+The full capability-gap audit lives in [`docs/CAPABILITY_GAP_AUDIT.md`](https://github.com/ayoistooslick/plainscript/blob/main/docs/CAPABILITY_GAP_AUDIT.md).
 These features close it in PlainScript's own grammar:
 
 - **Record kinds (classes):** `define a kind called "Person" with name is "" done`
