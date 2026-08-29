@@ -1,0 +1,13 @@
+// oauth · src/demo.pln
+// A runnable demo that exercises the unified OAuth flow: build an auth URL,
+// exchange an authorization code, and validate the resulting access token.
+
+import "./index.pln"
+
+show buildAuthUrl("google", "GID-123", "https://app.dev/callback", "state-abc")
+
+remember result as exchangeCode("github", "auth-code-8000", "GH-ID", "supersecret", 3600)
+show jsonEncode(result)
+
+remember decoded as validateToken(result.accessToken, "supersecret")
+show jsonEncode(decoded)

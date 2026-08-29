@@ -54,12 +54,12 @@ function runFile(file, opts = {}) {
 // Files written to cwd (default scratch) for any `use`/import resolution.
 function run(src, opts = {}) {
   const dir = opts.cwd || tmpDir();
-  const name = opts.name || 'main.ps';
+  const name = opts.name || 'main.pln';
   write(dir, name, src);
   return runFile(path.join(dir, name), { cwd: dir });
 }
 
-// Run every .ps file in a directory through `plainscript check` and report
+// Run every .pln file in a directory through `plainscript check` and report
 // whether all passed.
 function checkDir(dir) {
   try {
@@ -75,7 +75,7 @@ function checkDir(dir) {
 }
 
 // Build one file into dist/ via the CLI (returns the CLI output).
-function build(dir, file = 'src/app.ps') {
+function build(dir, file = 'src/app.pln') {
   return execFileSync(process.execPath, [CLI, 'build', file], {
     cwd: dir,
     encoding: 'utf8',

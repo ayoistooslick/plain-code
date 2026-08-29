@@ -1,0 +1,34 @@
+// PlainScript v1.0.02 — Functional transformations
+//
+// Run with:  plainscript run examples/search-and-filter.pln
+//
+// gather / filter / total map, filter and reduce in place; match routes a
+// value to behaviour.
+
+remember scores as [70, 45, 92, 38, 60]
+
+gather each score in scores giving score + 5
+show scores                      // [ 75, 50, 97, 43, 65 ]
+
+filter each score in scores when score is at least 60
+show scores                      // [ 75, 97, 65 ]
+
+remember prices as [19.99, 4.99, 29.99]
+total each price in prices giving price
+show prices                      // 54.97
+
+// Pattern matching
+remember day as "wed"
+
+match day against
+    "mon" -> show "Start of the week"
+    "wed" -> show "Middle of the week"
+    "fri" -> show "Almost there"
+    otherwise -> show "Another day"
+done
+
+// Regex matching extracts a group into a variable
+match pattern "^([0-9]+)$" in "2026" as digits
+if digits is not empty
+    show "matched digits: " + first of digits
+done

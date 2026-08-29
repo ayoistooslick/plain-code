@@ -10,15 +10,15 @@ test('npm: use <pkg> compiles to require and runs against a local package', () =
     JSON.stringify({ name: 'fakenpmpkg', main: 'index.js' }));
   fs.writeFileSync(path.join(pkgDir, 'index.js'),
     'module.exports = function () { return "resolved-ok"; }');
-  write(dir, 'main.ps', 'use fakenpmpkg\nshow fakenpmpkg()\n');
-  const out = runFile(path.join(dir, 'main.ps'), { cwd: dir });
+  write(dir, 'main.pln', 'use fakenpmpkg\nshow fakenpmpkg()\n');
+  const out = runFile(path.join(dir, 'main.pln'), { cwd: dir });
   assert(out.includes('resolved-ok'), `expected local require result:\n${out}`);
 });
 
 test('npm: dependency detection flags npm deps but not node builtins', () => {
   const dir = tmpDir();
-  write(dir, 'app.ps', 'use fakedetectpkg\nremember x as 1\nshow "built"\n');
-  write(dir, 'b.ps', 'use fs\nuse path\nshow "builtin"\n');
+  write(dir, 'app.pln', 'use fakedetectpkg\nremember x as 1\nshow "built"\n');
+  write(dir, 'b.pln', 'use fs\nuse path\nshow "builtin"\n');
   const r = checkDir(dir);
   assert(r.ok, `check should pass:\n${JSON.stringify(r)}`);
   const names = (r.deps || []).map((d) => d.package);

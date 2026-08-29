@@ -45,8 +45,8 @@ function resolveDependencies(entryPath) {
     }
 
     // Parse the file to discover its own imports.
-    // Annotate any tokenise/parse error with the filename so callers see
-    // "file.ps — Line N, Column N: …" rather than a bare positional message.
+// Annotate any tokenise/parse error with the filename so callers see
+// "file.pln — Line N, Column N: …" rather than a bare positional message.
     const source = fs.readFileSync(absPath, 'utf8');
     let tokens, ast;
     try {

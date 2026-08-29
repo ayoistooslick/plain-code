@@ -20,8 +20,8 @@ test('fixture: dependency detection lists npm deps, not builtins', () => {
     `builtins leaked into deps: ${names}`);
 });
 
-test('fixture: verify.ps builds and produces a deterministic verification result', () => {
-  build(FIXTURE, 'src/verify.ps');
+test('fixture: verify.pln builds and produces a deterministic verification result', () => {
+  build(FIXTURE, 'src/verify.pln');
   const out = runNode(path.join(FIXTURE, 'dist', 'verify.js'), FIXTURE);
   assert(out.includes('ADA LOVELACE') && out.includes('"ok":true'),
     `expected verification output:\n${out}`);

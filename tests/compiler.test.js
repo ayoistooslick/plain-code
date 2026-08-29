@@ -795,27 +795,27 @@ test('sqlite() call compiles to new Database()', () => {
 console.log('\nv0.4.1 â€” Multi-file imports');
 
 test('tokenizes import keyword', () => {
-  const tokens = tokenize('import "./math.ps"');
+  const tokens = tokenize('import "./math.pln"');
   if (tokens[0].type !== TOKEN.IMPORT) throw new Error('import token wrong');
   if (tokens[1].type !== TOKEN.STRING) throw new Error('path token wrong');
-  if (tokens[1].value !== './math.ps') throw new Error('path value wrong');
+  if (tokens[1].value !== './math.pln') throw new Error('path value wrong');
 });
 
 test('import parses to ImportStatement', () => {
-  const tokens = tokenize('import "./math.ps"');
+  const tokens = tokenize('import "./math.pln"');
   const ast    = parse(tokens);
   const node   = ast.body[0];
   if (node.type !== 'ImportStatement')   throw new Error('wrong node type');
-  if (node.path !== './math.ps')        throw new Error('wrong path');
+  if (node.path !== './math.pln')        throw new Error('wrong path');
 });
 
 test('ImportStatement generates no output', () => {
-  const js = generate(parse(tokenize('import "./math.ps"')));
+  const js = generate(parse(tokenize('import "./math.pln"')));
   if (js.trim() !== '') throw new Error('import should generate empty string');
 });
 
 test('simple import â€” imported file compiles first', () => {
-  const js = bundleFixture('uses_math.ps');
+  const js = bundleFixture('uses_math.pln');
   // PI must be declared before it is used in show
   const piIdx   = js.indexOf('let PI');
   const showIdx = js.indexOf('console.log(PI)');
@@ -825,19 +825,19 @@ test('simple import â€” imported file compiles first', () => {
 });
 
 test('simple import â€” output contains imported code', () => {
-  const js = bundleFixture('uses_math.ps');
+  const js = bundleFixture('uses_math.pln');
   if (!js.includes('let PI = 3.14'))  throw new Error('PI missing');
   if (!js.includes('let TAU = 6.28')) throw new Error('TAU missing');
 });
 
 test('two imports â€” both files included in output', () => {
-  const js = bundleFixture('uses_both.ps');
+  const js = bundleFixture('uses_both.pln');
   if (!js.includes('let PI'))        throw new Error('PI missing');
   if (!js.includes('function double')) throw new Error('double missing');
 });
 
 test('nested imports â€” deepest dependency compiled first', () => {
-  const js = bundleFixture('nested_a.ps');
+  const js = bundleFixture('nested_a.pln');
   // nested_c defines deepValue, must appear before nested_b and nested_a output
   const deepIdx = js.indexOf('let deepValue');
   const aIdx    = js.indexOf('"a loaded"');
@@ -850,7 +850,7 @@ test('nested imports â€” deepest dependency compiled first', () => {
 });
 
 test('duplicate imports â€” code included exactly once', () => {
-  const js = bundleFixture('duplicate_a.ps');
+  const js = bundleFixture('duplicate_a.pln');
   // PI should appear only once in the output
   const firstIdx  = js.indexOf('let PI');
   const secondIdx = js.indexOf('let PI', firstIdx + 1);
@@ -859,7 +859,7 @@ test('duplicate imports â€” code included exactly once', () => {
 });
 
 test('diamond imports â€” shared file included exactly once', () => {
-  const js = bundleFixture('diamond_top.ps');
+  const js = bundleFixture('diamond_top.pln');
   const firstIdx  = js.indexOf('let sharedValue');
   const secondIdx = js.indexOf('let sharedValue', firstIdx + 1);
   if (firstIdx === -1)  throw new Error('sharedValue missing');
@@ -871,22 +871,22 @@ test('diamond imports â€” shared file included exactly once', () => {
 
 bundleThrows(
   'circular imports give friendly error',
-  'circular_a.ps',
+  'circular_a.pln',
   'circular'
 );
 
 bundleThrows(
   'circular import error mentions the file name',
-  'circular_a.ps',
+  'circular_a.pln',
   'circular_a'
 );
 
 test('missing imported file gives friendly error', () => {
-  const tokens = tokenize('import "./does_not_exist.ps"');
+  const tokens = tokenize('import "./does_not_exist.pln"');
   const ast = parse(tokens);
   // Write a temp entry file referencing a non-existent file
-  const tmpPath = path.join(__dirname, 'fixtures', 'missing_import_entry.ps');
-  require('fs').writeFileSync(tmpPath, 'import "./no_such_file_xyz.ps"\n');
+  const tmpPath = path.join(__dirname, 'fixtures', 'missing_import_entry.pln');
+  require('fs').writeFileSync(tmpPath, 'import "./no_such_file_xyz.pln"\n');
   try {
     bundle(tmpPath);
     require('fs').unlinkSync(tmpPath);
@@ -900,8 +900,8 @@ test('missing imported file gives friendly error', () => {
 });
 
 test('import path preserved correctly in AST', () => {
-  const ast = parse(tokenize('import "./sub/module.ps"'));
-  if (ast.body[0].path !== './sub/module.ps') throw new Error('wrong path');
+  const ast = parse(tokenize('import "./sub/module.pln"'));
+  if (ast.body[0].path !== './sub/module.pln') throw new Error('wrong path');
 });
 
 // â”€â”€ v0.4.2 â€” Package Manager & Project Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -997,15 +997,15 @@ test('plainscript install reports no sources when src/ is empty', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   const out = runCli(['install'], dir);
-  if (!out.toLowerCase().includes('no .ps source files')) {
-    throw new Error(`Expected "no .ps source files" error but got: ${out}`);
+  if (!out.toLowerCase().includes('no .pln source files')) {
+    throw new Error(`Expected "no .pln source files" error but got: ${out}`);
   }
 });
 
 test('plainscript install with no external dependencies shows correct message', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'show "hello"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "hello"\n');
   const out = runCli(['install'], dir);
   if (!out.includes('This project has no external dependencies.')) {
     throw new Error(`Expected "This project has no external dependencies." but got: ${out}`);
@@ -1015,7 +1015,7 @@ test('plainscript install with no external dependencies shows correct message', 
 test('plainscript install with built-in modules only shows no external dependencies', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use fs\nuse path\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use fs\nuse path\nshow "ok"\n');
   const out = runCli(['install'], dir);
   if (!out.includes('This project has no external dependencies.')) {
     throw new Error(`Expected "This project has no external dependencies." but got: ${out}`);
@@ -1025,7 +1025,7 @@ test('plainscript install with built-in modules only shows no external dependenc
 test('plainscript install installs missing dependencies and reports success', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use semver\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nshow "ok"\n');
   const out = runCli(['install'], dir);
   // Check that it found and installed the package
   if (!out.includes('Found 1 required package(s).')) {
@@ -1047,7 +1047,7 @@ test('plainscript install installs missing dependencies and reports success', ()
 test('plainscript install skips already installed dependencies', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use semver\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nshow "ok"\n');
   // First install
   runCli(['install'], dir);
   // Second install should say all installed
@@ -1060,7 +1060,7 @@ test('plainscript install skips already installed dependencies', () => {
 test('plainscript install handles multiple dependencies', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use semver\nuse express\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nuse express\nshow "ok"\n');
   const out = runCli(['install'], dir);
   if (!out.includes('Found 2 required package(s).')) {
     throw new Error(`Expected "Found 2 required package(s)." but got: ${out}`);
@@ -1072,7 +1072,7 @@ test('plainscript install handles multiple dependencies', () => {
 test('plainscript install fails when no source files found', () => {
   const dir = tmpDir();
   const out = runCli(['install'], dir);
-  if (!out.toLowerCase().includes('no .ps source files')) {
+  if (!out.toLowerCase().includes('no .pln source files')) {
     throw new Error(`Expected no-sources error but got: ${out}`);
   }
 });
@@ -1081,8 +1081,8 @@ test('plainscript install parses source files directly (no entry-file resolution
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   // write two files that both declare deps; install scans every source file
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use semver\nshow "ok"\n');
-  fs.writeFileSync(path.join(dir, 'src', 'util.ps'), 'use lodash\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use semver\nshow "ok"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'util.pln'), 'use lodash\nshow "ok"\n');
   const out = runCli(['install'], dir);
   if (!out.includes('semver')) throw new Error(`Expected semver in output but got: ${out}`);
   if (!out.includes('lodash')) throw new Error(`Expected lodash in output but got: ${out}`);
@@ -1229,10 +1229,10 @@ console.log('\nv0.5 â€” plainscript check');
 
 test('plainscript check exits 0 on valid file', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'ok.ps');
+  const plnFile = path.join(dir, 'ok.pln');
   fs.writeFileSync(plnFile, 'remember x as 1\nshow x\n');
   const out = runCli(['check', plnFile], dir);
-  if (!out.includes('ok.ps') || !out.toLowerCase().includes('validated')) {
+  if (!out.includes('ok.pln') || !out.toLowerCase().includes('validated')) {
     throw new Error(`Expected success report but got: ${out}`);
   }
 });
@@ -1240,17 +1240,17 @@ test('plainscript check exits 0 on valid file', () => {
 test('plainscript check validates a whole directory', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'));
-  fs.writeFileSync(path.join(dir, 'src', 'a.ps'), 'remember x as 1\n');
-  fs.writeFileSync(path.join(dir, 'src', 'b.ps'), 'show "hi"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'a.pln'), 'remember x as 1\n');
+  fs.writeFileSync(path.join(dir, 'src', 'b.pln'), 'show "hi"\n');
   const out = runCli(['check', path.join(dir, 'src')], dir);
-  if (!out.includes('a.ps') || !out.includes('b.ps')) {
+  if (!out.includes('a.pln') || !out.includes('b.pln')) {
     throw new Error(`Expected both files reported but got: ${out}`);
   }
 });
 
 test('plainscript check --json emits deterministic machine-readable output', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'ok.ps');
+  const plnFile = path.join(dir, 'ok.pln');
   fs.writeFileSync(plnFile, 'remember x as 1\nshow x\n');
   const out = runCli(['check', '--json', plnFile], dir);
   const parsed = JSON.parse(out);
@@ -1264,7 +1264,7 @@ test('plainscript check --json emits deterministic machine-readable output', () 
 
 test('plainscript check reports error on invalid file', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'bad.ps');
+  const plnFile = path.join(dir, 'bad.pln');
   fs.writeFileSync(plnFile, 'remembr x as 1\n');
   const out = runCli(['check', plnFile], dir);
   if (!out.toLowerCase().includes('did you mean')) {
@@ -1274,7 +1274,7 @@ test('plainscript check reports error on invalid file', () => {
 
 test('plainscript check includes line number in error', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'bad.ps');
+  const plnFile = path.join(dir, 'bad.pln');
   fs.writeFileSync(plnFile, 'remember x as 1\nremembr y as 2\n');
   const out = runCli(['check', plnFile], dir);
   if (!out.toLowerCase().includes('line')) {
@@ -1284,26 +1284,26 @@ test('plainscript check includes line number in error', () => {
 
 test('plainscript check includes filename in error', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'bad.ps');
+  const plnFile = path.join(dir, 'bad.pln');
   fs.writeFileSync(plnFile, 'remember x as 1\nremembr y as 2\n');
   const out = runCli(['check', plnFile], dir);
-  if (!out.includes('bad.ps')) {
-    throw new Error(`Expected filename "bad.ps" in error but got: ${out}`);
+  if (!out.includes('bad.pln')) {
+    throw new Error(`Expected filename "bad.pln" in error but got: ${out}`);
   }
 });
 
 test('plainscript check with no argument scans the project sources', () => {
   const dir = tmpDir();
-  // An empty project (no src/, no .ps in the root) reports no sources.
+  // An empty project (no src/, no .pln in the root) reports no sources.
   const out = runCli(['check'], dir);
-  if (!out.toLowerCase().includes('no .ps files found')) {
+  if (!out.toLowerCase().includes('no .pln files found')) {
     throw new Error(`Expected a project-scan report but got: ${out}`);
   }
 });
 
 test('plainscript check errors on missing file', () => {
   const dir = tmpDir();
-  const out = runCli(['check', 'does_not_exist.ps'], dir);
+  const out = runCli(['check', 'does_not_exist.pln'], dir);
   if (!out.toLowerCase().includes('not found')) {
     throw new Error(`Expected "not found" error but got: ${out}`);
   }
@@ -1315,7 +1315,7 @@ console.log('\nv0.5 â€” plainscript fmt');
 
 test('plainscript fmt formats file in-place', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'app.ps');
+  const plnFile = path.join(dir, 'app.pln');
   fs.writeFileSync(plnFile, 'make add(a, b)\ngive a + b\ndone\n');
   runCli(['fmt', plnFile], dir);
   const result = fs.readFileSync(plnFile, 'utf8');
@@ -1326,7 +1326,7 @@ test('plainscript fmt formats file in-place', () => {
 
 test('plainscript fmt reports success message', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'app.ps');
+  const plnFile = path.join(dir, 'app.pln');
   fs.writeFileSync(plnFile, 'show "hello"\n');
   const out = runCli(['fmt', plnFile], dir);
   if (!out.toLowerCase().includes('formatted')) {
@@ -1344,7 +1344,7 @@ test('plainscript fmt errors without file argument', () => {
 
 test('plainscript fmt errors on missing file', () => {
   const dir = tmpDir();
-  const out = runCli(['fmt', 'does_not_exist.ps'], dir);
+  const out = runCli(['fmt', 'does_not_exist.pln'], dir);
   if (!out.toLowerCase().includes('not found')) {
     throw new Error(`Expected "not found" error but got: ${out}`);
   }
@@ -1827,7 +1827,7 @@ test('plainscript help includes "route"', () => {
   if (!out.includes('route')) throw new Error('"route" missing from help');
 });
 
-// â”€â”€ v1.0.1 â€” Lexer edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.02 â€” Lexer edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” Lexer edge cases');
 
@@ -1869,7 +1869,7 @@ test('throws on unexpected character', () => {
   }
 });
 
-// â”€â”€ v1.0.1 â€” Compiler expression edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.02 â€” Compiler expression edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” Expression edge cases');
 
@@ -1908,7 +1908,7 @@ test('function call result used in expression', () => {
   if (!js.includes('add(1, 2) + 3')) throw new Error('missing expression with call');
 });
 
-// â”€â”€ v1.0.1 â€” Error message quality â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.02 â€” Error message quality â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” Error message quality');
 
@@ -1962,7 +1962,7 @@ test('missing "as" in remember gives helpful message', () => {
   }
 });
 
-// â”€â”€ v1.0.1 â€” Formatter additional coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.02 â€” Formatter additional coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” Formatter additional coverage');
 
@@ -1996,7 +1996,7 @@ test('format: object literal body is indented', () => {
   if (!result.includes('    name is "Ayokunle"')) throw new Error('object body not indented');
 });
 
-// â”€â”€ v1.0.1 â€” CLI additional coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.02 â€” CLI additional coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” CLI additional coverage');
 
@@ -2009,12 +2009,12 @@ test('plainscript new creates the project directory', () => {
   fs.rmSync(projectDir, { recursive: true, force: true });
 });
 
-test('plainscript new creates src/app.ps', () => {
+test('plainscript new creates src/app.pln', () => {
   const dir = tmpDir();
   const projectName = 'test-new-ps';
   const projectDir = path.join(dir, projectName);
   runCli(['new', projectName], dir);
-  if (!fs.existsSync(path.join(projectDir, 'src', 'app.ps'))) throw new Error('src/app.ps not created');
+  if (!fs.existsSync(path.join(projectDir, 'src', 'app.pln'))) throw new Error('src/app.pln not created');
   fs.rmSync(projectDir, { recursive: true, force: true });
 });
 
@@ -2027,13 +2027,13 @@ test('plainscript new creates package.json with build scripts and does NOT creat
   const pkg = JSON.parse(fs.readFileSync(path.join(projectDir, 'package.json'), 'utf8'));
   if (!pkg.scripts || pkg.scripts.build !== 'plainscript build') throw new Error('expected npm build script "plainscript build"');
   if (!pkg.devDependencies || !pkg.devDependencies['plainscript-lang']) throw new Error('expected plainscript-lang devDependency');
-  if (!fs.existsSync(path.join(projectDir, 'src', 'app.ps'))) throw new Error('expected src/app.ps scaffold');
+  if (!fs.existsSync(path.join(projectDir, 'src', 'app.pln'))) throw new Error('expected src/app.pln scaffold');
   fs.rmSync(projectDir, { recursive: true, force: true });
 });
 
 test('plainscript build writes .js output into dist/, preserving the file name', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'hello.ps');
+  const plnFile = path.join(dir, 'hello.pln');
   fs.writeFileSync(plnFile, 'show "hello"\n');
   runCli(['build', plnFile], dir);
   const jsFile = path.join(dir, 'dist', 'hello.js');
@@ -2043,7 +2043,7 @@ test('plainscript build writes .js output into dist/, preserving the file name',
 
 test('plainscript build output file contains valid JS', () => {
   const dir = tmpDir();
-  const plnFile = path.join(dir, 'prog.ps');
+  const plnFile = path.join(dir, 'prog.pln');
   fs.writeFileSync(plnFile, 'remember x as 42\nshow x\n');
   runCli(['build', plnFile], dir);
   const js = fs.readFileSync(path.join(dir, 'dist', 'prog.js'), 'utf8');
@@ -2066,7 +2066,7 @@ test('unknown command shows an error message', () => {
 
 test('plainscript run on a nonexistent file exits with a friendly error', () => {
   const dir = tmpDir();
-  const out = runCli(['run', 'no_such_file.ps'], dir);
+  const out = runCli(['run', 'no_such_file.pln'], dir);
   if (!out.includes('File not found')) {
     throw new Error(`Expected "File not found" error but got: ${out}`);
   }
@@ -2075,7 +2075,7 @@ test('plainscript run on a nonexistent file exits with a friendly error', () => 
   }
 });
 
-// â”€â”€ v1.0.1 â€” Compiler regression tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.02 â€” Compiler regression tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” Regression tests');
 
@@ -2453,257 +2453,6 @@ test('format: preserves plain expressions', () => {
 // â”€â”€ RFC-0011 â€” JavaScript Gateway (v1.1.1-beta) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nRFC-0011 â€” JavaScript Gateway (v1.1.1-beta)');
-
-// â”€â”€ Lexer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-test('tokenizes "javascript" as a block keyword', () => {
-  const tokens = tokenize('remember x as javascript');
-  if (tokens[3].type !== TOKEN.JAVASCRIPT_KW) throw new Error('javascript wrong');
-});
-
-test('collects raw JavaScript up to "done"', () => {
-  const tokens = tokenize('remember r as javascript\n  const v = await f()\n  return v\ndone');
-  if (tokens[3].type !== TOKEN.JAVASCRIPT_KW) throw new Error('javascript wrong');
-  if (tokens[4].type !== TOKEN.JS_BODY) throw new Error('JS_BODY wrong');
-  if (!tokens[4].value.includes('const v = await f()')) throw new Error('JS content missing');
-  if (tokens[5].type !== TOKEN.DONE) throw new Error('DONE wrong');
-});
-
-test('tokenizes "ask" keyword', () => {
-  const tokens = tokenize('ask name');
-  if (tokens[0].type !== TOKEN.ASK) throw new Error('ask wrong');
-});
-
-test('tokenizes a hyphenated package name as a PACKAGE token', () => {
-  const tokens = tokenize('use node-fetch');
-  if (tokens[0].type !== TOKEN.USE) throw new Error('use wrong');
-  if (tokens[1].type !== TOKEN.PACKAGE) throw new Error('expected PACKAGE token');
-  if (tokens[1].value !== 'node-fetch') throw new Error('wrong package value');
-});
-
-test('tokenizes a scoped package name as a PACKAGE token', () => {
-  const tokens = tokenize('use @scope/package-name');
-  if (tokens[1].type !== TOKEN.PACKAGE) throw new Error('expected PACKAGE token');
-  if (tokens[1].value !== '@scope/package-name') throw new Error('wrong package value');
-});
-
-// â”€â”€ Parser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-test('parses a JavaScript block to a JavaScriptBlock node', () => {
-  const ast = parse(tokenize('remember result as javascript\n  await axios.get(url)\ndone'));
-  const node = ast.body[0];
-  if (node.type !== 'JavaScriptBlock') throw new Error('wrong node type');
-  if (node.name !== 'result') throw new Error('wrong name');
-  if (!node.body.includes('await axios.get(url)')) throw new Error('wrong body');
-});
-
-test('parses ask variable to an AskStatement', () => {
-  const node = parse(tokenize('ask name')).body[0];
-  if (node.type !== 'AskStatement') throw new Error('wrong node type');
-  if (node.variable !== 'name') throw new Error('wrong variable');
-  if (node.prompt !== undefined) throw new Error('bare ask should have no prompt');
-});
-
-test('parses ask with prompt to an AskStatement', () => {
-  const node = parse(tokenize('ask "What is your name?" as name')).body[0];
-  if (node.type !== 'AskStatement') throw new Error('wrong node type');
-  if (node.variable !== 'name') throw new Error('wrong variable');
-  if (node.prompt !== 'What is your name?') throw new Error('wrong prompt');
-});
-
-test('ask with a prompt requires "as"', () => {
-  try {
-    compile('ask "hi" name');
-    throw new Error('should have thrown');
-  } catch (e) {
-    if (!e.message.toLowerCase().includes('as')) throw e;
-  }
-});
-
-// â”€â”€ Dependency detection (RFC-0011 Â§21) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-test('detects arbitrary npm packages', () => {
-  assert(JSON.stringify(detectDependencies('use axios')), '["axios"]');
-  assert(JSON.stringify(detectDependencies('use dotenv')), '["dotenv"]');
-  assert(JSON.stringify(detectDependencies('use bcrypt')), '["bcrypt"]');
-  assert(JSON.stringify(detectDependencies('use sharp')), '["sharp"]');
-});
-
-test('detects multiple generic npm packages in order', () => {
-  assert(JSON.stringify(detectDependencies('use axios\nuse dotenv\nuse bcrypt')),
-    '["axios","dotenv","bcrypt"]');
-});
-
-test('deduplicates generic npm packages', () => {
-  assert(JSON.stringify(detectDependencies('use axios\nuse axios\nuse dotenv')),
-    '["axios","dotenv"]');
-});
-
-test('unknown valid package names are not rejected', () => {
-  assert(JSON.stringify(detectDependencies('use semver')), '["semver"]');
-});
-
-test('node-fetch is detected as a dependency', () => {
-  assert(JSON.stringify(detectDependencies('use node-fetch')), '["node-fetch"]');
-});
-
-test('generic packages imported from other files are deduplicated at bundle time', () => {
-  const js = bundleFixture('gateway_imports_axios.ps');
-  const count = (js.match(/require\('axios'\)/g) || []).length;
-  if (count !== 1) throw new Error(`expected one axios require but got ${count}`);
-  if (!js.includes('"gateway loaded"')) throw new Error('entry output missing');
-});
-
-// â”€â”€ JavaScript blocks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-test('basic JavaScript block compiles to an async IIFE assignment', () => {
-  assert(compile('remember result as javascript\n  const value = await something()\n  return value\ndone'),
-    'let result = await (async () => {\n  const value = await something()\n  return value\n})();');
-});
-
-test('JavaScript block preserves statements and expressions verbatim', () => {
-  const js = compile('remember data as javascript\n  const obj = { a: [1, 2, 3] }\n  items.forEach((x) => console.log(x))\n  try { run() } catch (e) { console.error(e) }\n  return obj\ndone');
-  if (!js.includes('const obj = { a: [1, 2, 3] }')) throw new Error('object literal lost');
-  if (!js.includes('items.forEach((x) => console.log(x))')) throw new Error('callback lost');
-  if (!js.includes('try { run() } catch (e) { console.error(e) }')) throw new Error('try/catch lost');
-});
-
-test('JavaScript block supports async/await', () => {
-  const js = compile('remember response as javascript\n  const data = await axios.get(url)\n  return data.data\ndone');
-  if (!js.includes('await (async () => {')) throw new Error('missing async IIFE');
-  if (!js.includes('await axios.get(url)')) throw new Error('missing await');
-  if (!js.includes('return data.data')) throw new Error('missing return');
-});
-
-test('JavaScript block can read PlainScript variables in scope', () => {
-  const js = compile('remember url as "https://api.example.com"\nremember response as javascript\n  return await axios.get(url)\ndone');
-  if (!js.includes('axios.get(url)')) throw new Error('plain variable not visible inside JS block');
-});
-
-test('PlainScript code can use the result of a JavaScript block', () => {
-  const js = compile('remember response as javascript\n  return 42\ndone\nshow response');
-  if (!js.includes('let response = await (async () => {')) throw new Error('missing assignment');
-  if (!js.includes('console.log(response)')) throw new Error('result not usable in PlainScript');
-});
-
-test('JavaScript block body is emitted verbatim (template literals preserved)', () => {
-  const js = compile('remember t as javascript\n  return `hello\n  world`\ndone');
-  if (!js.includes('return `hello')) throw new Error('template literal changed');
-});
-
-test('JavaScript block with invalid JS reports a JavaScript error', () => {
-  try {
-    compile('remember x as javascript\n  const = 5\ndone');
-    throw new Error('should have thrown');
-  } catch (e) {
-    if (!e.message.includes('JavaScript error')) throw e;
-    if (!e.message.includes('x')) throw new Error('should mention the variable name');
-  }
-});
-
-test('JavaScript block inside a function makes the function async', () => {
-  const js = compile('make fetch()\n  remember result as javascript\n    const v = await job()\n    return v\n  done\n  give result\ndone');
-  if (!js.includes('async function fetch()')) throw new Error('function not async');
-  if (!js.includes('await (async () => {')) throw new Error('missing async IIFE');
-});
-
-test('JavaScript block inside a route makes the handler async', () => {
-  const js = compile('route "/data"\n  remember x as javascript\n    return 1\n  done\n  reply x\ndone');
-  if (!js.includes('async (req, res) =>')) throw new Error('route handler not async');
-});
-
-test('functions without async blocks stay synchronous', () => {
-  const js = compile('make greet()\n  show "hi"\ndone');
-  if (js.includes('async function')) throw new Error('plain function unexpectedly async');
-});
-
-test('JavaScript block inside a while loop compiles inside the loop', () => {
-  const js = compile('while x is above 0\n  remember v as javascript\n    return run(x)\n  done\n  x becomes x + 1\ndone');
-  if (!js.includes('while (x > 0)')) throw new Error('missing while');
-  if (!js.includes('await (async () => {')) throw new Error('missing JS block in loop');
-});
-
-// â”€â”€ ask â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-test('ask variable compiles to a readline prompt', () => {
-  const js = compile('ask name');
-  if (!js.includes('let name = await __ask("> ");')) throw new Error('missing ask statement');
-});
-
-test('ask with a prompt compiles to a prompted readline call', () => {
-  const js = compile('ask "What is your name?" as name');
-  if (!js.includes('let name = await __ask("What is your name?");')) throw new Error('missing prompted ask');
-});
-
-test('ask emits the readline runtime prelude once', () => {
-  const js = compile('ask name\nask "age" as age');
-  const count = (js.match(/const readline = require\('readline'\);/g) || []).length;
-  if (count !== 1) throw new Error(`expected one readline prelude but got ${count}`);
-  if (!js.includes('async function __ask')) throw new Error('missing __ask runtime');
-});
-
-test('ask inside a function makes the function async', () => {
-  const js = compile('make greet()\n  ask name\n  show "Hello, " + name\ndone');
-  if (!js.includes('async function greet()')) throw new Error('function not async');
-  if (!js.includes('await __ask("> ")')) throw new Error('missing ask call');
-});
-
-test('ask inside a loop compiles inside the loop', () => {
-  const js = compile('while x is above 0\n  ask "Next?" as name\n  x becomes x + 1\ndone');
-  if (!js.includes('while (x > 0)')) throw new Error('missing while');
-  if (!js.includes('await __ask("Next?")')) throw new Error('missing ask in loop');
-});
-
-test('ask result used in expressions', () => {
-  const js = compile('ask "Age?" as age\nshow age + 1');
-  if (!js.includes('console.log(age + 1)')) throw new Error('ask result not usable in expression');
-});
-
-// â”€â”€ Async runtime wrapper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-test('bundle wraps programs containing JavaScript blocks in an async runtime', () => {
-  const js = bundleFixture('gateway_js.ps');
-  if (!js.includes('(async () => {')) throw new Error('missing async wrapper');
-  if (!js.includes('let response = await (async () => {')) throw new Error('missing JS block');
-  if (!js.includes('console.log(response)')) throw new Error('missing show');
-});
-
-test('bundle wraps programs containing ask in an async runtime', () => {
-  const js = bundleFixture('gateway_ask.ps');
-  if (!js.includes('(async () => {')) throw new Error('missing async wrapper');
-  if (!js.includes('await __ask("Name?")')) throw new Error('missing ask');
-});
-
-test('bundle does not wrap programs without async features', () => {
-  const js = bundleFixture('uses_math.ps');
-  if (js.includes('(async () => {')) throw new Error('unexpected async wrapper');
-});
-
-// â”€â”€ Formatter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-test('format: preserves JavaScript block lines verbatim', () => {
-  const src = 'remember result as javascript\n        const x = 1\n    return x\ndone';
-  const result = format(src);
-  if (!result.includes('        const x = 1')) throw new Error('JS line whitespace changed');
-  if (!result.includes('    return x')) throw new Error('JS return line whitespace changed');
-  if (!result.match(/^done/m)) throw new Error('"done" not dedented');
-});
-
-test('format: JavaScript block inside a function keeps outer indentation', () => {
-  const src = 'make run()\nremember x as javascript\n        const v = 1\ndone\ndone';
-  const result = format(src);
-  if (!result.includes('    remember x as javascript')) throw new Error('block line not indented');
-  if (!result.includes('        const v = 1')) throw new Error('JS body not preserved');
-  if (!result.includes('    done')) throw new Error('inner done not at depth 1');
-});
-
-test('format: idempotent with JavaScript blocks', () => {
-  const src = 'remember x as javascript\n    const v = 1\n    return v\ndone\nshow x';
-  const once  = format(src);
-  const twice = format(once);
-  if (once !== twice) throw new Error('format not idempotent with JS blocks');
-});
-
 // â”€â”€ Generic npm packages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('use axios compiles to a require binding', () => {
@@ -2747,14 +2496,14 @@ test('hyphenated and scoped packages compile alongside regular packages', () => 
 });
 
 test('bundle: generic npm packages are detected and required', () => {
-  const js = bundleFixture('uses_npm.ps');
+  const js = bundleFixture('uses_npm.pln');
   if (!js.includes("require('node-fetch');")) throw new Error('missing node-fetch');
   if (!js.includes("require('@scope/package-name');")) throw new Error('missing scoped package');
   if (!js.includes("require('dotenv');")) throw new Error('missing dotenv');
 });
 
 test('bundle: hyphenated packages imported from other files are deduplicated', () => {
-  const js = bundleFixture('gateway_imports_npm.ps');
+  const js = bundleFixture('gateway_imports_npm.pln');
   const count = (js.match(/require\('node-fetch'\)/g) || []).length;
   if (count !== 1) throw new Error(`expected one node-fetch require but got ${count}`);
   if (!js.includes('"gateway loaded"')) throw new Error('entry output missing');
@@ -2838,22 +2587,11 @@ test('known packages keep their canonical binding when versioned', () => {
 
 test('detect keeps version specs and maps friendly names through them', () => {
   assert(JSON.stringify(detectDependencies('use left-pad@^1.3.0')), '["left-pad@^1.3.0"]');
-  assert(JSON.stringify(detectDependencies('use sqlite@7')), '["better-sqlite3@7"]');
+assert(JSON.stringify(detectDependencies('use sqlite@7')), '["better-sqlite3@7"]');
   assert(JSON.stringify(detectDependencies('use @scope/pkg@1')), '["@scope/pkg@1"]');
 });
 
-test('hyphenated package require inside a JavaScript block is preserved verbatim', () => {
-  const js = compile('remember f as javascript\n  const mod = require("node-fetch")\n  return mod\ndone');
-  if (!js.includes('require("node-fetch")')) throw new Error('JS block content changed');
-});
-
-// â”€â”€ CLI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-test('plainscript help includes the JavaScript Gateway', () => {
-  const out = runCli(['help'], process.cwd());
-  if (!out.includes('JavaScript')) throw new Error('"JavaScript" missing from help');
-  if (!out.includes('ask')) throw new Error('"ask" missing from help');
-});
+// â”€â”€ CLI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 test('plainscript version shows the compiler version', () => {
   const out = runCli(['version'], process.cwd());
@@ -2861,19 +2599,9 @@ test('plainscript version shows the compiler version', () => {
   if (!out.includes(VERSION)) throw new Error(`Expected ${VERSION} but got: ${out}`);
 });
 
-test('plainscript build produces executable async output for a JavaScript block', () => {
-  const dir = tmpDir();
-  const plnFile = path.join(dir, 'gw.ps');
-  fs.writeFileSync(plnFile, 'remember x as javascript\n  return 1\ndone\nshow x\n');
-  runCli(['build', plnFile], dir);
-  const js = fs.readFileSync(path.join(dir, 'dist', 'gw.js'), 'utf8');
-  if (!js.includes('(async () => {')) throw new Error('build output not wrapped');
-  if (!js.includes('let x = await (async () => {')) throw new Error('JS block missing in build');
-});
-
 test('plainscript run on a nonexistent file reports a friendly error and does not invoke AI', () => {
   const dir = tmpDir();
-  const out = runCli(['run', 'missing.ps'], dir);
+  const out = runCli(['run', 'missing.pln'], dir);
   if (!out.includes('File not found')) {
     throw new Error(`Expected a "File not found" error but got: ${out}`);
   }
@@ -2891,7 +2619,7 @@ function writeLocalPackage(projectDir, pkgName, mainSrc) {
   fs.mkdirSync(pkgDir, { recursive: true });
   fs.writeFileSync(
     path.join(pkgDir, 'package.json'),
-    JSON.stringify({ name: pkgName, version: '1.0.1', main: 'index.js' })
+    JSON.stringify({ name: pkgName, version: '1.0.02', main: 'index.js' })
   );
   fs.writeFileSync(path.join(pkgDir, 'index.js'), mainSrc);
 }
@@ -2899,8 +2627,8 @@ function writeLocalPackage(projectDir, pkgName, mainSrc) {
 test('plainscript run resolves dependencies from the project node_modules, not the global install', () => {
   const dir = tmpDir();
   writeLocalPackage(dir, 'plainscriptlocaltest', 'module.exports = "resolved-from-project-node_modules";\n');
-  fs.writeFileSync(path.join(dir, 'app.ps'), 'use plainscriptlocaltest\nshow plainscriptlocaltest\n');
-  const out = runCli(['run', 'app.ps'], dir);
+  fs.writeFileSync(path.join(dir, 'app.pln'), 'use plainscriptlocaltest\nshow plainscriptlocaltest\n');
+  const out = runCli(['run', 'app.pln'], dir);
   if (!out.includes('resolved-from-project-node_modules')) {
     throw new Error(`local dependency did not resolve from the project. Output:\n${out}`);
   }
@@ -2914,7 +2642,7 @@ test('plainscript start resolves project-local dependencies from src/', () => {
   const dir = tmpDir();
   writeLocalPackage(dir, 'plainscriptlocaltest', 'module.exports = "start-resolved-locally";\n');
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'use plainscriptlocaltest\nshow plainscriptlocaltest\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'use plainscriptlocaltest\nshow plainscriptlocaltest\n');
   const out = runCli(['start'], dir);
   if (!out.includes('start-resolved-locally')) {
     throw new Error(`plainscript start did not resolve the local dependency. Output:\n${out}`);
@@ -2926,8 +2654,8 @@ test('hyphenated packages resolve at runtime from the project node_modules', () 
   const marker = path.join(dir, 'hyphenated-loaded.txt');
   writeLocalPackage(dir, 'plainscript-fake-fetch',
     `require('fs').writeFileSync(${JSON.stringify(marker)}, 'ok');\nmodule.exports = {};\n`);
-  fs.writeFileSync(path.join(dir, 'app.ps'), 'use plainscript-fake-fetch\nshow "hyphenated-ok"\n');
-  const out = runCli(['run', 'app.ps'], dir);
+  fs.writeFileSync(path.join(dir, 'app.pln'), 'use plainscript-fake-fetch\nshow "hyphenated-ok"\n');
+  const out = runCli(['run', 'app.pln'], dir);
   if (!out.includes('hyphenated-ok')) throw new Error(`run failed. Output:\n${out}`);
   if (!fs.existsSync(marker)) {
     throw new Error('hyphenated package was not loaded from the project node_modules');
@@ -2939,8 +2667,8 @@ test('scoped packages resolve at runtime from the project node_modules', () => {
   const marker = path.join(dir, 'scoped-loaded.txt');
   writeLocalPackage(dir, '@fakescope/pkg',
     `require('fs').writeFileSync(${JSON.stringify(marker)}, 'ok');\nmodule.exports = {};\n`);
-  fs.writeFileSync(path.join(dir, 'app.ps'), 'use @fakescope/pkg\nshow "scoped-ok"\n');
-  const out = runCli(['run', 'app.ps'], dir);
+  fs.writeFileSync(path.join(dir, 'app.pln'), 'use @fakescope/pkg\nshow "scoped-ok"\n');
+  const out = runCli(['run', 'app.pln'], dir);
   if (!out.includes('scoped-ok')) throw new Error(`run failed. Output:\n${out}`);
   if (!fs.existsSync(marker)) {
     throw new Error('scoped package was not loaded from the project node_modules');
@@ -2951,28 +2679,28 @@ test('multiple project-local dependencies resolve at runtime', () => {
   const dir = tmpDir();
   writeLocalPackage(dir, 'plainscriptfirst', 'module.exports = "first";\n');
   writeLocalPackage(dir, 'plainscriptsecond', 'module.exports = "second";\n');
-  fs.writeFileSync(path.join(dir, 'app.ps'),
+  fs.writeFileSync(path.join(dir, 'app.pln'),
     'use plainscriptfirst\nuse plainscriptsecond\nshow plainscriptfirst + " " + plainscriptsecond\n');
-  const out = runCli(['run', 'app.ps'], dir);
+  const out = runCli(['run', 'app.pln'], dir);
   if (!out.includes('first second')) throw new Error(`multiple deps did not resolve. Output:\n${out}`);
 });
 
 test('multi-file projects resolve project-local dependencies at runtime', () => {
   const dir = tmpDir();
   writeLocalPackage(dir, 'plainscriptlocaltest', 'module.exports = "from-multifile";\n');
-  fs.writeFileSync(path.join(dir, 'lib.ps'), 'make version()\n  give "v2"\ndone\n');
-  fs.writeFileSync(path.join(dir, 'app.ps'),
-    'import "./lib.ps"\nuse plainscriptlocaltest\nshow plainscriptlocaltest + " " + version()\n');
-  const out = runCli(['run', 'app.ps'], dir);
+  fs.writeFileSync(path.join(dir, 'lib.pln'), 'make version()\n  give "v2"\ndone\n');
+  fs.writeFileSync(path.join(dir, 'app.pln'),
+    'import "./lib.pln"\nuse plainscriptlocaltest\nshow plainscriptlocaltest + " " + version()\n');
+  const out = runCli(['run', 'app.pln'], dir);
   if (!out.includes('from-multifile v2')) throw new Error(`multi-file run failed. Output:\n${out}`);
 });
 
 test('built-in modules still execute after the dependency-resolution fix', () => {
   const dir = tmpDir();
   fs.writeFileSync(path.join(dir, 'note.txt'), 'hello-builtin');
-  fs.writeFileSync(path.join(dir, 'app.ps'),
+  fs.writeFileSync(path.join(dir, 'app.pln'),
     'use fs\nremember content as readFile("note.txt")\nshow content\n');
-  const out = runCli(['run', 'app.ps'], dir);
+  const out = runCli(['run', 'app.pln'], dir);
   if (!out.includes('hello-builtin')) throw new Error(`built-in fs failed. Output:\n${out}`);
 });
 
@@ -2998,33 +2726,33 @@ test('plainscript doctor does not report a Complex Compilation layer', () => {
   if (out.includes('Complex Compilation')) throw new Error(`Complex Compilation must be gone. Output:\n${out}`);
 });
 
-test('plainscript doctor reports source files when src/ contains .ps files', () => {
+test('plainscript doctor reports source files when src/ contains .pln files', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'show "hello"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "hello"\n');
   const out = runCli(['doctor'], dir);
   if (!out.includes('Source files')) throw new Error(`Expected "Source files" check but got: ${out}`);
   if (!out.includes('src')) throw new Error(`Expected "src" in source check detail but got: ${out}`);
 });
 
-test('plainscript doctor reports no sources when no .ps files exist', () => {
+test('plainscript doctor reports no sources when no .pln files exist', () => {
   const dir = tmpDir();
   const out = runCli(['doctor'], dir);
   if (!out.includes('Source files')) throw new Error(`Expected "Source files" check but got: ${out}`);
-  if (!out.includes('no .ps files')) throw new Error(`Expected "no .ps files" detail but got: ${out}`);
+  if (!out.includes('no .pln files')) throw new Error(`Expected "no .pln files" detail but got: ${out}`);
 });
 
 test('plainscript doctor reports no sources when src/ is empty', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   const out = runCli(['doctor'], dir);
-  if (!out.includes('no .ps files')) throw new Error(`Expected "no .ps files" detail but got: ${out}`);
+  if (!out.includes('no .pln files')) throw new Error(`Expected "no .pln files" detail but got: ${out}`);
 });
 
 test('plainscript doctor reports ready dependencies when all installed', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'show "hello"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "hello"\n');
   const out = runCli(['doctor'], dir);
   if (!out.includes('ready')) throw new Error(`Expected "ready" for dependencies but got: ${out}`);
 });
@@ -3044,7 +2772,7 @@ test('plainscript start errors when no entry file found', () => {
   }
 });
 
-test('plainscript start errors when src/app.ps is missing', () => {
+test('plainscript start errors when src/app.pln is missing', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   const out = runCli(['start'], dir);
@@ -3053,10 +2781,10 @@ test('plainscript start errors when src/app.ps is missing', () => {
   }
 });
 
-test('plainscript start runs src/app.ps by default', () => {
+test('plainscript start runs src/app.pln by default', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'show "started-from-src"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "started-from-src"\n');
   const out = runCli(['start'], dir);
   if (!out.includes('started-from-src')) {
     throw new Error(`Expected "started-from-src" output but got: ${out}`);
@@ -3066,10 +2794,10 @@ test('plainscript start runs src/app.ps by default', () => {
   }
 });
 
-test('plainscript start defaults to src/app.ps when no entry configured', () => {
+test('plainscript start defaults to src/app.pln when no entry configured', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'show "default-entry"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "default-entry"\n');
   const out = runCli(['start'], dir);
   if (!out.includes('default-entry')) {
     throw new Error(`Expected "default-entry" output but got: ${out}`);
@@ -3113,573 +2841,7 @@ test('plainscript help includes "plainscript start"', () => {
   if (!out.includes('plainscript start')) throw new Error('"plainscript start" missing from help');
 });
 
-// â”€â”€ Acode syntax highlighting (stream spec) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-// The Acode plugin wraps plainscript-acode/stream-spec.js in CodeMirror's
-// StreamLanguage. That spec is pure CommonJS, so we can exercise the exact
-// tokenizer here in Node. The shim below mirrors @codemirror/language's
-// StringStream (line-based) and its drive loop, so these tests reflect what
-// Acode's editor will actually highlight.
-
-const streamSpec = require('../plainscript-acode/stream-spec.js');
-
-class StringStream {
-  constructor(string) {
-    this.string = string;
-    this.pos = 0;
-    this.start = 0;
-  }
-  eol() { return this.pos >= this.string.length; }
-  sol() { return this.pos === 0; }
-  peek() { return this.string.charAt(this.pos) || undefined; }
-  next() {
-    if (this.pos < this.string.length) return this.string.charAt(this.pos++);
-  }
-  eat(match) {
-    const ch = this.string.charAt(this.pos);
-    let ok;
-    if (typeof match === 'string') ok = ch === match;
-    else ok = ch && (match instanceof RegExp ? match.test(ch) : match(ch));
-    if (ok) { this.pos++; return ch; }
-  }
-  eatWhile(match) {
-    const start = this.pos;
-    while (this.eat(match)) { /* keep going */ }
-    return this.pos > start;
-  }
-  eatSpace() {
-    return this.eatWhile(/[\s\u00a0]/);
-  }
-  skipToEnd() { this.pos = this.string.length; }
-  skipTo(ch) {
-    const found = this.string.indexOf(ch, this.pos);
-    if (found > -1) { this.pos = found; return true; }
-  }
-  backUp(n) { this.pos = Math.max(0, this.pos - n); }
-  match(pattern, consume, caseInsensitive) {
-    if (typeof pattern === 'string') {
-      const cased = (s) => (caseInsensitive ? s.toLowerCase() : s);
-      const sub = this.string.substr(this.pos, pattern.length);
-      if (cased(sub) === cased(pattern)) {
-        if (consume !== false) this.pos += pattern.length;
-        return true;
-      }
-      return null;
-    }
-    const m = this.string.slice(this.pos).match(pattern);
-    if (m && m.index > 0) return null;
-    if (m && consume !== false) this.pos += m[0].length;
-    return m;
-  }
-  current() { return this.string.slice(this.start, this.pos); }
-}
-
-// Drive the stream spec exactly like @codemirror/language does: one
-// StringStream per line, token() called until end-of-line.
-function highlight(source) {
-  const state = streamSpec.startState(4);
-  const tokens = [];
-  for (const line of source.split('\n')) {
-    const stream = new StringStream(line);
-    while (!stream.eol()) {
-      stream.start = stream.pos;
-      const type = streamSpec.token(stream, state);
-      if (type) tokens.push({ type, text: stream.current() });
-    }
-  }
-  return tokens;
-}
-
-function highlightType(source, text) {
-  const tokens = highlight(source);
-  for (const token of tokens) {
-    if (token.text === text) return token.type;
-  }
-  return null;
-}
-
-function highlightLastType(source, text) {
-  const tokens = highlight(source);
-  let type = null;
-  for (const token of tokens) {
-    if (token.text === text) type = token.type;
-  }
-  return type;
-}
-
-// The exact set of legacy token names the spec may emit. StreamLanguage
-// resolves these against the tokenTable in plainscript-acode/main.js.
-const ALLOWED_TOKENS = new Set([
-  'keyword', 'operator', 'string', 'string-2', 'number', 'comment',
-  'variable', 'property', 'function', 'builtin', 'atom', 'meta',
-  'punctuation', 'invalid',
-]);
-
-console.log('\nAcode syntax highlighting (stream spec)');
-
-test('highlight: keywords, variables, strings, numbers, comments', () => {
-  const src = [
-    'remember name as "World"',
-    'show "Hello, " + name + "!"',
-    '// a comment',
-    'note: a documentation comment',
-    'remember pi as 3.14',
-  ].join('\n');
-  if (highlightType(src, 'remember') !== 'keyword') throw new Error('remember not keyword');
-  if (highlightType(src, 'name') !== 'variable') throw new Error('name not variable');
-  if (highlightType(src, 'as') !== 'operator') throw new Error('as not operator');
-  if (highlightType(src, '"World"') !== 'string') throw new Error('string not string');
-  if (highlightType(src, 'show') !== 'keyword') throw new Error('show not keyword');
-  if (highlightType(src, '// a comment') !== 'comment') throw new Error('comment not comment');
-  if (highlightType(src, 'note: a documentation comment') !== 'comment') {
-    throw new Error('note: documentation comment not comment');
-  }
-  if (highlightType(src, '3.14') !== 'number') throw new Error('number not number');
-  if (highlightType(src, 'pi') !== 'variable') throw new Error('pi not variable');
-});
-
-test('highlight: control flow and block delimiters', () => {
-  const src = [
-    'if score is at least 90',
-    '  show "A grade"',
-    'otherwise',
-    '  show "B grade"',
-    'done',
-  ].join('\n');
-  for (const word of ['if', 'otherwise', 'done', 'show']) {
-    if (highlightType(src, word) !== 'keyword') {
-      throw new Error(`control word "${word}" not keyword`);
-    }
-  }
-});
-
-test('highlight: multi-word comparison phrases are operators', () => {
-  const src = [
-    'is above', 'is below', 'is at least', 'is at most', 'is not',
-    'is empty', 'is not empty', 'contains', 'starts with', 'ends with',
-    'between 80 and 89', 'is greater than', 'is less than',
-  ].join('\n');
-  for (const word of ['is', 'above', 'below', 'at', 'least', 'most', 'not',
-    'empty', 'contains', 'starts', 'ends', 'with', 'between', 'and',
-    'greater', 'less', 'than']) {
-    if (highlightType(src, word) !== 'operator') {
-      throw new Error(`comparison word "${word}" not operator`);
-    }
-  }
-});
-
-test('highlight: route paths are special strings', () => {
-  const src = [
-    'route "/"',
-    '  reply "Hello from PlainScript!"',
-    'done',
-    'when someone visits "/api/status"',
-    '  reply json',
-    '    status is "ok"',
-    '    version is "1.0"',
-    '  done',
-    'done',
-  ].join('\n');
-  if (highlightType(src, '"/"') !== 'string-2') throw new Error('route root path not string-2');
-  if (highlightType(src, '"/api/status"') !== 'string-2') throw new Error('route path not string-2');
-  if (highlightType(src, '"Hello from PlainScript!"') !== 'string') throw new Error('reply string not plain string');
-  for (const word of ['route', 'visits', 'json']) {
-    if (highlightType(src, word) !== 'keyword') throw new Error(`${word} not keyword`);
-  }
-});
-
-test('highlight: web app shorthand and listen', () => {
-  const src = [
-    'web app',
-    'listen on 3000',
-    '  show "Server running"',
-    'done',
-  ].join('\n');
-  for (const word of ['web', 'app', 'listen', 'on']) {
-    if (highlightType(src, word) !== 'keyword') throw new Error(`${word} not keyword`);
-  }
-  if (highlightType(src, '3000') !== 'number') throw new Error('port not number');
-});
-
-test('highlight: use statements highlight module names as builtins', () => {
-  const src = [
-    'use express',
-    'use node-fetch',
-    'use @scope/package-name',
-    'use fs',
-  ].join('\n');
-  if (highlightType(src, 'use') !== 'keyword') throw new Error('use not keyword');
-  for (const pkg of ['express', 'node-fetch', '@scope/package-name', 'fs']) {
-    if (highlightType(src, pkg) !== 'builtin') throw new Error(`package ${pkg} not builtin`);
-  }
-});
-
-test('highlight: stdlib calls are builtins, user calls are functions', () => {
-  const src = [
-    'make greet(name)',
-    '  give "Hello, " + name',
-    'done',
-    'greet("World")',
-    'remember encoded as jsonEncode(user)',
-    'show readFile("a.txt")',
-  ].join('\n');
-  if (highlightType(src, 'make') !== 'keyword') throw new Error('make not keyword');
-  if (highlightType(src, 'give') !== 'keyword') throw new Error('give not keyword');
-  if (highlightType(src, 'greet') !== 'function') throw new Error('function name not function');
-  for (const call of ['jsonEncode', 'readFile']) {
-    if (highlightType(src, call) !== 'builtin') throw new Error(`stdlib call ${call} not builtin`);
-  }
-});
-
-test('highlight: v1.1 expression words and number words', () => {
-  const src = [
-    'show first player from players',
-    'show player three from players',
-    'show players length',
-    'show name of user',
-    'add("Palmer" to players)',
-    'remove("Foden" from players)',
-    'write("Saved" to "notes.txt")',
-  ].join('\n');
-  for (const word of ['first', 'from', 'of', 'to']) {
-    if (highlightType(src, word) !== 'operator') {
-      throw new Error(`expression word "${word}" not operator`);
-    }
-  }
-  if (highlightType(src, 'length') !== 'operator') throw new Error('postfix length not operator');
-  if (highlightType(src, 'three') !== 'number') throw new Error('number word "three" not number');
-  if (highlightType(src, 'add') !== 'function') throw new Error('add not function');
-  if (highlightType(src, 'remove') !== 'function') throw new Error('remove not function');
-  if (highlightType(src, 'write') !== 'builtin') throw new Error('write not builtin');
-  if (highlightType(src, 'players') !== 'variable') throw new Error('players not variable');
-});
-
-test('highlight: database and SQL blocks', () => {
-  const src = [
-    'database "app.db"',
-    'execute',
-    '  CREATE TABLE IF NOT EXISTS users (id INTEGER)',
-    'done',
-    'query',
-    '  SELECT * FROM users',
-    'done',
-  ].join('\n');
-  if (highlightType(src, 'database') !== 'keyword') throw new Error('database not keyword');
-  if (highlightType(src, 'execute') !== 'keyword') throw new Error('execute not keyword');
-  if (highlightType(src, 'query') !== 'keyword') throw new Error('query not keyword');
-  const tokens = highlight(src);
-  if (!tokens.some((t) => t.type === 'meta' && t.text.includes('CREATE TABLE'))) {
-    throw new Error('execute body not highlighted as meta');
-  }
-  if (!tokens.some((t) => t.type === 'meta' && t.text.includes('SELECT * FROM'))) {
-    throw new Error('query body not highlighted as meta');
-  }
-});
-
-test('highlight: javascript gateway block highlights JS inside and PlainScript after', () => {
-  const src = [
-    'remember response as javascript',
-    '  const value = 42',
-    '  return value',
-    'done',
-    'show response',
-  ].join('\n');
-  if (highlightType(src, 'javascript') !== 'keyword') throw new Error('javascript not keyword');
-  for (const word of ['const', 'return']) {
-    if (highlightType(src, word) !== 'keyword') throw new Error(`JS word "${word}" not keyword in block`);
-  }
-  if (highlightType(src, '42') !== 'number') throw new Error('JS number not number');
-  if (highlightLastType(src, 'done') !== 'keyword') throw new Error('gateway done not keyword');
-  if (highlightType(src, 'show') !== 'keyword') throw new Error('PlainScript after gateway not highlighted');
-});
-
-test('highlight: only a line exactly equal to done terminates the JS block', () => {
-  const src = [
-    'remember x as javascript',
-    '  const done = 1',
-    '  return done',
-    'done',
-  ].join('\n');
-  if (highlightType(src, 'const') !== 'keyword') throw new Error('const not keyword in block');
-  if (highlightType(src, 'return') !== 'keyword') throw new Error('return not keyword in block');
-  if (highlightType(src, 'done') !== 'variable') throw new Error('JS variable named done mis-typed');
-  if (highlightLastType(src, 'done') !== 'keyword') throw new Error('terminator done not keyword');
-});
-
-test('highlight: JS operators inside javascript blocks (incl. slash operators)', () => {
-  const src = [
-    'remember ratio as javascript',
-    '  let total = 10',
-    '  total /= 2',
-    '  total %= 3',
-    '  const half = total / 2',
-    '  const ok = (total === 5) && (total != 0)',
-    '  return total <= 5 ? "yes" : "no"',
-    'done',
-  ].join('\n');
-  for (const op of ['=', '/=', '%=', '/', '===', '!=', '&', '<=', '?', ':']) {
-    if (highlightType(src, op) !== 'operator') {
-      throw new Error(`JS operator "${op}" not operator`);
-    }
-  }
-  for (const word of ['let', 'const', 'return']) {
-    if (highlightType(src, word) !== 'keyword') throw new Error(`JS keyword "${word}" not keyword`);
-  }
-});
-
-test('highlight: atoms, invalid characters, and operator set', () => {
-  const src = [
-    'remember isStudent as true',
-    'show age + 1',
-    'remember x as y;',
-  ].join('\n');
-  if (highlightType(src, 'true') !== 'atom') throw new Error('true not atom');
-  if (highlightType(src, '+') !== 'operator') throw new Error('+ not operator');
-  if (highlightType(src, ';') !== 'invalid') throw new Error('; should be invalid in PlainScript');
-});
-
-test('highlight: atoms null and undefined', () => {
-  const src = [
-    'remember x as null',
-    'remember y as undefined',
-  ].join('\n');
-  if (highlightType(src, 'null') !== 'atom') throw new Error('null not atom');
-  if (highlightType(src, 'undefined') !== 'atom') throw new Error('undefined not atom');
-});
-
-test('highlight: template strings (backtick) are string-2', () => {
-  const src = 'show `Hello World`';
-  if (highlightType(src, '`Hello World`') !== 'string-2') {
-    throw new Error('template string not string-2');
-  }
-});
-
-test('highlight: template strings with interpolation', () => {
-  const src = 'remember msg as `Hello ${name}!`';
-  const tokens = highlight(src);
-  // The `${` triggers an interpolation â€” it should appear in an operator token
-  const opToken = tokens.find(t => t.type === 'operator' && t.text.includes('${'));
-  if (!opToken) throw new Error('${} interpolation not in operator token');
-  // The closing `}` is punctuation
-  if (highlightType(src, '}') !== 'punctuation') {
-    throw new Error('} closing interpolation not punctuation');
-  }
-  // The variable inside `${...}` is highlighted as a variable
-  if (highlightType(src, 'name') !== 'variable') {
-    throw new Error('interpolated variable not variable');
-  }
-});
-
-test('highlight: multiline template strings', () => {
-  const src = [
-    'remember msg as `line1',
-    'line2',
-    'line3`',
-  ].join('\n');
-  const tokens = highlight(src);
-  const strings = tokens.filter(t => t.type === 'string-2');
-  if (strings.length < 1) {
-    throw new Error('multiline template string not highlighted');
-  }
-});
-
-test('highlight: template string closing backtick resets to PlainScript', () => {
-  const src = [
-    'show `hello`',
-    'show "world"',
-  ].join('\n');
-  if (highlightType(src, '`hello`') !== 'string-2') {
-    throw new Error('template string not string-2');
-  }
-  if (highlightType(src, '"world"') !== 'string') {
-    throw new Error('string after template not string');
-  }
-});
-
-test('highlight: every emitted token type is a known legacy token', () => {
-  const files = [
-    'hello.ps', 'variables.ps', 'conditions.ps', 'expressions.ps',
-    'loops.ps', 'functions.ps', 'stdlib.ps', 'web-server.ps',
-    'database.ps',
-  ].map((name) => path.join(__dirname, '..', 'samples', name)).concat([
-    path.join(__dirname, 'fixtures', 'gateway_js.ps'),
-    path.join(__dirname, 'fixtures', 'gateway_ask.ps'),
-  ]);
-  for (const file of files) {
-    const source = fs.readFileSync(file, 'utf8');
-    for (const token of highlight(source)) {
-      if (!ALLOWED_TOKENS.has(token.type)) {
-        throw new Error(`${file}: unknown token type ${token.type}`);
-      }
-    }
-  }
-});
-
-// â”€â”€ Acode plugin loading (editorLanguages / aceModes) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-const {
-  PlainscriptLanguagePlugin,
-  LANGUAGE_NAME,
-  EXTENSIONS,
-} = require('../plainscript-acode/main.js');
-
-// The suite's test() helper is synchronous, so plugin tests that await the
-// async init() run through this helper and are joined with the summary below.
 const pendingPluginTests = [];
-let lastPluginTest = Promise.resolve();
-
-function testAsync(name, fn) {
-  const run = () => fn().then(
-    () => { console.log(`  PASS  ${name}`); passed++; },
-    (e) => { console.log(`  FAIL  ${name}`); console.log(`        ${e.message}`); failed++; },
-  );
-  lastPluginTest = lastPluginTest.then(run, run);
-  pendingPluginTests.push(lastPluginTest);
-}
-
-function makeMockAcode(modules) {
-  return {
-    require(name) {
-      return Object.prototype.hasOwnProperty.call(modules, name) ? modules[name] : undefined;
-    },
-  };
-}
-
-const cmLanguageMock = { StreamLanguage: { define: (spec) => ({ spec }) } };
-const lezerHighlightMock = {
-  tags: {
-    function: (t) => t,
-    standard: (t) => t,
-    special: (t) => t,
-    variableName: 'variableName',
-    string: 'string',
-    propertyName: 'propertyName',
-    meta: 'meta',
-    atom: 'atom',
-    invalid: 'invalid',
-  },
-};
-
-console.log('\nAcode plugin loading (editorLanguages / aceModes)');
-
-testAsync('plugin: registers via modern editorLanguages when available', async () => {
-  let call = null;
-  const acode = makeMockAcode({
-    editorLanguages: {
-      register(name, extensions, caption, loader) {
-        call = { name, extensions, caption, loader };
-        return Promise.resolve();
-      },
-      unregister() {},
-    },
-    '@codemirror/language': cmLanguageMock,
-    '@lezer/highlight': lezerHighlightMock,
-  });
-  const plugin = new PlainscriptLanguagePlugin(acode);
-  const usedPath = await plugin.init();
-  if (usedPath !== 'editorLanguages') throw new Error('init did not use editorLanguages');
-  if (!call) throw new Error('editorLanguages.register was not called');
-  if (call.name !== LANGUAGE_NAME) throw new Error(`unexpected mode name: ${call.name}`);
-  if (JSON.stringify(call.extensions) !== JSON.stringify(EXTENSIONS)) {
-    throw new Error(`unexpected extensions: ${JSON.stringify(call.extensions)}`);
-  }
-  const language = await call.loader();
-  if (!Array.isArray(language) || !language[0] || !language[0].spec) {
-    throw new Error('loader did not return a StreamLanguage extension');
-  }
-  if (language[0].spec.name !== 'plainscript') throw new Error('loader returned the wrong spec');
-});
-
-testAsync('plugin: falls back to legacy aceModes when editorLanguages is missing', async () => {
-  let call = null;
-  const acode = makeMockAcode({
-    aceModes: {
-      addMode(name, extensions, caption) {
-        call = { name, extensions, caption };
-        return Promise.resolve();
-      },
-      removeMode() {},
-    },
-  });
-  const plugin = new PlainscriptLanguagePlugin(acode);
-  const usedPath = await plugin.init();
-  if (usedPath !== 'aceModes') throw new Error('init did not fall back to aceModes');
-  if (!call) throw new Error('aceModes.addMode was not called');
-  if (call.name !== LANGUAGE_NAME) throw new Error(`unexpected mode name: ${call.name}`);
-  if (JSON.stringify(call.extensions) !== JSON.stringify(EXTENSIONS)) {
-    throw new Error(`unexpected extensions: ${JSON.stringify(call.extensions)}`);
-  }
-});
-
-testAsync('plugin: fails gracefully when neither API is available', async () => {
-  const acode = makeMockAcode({});
-  const plugin = new PlainscriptLanguagePlugin(acode);
-  let error = null;
-  try {
-    await plugin.init();
-  } catch (e) {
-    error = e;
-  }
-  if (!error) throw new Error('init resolved even though neither API is available');
-  if (!error.message.includes('editorLanguages') || !error.message.includes('aceModes')) {
-    throw new Error(`error message is not descriptive: ${error.message}`);
-  }
-  if (plugin.registration !== null) throw new Error('failed init left a registration behind');
-});
-
-testAsync('plugin: cleanup after modern editorLanguages registration', async () => {
-  let unregistered = null;
-  const acode = makeMockAcode({
-    editorLanguages: {
-      register() { return Promise.resolve(); },
-      unregister(name) { unregistered = name; },
-    },
-    '@codemirror/language': cmLanguageMock,
-    '@lezer/highlight': lezerHighlightMock,
-  });
-  const plugin = new PlainscriptLanguagePlugin(acode);
-  await plugin.init();
-  plugin.destroy();
-  if (unregistered !== LANGUAGE_NAME) {
-    throw new Error('editorLanguages.unregister was not called with the mode name');
-  }
-});
-
-testAsync('plugin: cleanup after legacy aceModes registration', async () => {
-  let removed = null;
-  const acode = makeMockAcode({
-    aceModes: {
-      addMode() { return Promise.resolve(); },
-      removeMode(name) { removed = name; },
-    },
-  });
-  const plugin = new PlainscriptLanguagePlugin(acode);
-  await plugin.init();
-  plugin.destroy();
-  if (removed !== LANGUAGE_NAME) {
-    throw new Error('aceModes.removeMode was not called with the mode name');
-  }
-});
-
-testAsync('plugin: main.js wires init/unmount on the acode global', async () => {
-  let initFn = null;
-  let unmountFn = null;
-  const globalAcode = {
-    require() { return undefined; },
-    setPluginInit(id, fn) { initFn = fn; },
-    setPluginUnmount(id, fn) { unmountFn = fn; },
-  };
-  const mainPath = require.resolve('../plainscript-acode/main.js');
-  delete require.cache[mainPath];
-  global.acode = globalAcode;
-  try {
-    require('../plainscript-acode/main.js');
-  } finally {
-    delete global.acode;
-  }
-  if (typeof initFn !== 'function') throw new Error('main.js did not call acode.setPluginInit');
-  if (typeof unmountFn !== 'function') throw new Error('main.js did not call acode.setPluginUnmount');
-});
 
 // â”€â”€ String Templates (backtick strings) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

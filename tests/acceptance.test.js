@@ -1,8 +1,8 @@
 ﻿// Acceptance tests for the v2.1.1 example projects.
 //
 // These boot the REAL compiled output of examples/ over live HTTP:
-//   • examples/football-backend/app.ps  — SQLite + sessions + api key + 404
-//   • examples/id-verification/app.ps   — uploads + ocr + name matching
+//   • examples/football-backend/app.pln  — SQLite + sessions + api key + 404
+//   • examples/id-verification/app.pln   — uploads + ocr + name matching
 //
 // tesseract.js is not bundled (it downloads language data on demand), so the
 // OCR engine is replaced by a deterministic stub that genuinely decodes the
@@ -134,10 +134,10 @@ function decodeIdPngText(png) {
 }
 
 console.log('\nAcceptance — football backend');
-console.log('(examples/football-backend/app.ps over live HTTP)');
+console.log('(examples/football-backend/app.pln over live HTTP)');
 
 async function footballAcceptance() {
-  const { port, server } = await bootApp(compileFile('examples/football-backend/app.ps'));
+  const { port, server } = await bootApp(compileFile('examples/football-backend/app.pln'));
   const base = `http://127.0.0.1:${port}`;
   try {
     const keyHeaders = { 'x-api-key': 'coach-key-42' };
@@ -207,13 +207,13 @@ async function footballAcceptance() {
 // ── ID verification ───────────────────────────────────────────────────────────
 
 console.log('\nAcceptance — ID verification');
-console.log('(examples/id-verification/app.ps over live HTTP)');
+console.log('(examples/id-verification/app.pln over live HTTP)');
 
 async function idVerificationAcceptance() {
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'plainscript-idverify-'));
   // Compile before switching cwd (source paths are repo-relative); the app's
   // relative "uploads" folder then lands inside the temp work directory.
-  const js = compileFile('examples/id-verification/app.ps');
+  const js = compileFile('examples/id-verification/app.pln');
   process.chdir(workDir);
   const { port, server, restoreCwd } = await bootApp(js, {
     fakeOcr: (imagePath) => decodeIdPngText(fs.readFileSync(imagePath)),

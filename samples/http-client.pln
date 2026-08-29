@@ -1,0 +1,22 @@
+// PlainScript v1.0.02 — HTTP client
+
+remember users as get "https://jsonplaceholder.typicode.com/users"
+
+if ok of users is true
+    show length(data of users)
+    if length(data of users) is greater than 0
+        remember firstUser as data of users[0]
+        show name of firstUser
+    done
+otherwise
+    show "request failed with status " + status of users
+done
+
+remember created as post "https://jsonplaceholder.typicode.com/posts" with {
+    title: "Hello from PlainScript"
+}
+
+show status of created
+
+remember deleted as delete "https://jsonplaceholder.typicode.com/posts/1"
+show ok of deleted

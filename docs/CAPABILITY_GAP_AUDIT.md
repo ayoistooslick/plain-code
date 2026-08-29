@@ -1,4 +1,4 @@
-# PlainScript 1.0.1 — Capability-Gap Audit vs. TypeScript / Node.js
+# PlainScript 1.0.02 — Capability-Gap Audit vs. TypeScript / Node.js
 
 > **Purpose.** PlainScript's goal is **capability parity**, not syntax parity, with
 > modern TypeScript + Node.js. We do not clone TypeScript's syntax or its static
@@ -6,16 +6,16 @@
 > (IOPL) — you describe *what* you want, and the deterministic compiler decides
 > *how* to implement it in JavaScript.
 >
-> This document is the complete working audit for the 1.0.1 milestone. For every
+> This document is the complete working audit for the 1.0.02 milestone. For every
 > major TypeScript/Node.js capability area, it records:
 >
-> - **Status** — what PlainScript 1.0.1 already does,
+> - **Status** — what PlainScript 1.0.02 already does,
 > - **Gap** — what is missing for real-world capability parity,
 > - **Resolution** — either an *IOPL-native implementation* (shipped in this
 >   release and covered by tests) or an explicit *rationale* for why the
 >   capability is unnecessary / already supplied by the host runtime.
 >
-> **Gate:** PlainScript must NOT be declared 1.0.1 "ready" until this audit is
+> **Gate:** PlainScript must NOT be declared 1.0.02 "ready" until this audit is
 > complete and its shipped resolutions are exercised by the test suite.
 >
 > ---
@@ -50,8 +50,8 @@ normal Node `dist/`, do what the TypeScript program can?"
 |------------------------------------|------------------------|
 | Interfaces / type aliases            | **IOPL-native `kind` record schema** (§8). Declares fields + defaults; compile-checked constructors. |
 | Generics `<T>`                       | **Rationale: unnecessary.** PlainScript functions are untyped by design; JavaScript enforces runtime shapes. For generic *containers* (Map, Set, Promise<T>), use the JS Gateway or runtime stdlib, which are naturally generic. Provide `isArray`, `isText`, `isNumber` runtime predicates instead. |
-| Unions / literals                    | **Rationale: unnecessary.** `match <expr> against ... done` (existing) exhaustively branches on runtime values. |
-| Optional / default params            | **IOPL-native** — `make f(x, y as 0)` (existing, RFC-0011). |
+| Unions / literals                    | **Rationale: unnecessary.** `match <expr> against ... end` (existing) exhaustively branches on runtime values. |
+| Optional / default params            | **IOPL-native** — `define f(x, y as 0)` (existing, RFC-0011). |
 | Rest params / spread                 | **IOPL-native `spread of`** — see §6 collections. |
 | Non-null / optional chaining         | **Runtime null-safety stdlib** — `valueOf(key, fallback)`, `hasField(rec, key)` (§13). Avoids `?.` syntax. |
 | `typeof`/`keyof` type queries        | **Runtime reflection stdlib** — `typeOf(x)`, `fieldsOf(x)` (§13). |
@@ -68,11 +68,11 @@ omitted (rationale above). **Gap closed for 80% target.**
 
 | TypeScript             | PlainScript resolution |
 |------------------------|------------------------|
-| ES `import`/`export`   | **Exists**: `import "./file.ps"` (§ bundler), top-level `make` auto-exported to `module.exports`. |
-| Named imports          | **IOPL-native `import ... from`** — `import { name } from "./util.ps"` binds only named symbols (this release). |
+| ES `import`/`export`   | **Exists**: `import "./file.pln"` (§ bundler), top-level `define` auto-exported to `module.exports`. |
+| Named imports          | **IOPL-native `import ... from`** — `import { name } from "./util.pln"` binds only named symbols (this release). |
 | Dynamic `import()`     | **Runtime stdlib `loadModule(path)`** returning the required module (this release). |
 | Circular imports       | **Compile-time error** with a friendly cycle report (existing) — safer than TS's hoisted partials. |
-| Barrel files           | **Works** — `import "./index.ps"` where index imports the rest (existing bundler de-dups). |
+| Barrel files           | **Works** — `import "./index.pln"` where index imports the rest (existing bundler de-dups). |
 | `import type`          | **Rationale: unnecessary** — searchable types). |
 | Node built-ins         | **Runtime stdlib** `use fs`, `use path`, and IOPL `read/write/...` (existing). |
 
@@ -89,8 +89,8 @@ already present. **Gap closed.**
 | `Promise.all`            | **IOPL-native `all of [e1, e2, ...]`** (this release). |
 | `Promise.race`           | **IOPL-native `any of [e1, e2, ...]`** (this release). |
 | `Promise.allSettled`     | **IOPL-native `settled of [e1, e2, ...]`** returning `{ status, value/error }` records (this release). |
-| `await Promise.all([...])` in one line | `all of [...]` is already awaited — `remember results as all of [a(), b()]`. |
-| Worker threads / parallel jobs | **IOPL-native `run in parallel ... done [as results]`** (existing, RFC-0011 ¶9) and `run background <call>` (existing). |
+| `await Promise.all([...])` in one line | `all of [...]` is already awaited — `let results is all of [a(), b()]`. |
+| Worker threads / parallel jobs | **IOPL-native `run in parallel ... end [as results]`** (existing, RFC-0011 ¶9) and `run background <call>` (existing). |
 | Cancellation / AbortController | **Runtime `withTimeout(promise, ms)`** raises on timeout (this release). |
 
 **Audit status:** `all/any/settled of`, `withTimeout` ship on top of the existing
@@ -108,18 +108,18 @@ prose constructor — rather than `class`/`new`/`extends` syntax.
 define a kind called "Person" with
     name is ""
     age is 0
-done
+end
 
-remember ada as create a Person with name "Ada" and age 17
-show name of ada                // "Ada"
+let ada is create a Person with name "Ada" and age 17
+print name of ada                // "Ada"
 ```
 
 - Fields declared with defaults; constructors **prompt for missing required
   fields** at compile time; unknown constructor fields are a compile error.
 - Kind objects are plain JS objects, so `jsonEncode`, `sendMail`, DB rows,
   and every existing stdlib works on them unchanged.
-- Attach behaviour with ordinary `make` functions that take the record
-  (`make describe(person)  give name of person + " is " + age of person`).
+- Attach behaviour with ordinary `define` functions that take the record
+  (`define describe(person)  give name of person + " is " + age of person`).
 - **Inheritance** is deliberately *composition-first*: `kind` + stdlib
   `merge(a, b)` (existing) covers the 80%. Deep prototype chains are a
   TypeScript *syntax*, not a capability we need to replicate.
@@ -128,9 +128,9 @@ show name of ada                // "Ada"
 |-------------------------|------------------------|
 | `class`, constructor     | **IOPL-native `kind` + `create a X with ...`** (this release). |
 | Fields / properties      | `kind` fields; access via `name of x` / `x.name`. |
-| Methods                  | Top-level `make` functions taking the record. |
+| Methods                  | Top-level `define` functions taking the record. |
 | `this`                   | **Rationale: unnecessary** — functions receive the record explicitly (no context bugs). |
-| `static` members         | Module-level`remember`/`make` are naturally static. |
+| `static` members         | Module-level `let`/`define` are naturally static. |
 | Extension / mixins       | `merge(a, b)` (existing) + nested kinds. |
 | Access modifiers         | **Rationale: unnecessary** — single-process bundles; `_field` is convention. |
 
@@ -143,9 +143,9 @@ and JSON/serialization compat. **Gap closed.**
 
 | TypeScript       | PlainScript resolution |
 |------------------|------------------------|
-| `for...of`        | `for each item in x ... done` (existing) — works on arrays, strings, Maps, Sets, generators. |
-| Generator `function*` / `yield` | **IOPL-native `yield`** inside `make ... done` (this release) — a `make` containing `yield` compiles to a `function*`. |
-| `[Symbol.iterator]` | Accessible via JS Gateway / `kind` producer (this release: `make` with `yield`). |
+| `for...of`        | `for each item in x ... end` (existing) — works on arrays, strings, Maps, Sets, generators. |
+| Generator `function*` / `yield` | **IOPL-native `yield`** inside `define ... end` (this release) — a `define` containing `yield` compiles to a `function*`. |
+| `[Symbol.iterator]` | Accessible via JS Gateway / `kind` producer (this release: `define` with `yield`). |
 | Iterator helpers (`map`/`filter`/`reduce`) | **IOPL-native** `gather each ... giving`, `filter each ... when`, `total each ... giving` (existing, functional map/filter/reduce). |
 | Spread `/ rest`     | **IOPL-native `spread of x`** unfolds an iterable into a new array (this release). |
 | Lazy sequences      | Generators via `yield` + `for each` (this release). |
@@ -222,7 +222,7 @@ and JSON/serialization compat. **Gap closed.**
 
 | TypeScript / Node | PlainScript resolution |
 |-------------------|------------------------|
-| Worker threads    | **IOPL-native `run in parallel ... done`** (existing) and `run background <call>` (existing). |
+| Worker threads    | **IOPL-native `run in parallel ... end`** (existing) and `run background <call>` (existing). |
 | Child processes   | **Runtime stdlib `runCommand(cmd, args)`** (async, captures stdout/stderr/exit) (this release). |
 | `process.exit`    | `exit(code)` (existing); `env()` (existing). |
 | Signals / IPC      | **Rationale: unnecessary for 80%** — batch/parallel covers CPU-bound; cross-process messaging is niche. JS Gateway for the rest. |
@@ -251,7 +251,7 @@ and JSON/serialization compat. **Gap closed.**
 
 | Node stream        | PlainScript resolution |
 |--------------------|------------------------|
-| Read line-by-line  | **IOPL-native `stream "file" as line ... done`** (existing). |
+| Read line-by-line  | **IOPL-native `stream "file" as line ... end`** (existing). |
 | Write append       | `writeLine(file, text)` / `appendLine(file, text)` (this release). |
 | Transform / pipe   | **Rationale: necessary via JS Gateway only** — stream pipelines are an implementation detail; `write`/`read`/`stream` cover I/O. |
 
@@ -305,7 +305,7 @@ and JSON/serialization compat. **Gap closed.**
 
 | TypeScript / Node | PlainScript resolution |
 |-------------------|------------------------|
-| Test runner       | **IOPL-native `test "name" ... done` blocks** with `check a equals b`, `check a is true`, `check raises` (this release). |
+| Test runner       | **IOPL-native `test "name" ... end` blocks** with `check a equals b`, `check a is true`, `check raises` (this release). |
 | Assertions        | `check a equals b` / `check a contains b` / `check a raises <msg>` (this release). |
 | Suite grouping    | `test` blocks run in order; `check` failures print and exit `1` (this release). |
 
@@ -315,7 +315,7 @@ and JSON/serialization compat. **Gap closed.**
 
 ## 18. JavaScript Gateway (escape hatch)
 
-The **JavaScript Gateway** (`javascript ... done`, RFC-0011 §10) is the universal
+The **JavaScript Gateway** (`javascript ... end`, RFC-0011 §10) is the universal
 fallback that closes *every* remaining micro-gap — any of TypeScript's capabilities
 that is expressible in JS is reachable here without leaving PlainScript. This
 single feature is why the audit can be honest about the many "rationale: omitted"
@@ -331,7 +331,7 @@ rows without reducing capability parity.
 |-----------------------|------------------------|
 | Publish npm library   | `plainscript build` → `dist/`; `main`/`prepare` in package.json (existing). |
 | Named exports         | **IOPL-native `export <name>`** marks a top-level symbol for export; imported bindings re-exportable (this release). |
-| Consumer API          | `module.exports` of top-level `make` (existing) + explicit `export` (this release). |
+| Consumer API          | `module.exports` of top-level `define` (existing) + explicit `export` (this release). |
 | `exports` map / ESM   | Standard `package.json` semantics (project model, existing). |
 
 **Audit status:** export statement ships. **Gap closed.**
@@ -366,7 +366,7 @@ rows without reducing capability parity.
 
 ---
 
-## 21. 1.0.1 readiness gate
+## 21. 1.0.02 readiness gate
 
 The audit is **complete** only when:
 
@@ -376,13 +376,13 @@ The audit is **complete** only when:
 3. The runtime stdlib table, knowledge base, and README document every new
    capability.
 
-Until then the package version remains **below 1.0.1**.
+Until then the package version remains **below 1.0.02**.
 
 ---
 
 ## 22. v2.2.0 — AI/ML, data/storage & web additions
 
-The v2.0–v2.2 releases close further gaps beyond the 1.0.1 audit across the
+The v2.0–v2.2 releases close further gaps beyond the 1.0.02 audit across the
 AI/ML, data/storage and web/full-stack surface. All features below are
 IOPL-native (intent-oriented) rather than TypeScript-syntax clones.
 

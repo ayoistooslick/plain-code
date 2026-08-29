@@ -1,0 +1,17 @@
+// PlainScript v1.0.02 — Web server (Express shorthand)
+
+web app
+
+route "/"
+    reply "Hello from PlainScript!"
+done
+
+route "/api/status"
+    reply json
+        status is "ok"
+        version is "1.0.02"
+        language is "PlainScript"
+    done
+done
+
+start 3000

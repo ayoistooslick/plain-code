@@ -1,0 +1,24 @@
+// PlainScript v1.0.02 — Native test DSL
+
+make add(a, b)
+    give a + b
+done
+
+make parseConfig(raw)
+    give jsonDecode(raw)
+done
+
+test "addition"
+    check add(2, 3) equals 5
+    check add(0, 0) is 0
+done
+
+test "strings"
+    check "PlainScript" contains "Script"
+    check "hello" contains "ell"
+done
+
+test "json"
+    check jsonDecode("{\"name\":\"Ada\"}") equals { name: "Ada" }
+    check jsonDecode("not json") raises "JSON"
+done

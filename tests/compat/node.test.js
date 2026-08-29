@@ -20,7 +20,7 @@ show path.dirname(p)
 test('use fs: existsSync/readFileSync against a real file', () => {
   const dir = tmpDir();
   write(dir, 'data.txt', 'payload-123\n');
-  write(dir, 'main.ps', `
+  write(dir, 'main.pln', `
 use fs
 if fs.existsSync("data.txt") is true
     show fs.readFileSync("data.txt", "utf8")
@@ -28,7 +28,7 @@ otherwise
     show "missing"
 done
 `);
-  const out = runFile(path.join(dir, 'main.ps'), { cwd: dir });
+  const out = runFile(path.join(dir, 'main.pln'), { cwd: dir });
   assert(out.includes('payload-123'), `expected file contents:\n${out}`);
 });
 

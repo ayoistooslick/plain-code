@@ -1,0 +1,39 @@
+// PlainScript v1.0.02 — File uploads
+//
+// Run with:  plainscript run examples/file-uploads.pln
+// Then try:
+//   curl -F photo=@some-image.png http://localhost:3000/upload
+//   curl -F doc=@notes.txt http://localhost:3000/upload-many
+//
+// Uploaded files are kept in memory (no folder) so nothing touches the disk.
+// A file over 5 MB is rejected with HTTP 413 and a non-image with HTTP 415.
+
+web app
+
+accept uploads limit "5 MB" allow ["image/png", "image/jpeg", "text/plain"]
+
+route post "/upload"
+    remember file as upload("file")
+    if file is not empty
+        reply json
+            name is name of file
+            type is type of file
+            size is size of file
+        done
+    otherwise
+        reply json
+            error is "no file under the 'file' field"
+        done
+    done
+done
+
+route post "/upload-many"
+    remember files as uploads("docs")
+    gather each file in files giving name of file
+    reply json
+        received is length(files)
+        names is files
+    done
+done
+
+start 3000

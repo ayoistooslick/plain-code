@@ -11,18 +11,20 @@
         { "open": "(", "close": ")" },
         { "open": "[", "close": "]" },
         { "open": "{", "close": "}" },
-        { "open": "\"", "close": "\"", "notIn": ["string", "comment"] }
+        { "open": "\"", "close": "\"", "notIn": ["string", "comment"] },
+        { "open": "`", "close": "`", "notIn": ["string", "comment"] }
     ],
     "surroundingPairs": [
         ["(", ")"],
         ["[", "]"],
         ["{", "}"],
-        ["\"", "\""]
+        ["\"", "\""],
+        ["`", "`"]
     ],
     "folding": {
         "markers": {
-            "start": "^\\s*(make|if|otherwise|for each|while|when someone visits|listen on|reply json|remember \\S+ as)\\b",
-            "end": "^\\s*done\\b"
+            "start": "^\\s*(define|function|if|otherwise|for each|while|when someone visits|listen on|reply json|let\\s+\\S+\\s+is)\\b",
+            "end": "^\\s*(end)\\b"
         }
     },
     "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)"

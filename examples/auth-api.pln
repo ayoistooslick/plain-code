@@ -1,0 +1,56 @@
+// PlainScript v1.0.02 — API key protection, rate limits and tokens
+//
+// Run with:  API_KEY=my-secret plainscript run examples/auth-api.pln
+// Then try:
+//   curl -H "x-api-key: my-secret" http://localhost:3000/status
+//   curl http://localhost:3000/status            # 401 without the key
+//
+// Routes registered after "require api key" are guarded; the health route is
+// registered first so uptime checks keep working.
+
+web app
+
+route get "/health"
+    reply "alive"
+done
+
+require api key from env("API_KEY")
+limit requests to 60 per minute
+
+remember secret as env("TOKEN_SECRET")
+
+route get "/status"
+    reply json
+        status is "ok"
+        version is "1.0.02"
+    done
+done
+
+route post "/token"
+    remember payload as
+        sub is "user-1"
+        role is "admin"
+    done
+    remember issued as createToken(payload, secret, 1800)
+    reply json
+        token is issued
+    done
+done
+
+route get "/verify"
+    remember supplied as header("x-token")
+    remember claims as readToken(supplied, secret)
+    if claims is empty
+        status 401
+        reply json
+            error is "invalid or expired token"
+        done
+    otherwise
+        reply json
+            sub is sub of claims
+            role is role of claims
+        done
+    done
+done
+
+start 3000

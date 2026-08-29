@@ -1,0 +1,47 @@
+// PlainScript v1.0.02 — File I/O, YAML and environment configuration
+//
+// Run with:  plainscript run examples/files-and-config.pln
+//
+// Writes and reads files, walks a folder, round-trips YAML and applies a
+// .env file. Everything is deterministic and dependency-free.
+
+makeFolder("example-output")
+writeFile("example-output/greeting.txt", "Hello, files!")
+writeLine("example-output/log.txt", "first line")
+appendLine("example-output/log.txt", "second line")
+
+show readFile("example-output/greeting.txt")
+show readFile("example-output/log.txt")
+show fileExists("example-output/greeting.txt")
+show fileSize("example-output/greeting.txt")
+show fileType("example-output")          // directory
+show lastModified("example-output/greeting.txt")
+
+show listFolder("example-output")
+show walkFolder("example-output")
+
+remember settings as
+    app is "plainscript"
+    limits is { requests: 100, window: "hour" }
+done
+
+remember encoded as yamlEncode(settings)
+show encoded
+
+remember parsed as yamlDecode(encoded)
+show app of parsed
+remember limits as limits of parsed
+show requests of limits
+
+load env file ".env"
+show env("APP_ENV")
+
+// JSON round-trip stays convenient too
+remember backup as jsonEncode(settings)
+show jsonDecode(backup)
+
+// Clean up after ourselves
+deleteFile("example-output/greeting.txt")
+deleteFile("example-output/log.txt")
+deleteFolder("example-output")
+show "cleanup done"

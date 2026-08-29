@@ -1,0 +1,12 @@
+// PlainScript v1.0.02 — runtime dependency and deployment example
+//
+// `plainscript build` and `plainscript run` detect express from `web app` and install it
+// when it is missing. `plainscript start` builds src/app.pln by default.
+
+web app
+
+route "/"
+    reply "PlainScript is ready to deploy!"
+done
+
+start 3000

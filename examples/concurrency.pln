@@ -1,0 +1,49 @@
+// PlainScript v1.0.02 — Concurrency: combinators, timeouts and workers
+//
+// Run with:  plainscript run examples/concurrency.pln
+//
+// all / any / settled run several promises in parallel; withTimeout bounds
+// how long one may take; run background fires work without blocking.
+
+make fetchUsers()
+    sleep(300)
+    give { source: "users", count: 42 }
+done
+
+make fetchOrders()
+    sleep(150)
+    give { source: "orders", count: 17 }
+done
+
+make flakyFetch()
+    remember data as jsonDecode("not json")
+    give data
+done
+
+// Every item must resolve — an array of results
+remember dashboard as all of [fetchUsers(), fetchOrders()]
+for each panel in dashboard
+    show source of panel + ": " + text(count of panel)
+done
+
+// First to settle wins
+remember first as any of [fetchUsers(), fetchOrders()]
+show "first: " + source of first
+
+// Never throws; each outcome is a record with a status
+remember results as settled of [fetchUsers(), flakyFetch()]
+for each outcome in results
+    if status of outcome is "fulfilled"
+        show "ok: " + text(value of outcome)
+    otherwise
+        show "failed: " + message of reason of outcome
+    done
+done
+
+// Bound a slow call
+remember bounded as withTimeout(fetchUsers(), 2000)
+show "bounded result ready"
+
+// Fire-and-forget background work
+run background fetchUsers()
+show "background job launched — this line prints immediately"

@@ -56,7 +56,7 @@ Before submitting a pull request, make sure the complete suite passes.
 
 A successful test run should report:
 
-381 tests: 381 passed, 0 failed
+457 tests: 457 passed, 0 failed
 
 The exact number of tests may increase as the project evolves.
 

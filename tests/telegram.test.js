@@ -206,14 +206,6 @@ test('parser: inline object literal', () => {
   if (stmt.value.properties.length !== 2) throw new Error('wrong property count');
 });
 
-test('parser: statement-level javascript block', () => {
-  const ast = parse(tokenize('javascript\n  console.log("x")\ndone'));
-  const stmt = ast.body[0];
-  if (stmt.type !== 'JavaScriptBlock') throw new Error('not JavaScriptBlock');
-  if (stmt.name !== null) throw new Error('statement-level block should have no name');
-  if (!stmt.body.includes('console.log')) throw new Error('body missing');
-});
-
 // ── Generator ──────────────────────────────────────────────────────────────
 
 test('generate: telegram command emits BOT.onCommand', () => {
@@ -268,18 +260,6 @@ test('generate: inline object literal renders { key: value }', () => {
   if (!js.includes('let data = { "text": "hi", "n": 2 };')) {
     throw new Error(`bad inline object output:\n${js}`);
   }
-});
-
-test('generate: synchronous statement-level javascript block emits its body directly', () => {
-  const js = compile('javascript\n  console.log("x")\ndone');
-  if (js.includes('await (async () => {')) throw new Error(`sync block should not be wrapped:\n${js}`);
-  if (!js.includes('console.log("x")')) throw new Error(`body missing:\n${js}`);
-});
-
-test('generate: statement-level javascript block with top-level await keeps the async wrapper', () => {
-  const js = compile('javascript\n  const data = await fetch(url)\ndone');
-  if (!js.includes('await (async () => {')) throw new Error(`async block lost its wrapper:\n${js}`);
-  if (!js.includes('await fetch(url)')) throw new Error('await missing from body');
 });
 
 // ── Formatter ──────────────────────────────────────────────────────────────

@@ -1,0 +1,27 @@
+// PlainScript v2.1 — WebSocket chat server
+//
+// Run with:  plainscript run examples/websocket-server.pln
+// Then connect any ws client to ws://localhost:8080 and start typing.
+// Every message a client sends is echoed back to it and broadcast to
+// everyone else.
+
+websocket server on 8080
+
+when socket connects
+    send socket "Welcome to the PlainScript chat server!"
+    broadcast "Someone new joined the chat"
+done
+
+when socket sends message
+    show "Got: " + message
+    send socket "You said: " + message
+    broadcast message
+done
+
+when socket disconnects
+    broadcast "Someone left the chat"
+done
+
+done
+
+show "Chat server listening on port 8080"

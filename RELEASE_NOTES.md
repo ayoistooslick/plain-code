@@ -24,13 +24,13 @@ editor tooling ship together.
 ### Production builds (`plainscript build`)
 
 - Sources compile to `dist/` preserving names and structure:
-  `src/messi.ps` → `dist/messi.js`, nested folders included.
+  `src/messi.pln` → `dist/messi.js`, nested folders included.
 - Imports are bundled into each output, so every file in `dist/` runs
   standalone under Node.
 - Deterministic output: rebuilds are byte-identical — safe to commit,
   diff, and cache.
 
-- `plainscript build` discovers all `.ps` files under `src/` and compiles each to
+- `plainscript build` discovers all `.pln` files under `src/` and compiles each to
   `dist/`, preserving file names and folder structure. No configuration file needed.
 - Source discovery skips `node_modules`, hidden directories, and the output
   directory itself.
@@ -46,15 +46,15 @@ editor tooling ship together.
 ## The language
 
 - Variables, conditions, functions, arrays, objects, and loops read as
-  sentences: `remember age as 16`, `if age is at least 18`, `make add(a, b)`,
+  sentences: `let age is 16`, `if age is at least 18`, `define add(a, b)`,
   `for each player in players`.
 - String templates preserve whitespace and interpolate with `${expression}`,
   compiling directly to JavaScript template literals.
-- PlainScript Expressions: `show first player from players`, `add("X" to items)`,
-  `show city of address of customer`, `remember data as read("users.txt")`.
+- PlainScript Expressions: `print first player from players`, `add("X" to items)`,
+  `print city of address of customer`, `let data is read("users.txt")`.
 - Multi-file projects bundle imports per entry; every source file gets its
   own standalone output under `dist/`.
-- JavaScript Gateway: raw JavaScript inside `javascript ... done` blocks
+- JavaScript Gateway: raw JavaScript inside `javascript ... end` blocks
   with full async support; any npm package joins via `use <package>`.
 
 ## Backend capabilities
@@ -101,9 +101,8 @@ engine, no AI, no hidden codegen:
 ## Editor support
 
 - `plainscript-vscode/`: syntax highlighting, snippets, folding, and a file icon
-  for `.ps` sources.
-- `plainscript-acode/`: a zero-dependency Acode plugin whose tokenizer mirrors
-  the compiler's token table.
+  for `.pln` sources.
+- `editors/mt-manager/`: MT Manager syntax highlighting (`.mtsx`) for Android.
 
 ## Verification
 

@@ -1,0 +1,18 @@
+// PlainScript v1.0.02 — Command line and environment
+
+show args()                    // everything after "plainscript run file.pln"
+
+remember hello as env("HELLO")
+if hello is not empty
+    show "HELLO=" + hello
+done
+
+remember result as runCommand("echo", ["plainscript"])
+show stdout of result
+show code of result
+
+remember dir as walkFolder(".")
+show length(dir)
+
+remember now as formatDate(date(), "YYYY-MM-DD")
+show now

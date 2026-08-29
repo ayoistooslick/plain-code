@@ -1,4 +1,4 @@
-// v1.0.1 capability-gap audit tests.
+// v1.0.02 capability-gap audit tests.
 // Exercises every feature shipped to close the TypeScript/Node capability gap
 // (see docs/CAPABILITY_GAP_AUDIT.md): record kinds, concurrency combinators,
 // generators, binary/serialization, reflection, config, CLI, process, streams,
@@ -60,7 +60,7 @@ function run(source) {
   return { stdout: res.stdout || '', code: res.status, stderr: res.stderr || '' };
 }
 
-console.log('\n── v1.0.1 capability-gap audit ───────────────────────────────\n');
+console.log('\n── v1.0.02 capability-gap audit ───────────────────────────────\n');
 console.log('Record kinds (classes)');
 
 test('define a kind compiles to a factory with defaults', () => {
@@ -300,12 +300,12 @@ test('fileSize is a positive number for a real file', () => {
 
 test('path helpers decompose a path', () => {
   const r = run([
-    'show extensionOf("src/app.ps")',
+    'show extensionOf("src/app.pln")',
     'show baseName("/tmp/x/hello.txt")',
     'show folderOf("/tmp/x/hello.txt")',
     'show joinPath("/a", "b")',
   ].join('\n'));
-  assert(r.stdout, '.ps\nhello.txt\n/tmp/x\n/a/b');
+  assert(r.stdout, '.pln\nhello.txt\n/tmp/x\n/a/b');
 });
 
 test('walkFolder returns file paths', () => {

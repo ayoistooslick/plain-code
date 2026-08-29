@@ -4,7 +4,7 @@ All notable changes to PlainScript are documented here.
 
 ---
 
-## [1.0.1] — 2026
+## [1.0.02] — 2026
 
 ### Fixed
 
@@ -21,7 +21,7 @@ All notable changes to PlainScript are documented here.
 
 ### Changed
 
-- Version bumped to **v1.0.1** across the compiler, package metadata, templates,
+- Version bumped to **v1.0.02** across the compiler, package metadata, templates,
   fixtures, examples, samples, and documentation.
 
 ---
@@ -60,13 +60,13 @@ status and rationale, lives in `docs/CAPABILITY_GAP_AUDIT.md`.
 
 ### New IOPL-native capabilities
 
-- **Record kinds (classes, IOPL-style):** `define a kind called "Person" with name is "" done`
+- **Record kinds (classes, IOPL-style):** `define a kind called "Person" with name is "" end`
   declares a compile-checked record schema; `create a Person with name "Ada" and age 17`
   builds instances. Unknown fields fail at runtime; records stay plain objects
   (JSON, DB, mail, etc. work unchanged). Composition via `merge` replaces inheritance.
 - **Concurrency combinators:** `all of [... ]`, `any of [...]`, `settled of [...]`
   over Promise-combinators, plus `withTimeout(promise, ms)`.
-- **Generators:** `yield <expr>` turns a `make ... done` into a generator
+- **Generators:** `yield <expr>` turns a `define ... end` into a generator
   (`function*`); `for each` and `spread of` consume them lazily.
 - **Reflection:** `typeOf`, `fieldsOf`, `valueOf`, `hasField`, `sizeOf`.
 - **Binary data:** `base64Encode`/`base64Decode`, `textToBytes`/`bytesToText`,
@@ -81,7 +81,7 @@ status and rationale, lives in `docs/CAPABILITY_GAP_AUDIT.md`.
 - **Collections:** `keyMap`/`mapSet`/`mapGet`/`mapHas`/`mapDelete` and
   `newSet`/`addToSet`/`removeFromSet`/`setHas` wrapping JS `Map`/`Set`.
 - **Dynamic modules:** `loadModule("./m")` requires a module at runtime.
-- **Native test DSL:** `test "name" ... done` with `check a equals b`,
+- **Native test DSL:** `test "name" ... end` with `check a equals b`,
   `check a contains b`, `check a is b`, `check <expr> raises "msg"`; a built-in
   runner prints `PASS/FAIL` and exits non-zero on failure.
 - **Exports:** `export <name>` marks a top-level symbol for `module.exports`.
@@ -104,7 +104,7 @@ status and rationale, lives in `docs/CAPABILITY_GAP_AUDIT.md`.
 
 PlainScript is an Intent-Oriented Programming Language (IOPL): you describe **what**
 you want, and the deterministic compiler decides **how** to implement it in
-JavaScript. The `.ps` extension and the whole language ship complete in this
+JavaScript. The `.pln` extension and the whole language ship complete in this
 release.
 
 - **npm package `plainscript`.** Installs per project as a devDependency:
@@ -125,13 +125,13 @@ release.
 
 - **`plainscript build` compiles a real production build.** Sources compile into
   `dist/`, preserving source file names and directory structure relative to
-  the source root (`src/messi.ps` → `dist/messi.js`,
-  `src/a/b.ps` → `dist/a/b.js`). Every entry is bundled with its imports,
+  the source root (`src/messi.pln` → `dist/messi.js`,
+  `src/a/b.pln` → `dist/a/b.js`). Every entry is bundled with its imports,
   so each file in `dist/` runs standalone. Compilation is deterministic:
   identical sources produce byte-identical output.
-- **Zero-config production build** — `plainscript build` auto-discovers `.ps` files
+- **Zero-config production build** — `plainscript build` auto-discovers `.pln` files
   under `src/` and compiles each to `dist/`, preserving file names and directory
-  structure (`src/messi.ps` → `dist/messi.js`, `src/a/b.ps` → `dist/a/b.js`).
+  structure (`src/messi.pln` → `dist/messi.js`, `src/a/b.pln` → `dist/a/b.js`).
   Every entry is bundled with its imports, so each file in `dist/` runs standalone.
   Compilation is deterministic: identical sources produce byte-identical output.
 - **Full CLI:** `plainscript build | run | start | new | install | add | remove |
@@ -146,6 +146,5 @@ release.
   cron and background jobs, WebSocket servers, and Redis-backed caching.
 - **WhatsApp bots** through Baileys with QR or pairing-code linking,
   compile-time pairing-number validation, and automatic reconnection.
-- **Editor support:** a VS Code extension (`plainscript-vscode/`) and an Acode
-  plugin (`plainscript-acode/`) whose highlighting is generated from the same
-  token table the compiler uses.
+- **Editor support:** a VS Code extension (`plainscript-vscode/`) and an
+  MT Manager syntax file (`editors/mt-manager/`) for Android editing.

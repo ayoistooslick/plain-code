@@ -1,8 +1,8 @@
 {
     "name": "plainscript-language",
     "displayName": "PlainScript Language",
-    "description": "Syntax highlighting and language support for the PlainScript programming language (.ps files)",
-    "version": "0.1.7",
+    "description": "Syntax highlighting and language support for the PlainScript programming language (.pln files)",
+    "version": "1.0.02",
     "publisher": "ayoistooslick",
     "engines": {
         "vscode": "^1.70.0"
@@ -15,7 +15,7 @@
             {
                 "id": "plainscript",
                 "aliases": ["PlainScript", "plainscript"],
-                "extensions": [".ps"],
+                "extensions": [".pln"],
                 "configuration": "./language-configuration.json",
                 "icon": {
                     "light": "./icons/plainscript-file.svg",
@@ -42,4 +42,3 @@
     },
     "license": "MIT"
 }
-

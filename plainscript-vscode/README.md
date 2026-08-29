@@ -1,18 +1,19 @@
 # PlainScript Language — VS Code Extension
 
-Syntax highlighting and language support for the [PlainScript programming language](https://github.com/ayoistooslick/plain-code) (`.ps` files).
+Syntax highlighting and language support for the [PlainScript programming language](https://github.com/ayoistooslick/plainscript) (`.pln` files).
 
 ---
 
 ## Features
 
 - **Syntax highlighting** — keywords, strings, numbers, comments, operators, and function names
-- **File icon** — `.ps` files get a distinctive icon in the file tree
-- **Language registration** — VS Code recognises `.ps` as PlainScript source
-- **Auto-closing pairs** — `()`, `[]`, `{}`, `""`
+- **File icon** — `.pln` files get a distinctive icon in the file tree
+- **Language registration** — VS Code recognises `.pln` as PlainScript source
+- **Auto-closing pairs** — `()`, `[]`, `{}`, `""`, ` `` `
 - **Comment toggling** — `Ctrl+/` / `Cmd+/` toggles `//` line comments
 - **Bracket matching** — highlights matching brackets
-- **Code folding** — fold `make`/`if`/`for each`/`while`/`when`/`listen` blocks
+- **Code folding** — fold `define`/`if`/`for each`/`while`/`when`/`listen` blocks
+- **Snippets** — common PlainScript patterns (variables, functions, loops, web apps, databases, tests)
 
 ---
 
@@ -30,7 +31,7 @@ Syntax highlighting and language support for the [PlainScript programming langua
    cd plainscript-vscode
    vsce package
    ```
-   This produces `plainscript-language-0.1.7.vsix`.
+   This produces `plainscript-language-1.0.02.vsix`.
 4. Install the VSIX in VS Code:
    - Open VS Code
    - Press `Ctrl+Shift+P` / `Cmd+Shift+P`
@@ -41,7 +42,7 @@ Syntax highlighting and language support for the [PlainScript programming langua
 
 1. Open the `plainscript-vscode` folder in VS Code.
 2. Press `F5` to launch the **Extension Development Host** — a new VS Code window opens with the extension active.
-3. Open any `.ps` file to see syntax highlighting immediately.
+3. Open any `.pln` file to see syntax highlighting immediately.
 
 ---
 
@@ -49,11 +50,12 @@ Syntax highlighting and language support for the [PlainScript programming langua
 
 | Category    | Keywords                                                                 |
 |-------------|--------------------------------------------------------------------------|
-| Control     | `if` `otherwise` `done` `for` `each` `in` `while` `when` `listen`       |
-| Declaration | `remember` `make` `use` `import`                                         |
-| Action      | `becomes` `as` `give` `show` `reply` `serve` `note`                     |
-| Comparison  | `is` `greater` `less` `than` `above` `below` `at` `least` `most` `not` `empty` `contains` `starts` `ends` `with` `between` `and` |
-| Constant    | `true` `false`                                                           |
+| Control     | `if` `otherwise` `end` `for` `each` `in` `while` `when` `listen`       |
+| Declaration | `let` `define` `function` `use` `import` `export`                       |
+| Action      | `is now` `as` `give back` `print` `reply` `serve` `note`                |
+| Comparison  | `is` `greater` `less` `than` `above` `below` `at` `least` `most` `not` `empty` `contains` `starts` `ends` `with` `between` `and` `or` |
+| Backend     | `web` `app` `route` `start` `database` `query` `insert` `cache` `mail`  |
+| Constant    | `true` `false` `null`                                                    |
 
 ---
 

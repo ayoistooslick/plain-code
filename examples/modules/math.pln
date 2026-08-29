@@ -1,0 +1,20 @@
+// PlainScript v1.0.02 — reusable module, imported by app.pln
+
+remember PI as 3.14
+
+make double(n)
+    give n * 2
+done
+
+make square(n)
+    give n * n
+done
+
+make circumference(radius)
+    give 2 * PI * radius
+done
+
+export PI
+export double
+export square
+export circumference

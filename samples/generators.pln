@@ -1,0 +1,24 @@
+// PlainScript v1.0.02 — Generators (yield + spread of)
+
+make countUp(n)
+    remember i as 0
+    while i is less than n
+        i becomes i + 1
+        yield i
+    done
+done
+
+make evensUpTo(n)
+    remember i as 2
+    while i is at most n
+        yield i
+        i becomes i + 2
+    done
+done
+
+show spread of countUp(5)    // [ 1, 2, 3, 4, 5 ]
+show spread of evensUpTo(10) // [ 2, 4, 6, 8, 10 ]
+
+for each number in countUp(3)
+    show "step " + number
+done

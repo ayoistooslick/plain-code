@@ -1,6 +1,5 @@
 // Generator: converts a PlainScript AST into JavaScript source code.
 
-const vm = require('vm');
 const { splitPackageSpec } = require('./dependency-detector');
 
 // Known runtime packages and their require() statements.
@@ -1095,15 +1094,33 @@ const BUILTIN_DECLARATIONS = {
 };
 
 // Built-in stdlib functions: PlainScript name → JS code generator.
-// v0.1–v0.4 original stdlib
-const STDLIB = {
-  length:    (args, context) => `(${generateExpr(args[0], context)}).length`,
-  uppercase: (args, context) => `(${generateExpr(args[0], context)}).toUpperCase()`,
-  lowercase: (args, context) => `(${generateExpr(args[0], context)}).toLowerCase()`,
-  random:    (_args) => `Math.random()`,
-  round:     (args, context)  => `Math.round(${generateExpr(args[0], context)})`,
-  // Runtime constructors
-  sqlite:    (args, context)  => `new Database(${args.map(arg => generateExpr(arg, context)).join(', ')})`,
+  // v0.1–v0.4 original stdlib
+  const STDLIB = {
+    length:    (args, context) => `(${generateExpr(args[0], context)}).length`,
+    uppercase: (args, context) => `(${generateExpr(args[0], context)}).toUpperCase()`,
+    lowercase: (args, context) => `(${generateExpr(args[0], context)}).toLowerCase()`,
+    random:    (_args) => `Math.random()`,
+    round:     (args, context)  => `Math.round(${generateExpr(args[0], context)})`,
+    // Symbol creation
+    symbol:    (args, context) => `Symbol(${args.length > 0 ? generateExpr(args[0], context) : 'undefined'})`,
+    symbolFor: (args, context) => `Symbol.for(${generateExpr(args[0], context)})`,
+    symbolKeyFor: (args, context) => `Symbol.keyFor(${generateExpr(args[0], context)})`,
+    // Well-known symbols
+    symbolIterator:      (_args) => `Symbol.iterator`,
+    symbolAsyncIterator: (_args) => `Symbol.asyncIterator`,
+    symbolMatch:         (_args) => `Symbol.match`,
+    symbolMatchAll:      (_args) => `Symbol.matchAll`,
+    symbolReplace:       (_args) => `Symbol.replace`,
+    symbolSearch:        (_args) => `Symbol.search`,
+    symbolSplit:         (_args) => `Symbol.split`,
+    symbolHasInstance:   (_args) => `Symbol.hasInstance`,
+    symbolIsConcatSpreadable: (_args) => `Symbol.isConcatSpreadable`,
+    symbolToPrimitive:   (_args) => `Symbol.toPrimitive`,
+    symbolToStringTag:   (_args) => `Symbol.toStringTag`,
+    symbolUnscopables:   (_args) => `Symbol.unscopables`,
+    symbolSpecies:       (_args) => `Symbol.species`,
+    // Runtime constructors
+    sqlite:    (args, context)  => `new Database(${args.map(arg => generateExpr(arg, context)).join(', ')})`,
   // v0.6 — runtime standard library
   print:      (args, context) => `console.log(${args.map(arg => generateExpr(arg, context)).join(', ')})`,
   readFile:   (args, context) => `fs.readFileSync(${generateExpr(args[0], context)}, 'utf8')`,
@@ -1261,6 +1278,26 @@ const STDLIB = {
   padStart: (args, context) => `String(${generateExpr(args[0], context)}).padStart(${generateExpr(args[1], context)}, String(${args.length > 2 ? generateExpr(args[2], context) : '" "'}))`,
   padEnd: (args, context) => `String(${generateExpr(args[0], context)}).padEnd(${generateExpr(args[1], context)}, String(${args.length > 2 ? generateExpr(args[2], context) : '" "'}))`,
 
+  // ── v2.3.0 — Proxy and Reflect (IOPL-native).
+  // Proxy creation: proxy(target, handler)
+  proxy: (args, context) => `new Proxy(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  // Proxy revocable: proxyRevocable(target, handler) -> { proxy, revoke }
+  proxyRevocable: (args, context) => `Proxy.revocable(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  // Reflect methods
+  reflectApply:     (args, context) => `Reflect.apply(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  reflectConstruct: (args, context) => `Reflect.construct(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  reflectDefineProperty: (args, context) => `Reflect.defineProperty(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  reflectDeleteProperty: (args, context) => `Reflect.deleteProperty(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  reflectGet:       (args, context) => `Reflect.get(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  reflectGetOwnPropertyDescriptor: (args, context) => `Reflect.getOwnPropertyDescriptor(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  reflectGetPrototypeOf: (args, context) => `Reflect.getPrototypeOf(${generateExpr(args[0], context)})`,
+  reflectHas:       (args, context) => `Reflect.has(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  reflectIsExtensible: (args, context) => `Reflect.isExtensible(${generateExpr(args[0], context)})`,
+  reflectOwnKeys:   (args, context) => `Reflect.ownKeys(${generateExpr(args[0], context)})`,
+  reflectPreventExtensions: (args, context) => `Reflect.preventExtensions(${generateExpr(args[0], context)})`,
+  reflectSet:       (args, context) => `Reflect.set(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  reflectSetPrototypeOf: (args, context) => `Reflect.setPrototypeOf(${args.map(a => generateExpr(a, context)).join(', ')})`,
+
   // ── v1.0.1 — nullable / regex / date helpers (IOPL-native).
   // first non-null, non-undefined argument — IOPL null-coalescing.
   coalesce: (args, context) =>
@@ -1276,6 +1313,144 @@ const STDLIB = {
     const value = generateExpr(args[0], context);
     const pattern = args.length > 1 ? generateExpr(args[1], context) : '"YYYY-MM-DD HH:mm:ss"';
     return `__formatDate(${value}, ${pattern})`;
+  },
+
+  // ── v1.0.02 — Native Date/DateTime/Regex support (IOPL-native, no JS gateway needed).
+  // Create a new Date object. With no args: now. With 1 arg: parse ISO string or timestamp.
+  // With multiple args: year, month (1-12), day, hour, min, sec, ms.
+  newDate: (args, context) => {
+    if (!args || args.length === 0) return `new Date()`;
+    if (args.length === 1) return `new Date(${generateExpr(args[0], context)})`;
+    return `new Date(${args.map(a => generateExpr(a, context)).join(', ')})`;
+  },
+  // Current timestamp in milliseconds.
+  now: (_args) => `Date.now()`,
+  // Current timestamp in seconds (Unix epoch).
+  nowSec: (_args) => `Math.floor(Date.now() / 1000)`,
+  // Date → ISO string (e.g., "2026-08-28T12:34:56.789Z").
+  toISO: (args, context) => `${generateExpr(args[0], context)}.toISOString()`,
+  // Date → locale date string.
+  toLocaleDate: (args, context) => `${generateExpr(args[0], context)}.toLocaleDateString()`,
+  // Date → locale time string.
+  toLocaleTime: (args, context) => `${generateExpr(args[0], context)}.toLocaleTimeString()`,
+  // Date → locale string.
+  toLocale: (args, context) => `${generateExpr(args[0], context)}.toLocaleString()`,
+  // Date → UTC string.
+  toUTC: (args, context) => `${generateExpr(args[0], context)}.toUTCString()`,
+  // Get timestamp (milliseconds) from a Date.
+  timestamp: (args, context) => `${generateExpr(args[0], context)}.getTime()`,
+  // Get year (full, e.g., 2026).
+  year: (args, context) => `${generateExpr(args[0], context)}.getFullYear()`,
+  // Get month (1-12).
+  month: (args, context) => `${generateExpr(args[0], context)}.getMonth() + 1`,
+  // Get day of month (1-31).
+  day: (args, context) => `${generateExpr(args[0], context)}.getDate()`,
+  // Get day of week (0-6, Sun=0).
+  dayOfWeek: (args, context) => `${generateExpr(args[0], context)}.getDay()`,
+  // Get hours (0-23).
+  hours: (args, context) => `${generateExpr(args[0], context)}.getHours()`,
+  // Get minutes (0-59).
+  minutes: (args, context) => `${generateExpr(args[0], context)}.getMinutes()`,
+  // Get seconds (0-59).
+  seconds: (args, context) => `${generateExpr(args[0], context)}.getSeconds()`,
+  // Get milliseconds (0-999).
+  milliseconds: (args, context) => `${generateExpr(args[0], context)}.getMilliseconds()`,
+  // Get timezone offset in minutes.
+  tzOffset: (args, context) => `${generateExpr(args[0], context)}.getTimezoneOffset()`,
+  // Add time to a Date (returns new Date). Unit: ms, s, m, h, d, w, mo, y.
+  addTime: (args, context) => {
+    if (args.length < 3) throw new Error('addTime(date, amount, unit) requires 3 arguments');
+    const date = generateExpr(args[0], context);
+    const amount = generateExpr(args[1], context);
+    const unit = generateExpr(args[2], context);
+    return `(() => { const base = new Date(${date}.getTime()); const u = String(${unit}).toLowerCase(); const mult = { ms:1, s:1000, m:60000, h:3600000, d:86400000, w:604800000, mo:2592000000, y:31536000000 }; const result = new Date(base.getTime()); result.setTime(result.getTime() + ${amount} * (mult[u] || 1)); return result; })()`;
+  },
+  // Subtract time from a Date (returns new Date).
+  subTime: (args, context) => {
+    if (args.length < 3) throw new Error('subTime(date, amount, unit) requires 3 arguments');
+    const date = generateExpr(args[0], context);
+    const amount = generateExpr(args[1], context);
+    const unit = generateExpr(args[2], context);
+    return `(() => { const base = new Date(${date}.getTime()); const u = String(${unit}).toLowerCase(); const mult = { ms:1, s:1000, m:60000, h:3600000, d:86400000, w:604800000, mo:2592000000, y:31536000000 }; const result = new Date(base.getTime()); result.setTime(result.getTime() - ${amount} * (mult[u] || 1)); return result; })()`;
+  },
+  // Difference between two dates in given unit (ms, s, m, h, d, w).
+  diffTime: (args, context) => {
+    if (args.length < 3) throw new Error('diffTime(date1, date2, unit) requires 3 arguments');
+    const d1 = generateExpr(args[0], context);
+    const d2 = generateExpr(args[1], context);
+    const unit = generateExpr(args[2], context);
+    return `(() => { const u = String(${unit}).toLowerCase(); const mult = { ms:1, s:1000, m:60000, h:3600000, d:86400000, w:604800000 }; return Math.floor((${d1}.getTime() - ${d2}.getTime()) / (mult[u] || 1)); })()`;
+  },
+  // Start of day (00:00:00.000) for a Date.
+  startOfDay: (args, context) => `(() => { const dt = new Date(${generateExpr(args[0], context)}); dt.setHours(0,0,0,0); return dt; })()`,
+  // End of day (23:59:59.999) for a Date.
+  endOfDay: (args, context) => `(() => { const dt = new Date(${generateExpr(args[0], context)}); dt.setHours(23,59,59,999); return dt; })()`,
+  // Start of month (1st, 00:00:00.000).
+  startOfMonth: (args, context) => `(() => { const dt = new Date(${generateExpr(args[0], context)}); dt.setDate(1); dt.setHours(0,0,0,0); return dt; })()`,
+  // End of month (last day, 23:59:59.999).
+  endOfMonth: (args, context) => `(() => { const dt = new Date(${generateExpr(args[0], context)}); dt.setMonth(dt.getMonth()+1, 0); dt.setHours(23,59,59,999); return dt; })()`,
+  // Start of year (Jan 1, 00:00:00.000).
+  startOfYear: (args, context) => `(() => { const dt = new Date(${generateExpr(args[0], context)}); dt.setMonth(0,1); dt.setHours(0,0,0,0); return dt; })()`,
+  // End of year (Dec 31, 23:59:59.999).
+  endOfYear: (args, context) => `(() => { const dt = new Date(${generateExpr(args[0], context)}); dt.setMonth(11,31); dt.setHours(23,59,59,999); return dt; })()`,
+  // Check if a Date is valid (not NaN).
+  isValidDate: (args, context) => `!isNaN(${generateExpr(args[0], context)}.getTime())`,
+  // Format a Date with a custom pattern (YYYY, MM, DD, HH, mm, ss, SSS).
+  format: (args, context) => {
+    ensureBuiltin(context, 'core');
+    const value = generateExpr(args[0], context);
+    const pattern = args.length > 1 ? generateExpr(args[1], context) : '"YYYY-MM-DD HH:mm:ss"';
+    return `__formatDate(${value}, ${pattern})`;
+  },
+
+  // Regex creation and matching.
+  // Create a RegExp from a pattern string. Optional flags (e.g., "gi").
+  regex: (args, context) => {
+    if (!args || args.length === 0) throw new Error('regex(pattern, flags?) requires at least a pattern');
+    const pattern = generateExpr(args[0], context);
+    const flags = args.length > 1 ? generateExpr(args[1], context) : 'undefined';
+    return `new RegExp(${pattern}, ${flags})`;
+  },
+  // Test if a string matches a regex pattern.
+  matches: (args, context) => {
+    if (args.length < 2) throw new Error('matches(text, pattern, flags?) requires at least text and pattern');
+    const text = generateExpr(args[0], context);
+    const pattern = generateExpr(args[1], context);
+    const flags = args.length > 2 ? generateExpr(args[2], context) : 'undefined';
+    return `new RegExp(${pattern}, ${flags}).test(${text})`;
+  },
+  // Extract first match of regex in string (returns array or null).
+  regexMatch: (args, context) => {
+    if (args.length < 2) throw new Error('regexMatch(text, pattern, flags?) requires at least text and pattern');
+    const text = generateExpr(args[0], context);
+    const pattern = generateExpr(args[1], context);
+    const flags = args.length > 2 ? generateExpr(args[2], context) : 'undefined';
+    return `${text}.match(new RegExp(${pattern}, ${flags}))`;
+  },
+  // Extract all matches of regex in string (returns array).
+  regexMatchAll: (args, context) => {
+    if (args.length < 2) throw new Error('regexMatchAll(text, pattern, flags?) requires at least text and pattern');
+    const text = generateExpr(args[0], context);
+    const pattern = generateExpr(args[1], context);
+    const flags = args.length > 2 ? generateExpr(args[2], context) : 'undefined';
+    return `((${flags}) === undefined ? Array.from(${text}.matchAll(new RegExp(${pattern}, 'g'))) : Array.from(${text}.matchAll(new RegExp(${pattern}, ${flags} + 'g'))))`;
+  },
+  // Replace using regex (with capture groups support).
+  replaceRegex: (args, context) => {
+    if (args.length < 3) throw new Error('replaceRegex(text, pattern, replacement, flags?) requires at least 3 arguments');
+    const text = generateExpr(args[0], context);
+    const pattern = generateExpr(args[1], context);
+    const replacement = generateExpr(args[2], context);
+    const flags = args.length > 3 ? generateExpr(args[3], context) : 'undefined';
+    return `${text}.replace(new RegExp(${pattern}, ${flags}), ${replacement})`;
+  },
+  // Split string by regex pattern.
+  splitRegex: (args, context) => {
+    if (args.length < 2) throw new Error('splitRegex(text, pattern, flags?) requires at least text and pattern');
+    const text = generateExpr(args[0], context);
+    const pattern = generateExpr(args[1], context);
+    const flags = args.length > 2 ? generateExpr(args[2], context) : 'undefined';
+    return `${text}.split(new RegExp(${pattern}, ${flags}))`;
   },
 
   // ── v2.1.0 — cache (Redis) accessors. All async.
@@ -1412,7 +1587,7 @@ const STDLIB = {
   // Generators / iterables
   spread: (args, context) => `[...${generateExpr(args[0], context)}]`,
 
-  // v1.0.1 — dynamic module loading (the runtime companion to `import "./x.ps"`).
+  // v1.0.1 — dynamic module loading (the runtime companion to `import "./x.pt"`).
   // Resolves relative to the bundler's CWD so `loadModule("./m")` behaves like
   // `require.resolve` from the program root.
   loadModule: (args, context) => {
@@ -1498,6 +1673,385 @@ const STDLIB = {
     ensureBuiltin(context, 'fs');
     return `fs.appendFileSync(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)} + '\\n', 'utf8')`;
   },
+
+  // ── v1.0.02 — Extended Math functions (IOPL-native).
+  abs: (args, context) => `Math.abs(${generateExpr(args[0], context)})`,
+  min: (args, context) => `Math.min(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  max: (args, context) => `Math.max(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  sqrt: (args, context) => `Math.sqrt(${generateExpr(args[0], context)})`,
+  pow: (args, context) => `Math.pow(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  floor: (args, context) => `Math.floor(${generateExpr(args[0], context)})`,
+  ceil: (args, context) => `Math.ceil(${generateExpr(args[0], context)})`,
+  round: (args, context) => `Math.round(${generateExpr(args[0], context)})`,
+  trunc: (args, context) => `Math.trunc(${generateExpr(args[0], context)})`,
+  sign: (args, context) => `Math.sign(${generateExpr(args[0], context)})`,
+  random: (_args) => `Math.random()`,
+  randomInt: (args, context) => `Math.floor(Math.random() * (${generateExpr(args[1], context)} - ${generateExpr(args[0], context)} + 1)) + ${generateExpr(args[0], context)}`,
+  clamp: (args, context) => `Math.min(Math.max(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)}), ${generateExpr(args[2], context)})`,
+  lerp: (args, context) => `${generateExpr(args[0], context)} + (${generateExpr(args[1], context)} - ${generateExpr(args[0], context)}) * ${generateExpr(args[2], context)}`,
+  PI: (_args) => `Math.PI`,
+  E: (_args) => `Math.E`,
+  ln2: (_args) => `Math.LN2`,
+  ln10: (_args) => `Math.LN10`,
+  log2e: (_args) => `Math.LOG2E`,
+  log10e: (_args) => `Math.LOG10E`,
+  sin: (args, context) => `Math.sin(${generateExpr(args[0], context)})`,
+  cos: (args, context) => `Math.cos(${generateExpr(args[0], context)})`,
+  tan: (args, context) => `Math.tan(${generateExpr(args[0], context)})`,
+  asin: (args, context) => `Math.asin(${generateExpr(args[0], context)})`,
+  acos: (args, context) => `Math.acos(${generateExpr(args[0], context)})`,
+  atan: (args, context) => `Math.atan(${generateExpr(args[0], context)})`,
+  atan2: (args, context) => `Math.atan2(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  sinh: (args, context) => `Math.sinh(${generateExpr(args[0], context)})`,
+  cosh: (args, context) => `Math.cosh(${generateExpr(args[0], context)})`,
+  tanh: (args, context) => `Math.tanh(${generateExpr(args[0], context)})`,
+  exp: (args, context) => `Math.exp(${generateExpr(args[0], context)})`,
+  expm1: (args, context) => `Math.expm1(${generateExpr(args[0], context)})`,
+  log: (args, context) => `Math.log(${generateExpr(args[0], context)})`,
+  log1p: (args, context) => `Math.log1p(${generateExpr(args[0], context)})`,
+  log2: (args, context) => `Math.log2(${generateExpr(args[0], context)})`,
+  log10: (args, context) => `Math.log10(${generateExpr(args[0], context)})`,
+  hypot: (args, context) => `Math.hypot(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  cbrt: (args, context) => `Math.cbrt(${generateExpr(args[0], context)})`,
+
+  // ── v1.0.02 — Extended String functions (IOPL-native).
+  trim: (args, context) => `String(${generateExpr(args[0], context)}).trim()`,
+  trimStart: (args, context) => `String(${generateExpr(args[0], context)}).trimStart()`,
+  trimEnd: (args, context) => `String(${generateExpr(args[0], context)}).trimEnd()`,
+  toUpperCase: (args, context) => `String(${generateExpr(args[0], context)}).toUpperCase()`,
+  toLowerCase: (args, context) => `String(${generateExpr(args[0], context)}).toLowerCase()`,
+  charAt: (args, context) => `String(${generateExpr(args[0], context)}).charAt(${generateExpr(args[1], context)})`,
+  charCodeAt: (args, context) => `String(${generateExpr(args[0], context)}).charCodeAt(${generateExpr(args[1], context)})`,
+  codePointAt: (args, context) => `String(${generateExpr(args[0], context)}).codePointAt(${generateExpr(args[1], context)})`,
+  slice: (args, context) => `String(${generateExpr(args[0], context)}).slice(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  substring: (args, context) => `String(${generateExpr(args[0], context)}).substring(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  substr: (args, context) => `String(${generateExpr(args[0], context)}).substr(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  indexOf: (args, context) => `String(${generateExpr(args[0], context)}).indexOf(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  lastIndexOf: (args, context) => `String(${generateExpr(args[0], context)}).lastIndexOf(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  includes: (args, context) => `String(${generateExpr(args[0], context)}).includes(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  startsWith: (args, context) => `String(${generateExpr(args[0], context)}).startsWith(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  endsWith: (args, context) => `String(${generateExpr(args[0], context)}).endsWith(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  repeat: (args, context) => `String(${generateExpr(args[0], context)}).repeat(${generateExpr(args[1], context)})`,
+  padStart: (args, context) => `String(${generateExpr(args[0], context)}).padStart(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  padEnd: (args, context) => `String(${generateExpr(args[0], context)}).padEnd(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  split: (args, context) => {
+    const sep = args.length > 1 ? generateExpr(args[1], context) : '","';
+    return `String(${generateExpr(args[0], context)}).split(${sep})`;
+  },
+  join: (args, context) => `(${generateExpr(args[0], context)}).join(${args.length > 1 ? generateExpr(args[1], context) : '","'})`,
+  replaceAll: (args, context) => `String(${generateExpr(args[0], context)}).replaceAll(${generateExpr(args[1], context)}, ${generateExpr(args[2], context)})`,
+  match: (args, context) => `String(${generateExpr(args[0], context)}).match(${generateExpr(args[1], context)})`,
+  matchAll: (args, context) => `Array.from(String(${generateExpr(args[0], context)}).matchAll(${generateExpr(args[1], context)}))`,
+  search: (args, context) => `String(${generateExpr(args[0], context)}).search(${generateExpr(args[1], context)})`,
+  toString: (args, context) => `String(${generateExpr(args[0], context)}).toString()`,
+  stringValueOf: (args, context) => `String(${generateExpr(args[0], context)}).valueOf()`,
+
+  // ── v1.0.02 — Extended Array/Collection functions (IOPL-native).
+  push: (args, context) => `(${generateExpr(args[0], context)}).push(${args.slice(1).map(a => generateExpr(a, context)).join(', ')})`,
+  pop: (args, context) => `(${generateExpr(args[0], context)}).pop()`,
+  shift: (args, context) => `(${generateExpr(args[0], context)}).shift()`,
+  unshift: (args, context) => `(${generateExpr(args[0], context)}).unshift(${args.slice(1).map(a => generateExpr(a, context)).join(', ')})`,
+  splice: (args, context) => `(${generateExpr(args[0], context)}).splice(${args.slice(1).map(a => generateExpr(a, context)).join(', ')})`,
+  concat: (args, context) => `(${generateExpr(args[0], context)}).concat(${args.slice(1).map(a => generateExpr(a, context)).join(', ')})`,
+  slice: (args, context) => `(${generateExpr(args[0], context)}).slice(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  copyWithin: (args, context) => `(${generateExpr(args[0], context)}).copyWithin(${args.slice(1).map(a => generateExpr(a, context)).join(', ')})`,
+  fill: (args, context) => `(${generateExpr(args[0], context)}).fill(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''}${args.length > 3 ? ', ' + generateExpr(args[3], context) : ''})`,
+  find: (args, context) => `(${generateExpr(args[0], context)}).find(${generateExpr(args[1], context)})`,
+  findIndex: (args, context) => `(${generateExpr(args[0], context)}).findIndex(${generateExpr(args[1], context)})`,
+  findLast: (args, context) => `(${generateExpr(args[0], context)}).findLast(${generateExpr(args[1], context)})`,
+  findLastIndex: (args, context) => `(${generateExpr(args[0], context)}).findLastIndex(${generateExpr(args[1], context)})`,
+  indexOf: (args, context) => `(${generateExpr(args[0], context)}).indexOf(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  lastIndexOf: (args, context) => `(${generateExpr(args[0], context)}).lastIndexOf(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  includes: (args, context) => `(${generateExpr(args[0], context)}).includes(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  join: (args, context) => `(${generateExpr(args[0], context)}).join(${args.length > 1 ? generateExpr(args[1], context) : '","'})`,
+  reverse: (args, context) => `[...${generateExpr(args[0], context)}].reverse()`,
+  sort: (args, context) => `[...${generateExpr(args[0], context)}].sort(${args.length > 1 ? generateExpr(args[1], context) : '(a, b) => (a < b ? -1 : a > b ? 1 : 0)'})`,
+  flat: (args, context) => `(${generateExpr(args[0], context)}).flat(${args.length > 1 ? generateExpr(args[1], context) : ''})`,
+  flatMap: (args, context) => `(${generateExpr(args[0], context)}).flatMap(${generateExpr(args[1], context)})`,
+  map: (args, context) => `(${generateExpr(args[0], context)}).map(${generateExpr(args[1], context)})`,
+  filter: (args, context) => `(${generateExpr(args[0], context)}).filter(${generateExpr(args[1], context)})`,
+  reduce: (args, context) => `(${generateExpr(args[0], context)}).reduce(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  reduceRight: (args, context) => `(${generateExpr(args[0], context)}).reduceRight(${generateExpr(args[1], context)}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+  forEach: (args, context) => `(${generateExpr(args[0], context)}).forEach(${generateExpr(args[1], context)})`,
+  some: (args, context) => `(${generateExpr(args[0], context)}).some(${generateExpr(args[1], context)})`,
+  every: (args, context) => `(${generateExpr(args[0], context)}).every(${generateExpr(args[1], context)})`,
+  at: (args, context) => `(${generateExpr(args[0], context)}).at(${generateExpr(args[1], context)})`,
+  with: (args, context) => `(${generateExpr(args[0], context)}).with(${generateExpr(args[1], context)}, ${generateExpr(args[2], context)})`,
+  toSorted: (args, context) => `(${generateExpr(args[0], context)}).toSorted(${args.length > 1 ? generateExpr(args[1], context) : '(a, b) => (a < b ? -1 : a > b ? 1 : 0)'})`,
+  toReversed: (args, context) => `(${generateExpr(args[0], context)}).toReversed()`,
+  toSpliced: (args, context) => `(${generateExpr(args[0], context)}).toSpliced(${args.slice(1).map(a => generateExpr(a, context)).join(', ')})`,
+  keys: (args, context) => `Object.keys(${generateExpr(args[0], context)})`,
+  values: (args, context) => `Object.values(${generateExpr(args[0], context)})`,
+  entries: (args, context) => `Object.entries(${generateExpr(args[0], context)})`,
+
+  // ── v1.0.02 — Extended Object functions (IOPL-native).
+  assign: (args, context) => `Object.assign(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  create: (args, context) => `Object.create(${generateExpr(args[0], context)}${args.length > 1 ? ', ' + generateExpr(args[1], context) : ''})`,
+  defineProperty: (args, context) => `Object.defineProperty(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  defineProperties: (args, context) => `Object.defineProperties(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  getOwnPropertyDescriptor: (args, context) => `Object.getOwnPropertyDescriptor(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  getOwnPropertyDescriptors: (args, context) => `Object.getOwnPropertyDescriptors(${generateExpr(args[0], context)})`,
+  getOwnPropertyNames: (args, context) => `Object.getOwnPropertyNames(${generateExpr(args[0], context)})`,
+  getOwnPropertySymbols: (args, context) => `Object.getOwnPropertySymbols(${generateExpr(args[0], context)})`,
+  getPrototypeOf: (args, context) => `Object.getPrototypeOf(${generateExpr(args[0], context)})`,
+  setPrototypeOf: (args, context) => `Object.setPrototypeOf(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  objectIs: (args, context) => `Object.is(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  isExtensible: (args, context) => `Object.isExtensible(${generateExpr(args[0], context)})`,
+  isFrozen: (args, context) => `Object.isFrozen(${generateExpr(args[0], context)})`,
+  isSealed: (args, context) => `Object.isSealed(${generateExpr(args[0], context)})`,
+  preventExtensions: (args, context) => `Object.preventExtensions(${generateExpr(args[0], context)})`,
+  freeze: (args, context) => `Object.freeze(${generateExpr(args[0], context)})`,
+  seal: (args, context) => `Object.seal(${generateExpr(args[0], context)})`,
+  hasOwn: (args, context) => `Object.hasOwn(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+
+  // ── v1.0.02 — Promise/Async utilities (IOPL-native).
+  Promise: {
+    resolve: (args, context) => `Promise.resolve(${generateExpr(args[0], context)})`,
+    reject: (args, context) => `Promise.reject(${generateExpr(args[0], context)})`,
+    all: (args, context) => `Promise.all(${generateExpr(args[0], context)})`,
+    allSettled: (args, context) => `Promise.allSettled(${generateExpr(args[0], context)})`,
+    race: (args, context) => `Promise.race(${generateExpr(args[0], context)})`,
+    any: (args, context) => `Promise.any(${generateExpr(args[0], context)})`,
+  },
+  // Note: These are accessed as Promise.resolve, Promise.all, etc.
+  // We'll add helper functions for them.
+  promiseResolve: (args, context) => `Promise.resolve(${generateExpr(args[0], context)})`,
+  promiseReject: (args, context) => `Promise.reject(${generateExpr(args[0], context)})`,
+  promiseAll: (args, context) => `Promise.all(${generateExpr(args[0], context)})`,
+  promiseAllSettled: (args, context) => `Promise.allSettled(${generateExpr(args[0], context)})`,
+  promiseRace: (args, context) => `Promise.race(${generateExpr(args[0], context)})`,
+  promiseAny: (args, context) => `Promise.any(${generateExpr(args[0], context)})`,
+  promiseWithResolvers: (args, context) => `Promise.withResolvers()`,
+  await: (args, context) => {
+    markAsync(context);
+    return `await ${generateExpr(args[0], context)}`;
+  },
+  // Async sleep (returns a promise that resolves after ms).
+  sleepAsync: (args, context) => {
+    markAsync(context);
+    return `new Promise(r => setTimeout(r, ${generateExpr(args[0], context)}))`;
+  },
+  // Timeout wrapper for promises.
+  timeout: (args, context) => {
+    markAsync(context);
+    const ms = args.length > 1 ? generateExpr(args[1], context) : '30000';
+    return `Promise.race([${generateExpr(args[0], context)}, new Promise((_, r) => setTimeout(() => r(new Error('Timed out')), ${ms}))])`;
+  },
+
+  // ── v1.0.02 — JSON utilities (IOPL-native).
+  jsonParse: (args, context) => `JSON.parse(${generateExpr(args[0], context)})`,
+  stringify: (args, context) => `JSON.stringify(${generateExpr(args[0], context)}${args.length > 1 ? ', ' + generateExpr(args[1], context) : ''}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
+
+  // ── v1.0.02 — Type checking utilities (IOPL-native).
+  isArray: (args, context) => `Array.isArray(${generateExpr(args[0], context)})`,
+  isInteger: (args, context) => `Number.isInteger(${generateExpr(args[0], context)})`,
+  isNaN: (args, context) => `Number.isNaN(${generateExpr(args[0], context)})`,
+  isFinite: (args, context) => `Number.isFinite(${generateExpr(args[0], context)})`,
+  isSafeInteger: (args, context) => `Number.isSafeInteger(${generateExpr(args[0], context)})`,
+  parseInt: (args, context) => `parseInt(${generateExpr(args[0], context)}${args.length > 1 ? ', ' + generateExpr(args[1], context) : ''})`,
+  parseFloat: (args, context) => `parseFloat(${generateExpr(args[0], context)})`,
+
+  // ── v1.0.02 — Array static methods (IOPL-native).
+  arrayFrom: (args, context) => `Array.from(${generateExpr(args[0], context)}${args.length > 1 ? ', ' + generateExpr(args[1], context) : ''})`,
+  arrayOf: (args, context) => `Array.of(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  arrayIsArray: (args, context) => `Array.isArray(${generateExpr(args[0], context)})`,
+
+  // ── v1.0.02 — Object static methods (IOPL-native).
+  objectFromEntries: (args, context) => `Object.fromEntries(${generateExpr(args[0], context)})`,
+  objectGetOwnPropertySymbols: (args, context) => `Object.getOwnPropertySymbols(${generateExpr(args[0], context)})`,
+  objectGetOwnPropertyDescriptors: (args, context) => `Object.getOwnPropertyDescriptors(${generateExpr(args[0], context)})`,
+  objectGetPrototypeOf: (args, context) => `Object.getPrototypeOf(${generateExpr(args[0], context)})`,
+  objectSetPrototypeOf: (args, context) => `Object.setPrototypeOf(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  objectIs: (args, context) => `Object.is(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  objectCreate: (args, context) => `Object.create(${generateExpr(args[0], context)}${args.length > 1 ? ', ' + generateExpr(args[1], context) : ''})`,
+  objectAssign: (args, context) => `Object.assign(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  objectKeys: (args, context) => `Object.keys(${generateExpr(args[0], context)})`,
+  objectValues: (args, context) => `Object.values(${generateExpr(args[0], context)})`,
+  objectEntries: (args, context) => `Object.entries(${generateExpr(args[0], context)})`,
+  objectHasOwn: (args, context) => `Object.hasOwn(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  objectDefineProperty: (args, context) => `Object.defineProperty(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  objectDefineProperties: (args, context) => `Object.defineProperties(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  objectGetOwnPropertyDescriptor: (args, context) => `Object.getOwnPropertyDescriptor(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  objectGetOwnPropertyNames: (args, context) => `Object.getOwnPropertyNames(${generateExpr(args[0], context)})`,
+  objectIsExtensible: (args, context) => `Object.isExtensible(${generateExpr(args[0], context)})`,
+  objectIsFrozen: (args, context) => `Object.isFrozen(${generateExpr(args[0], context)})`,
+  objectIsSealed: (args, context) => `Object.isSealed(${generateExpr(args[0], context)})`,
+  objectPreventExtensions: (args, context) => `Object.preventExtensions(${generateExpr(args[0], context)})`,
+  objectFreeze: (args, context) => `Object.freeze(${generateExpr(args[0], context)})`,
+  objectSeal: (args, context) => `Object.seal(${generateExpr(args[0], context)})`,
+
+  // ── v1.0.02 — Symbol support (IOPL-native).
+  symbol: (args, context) => `Symbol(${args.length > 0 ? generateExpr(args[0], context) : 'undefined'})`,
+  symbolFor: (args, context) => `Symbol.for(${generateExpr(args[0], context)})`,
+  symbolKeyFor: (args, context) => `Symbol.keyFor(${generateExpr(args[0], context)})`,
+  symbolIterator: (_args) => `Symbol.iterator`,
+  symbolAsyncIterator: (_args) => `Symbol.asyncIterator`,
+  symbolToStringTag: (_args) => `Symbol.toStringTag`,
+  symbolHasInstance: (_args) => `Symbol.hasInstance`,
+  symbolIsConcatSpreadable: (_args) => `Symbol.isConcatSpreadable`,
+  symbolMatch: (_args) => `Symbol.match`,
+  symbolMatchAll: (_args) => `Symbol.matchAll`,
+  symbolReplace: (_args) => `Symbol.replace`,
+  symbolSearch: (_args) => `Symbol.search`,
+  symbolSplit: (_args) => `Symbol.split`,
+  symbolToPrimitive: (_args) => `Symbol.toPrimitive`,
+  symbolUnscopables: (_args) => `Symbol.unscopables`,
+
+  // ── v1.0.02 — Math static methods (IOPL-native).
+  mathAbs: (args, context) => `Math.abs(${generateExpr(args[0], context)})`,
+  mathMin: (args, context) => `Math.min(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  mathMax: (args, context) => `Math.max(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  mathSqrt: (args, context) => `Math.sqrt(${generateExpr(args[0], context)})`,
+  mathPow: (args, context) => `Math.pow(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  mathFloor: (args, context) => `Math.floor(${generateExpr(args[0], context)})`,
+  mathCeil: (args, context) => `Math.ceil(${generateExpr(args[0], context)})`,
+  mathRound: (args, context) => `Math.round(${generateExpr(args[0], context)})`,
+  mathTrunc: (args, context) => `Math.trunc(${generateExpr(args[0], context)})`,
+  mathSign: (args, context) => `Math.sign(${generateExpr(args[0], context)})`,
+  mathRandom: (_args) => `Math.random()`,
+  mathClamp: (args, context) => `Math.min(Math.max(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)}), ${generateExpr(args[2], context)})`,
+  mathPI: (_args) => `Math.PI`,
+  mathE: (_args) => `Math.E`,
+  mathLN2: (_args) => `Math.LN2`,
+  mathLN10: (_args) => `Math.LN10`,
+  mathLOG2E: (_args) => `Math.LOG2E`,
+  mathLOG10E: (_args) => `Math.LOG10E`,
+  mathSin: (args, context) => `Math.sin(${generateExpr(args[0], context)})`,
+  mathCos: (args, context) => `Math.cos(${generateExpr(args[0], context)})`,
+  mathTan: (args, context) => `Math.tan(${generateExpr(args[0], context)})`,
+  mathAsin: (args, context) => `Math.asin(${generateExpr(args[0], context)})`,
+  mathAcos: (args, context) => `Math.acos(${generateExpr(args[0], context)})`,
+  mathAtan: (args, context) => `Math.atan(${generateExpr(args[0], context)})`,
+  mathAtan2: (args, context) => `Math.atan2(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  mathSinh: (args, context) => `Math.sinh(${generateExpr(args[0], context)})`,
+  mathCosh: (args, context) => `Math.cosh(${generateExpr(args[0], context)})`,
+  mathTanh: (args, context) => `Math.tanh(${generateExpr(args[0], context)})`,
+  mathExp: (args, context) => `Math.exp(${generateExpr(args[0], context)})`,
+  mathExpm1: (args, context) => `Math.expm1(${generateExpr(args[0], context)})`,
+  mathLog: (args, context) => `Math.log(${generateExpr(args[0], context)})`,
+  mathLog1p: (args, context) => `Math.log1p(${generateExpr(args[0], context)})`,
+  mathLog2: (args, context) => `Math.log2(${generateExpr(args[0], context)})`,
+  mathLog10: (args, context) => `Math.log10(${generateExpr(args[0], context)})`,
+  mathHypot: (args, context) => `Math.hypot(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  mathCbrt: (args, context) => `Math.cbrt(${generateExpr(args[0], context)})`,
+
+  // ── v1.0.02 — TypedArray support (IOPL-native).
+  int8Array: (args, context) => `new Int8Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  uint8Array: (args, context) => `new Uint8Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  uint8ClampedArray: (args, context) => `new Uint8ClampedArray(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  int16Array: (args, context) => `new Int16Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  uint16Array: (args, context) => `new Uint16Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  int32Array: (args, context) => `new Int32Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  uint32Array: (args, context) => `new Uint32Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  float32Array: (args, context) => `new Float32Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  float64Array: (args, context) => `new Float64Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  bigInt64Array: (args, context) => `new BigInt64Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  bigUint64Array: (args, context) => `new BigUint64Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  dataView: (args, context) => `new DataView(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  arrayBuffer: (args, context) => `new ArrayBuffer(${args.map(a => generateExpr(a, context)).join(', ')})`,
+
+  // ── v1.0.02 — Global objects access (IOPL-native).
+  globalThis: (_args) => `globalThis`,
+  console: (_args) => `console`,
+  process: (_args) => `process`,
+  Buffer: (_args) => `Buffer`,
+
+  // ── v2.3.0 — EventSource / Server-Sent Events (IOPL-native).
+  eventSource: (args, context) => `new EventSource(${args.map(a => generateExpr(a, context)).join(', ')})`,
+
+  // ── v2.2.0 — URL and URLSearchParams (IOPL-native).
+  url: (args, context) => `new URL(${generateExpr(args[0], context)}${args[1] ? `, ${generateExpr(args[1], context)}` : ''})`,
+  urlSearchParams: (args, context) => `new URLSearchParams(${args.length ? generateExpr(args[0], context) : ''})`,
+
+  // ── v2.2.0 — Intl / Internationalization (IOPL-native).
+  dateTimeFormat: (args, context) => `new Intl.DateTimeFormat(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  numberFormat: (args, context) => `new Intl.NumberFormat(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  collator: (args, context) => `new Intl.Collator(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+
+  // ── v2.2.0 — Crypto / Web Crypto API (IOPL-native).
+  cryptoRandomUUID: (_args) => `crypto.randomUUID()`,
+  cryptoGetRandomValues: (args, context) => `crypto.getRandomValues(${generateExpr(args[0], context)})`,
+  cryptoSubtleDigest: (args, context) => `crypto.subtle.digest(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  cryptoSubtleEncrypt: (args, context) => `crypto.subtle.encrypt(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  cryptoSubtleDecrypt: (args, context) => `crypto.subtle.decrypt(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  cryptoSubtleSign: (args, context) => `crypto.subtle.sign(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  cryptoSubtleVerify: (args, context) => `crypto.subtle.verify(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  cryptoSubtleGenerateKey: (args, context) => `crypto.subtle.generateKey(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  cryptoSubtleDeriveKey: (args, context) => `crypto.subtle.deriveKey(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  cryptoSubtleImportKey: (args, context) => `crypto.subtle.importKey(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  cryptoSubtleExportKey: (args, context) => `crypto.subtle.exportKey(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  cryptoSubtleWrapKey: (args, context) => `crypto.subtle.wrapKey(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  cryptoSubtleUnwrapKey: (args, context) => `crypto.subtle.unwrapKey(${args.map(a => generateExpr(a, context)).join(', ')})`,
+
+  // ── v2.2.0 — WeakMap / WeakSet / WeakRef / FinalizationRegistry (IOPL-native).
+  weakMap: (_args) => `new WeakMap()`,
+  weakSet: (_args) => `new WeakSet()`,
+  weakRef: (args, context) => `new WeakRef(${generateExpr(args[0], context)})`,
+  finalizationRegistry: (args, context) => `new FinalizationRegistry(${generateExpr(args[0], context)})`,
+
+  // ── v2.2.0 — Proxy / Reflect (IOPL-native).
+  proxy: (args, context) => `new Proxy(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  reflectGet: (args, context) => `Reflect.get(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  reflectSet: (args, context) => `Reflect.set(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)}, ${generateExpr(args[2], context)})`,
+  reflectHas: (args, context) => `Reflect.has(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  reflectDeleteProperty: (args, context) => `Reflect.deleteProperty(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  reflectConstruct: (args, context) => `Reflect.construct(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  reflectApply: (args, context) => `Reflect.apply(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  reflectOwnKeys: (args, context) => `Reflect.ownKeys(${generateExpr(args[0], context)})`,
+  reflectDefineProperty: (args, context) => `Reflect.defineProperty(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  reflectGetOwnPropertyDescriptor: (args, context) => `Reflect.getOwnPropertyDescriptor(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+
+  // ── v2.2.0 — Symbol (IOPL-native).
+  symbol: (args, context) => `Symbol(${args.length ? generateExpr(args[0], context) : 'undefined'})`,
+  symbolFor: (args, context) => `Symbol.for(${generateExpr(args[0], context)})`,
+  symbolKeyFor: (args, context) => `Symbol.keyFor(${generateExpr(args[0], context)})`,
+  symbolIterator: (_args) => `Symbol.iterator`,
+  symbolAsyncIterator: (_args) => `Symbol.asyncIterator`,
+  symbolToStringTag: (_args) => `Symbol.toStringTag`,
+  symbolHasInstance: (_args) => `Symbol.hasInstance`,
+  symbolIsConcatSpreadable: (_args) => `Symbol.isConcatSpreadable`,
+  symbolMatch: (_args) => `Symbol.match`,
+  symbolMatchAll: (_args) => `Symbol.matchAll`,
+  symbolReplace: (_args) => `Symbol.replace`,
+  symbolSearch: (_args) => `Symbol.search`,
+  symbolSplit: (_args) => `Symbol.split`,
+  symbolToPrimitive: (_args) => `Symbol.toPrimitive`,
+  symbolUnscopables: (_args) => `Symbol.unscopables`,
+
+  // ── v2.2.0 — BigInt (IOPL-native).
+  bigInt: (args, context) => `BigInt(${generateExpr(args[0], context)})`,
+  bigIntAsIntN: (args, context) => `BigInt.asIntN(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+  bigIntAsUintN: (args, context) => `BigInt.asUintN(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
+
+  // ── v2.2.0 — Atomics / SharedArrayBuffer (IOPL-native).
+  atomicsAdd: (args, context) => `Atomics.add(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  atomicsSub: (args, context) => `Atomics.sub(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  atomicsAnd: (args, context) => `Atomics.and(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  atomicsOr: (args, context) => `Atomics.or(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  atomicsXor: (args, context) => `Atomics.xor(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  atomicsExchange: (args, context) => `Atomics.exchange(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  atomicsCompareExchange: (args, context) => `Atomics.compareExchange(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  atomicsLoad: (args, context) => `Atomics.load(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  atomicsStore: (args, context) => `Atomics.store(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  atomicsWait: (args, context) => `Atomics.wait(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  atomicsNotify: (args, context) => `Atomics.notify(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  atomicsIsLockFree: (args, context) => `Atomics.isLockFree(${generateExpr(args[0], context)})`,
+  sharedArrayBuffer: (args, context) => `new SharedArrayBuffer(${generateExpr(args[0], context)})`,
+
+  // ── v2.2.0 — Error subclasses (IOPL-native).
+  error: (args, context) => `new Error(${args.length ? generateExpr(args[0], context) : ''})`,
+  typeError: (args, context) => `new TypeError(${args.length ? generateExpr(args[0], context) : ''})`,
+  rangeError: (args, context) => `new RangeError(${args.length ? generateExpr(args[0], context) : ''})`,
+  referenceError: (args, context) => `new ReferenceError(${args.length ? generateExpr(args[0], context) : ''})`,
+  syntaxError: (args, context) => `new SyntaxError(${args.length ? generateExpr(args[0], context) : ''})`,
+  evalError: (args, context) => `new EvalError(${args.length ? generateExpr(args[0], context) : ''})`,
+  uriError: (args, context) => `new URIError(${args.length ? generateExpr(args[0], context) : ''})`,
+  aggregateError: (args, context) => `new AggregateError(${args.map(a => generateExpr(a, context)).join(', ')})`,
+
+  // ── v2.2.0 — Blob / File / FormData (IOPL-native, browser-compatible).
+  blob: (args, context) => `new Blob(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  file: (args, context) => `new File(${args.map(a => generateExpr(a, context)).join(', ')})`,
+  formData: (_args) => `new FormData()`,
 };
 
 // Mark the enclosing program async when a call awaits at the top level, and
@@ -1806,8 +2360,16 @@ function generateCondition(cond, context) {
 
 function generateStatement(node, indent = '', context = createGenerationContext()) {
   switch (node.type) {
-    case 'RememberStatement':
+    case 'RememberStatement': {
+      // Handle destructuring: remember [a, b] as arr / remember {x, y} as obj
+      if (node.name && typeof node.name === 'object' && (node.name.type === 'ArrayPattern' || node.name.type === 'ObjectPattern')) {
+        const pattern = node.name.type === 'ArrayPattern'
+          ? `[${node.name.elements.map(e => generateLValue(e, context)).join(', ')}]`
+          : `{ ${node.name.properties.map(p => p.key).join(', ')} }`;
+        return `${indent}let ${pattern} = ${generateExpr(node.value, context)};`;
+      }
       return `${indent}let ${node.name} = ${generateExpr(node.value, context)};`;
+    }
 
     case 'ShowStatement':
       return `${indent}console.log(${generateExpr(node.value, context)});`;
@@ -1815,18 +2377,49 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     case 'GiveStatement':
       return `${indent}return ${generateExpr(node.value, context)};`;
 
-    case 'BecomeStatement':
-      return `${indent}${generateLValue(node.target, context)} = ${generateExpr(node.value, context)};`;
+    case 'BecomeStatement': {
+      // Handle destructuring: [a, b] = arr / {x, y} = obj
+      if (node.target && typeof node.target === 'object' && (node.target.type === 'ArrayPattern' || node.target.type === 'ObjectPattern')) {
+        const pattern = node.target.type === 'ArrayPattern'
+          ? `[${node.target.elements.map(e => generateLValue(e, context)).join(', ')}]`
+          : `{ ${node.target.properties.map(p => generateLValue(p, context)).join(', ')} }`;
+        return `${indent}let ${pattern} = ${generateExpr(node.value, context)};`;
+      }
+      const target = generateLValue(node.target, context);
+      const value = generateExpr(node.value, context);
+      const op = node.op || '=';
+      if (op === '=') {
+        return `${indent}${target} = ${value};`;
+      }
+      // Logical assignment: x ||= y, x &&= y, x ??= y
+      // In JS: x ||= y  ->  x || (x = y)
+      // We need to handle this carefully for member expressions
+      const opMap = { '||=': '||', '&&=': '&&', '??=': '??' };
+      const jsOp = opMap[op];
+      if (jsOp) {
+        return `${indent}${target} ${jsOp} (${target} = ${value});`;
+      }
+      return `${indent}${target} ${op} ${value};`;
+    }
 
     // v1.0.1 — record kinds: `define a kind called "Person" with ... done`.
     // Names are emitted as a JS factory that returns a fresh plain object with
     // declared defaults. Constructors prompt for required fields at compile
     // time via `create a Person with ...` (see GenerateExpr CreateKind).
+    // v1.0.02 — supports `extends` for inheritance.
     case 'DefineKindStatement': {
-      const members = node.fields.map(f =>
-        `${JSON.stringify(f.key)}: ${f.value ? generateExpr(f.value, context) : 'undefined'}`
-      );
-      const defaults = `{ ${members.join(', ')} }`;
+      let defaults = '';
+      if (node.extends) {
+        // Inherit from parent kind by spreading its defaults
+        defaults = `{ ...__makeKind_${node.extends}({}), ${node.fields.map(f =>
+          `${JSON.stringify(f.key)}: ${f.value ? generateExpr(f.value, context) : 'undefined'}`
+        ).join(', ')} }`;
+      } else {
+        const members = node.fields.map(f =>
+          `${JSON.stringify(f.key)}: ${f.value ? generateExpr(f.value, context) : 'undefined'}`
+        );
+        defaults = `{ ${members.join(', ')} }`;
+      }
       return [
         `${indent}function __makeKind_${node.name}(${node.name}Fields) {`,
         `${indent}  const __rec = ${defaults};`,
@@ -1901,47 +2494,6 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       return pkg ? `${indent}${pkg}` : '';
     }
 
-    // v1.1.1 — JavaScript Gateway (RFC-0011)
-
-    // remember <name> as javascript … done   (named — always produces a value)
-    // javascript … done                      (statement-level block)
-    case 'JavaScriptBlock': {
-      // Validate the raw JavaScript at compile time so JS syntax errors are
-      // reported as such, with the PlainScript context that produced them.
-      try {
-        new vm.Script(`(async () => {\n${node.body}\n})`);
-      } catch (e) {
-        const label = node.name ? `assigned to "${node.name}"` : 'block';
-        throw new Error(
-          `JavaScript error inside the "javascript" ${label}: ${e.message}`
-        );
-      }
-      // Does the body use top-level `await`? Top-level await only parses
-      // inside an async function, so a plain Script rejects it. Synchronous
-      // statement-level blocks need no wrapper; async ones do.
-      let hasTopLevelAwait = false;
-      try {
-        new vm.Script(node.body);
-      } catch (_) {
-        hasTopLevelAwait = true;
-      }
-      // Named blocks always bind a value, so they keep the async IIFE. The
-      // body is emitted verbatim: JavaScript indentation, template literals,
-      // and line structure are preserved as written (RFC-0011 §31).
-      if (node.name) {
-        markAsync(context);
-        return `${indent}let ${node.name} = await (async () => {\n${node.body}\n${indent}})();`;
-      }
-      // Statement-level blocks inside functions/routes/loops, or that need
-      // top-level await, retain the async-context wrapper.
-      if (context.inFunction || hasTopLevelAwait) {
-        markAsync(context);
-        return `${indent}await (async () => {\n${node.body}\n${indent}})();`;
-      }
-      // Synchronous statement-level block: emit its body directly/verbatim.
-      return `${indent}${node.body}`;
-    }
-
     // ask name  /  ask "<prompt>" as name
     case 'AskStatement': {
       ensureBuiltin(context, 'ask');
@@ -1967,6 +2519,21 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       const isAsync = block.emitted ? 'async ' : '';
       const isGen = containsYield(node.body) ? '*' : '';
       const paramStr = node.params.map(p => {
+        // Rest parameter: ...args
+        if (p && p.type === 'RestElement') {
+          return `...${p.name}`;
+        }
+        // Destructuring: [a, b] or {x, y}
+        if (p && (p.type === 'ArrayPattern' || p.type === 'ObjectPattern')) {
+          const pattern = p.type === 'ArrayPattern'
+            ? `[${p.elements.map(e => generateLValue(e, context)).join(', ')}]`
+            : `{ ${p.properties.map(prop => generateLValue(prop, context)).join(', ')} }`;
+          if (p.defaultValue) {
+            return `${pattern} = ${generateExpr(p.defaultValue, context)}`;
+          }
+          return pattern;
+        }
+        // Regular parameter
         if (typeof p === 'object') {
           if (p.defaultValue) return `${p.name} = ${generateExpr(p.defaultValue, context)}`;
           return p.name;
@@ -2037,8 +2604,50 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       return `${indent}continue;`;
     }
 
+    case 'DebuggerStatement':
+      return `${indent}debugger;`;
+
     case 'ThrowStatement':
       return `${indent}throw ${generateExpr(node.value, context)};`;
+
+    case 'ReturnStatement':
+      return `${indent}return${node.value ? ' ' + generateExpr(node.value, context) : ''};`;
+
+    case 'BreakStatement': {
+      if (context.loopDepth <= 0) {
+        throw new Error('"break" can only be used inside a loop (for each, for index, or while).\n\nExample:\n  for each item in list\n    if done(item)\n      break\n    done\n  done');
+      }
+      return `${indent}break;`;
+    }
+
+    case 'ContinueStatement': {
+      if (context.loopDepth <= 0) {
+        throw new Error('"continue" can only be used inside a loop (for each, for index, or while).\n\nExample:\n  for each item in list\n    if skip(item)\n      continue\n    done\n  done');
+      }
+      return `${indent}continue;`;
+    }
+
+    case 'SwitchStatement': {
+      const discriminant = generateExpr(node.discriminant, context);
+      const cases = node.cases.map(c => {
+        const test = generateExpr(c.test, context);
+        const body = c.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+        return `${indent}  case ${test}:\n${body}\n${indent}    break;`;
+      }).join('\n');
+      let out = `${indent}switch (${discriminant}) {\n${cases}`;
+      if (node.defaultCase) {
+        const defaultBody = node.defaultCase.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+        out += `\n${indent}  default:\n${defaultBody}\n${indent}    break;`;
+      }
+      out += `\n${indent}}`;
+      return out;
+    }
+
+    case 'ClassDeclaration': {
+      const superClass = node.superClass ? ` extends ${generateExpr(node.superClass, context)}` : '';
+      const body = node.body.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+      return `${indent}class ${node.name}${superClass} {\n${body}\n${indent}}`;
+    }
 
     // v0.3 — Express runtime
 
@@ -2265,8 +2874,8 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     case 'TryStatement': {
       const tryBody = (node.tryBody || node.body || []).map(s => generateStatement(s, indent + '  ', context)).join('\n');
       const tryBlock = `${indent}try {\n${tryBody}\n${indent}`;
+      const lines = [tryBlock];
       if (node.catches && node.catches.length > 0) {
-        const lines = [tryBlock];
         for (let i = 0; i < node.catches.length; i++) {
           const c = node.catches[i];
           const errorName = c.name || c.param || '__plainError';
@@ -2294,17 +2903,22 @@ function generateStatement(node, indent = '', context = createGenerationContext(
             }
           }
         }
-        return lines.join('\n');
-      }
-      let out = tryBlock;
-      if (node.recoverBody) {
+      } else if (node.recoverBody) {
         const errorName = node.catchName || '__plainError';
         const recoverBody = node.recoverBody.map(s => generateStatement(s, indent + '  ', context)).join('\n');
-        out += ` catch (${errorName}) {\n${recoverBody}\n${indent}}`;
+        lines.push(`${indent}} catch (${errorName}) {`);
+        lines.push(recoverBody);
+        lines.push(`${indent}}`);
       } else {
-        out += `${indent}} catch (__plainError) {}`;
+        lines.push(`${indent}} catch (__plainError) {}`);
       }
-      return out;
+      if (node.finallyBody) {
+        const finallyBody = node.finallyBody.map(s => generateStatement(s, indent + '  ', context)).join('\n');
+        lines.push(`${indent}finally {`);
+        lines.push(finallyBody);
+        lines.push(`${indent}}`);
+      }
+      return lines.join('\n');
     }
 
     case 'RetryStatement': {
@@ -2695,6 +3309,9 @@ function generateLValue(node, context) {
   if (node.type === 'FirstItem')        return `${generateExpr(node.collection, context)}[0]`;
   if (node.type === 'NumberedItem')     return `${generateExpr(node.collection, context)}[${node.index}]`;
   if (node.type === 'LastItem')         return `${generateExpr(node.collection, context)}[${generateExpr(node.collection, context)}.length - 1]`;
+  // Destructuring patterns
+  if (node.type === 'ArrayPattern')     return `[${node.elements.map(e => generateLValue(e, context)).join(', ')}]`;
+  if (node.type === 'ObjectPattern')    return `{ ${node.properties.map(p => p.key).join(', ')} }`;
   throw new Error(`Invalid assignment target "${node.type}".`);
 }
 
@@ -2777,11 +3394,20 @@ function generateExpr(node, context = createGenerationContext()) {
       return `{ ${props} }`;
     }
 
+    case 'NullishCoalesceExpression':
+      return `(${generateExpr(node.left, context)} ?? ${generateExpr(node.right, context)})`;
+
     case 'IndexExpression':
       return `${generateExpr(node.object, context)}[${generateExpr(node.index, context)}]`;
 
     case 'MemberExpression':
       return `${generateExpr(node.object, context)}.${node.property}`;
+
+    case 'OptionalChainExpression':
+      return `${generateExpr(node.object, context)}?.${node.property}`;
+
+    case 'OptionalCallExpression':
+      return `${generateExpr(node.callee.object, context)}?.${node.callee.property}(${node.args.map(arg => generateExpr(arg, context)).join(', ')})`;
 
     case 'CallExpression': {
       // Method call: receiver.method(args). Member access invoked with parens —
@@ -2868,6 +3494,63 @@ function generateExpr(node, context = createGenerationContext()) {
     // v1.0.1 — `spread of <collection>` → a fresh array from an iterable.
     case 'SpreadExpression':
       return `[...${generateExpr(node.collection, context)}]`;
+
+    case 'SpreadElement':
+      return `...${generateExpr(node.argument, context)}`;
+
+    case 'SpreadProperty':
+      return `...${generateExpr(node.argument, context)}`;
+
+    case 'ArrayPattern':
+      // Array destructuring pattern: [a, b] = value
+      return `[${node.elements.map(e => generateExpr(e, context)).join(', ')}]`;
+
+    case 'ObjectPattern':
+      // Object destructuring pattern: {x, y} = value
+      return `{ ${node.properties.map(p => generateExpr(p, context)).join(', ')} }`;
+
+    case 'RestElement':
+      return `...${node.name}`;
+
+    case 'BigIntLiteral':
+      return `${node.value}n`;
+
+    case 'UndefinedLiteral':
+      return 'undefined';
+
+    case 'ThisExpression':
+      return 'this';
+
+    case 'ImportMetaExpression':
+      return 'import.meta';
+
+    case 'SuperExpression':
+      return 'super';
+
+    case 'SuperProperty':
+      return `super.${node.property}`;
+
+    case 'NewExpression':
+      return `new ${generateExpr(node.callee, context)}(${node.args.map(arg => generateExpr(arg, context)).join(', ')})`;
+
+    case 'AwaitExpression': {
+      markAsync(context);
+      return `(await ${generateExpr(node.value, context)})`;
+    }
+
+    case 'UnaryExpression': {
+      // Handle typeof, void, delete operators
+      if (['typeof', 'void', 'delete'].includes(node.operator)) {
+        const operand = node.operand.type === 'BinaryExpression'
+          ? `(${generateExpr(node.operand, context)})`
+          : generateExpr(node.operand, context);
+        return `${node.operator} ${operand}`;
+      }
+      // Regular unary minus
+      return `${node.operator}${node.operand.type === 'BinaryExpression'
+        ? `(${generateExpr(node.operand, context)})`
+        : generateExpr(node.operand, context)}`;
+    }
 
     default:
       throw new Error(`Unknown expression type "${node.type}".`);

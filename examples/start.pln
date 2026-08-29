@@ -1,0 +1,2 @@
+// PlainScript v1.0.02 — entry file for `plainscript start`
+show "Application started by PlainScript"

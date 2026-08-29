@@ -1,0 +1,15 @@
+// oauth · src/index.pln
+// The public entry point for the unified OAuth SDK. Re-exports the whole
+// provider + flow + token surface so `require("oauth")` returns a single object.
+
+import "./crypto.pln"
+import "./providers.pln"
+import "./oauth.pln"
+
+export providerConfig
+export buildAuthUrl
+export exchangeCode
+export generateState
+export issueAccessToken
+export issueRefreshToken
+export validateToken

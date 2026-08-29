@@ -1,95 +1,91 @@
 {
-    "Remember variable": {
-        "prefix": "rem",
-        "body": ["remember ${1:name} as ${2:value}"],
+    "Let variable": {
+        "prefix": "let",
+        "body": ["let ${1:name} is ${2:value}"],
         "description": "Declare a variable"
     },
-    "Show value": {
-        "prefix": "show",
-        "body": ["show ${1:value}"],
+    "Reassign variable": {
+        "prefix": "reassign",
+        "body": ["${1:name} is now ${2:value}"],
+        "description": "Reassign a variable"
+    },
+    "Print value": {
+        "prefix": "print",
+        "body": ["print ${1:value}"],
         "description": "Print a value"
     },
     "If statement": {
         "prefix": "if",
         "body": [
-            "if ${1:condition} is ${2:value}",
-            "    ${3:show \"yes\"}",
-            "done"
+            "if ${1:condition}",
+            "    print ${2:\"yes\"}",
+            "end"
         ],
         "description": "If block"
     },
     "If / otherwise": {
         "prefix": "ifo",
         "body": [
-            "if ${1:condition} is ${2:value}",
-            "    ${3:show \"yes\"}",
+            "if ${1:condition}",
+            "    print ${2:\"yes\"}",
             "otherwise",
-            "    ${4:show \"no\"}",
-            "done"
+            "    print ${3:\"no\"}",
+            "end"
         ],
         "description": "If / otherwise block"
     },
-    "Make function": {
-        "prefix": "make",
+    "Define function": {
+        "prefix": "def",
         "body": [
-            "make ${1:name}(${2:params})",
-            "    ${3:show \"hello\"}",
-            "done"
+            "define ${1:name}(${2:params})",
+            "    ${3:print \"hello\"}",
+            "end"
         ],
-        "description": "Declare a function"
+        "description": "Define a function"
     },
-    "Make function with return": {
-        "prefix": "makeg",
+    "Define function with return": {
+        "prefix": "defg",
         "body": [
-            "make ${1:name}(${2:a}, ${3:b})",
-            "    give ${4:a + b}",
-            "done"
+            "define ${1:name}(${2:a}, ${3:b})",
+            "    give back ${4:a + b}",
+            "end"
         ],
-        "description": "Declare a function with a return value"
+        "description": "Define a function with a return value"
     },
     "For each loop": {
         "prefix": "foreach",
         "body": [
             "for each ${1:item} in ${2:collection}",
-            "    show ${1:item}",
-            "done"
+            "    print ${1:item}",
+            "end"
         ],
         "description": "For each loop"
-    },
-    "For every loop": {
-        "prefix": "forevery",
-        "body": [
-            "for every ${1:item} in ${2:collection}",
-            "    show ${1:item}",
-            "done"
-        ],
-        "description": "For every loop (alias for for each)"
     },
     "While loop": {
         "prefix": "while",
         "body": [
             "while ${1:x} is less than ${2:10}",
-            "    ${3:x becomes x + 1}",
-            "done"
+            "    ${3:x is now x + 1}",
+            "end"
         ],
         "description": "While loop"
     },
-    "Remember array": {
-        "prefix": "rema",
+    "Array literal": {
+        "prefix": "arr",
         "body": [
-            "remember ${1:items} as [",
+            "let ${1:items} is [",
             "    ${2:\"item1\"},",
-            "    ${3:\"item2\"},",
+            "    ${3:\"item2\"}",
             "]"
         ],
         "description": "Declare an array"
     },
-    "Remember object": {
-        "prefix": "remo",
+    "Object literal": {
+        "prefix": "obj",
         "body": [
-            "remember ${1:obj} as",
+            "let ${1:obj} is",
             "    ${2:key} is ${3:\"value\"}",
-            "done"
+            "end"
         ],
         "description": "Declare an object"
     },
@@ -99,36 +95,36 @@
             "web app",
             "",
             "route \"/\"",
-            "    reply \"${1:Hello from PlainScript!}\"",
-            "done",
+            "    print \"${1:Hello from PlainScript!}\"",
+            "end",
             "",
             "start ${2:3000}"
         ],
-        "description": "Web app boilerplate (v0.6)"
+        "description": "Web app boilerplate"
     },
     "Route": {
         "prefix": "route",
         "body": [
             "route \"${1:/path}\"",
-            "    reply ${2:\"Hello\"}",
-            "done"
+            "    print ${2:\"Hello\"}",
+            "end"
         ],
-        "description": "Define a route (v0.6)"
+        "description": "Define a route"
     },
-    "Express app (classic)": {
+    "Express app": {
         "prefix": "express",
         "body": [
             "use express",
             "",
-            "remember app as express()",
+            "let app is express()",
             "",
             "when someone visits \"${1:/}\"",
-            "    reply \"${2:Hello from PlainScript!}\"",
-            "done",
+            "    print \"${2:Hello from PlainScript!}\"",
+            "end",
             "",
             "listen on ${3:3000}",
-            "    show \"Server running on port ${3:3000}\"",
-            "done"
+            "    print \"Server running on port ${3:3000}\"",
+            "end"
         ],
         "description": "Classic Express app boilerplate"
     },
@@ -139,35 +135,71 @@
             "",
             "execute",
             "    CREATE TABLE IF NOT EXISTS ${2:items} (id INTEGER PRIMARY KEY, ${3:name} TEXT)",
-            "done"
+            "end"
         ],
-        "description": "SQLite database setup (v0.6)"
+        "description": "SQLite database setup"
     },
     "Query": {
         "prefix": "query",
         "body": [
             "query",
             "    SELECT * FROM ${1:table}",
-            "done"
+            "end"
         ],
-        "description": "SQL query block (v0.6)"
+        "description": "SQL query block"
     },
     "Between comparison": {
         "prefix": "between",
         "body": ["if ${1:x} between ${2:1} and ${3:10}"],
-        "description": "Between comparison (v0.6)"
+        "description": "Between comparison"
     },
     "Contains check": {
         "prefix": "contains",
         "body": ["if ${1:text} contains ${2:\"word\"}"],
-        "description": "String contains check (v0.6)"
+        "description": "String contains check"
+    },
+    "Try / recover": {
+        "prefix": "try",
+        "body": [
+            "try",
+            "    ${1:print \"risky operation\"}",
+            "recover as err",
+            "    print \"Error: \" + message of err",
+            "end"
+        ],
+        "description": "Try / recover error handling"
     },
     "JSON encode/decode": {
         "prefix": "json",
         "body": [
-            "remember ${1:encoded} as jsonEncode(${2:value})",
-            "remember ${3:decoded} as jsonDecode(${1:encoded})"
+            "let ${1:encoded} is jsonEncode(${2:value})",
+            "let ${2:decoded} is jsonDecode(${1:encoded})"
         ],
         "description": "JSON encode and decode"
+    },
+    "Record kind": {
+        "prefix": "kind",
+        "body": [
+            "define a kind called \"${1:Person}\" with",
+            "    ${2:name} is ${3:\"\"}",
+            "end",
+            "",
+            "let ${4:instance} is create a ${1:Person} with ${2:name} \"${5:Alice}\""
+        ],
+        "description": "Define a record kind (class)"
+    },
+    "Test block": {
+        "prefix": "test",
+        "body": [
+            "test \"${1:my test}\"",
+            "    check ${2:add(2, 3)} equals ${3:5}",
+            "end"
+        ],
+        "description": "Native test block"
+    },
+    "Wait for": {
+        "prefix": "waitfor",
+        "body": ["let ${1:result} is wait for ${2:promise}"],
+        "description": "Await a promise"
     }
 }

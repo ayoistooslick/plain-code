@@ -13,14 +13,14 @@
 
 PlainScript is an Intent-Oriented Programming Language (IOPL). You describe **what** you want; the compiler decides **how** to implement it in JavaScript.
 
-**Current version:** v1.0.1 — the `plainscript` npm package with a TypeScript-style production build (`plainscript build` → `dist/`, source names preserved).
+**Current version:** v1.0.02 — the `plainscript` npm package with a TypeScript-style production build (`plainscript build` → `dist/`, source names preserved).
 
 ---
 
 ## Quick start
 
 ```bash
-npx plainscript new myapp     # scaffolds src/app.ps and package.json
+npx plainscript new myapp     # scaffolds src/app.pln and package.json
 cd myapp
 npm install            # installs plainscript as a devDependency plus runtime packages
 npm run build          # compiles src/ -> dist/ (plainscript build)
@@ -31,7 +31,7 @@ Adding PlainScript to an existing project:
 
 ```bash
 npm install --save-dev plainscript-lang
-# start writing src/*.ps files — plainscript build auto-discovers them
+# start writing src/*.pln files — plainscript build auto-discovers them
 ```
 
 No global install is needed anywhere — everything runs through npm scripts
@@ -42,17 +42,17 @@ and `npx`.
 ## CLI
 
 ```
-plainscript run    <file.ps>   Install missing dependencies, compile and execute
+plainscript run    <file.pln>   Install missing dependencies, compile and execute
                          (executes from a scratch dir — nothing is written
                          into your project)
-plainscript build  [file.ps]   Compile to dist/. With no argument, builds every
-                         .ps file under the source root, preserving names
+plainscript build  [file.pln]   Compile to dist/. With no argument, builds every
+                         .pln file under the source root, preserving names
                          and folder structure
-plainscript check  <file.ps>   Check syntax only (no output, no execution)
-plainscript fmt    <file.ps>   Format a PlainScript file in-place
+plainscript check  <file.pln>   Check syntax only (no output, no execution)
+plainscript fmt    <file.pln>   Format a PlainScript file in-place
 plainscript new    [name]       Create a new PlainScript project (npm-ready)
 plainscript install             Install dependencies detected in the project's sources
-plainscript start               Build src/app.ps and run its dist/ output
+plainscript start               Build src/app.pln and run its dist/ output
 plainscript doctor              Check the PlainScript project environment
 plainscript add    <package>    Install a package into the project
 plainscript remove <package>    Uninstall a package from the project
@@ -66,13 +66,13 @@ plainscript help                Print help text
 ## Building and configuration
 
 `plainscript build` is a deterministic production build, TypeScript-style but for
-`.ps` sources — **zero configuration required**:
+`.pln` sources — **zero configuration required**:
 
-- `plainscript build` (no argument) discovers every `.ps` file under `src/` and
+- `plainscript build` (no argument) discovers every `.pln` file under `src/` and
   compiles each to `dist/` **preserving source file names and folder structure**:
-  `src/messi.ps` → `dist/messi.js`,
-  `src/helpers/math.ps` → `dist/helpers/math.js`.
-- `plainscript build <file.ps>` compiles a single file into `dist/`.
+  `src/messi.pln` → `dist/messi.js`,
+  `src/helpers/math.pln` → `dist/helpers/math.js`.
+- `plainscript build <file.pln>` compiles a single file into `dist/`.
 - Imports are bundled into each output, so every file in `dist/` runs
   standalone under Node.
 - Rebuilds are byte-identical — safe to commit, diff, and cache.
@@ -96,12 +96,6 @@ For projects that need custom output or source directories, add a
 }
 ```
 
-| Key         | Default                          | Meaning                                      |
-|-------------|----------------------------------|----------------------------------------------|
-| `outDir`    | `"dist"`                         | Build output directory                       |
-| `rootDir`   | `"src"` if it exists, else `"."` | Root that `plainscript build` scans for sources   |
-| `exclude`   | `["node_modules"]`               | Directories to skip during source discovery   |
-
 ### Publishing a library written in PlainScript
 
 ```json
@@ -112,11 +106,11 @@ For projects that need custom output or source directories, add a
         "build": "plainscript build",
         "prepare": "plainscript build"
     },
-    "devDependencies": { "plainscript-lang": "^1.0.1" }
+    "devDependencies": { "plainscript-lang": "^1.0.02" }
 }
 ```
 
-`src/index.ps` builds to `dist/index.js`; consumers install and `require()`
+`src/index.pln` builds to `dist/index.js`; consumers install and `require()`
 it like any Node package. There is no PlainScript-specific registry or format —
 standard `package.json` semantics apply.
 
@@ -127,9 +121,9 @@ standard `package.json` semantics apply.
 ### Variables
 
 ```plainscript
-remember name as "Ayokunle"
-remember age as 16
-age becomes 17
+let name is "Ayokunle"
+let age is 16
+age is now 17
 ```
 
 ### String Templates
@@ -137,11 +131,11 @@ age becomes 17
 Backtick-delimited strings preserve whitespace and support `${expression}` interpolation:
 
 ```plainscript
-remember name as "World"
-remember greeting as `Hello ${name}!`
-show greeting
+let name is "World"
+let greeting is `Hello ${name}!`
+print greeting
 
-remember email as `Dear ${customer},
+let email is `Dear ${customer},
 
 Thank you for your order #${orderId}.
 
@@ -155,18 +149,18 @@ Interpolation compiles directly to JavaScript template literals — it is not ev
 
 ```plainscript
 if age is at least 18
-    show "Adult"
+    print "Adult"
 otherwise
-    show "Teenager"
-done
+    print "Teenager"
+end
 
 if name contains "PlainScript"
-    show "Found it"
-done
+    print "Found it"
+end
 
 if score between 90 and 100
-    show "A grade"
-done
+    print "A grade"
+end
 ```
 
 All comparison operators:
@@ -189,40 +183,44 @@ All comparison operators:
 ### Functions
 
 ```plainscript
-make add(a, b)
-    give a + b
-done
-show add(5, 7)
+define add(a, b)
+    give back a + b
+end
+print add(5, 7)
+
+function multiply(x, y)
+    return x * y
+end
 ```
 
 ### Arrays & Objects
 
 ```plainscript
-remember players as ["Haaland", "Foden", "Rodri"]
-show players[0]
-players[1] becomes "Palmer"
+let players is ["Haaland", "Foden", "Rodri"]
+print players[0]
+players[1] is now "Palmer"
 
-remember user as
+let user is
     name is "Ayokunle"
     age is 17
-done
-show user.name
+end
+print user.name
 ```
 
 ### Loops
 
 ```plainscript
 for each player in players
-    show player
-done
+    print player
+end
 
 for every item in basket    // alias for "for each"
-    show item
-done
+    print item
+end
 
 while age is less than 18
-    age becomes age + 1
-done
+    age is now age + 1
+end
 ```
 
 ### PlainScript Expressions
@@ -232,12 +230,12 @@ Collections, properties, and files read like sentences.
 **Items**
 
 ```plainscript
-remember players as ["Haaland", "Foden", "Rodri"]
+let players is ["Haaland", "Foden", "Rodri"]
 
-show first player from players   // players[0]
-show last player from players    // players[players.length - 1]
-show player two from players     // players[1]
-first player from players becomes "Haaland"  // players[0] = "Haaland"
+print first player from players   // players[0]
+print last player from players    // players[players.length - 1]
+print player two from players     // players[1]
+first player from players is now "Haaland"  // players[0] = "Haaland"
 ```
 
 Number words from `one` to `twenty` map to one-based positions: `player one` is the first item.
@@ -245,21 +243,21 @@ Number words from `one` to `twenty` map to one-based positions: `player one` is 
 **Collections**
 
 ```plainscript
-show players length              // players.length
+print players length              // players.length
 add("Palmer" to players)         // players.push("Palmer")
 remove("Rodri" from players)     // players.splice(players.indexOf("Rodri"), 1)
 
 if players contains "Foden"      // players.includes("Foden")
-    show "Found"
-done
+    print "Found"
+end
 ```
 
 **Properties**
 
 ```plainscript
-show name of user                // user.name
-show city of address of customer // customer.address.city
-name of user becomes "Ayo"       // user.name = "Ayo"
+print name of user                // user.name
+print city of address of customer // customer.address.city
+name of user is now "Ayo"       // user.name = "Ayo"
 ```
 
 `of` chains right-to-left: `city of address of customer` reads the city of the address of the customer.
@@ -267,51 +265,35 @@ name of user becomes "Ayo"       // user.name = "Ayo"
 **Files**
 
 ```plainscript
-remember data as read("users.txt")   // fs.readFileSync("users.txt", 'utf8')
+let data is read("users.txt")   // fs.readFileSync("users.txt", 'utf8')
 write(data to "users.txt")           // fs.writeFileSync(data, "users.txt", 'utf8')
 ```
 
 The older `readFile()` / `writeFile()` forms still work and are unchanged.
 
-### JavaScript Gateway
-
-JavaScript blocks run raw JavaScript with full async support:
+### Logical Assignment
 
 ```plainscript
-remember response as javascript
-    const res = await fetch("https://api.example.com")
-    const data = await res.json()
-    return data
-done
-show response
+let flag is false
+flag or is now true
+print flag
+
+let val is null
+val nullish is now "default"
+print val
 ```
 
-`ask` reads a line of input from the terminal:
-
-```plainscript
-ask "What is your name?" as name
-show "Hello, " + name
-```
-
-Any npm package can be declared with `use`:
-
-```plainscript
-use axios
-use node-fetch
-use @scope/package-name
-```
-
-### TypeScript-parity capabilities (1.0.1)
+### TypeScript-parity capabilities (1.0.02)
 
 The full capability-gap audit lives in [`docs/CAPABILITY_GAP_AUDIT.md`](https://github.com/ayoistooslick/plainscript/blob/main/docs/CAPABILITY_GAP_AUDIT.md).
 These features close it in PlainScript's own grammar:
 
-- **Record kinds (classes):** `define a kind called "Person" with name is "" done`
+- **Record kinds (classes):** `define a kind called "Person" with name is "" end`
   + `create a Person with name "Ada" and age 17`. Plain-object instances; unknown
   fields throw.
 - **Concurrency:** `all of [...]`, `any of [...]`, `settled of [...]`,
   `withTimeout(promise, ms)`.
-- **Generators:** `yield` inside `make ... done`; consumed with `for each` or
+- **Generators:** `yield` inside `define ... end`; consumed with `for each` or
   `spread of`.
 - **Reflection:** `typeOf`, `fieldsOf`, `valueOf`, `hasField`, `sizeOf`.
 - **Binary:** `base64Encode/Decode`, `textToBytes/bytesToText`, `sha256/sha1/md5`.
@@ -322,7 +304,7 @@ These features close it in PlainScript's own grammar:
 - **Streams:** `writeLine`, `appendLine`.
 - **Collections:** `keyMap/mapSet/mapGet/mapHas/mapDelete`, `newSet/addToSet`.
 - **Dynamic modules:** `loadModule("./m")`.
-- **Native tests:** `test "name" ... done` with `check a equals b`,
+- **Native tests:** `test "name" ... end` with `check a equals b`,
   `check a contains b`, `check a is b`, `check <expr> raises "msg"`.
 - **Exports:** `export <name>`.
 
@@ -355,13 +337,13 @@ so data survives restarts either way.
 ### HTTP client
 
 ```plainscript
-remember r as get "https://api.example.com/users"
+let r is get "https://api.example.com/users"
 if ok of r
-    show status of r
-    show data of r
-done
+    print status of r
+    print data of r
+end
 
-remember created as post url with body
+let created is post url with body
     headers { accept: "application/json" }
     timeout 5000
 ```
@@ -374,12 +356,12 @@ awaits raw promises when you need it.
 ### Passwords and tokens (built-in auth)
 
 ```plainscript
-remember hash as hashPassword("correct horse")
+let hash is hashPassword("correct horse")
 if checkPassword(password of body of request, hash)
-    remember token as createToken(user, env("TOKEN_SECRET"), 3600)
-done
+    let token is createToken(user, env("TOKEN_SECRET"), 3600)
+end
 
-remember payload as readToken(token, env("TOKEN_SECRET"))
+let payload is readToken(token, env("TOKEN_SECRET"))
 ```
 
 `hashPassword`/`checkPassword` use scrypt; tokens are HMAC-signed with an
@@ -392,18 +374,18 @@ web app
 enable sessions "a-long-random-secret"
 
 route post "/login"
-    user of session of request becomes username of body of request
-    reply "welcome"
-done
+    user of session of request is username of body of request
+    print "welcome"
+end
 
 route get "/me"
-    reply user of session of request
-done
+    print user of session of request
+end
 
 route post "/logout"
     destroy session
-    reply "bye"
-done
+    print "bye"
+end
 ```
 
 Sessions ride an HMAC-signed `HttpOnly` cookie (`plainscript.sid`). The store is
@@ -415,10 +397,10 @@ in-memory: restarting the server signs everyone out.
 accept uploads limit "5 MB" allow ["image/png", "image/jpeg"] folder "uploads"
 
 route post "/scan"
-    remember file as upload("doc")
+    let file is upload("doc")
     ocr path of file as text
-    reply "scanned: " + text
-done
+    print "scanned: " + text
+end
 ```
 
 Files arrive as records with `name`, `type`, `size`, `data` (buffer) and
@@ -429,7 +411,7 @@ types 415. `uploads("docs")` returns every file under a field name.
 
 ```plainscript
 set cookie "theme" to "dark" expires in 7 days
-show cookie("theme")
+print cookie("theme")
 clear cookie "theme"
 ```
 
@@ -449,7 +431,7 @@ google oauth
     secret is env("GOOGLE_SECRET")
     callback is "https://myapp.dev/auth/google/callback"
     landing is "/dashboard"
-done
+end
 ```
 
 Registers `/auth/google` (redirect) and `/auth/google/callback`
@@ -461,24 +443,24 @@ user and the browser lands on `landing`.
 ```plainscript
 when nothing matches
     status 404
-    reply json
+    print json
         error is "No such road"
-    done
-done
+    end
+end
 ```
 
 ### Error handling and retries
 
 ```plainscript
 try
-    remember data as jsonDecode(raw)
+    let data is jsonDecode(raw)
 recover as err
-    show "bad json: " + message of err
-done
+    print "bad json: " + message of err
+end
 
 retry 3 times every 5 seconds
     wait for fetch("https://flaky.api")
-done
+end
 ```
 
 ---
@@ -516,15 +498,15 @@ No imports needed. These functions are built into the compiler:
 web app
 
 route "/"
-    reply "Hello from PlainScript!"
-done
+    print "Hello from PlainScript!"
+end
 
 route "/api/status"
-    reply json
+    print json
         status is "ok"
         version is "2.0"
-    done
-done
+    end
+end
 
 start 3000
 ```
@@ -538,15 +520,15 @@ database "app.db"
 
 execute
     CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)
-done
+end
 
 insert
     INSERT INTO users (name) VALUES ('Alice')
-done
+end
 
-remember rows as query
+let rows is query
     SELECT * FROM users
-done
+end
 ```
 
 ---
@@ -565,23 +547,23 @@ allow cors
 group "/api"
 
     route get "/users"
-        remember users as query
+        let users is query
             SELECT * FROM users
-        done
-        reply users
-    done
+        end
+        print users
+    end
 
     route post "/users"
-        remember missing as validate(body of request, ["name", "email"])
-        if length(missing) is greater than 0
+        let missing is validate(body of request, ["name", "email"])
+        if length of missing is greater than 0
             status 400
-            reply missing
+            print missing
         otherwise
-            reply "created"
-        done
-    done
+            print "created"
+        end
+    end
 
-done
+end
 
 start env("PORT")
 ```
@@ -599,8 +581,8 @@ database "app.db"                    // or: postgres env("DATABASE_URL")
 transaction
     insert
         INSERT INTO users (name) VALUES ({who})
-    done
-done
+    end
+end
 ```
 
 Placeholders `{likeThis}` bind to PlainScript variables. `postgres "..."` switches
@@ -614,28 +596,32 @@ mail transport
     port is 587
     user is env("EMAIL_USER")
     pass is env("EMAIL_PASS")
-done
+end
 
 send mail
     from is "hello@plainscript.dev"
     to is "you@example.com"
     subject is "Hello from PlainScript"
     text is "Sent from a PlainScript program."
-done
+end
 ```
 
 ### Cron and background jobs
 
 ```plainscript
 every 5 minutes
-    show "heartbeat"
-done
+    print "heartbeat"
+end
 
 schedule "0 2 * * *"
-    show "nightly cleanup"
-done
+    print "nightly cleanup"
+end
 
-run background resizeImage("photo.png")
+define resize(name)
+    print `resizing ${name}`
+end
+
+run background resize("photo.png")
 ```
 
 ### WebSocket servers
@@ -644,18 +630,18 @@ run background resizeImage("photo.png")
 websocket server on 8080
     when socket connects
         send socket "Welcome!"
-    done
+    end
     when socket sends message
         broadcast message
-    done
-done
+    end
+end
 ```
 
 ### Cache (Redis with in-memory fallback)
 
 ```plainscript
 cache env("REDIS_URL")          // omit for an in-memory Map store with TTL
-remember token as cacheGet("token")
+let token is cacheGet("token")
 cacheSet("greeting", "hi", 60)
 cacheDelete("greeting")
 ```
@@ -666,15 +652,15 @@ back to an in-memory store, so naive caching works out of the box.
 ### AI / ML
 
 ```plainscript
-remember reply as chat("gpt-4o-mini", [
+let reply is chat("gpt-4o-mini", [
     { role: "user", content: "Say hello in two words" }
 ])
 
-remember vec as embedText("text-embedding-3-small", "PlainScript rocks")
-remember score as similarity(vec, embedText("text-embedding-3-small", "I love PlainScript"))
+let vec is embedText("text-embedding-3-small", "PlainScript rocks")
+let score is similarity(vec, embedText("text-embedding-3-small", "I love PlainScript"))
 
-remember tags as ai_tags("PlainScript is an intent-oriented language")
-remember article as ai_post("Welcome to PlainScript", ["why IOPL", "quick start"])
+let tags is ai_tags("PlainScript is an intent-oriented language")
+let article is ai_post("Welcome to PlainScript", ["why IOPL", "quick start"])
 ```
 
 `chat` and `embedText` are async OpenAI-compatible calls (from `OPENAI_API_KEY`,
@@ -683,9 +669,9 @@ override with `options.apiKey`/`options.baseURL`); `similarity` returns -1..1.
 ### Pagination
 
 ```plainscript
-remember page as paginate(allUsers, 2, 10)
-show page.items          # second page of 10
-show page.hasNext        # true if another page exists
+let page is paginate(allUsers, 2, 10)
+print page.items          # second page of 10
+print page.hasNext        # true if another page exists
 ```
 
 `paginate(list, page, perPage)` returns
@@ -696,12 +682,12 @@ show page.hasNext        # true if another page exists
 ## Multi-file projects
 
 ```plainscript
-import "./math.ps"
-import "./utils.ps"
+import "./math.pln"
+import "./utils.pln"
 
-show PI
+print PI
 
-show double(5)
+print double(5)
 ```
 
 Imports are bundled per entry: `plainscript build` gives every source file its own
@@ -714,24 +700,24 @@ standalone output under `dist/`, with imported code inlined.
 ```plainscript
 use express
 
-remember app as express()
+let app is express()
 
 serve folder "public"
 
 when someone visits "/"
-    reply "Hello from PlainScript!"
-done
+    print "Hello from PlainScript!"
+end
 
 when someone visits "/api/status"
-    reply json
+    print json
         status is "ok"
         version is "0.3"
-    done
-done
+    end
+end
 
 listen on 3000
-    show "Server running at http://localhost:3000"
-done
+    print "Server running at http://localhost:3000"
+end
 ```
 
 ---
@@ -751,15 +737,15 @@ whatsapp bot
         log message                         // print the normalized record
 
         if message.text is "/start"
-            reply "Welcome!"
-        done
+            print "Welcome!"
+        end
 
         if message.text is "/help"
-            reply `Available commands:
+            print `Available commands:
 /start /help`
-        done
-    done
-done
+        end
+    end
+end
 ```
 
 - `login qr` prints a scannable QR code; `login pairing "<number>"` prints an
@@ -768,17 +754,17 @@ done
 - `login pairing` also accepts any value — prompt for the number
   at runtime instead of hard-coding it:
 
-  ```plainscript
-  ask "WhatsApp number: " as phone
+```plainscript
+ask "WhatsApp number: " as phone
 
-  whatsapp bot
-      auth "session"
-      login pairing phone
-  done
-  ```
+whatsapp bot
+    auth "session"
+    login pairing phone
+end
+```
 
 - Inside `on message`, `message` holds `{ text, chat, sender, name, id,
-  time, isGroup }`; `reply` answers the current chat.
+  time, isGroup }`; `print` answers the current chat.
 - The bot ignores its own messages and status broadcasts and keeps working in
   groups; transient disconnects reconnect after 3 seconds.
 
@@ -793,7 +779,7 @@ plainscript install           # Install all detected dependencies
 plainscript add express       # Add a package
 plainscript remove express    # Remove a package
 plainscript update            # Update all packages
-plainscript start             # Build src/app.ps and run its dist/ output
+plainscript start             # Build src/app.pln and run its dist/ output
 plainscript doctor            # Check project environment
 ```
 
@@ -836,27 +822,27 @@ plainscript/
 │   └── cli.js                — command-line entry point
 │
 ├── examples/
-│   ├── hello.ps
-│   ├── day2.ps
-│   ├── day3.ps
-│   ├── arrays.ps
-│   ├── objects.ps
-│   ├── loops.ps
-│   ├── expressions.ps
-│   ├── stdlib.ps
-│   ├── server.ps
-│   ├── web-app.ps
-│   ├── start.ps
-│   ├── database.ps
-│   ├── deployment.ps
+│   ├── hello.pln
+│   ├── day2.pln
+│   ├── day3.pln
+│   ├── arrays.pln
+│   ├── objects.pln
+│   ├── loops.pln
+│   ├── expressions.pln
+│   ├── stdlib.pln
+│   ├── server.pln
+│   ├── web-app.pln
+│   ├── start.pln
+│   ├── database.pln
+│   ├── deployment.pln
 │   ├── football-backend/     — acceptance example (SQLite + auth + sessions)
-│   │   └── app.ps
+│   │   └── app.pln
 │   ├── id-verification/      — acceptance example (uploads + OCR matching)
-│   │   ├── app.ps
+│   │   ├── app.pln
 │   │   └── make-sample-id.js
 │   └── whatsapp-bot/         — WhatsApp bots (QR and pairing linking)
-│       ├── qr.ps
-│       └── pairing.ps
+│       ├── qr.pln
+│       └── pairing.pln
 │
 ├── tests/
 │   ├── compiler.test.js      — language, CLI and formatter coverage
@@ -869,8 +855,12 @@ plainscript/
 │   └── acceptance.test.js    — boots the example projects over live HTTP
 │
 ├── docs/
-│   ├── PlainScript_SPEC.md
+│   ├── PLAINSCRIPT-SPEC.md
 │   └── index.html
+│
+├── editors/
+│   └── mt-manager/
+│       └── plainscript.mtsx    — MT Manager syntax highlighting
 │
 ├── package.json
 └── README.md

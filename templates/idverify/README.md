@@ -11,11 +11,11 @@ built-ins).
 templates/idverify/
 ├── package.json     # npm package; main → dist/index.js
 └── src/
-    ├── index.ps     # public entry: re-exports the SDK surface
-    ├── hash.ps      # SHA-256 fingerprinting / digest helpers
-    ├── mrz.ps       # machine-readable zone parsing
-    ├── verify.ps    # the verification workflow
-    └── demo.ps      # runnable demo
+    ├── index.pln     # public entry: re-exports the SDK surface
+    ├── hash.pln      # SHA-256 fingerprinting / digest helpers
+    ├── mrz.pln       # machine-readable zone parsing
+    ├── verify.pln    # the verification workflow
+    └── demo.pln      # runnable demo
 ```
 
 ## Run it
@@ -23,12 +23,12 @@ templates/idverify/
 ```bash
 npm install --save-dev plainscript-lang   # install the compiler
 plainscript build                    # src/ → dist/
-plainscript run src/demo.ps          # run the demo
+plainscript run src/demo.pln          # run the demo
 node -e "console.log(require('./dist/index.js').verifyDocument({ holder: 'ADA LOVELACE' }))"
 ```
 
-`plainscript build` (no argument) compiles every `.ps` under `src/` to `dist/`.
-Every top-level `make` function is exported from the built file, so consumers
+`plainscript build` (no argument) compiles every `.pln` under `src/` to `dist/`.
+Every top-level `define` function is exported from the built file, so consumers
 `require('idverify')` it like any Node package.
 
 ## Example output

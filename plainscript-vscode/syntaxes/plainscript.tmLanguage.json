@@ -2,7 +2,7 @@
     "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     "name": "PlainScript",
     "scopeName": "source.plainscript",
-    "fileTypes": [".ps"],
+    "fileTypes": [".pln"],
     "patterns": [
         { "include": "#comments" },
         { "include": "#strings" },
@@ -34,10 +34,6 @@
                 {
                     "name": "constant.character.escape.plainscript",
                     "match": "\\\\."
-                },
-                {
-                    "name": "meta.embedded.line.plainscript",
-                    "match": "\\$\\{[^}]*\\}"
                 }
             ]
         },
@@ -64,15 +60,19 @@
             "patterns": [
                 {
                     "name": "keyword.control.plainscript",
-                    "match": "\\b(if|otherwise|done|for|each|every|in|while|when|listen|javascript|ask|ocr|try|recover|retry|times|wait|enable|destroy|accept|require|using)\\b"
+                    "match": "\\b(if|otherwise|for|each|every|in|while|when|listen|try|recover|retry|times|wait|enable|destroy|accept|require|using|end)\\b"
                 },
                 {
                     "name": "keyword.declaration.plainscript",
-                    "match": "\\b(remember|make|use|import)\\b"
+                    "match": "\\b(let|define|function|use|import|export|database|web|bot|whatsapp)\\b"
+                },
+                {
+                    "name": "keyword.operator.assignment.plainscript",
+                    "match": "\\b(is now|set to|change to|give back|return)\\b"
                 },
                 {
                     "name": "keyword.operator.plainscript",
-                    "match": "\\b(becomes|as|give|show|reply|serve|note|print|broadcast)\\b"
+                    "match": "\\b(as|give|reply|serve|note|print|broadcast|log|ask|ocr|send|load|run|test|check|spread|yield|merge|create|kind|called)\\b"
                 },
                 {
                     "name": "keyword.operator.comparison.plainscript",
@@ -80,23 +80,23 @@
                 },
                 {
                     "name": "keyword.other.web.plainscript",
-                    "match": "\\b(web|app|route|start|group|allow|cors|validate|status|param|nothing|matches)\\b"
+                    "match": "\\b(app|route|start|group|allow|cors|validate|status|param|nothing|matches|redirect|folder)\\b"
                 },
                 {
                     "name": "keyword.other.database.plainscript",
-                    "match": "\\b(database|query|insert|update|delete|execute)\\b"
+                    "match": "\\b(query|insert|update|delete|execute|transaction|postgres|native|wasm)\\b"
                 },
                 {
                     "name": "keyword.other.backend.plainscript",
-                    "match": "\\b(sessions|session|uploads|limit|requests|api|key|google|oauth|cookie|expires|native|wasm|postgres|schedule|background|websocket|socket|connects|disconnects|mail|transport|headers|timeout)\\b"
+                    "match": "\\b(sessions|session|uploads|limit|requests|api|key|google|oauth|cookie|expires|schedule|background|websocket|socket|connects|disconnects|mail|transport|headers|timeout|cache|redis|database)\\b"
                 },
                 {
                     "name": "keyword.other.plainscript",
-                    "match": "\\b(someone|visits|sends|clicks|matching|on|folder|json)\\b"
+                    "match": "\\b(someone|visits|sends|clicks|matching|on|json|done|get|post|put|patch|use)\\b"
                 },
                 {
                     "name": "support.function.stdlib.plainscript",
-                    "match": "\\b(length|uppercase|lowercase|trim|replace|split|join|number|text|floor|ceiling|random|round|sort|reverse|unique|sum|smallest|largest|keys|values|hasKey|merge|sqlite|print|readFile|writeFile|appendFile|fileExists|copyFile|moveFile|deleteFile|makeFolder|deleteFolder|listFolder|readBytes|writeBytes|read|write|sleep|time|date|jsonEncode|jsonDecode|env|exit|uuid|cacheGet|cacheSet|cacheDelete|hashPassword|checkPassword|createToken|readToken|validate|param|query|header|upload|uploads|cookie|bot|sendMessage|sendPhoto|getChat|getMyChats|editMessage)(?=\\s*\\()"
+                    "match": "\\b(length|uppercase|lowercase|trim|replace|split|join|number|text|floor|ceiling|random|round|sort|reverse|unique|sum|smallest|largest|keys|values|hasKey|merge|readFile|writeFile|appendFile|fileExists|copyFile|moveFile|deleteFile|makeFolder|deleteFolder|listFolder|readBytes|writeBytes|read|write|sleep|time|date|jsonEncode|jsonDecode|env|exit|uuid|cacheGet|cacheSet|cacheDelete|hashPassword|checkPassword|createToken|readToken|validate|param|query|header|upload|uploads|cookie|sendMessage|sendPhoto|getChat|getMyChats|editMessage|paginate|chat|embedText|similarity|ai_tags|ai_post|typeOf|fieldsOf|valueOf|hasField|sizeOf|base64Encode|base64Decode|textToBytes|bytesToText|sha256|sha1|md5|yamlDecode|yamlEncode|loadModule|runCommand|args|fileSize|fileType|lastModified|walkFolder|joinPath|baseName|folderOf|extensionOf|writeLine|appendLine|keyMap|mapSet|mapGet|mapHas|mapDelete|newSet|addToSet|removeFromSet|setHas|unique|spread|allOf|anyOf|settledOf|withTimeout|range|clamp|first|last|flatten|includes|pick|omit|groupBy|startsWith|endsWith|truncate|padStart|padEnd|loadEnvFile|newDate|now|nowSec|year|month|day|hours|minutes|seconds|toISO|toLocaleDate|toLocaleTime|toUTC|formatDate|addTime|subTime|diffTime|startOfDay|endOfDay|startOfMonth|endOfMonth|startOfYear|endOfYear|parseDate|regex|regexMatch|regexMatchAll|replaceRegex|splitRegex|coalesce)(?=\\s*\\()"
                 },
                 {
                     "name": "constant.language.plainscript",
@@ -135,8 +135,8 @@
         "function-names": {
             "patterns": [
                 {
-                    "comment": "Function declaration: make name(...)",
-                    "match": "(?<=\\bmake\\s+)(\\w+)(?=\\s*\\()",
+                    "comment": "Function declaration: define name(...)",
+                    "match": "(?<=\\bdefine\\s+)(\\w+)(?=\\s*\\()",
                     "name": "entity.name.function.plainscript"
                 },
                 {

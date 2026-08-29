@@ -1,0 +1,15 @@
+// PlainScript v1.0.02 — Record kinds (classes)
+
+define a kind called "Person" with
+    name is ""
+    age is 0
+    country is "Unknown"
+done
+
+remember ada as create a Person with name "Ada" and age 17
+show name of ada
+show ada.age
+show ada.country
+
+ada.age becomes 18
+show ada.age

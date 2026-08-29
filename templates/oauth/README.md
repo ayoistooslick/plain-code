@@ -11,11 +11,11 @@ No runtime npm packages required (only Node built-ins).
 templates/oauth/
 ├── package.json     # npm package; main → dist/index.js
 └── src/
-    ├── index.ps     # public entry: re-exports the whole SDK surface
-    ├── crypto.ps    # token/state primitives (HS256 JWT via built-ins)
-    ├── providers.ps # provider registry (google, github, ...)
-    ├── oauth.ps     # buildAuthUrl / exchangeCode flow
-    └── demo.ps      # runnable demo
+    ├── index.pln     # public entry: re-exports the whole SDK surface
+    ├── crypto.pln    # token/state primitives (HS256 JWT via built-ins)
+    ├── providers.pln # provider registry (google, github, ...)
+    ├── oauth.pln     # buildAuthUrl / exchangeCode flow
+    └── demo.pln      # runnable demo
 ```
 
 ## Run it
@@ -23,12 +23,12 @@ templates/oauth/
 ```bash
 npm install --save-dev plainscript-lang   # install the compiler
 plainscript build                    # src/ → dist/
-plainscript run src/demo.ps          # run the demo
+plainscript run src/demo.pln          # run the demo
 node -e "console.log(require('./dist/index.js').buildAuthUrl('github', 'ID', 'https://app.dev/cb', 'st8'))"
 ```
 
-`plainscript build` (no argument) compiles every `.ps` under `src/` to `dist/`.
-Every top-level `make` function is exported from the built file, so consumers
+`plainscript build` (no argument) compiles every `.pln` under `src/` to `dist/`.
+Every top-level `define` function is exported from the built file, so consumers
 `require('oauth')` it like any Node package.
 
 ## Example output

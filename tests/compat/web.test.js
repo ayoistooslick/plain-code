@@ -14,7 +14,7 @@ route "/api/status"
 done
 start 0
 `;
-  write(dir, 'app.ps', app);
+  write(dir, 'app.pln', app);
   const r = checkDir(dir);
   assert(r.ok, `web app should validate:\n${JSON.stringify(r)}`);
 });
@@ -28,7 +28,7 @@ route get "/"
 done
 start 0
 `;
-  write(dir, 'app.ps', app);
+  write(dir, 'app.pln', app);
   const r = checkDir(dir);
   assert(r.ok, `web app should validate:\n${JSON.stringify(r)}`);
   const names = (r.deps || []).map((d) => d.package);

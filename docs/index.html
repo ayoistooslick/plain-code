@@ -35,7 +35,7 @@
       <a href="#" class="nav-logo">
         <img src="logo.jpg" alt="PlainScript Logo">
         <span class="logo-word">PlainScript</span>
-        <span class="logo-ver">v1.0.1</span>
+        <span class="logo-ver">v1.0.02</span>
       </a>
       <div class="nav-links">
         <a href="#language">Language</a>
@@ -85,7 +85,7 @@
   <!-- Hero Section -->
   <section class="hero">
     <div class="hero-content">
-      <div class="hero-badge">v1.0.1 — intent-oriented, TypeScript-capable</div>
+      <div class="hero-badge">v1.0.02 — intent-oriented, TypeScript-capable</div>
       <h1 class="hero-title">
         Write code that<br>
         reads like <span class="green">Plain English</span>
@@ -105,7 +105,7 @@
               <span class="dot yellow"></span>
               <span class="dot green"></span>
             </div>
-            <span class="code-window-title">app.ps</span>
+            <span class="code-window-title">app.pln</span>
             <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
           </div>
           <div class="code-window-body">
@@ -114,7 +114,7 @@ route get "/"
   reply "Hello, World!"
 done
 
-show "Server is running"</code></pre>
+print "Server is running"</code></pre>
           </div>
         </div>
         <div class="code-window">
@@ -238,16 +238,16 @@ console.log("Server is running");</code></pre>
             <div class="code-window-body">
               <pre><code>web app
 route get "/"
-  reply "Hello, World!"
+  print "Hello, World!"
 done
 
 route get "/users"
-  reply json
+  print json
     count is 3
-  done
-done
+  end
+end
 
-show "Server running on port 3000"</code></pre>
+print "Server running on port 3000"</code></pre>
             </div>
           </div>
           <div class="code-window">
@@ -299,13 +299,13 @@ app.listen(3000, () => {
             <div class="code-window-body">
               <pre><code>database "app.db"
 
-remember results as query
-SELECT * FROM users WHERE active = 1
-done
+let results is query
+  SELECT * FROM users WHERE active = 1
+end
 
 for each user in results
-  show user.name
-done</code></pre>
+  print user.name
+end</code></pre>
             </div>
           </div>
           <div class="code-window">
@@ -349,7 +349,7 @@ results.forEach((user) => {
             <h3 class="step-title">Install</h3>
             <div class="code-block">
               <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
-              <pre><code>npm install -g plainscript-lang</code></pre>
+              <pre><code>npm install --save-dev plainscript-lang</code></pre>
             </div>
           </div>
         </div>
@@ -361,7 +361,7 @@ results.forEach((user) => {
               <button class="code-copy" aria-label="Copy code"><i class="far fa-copy"></i></button>
               <pre><code>plainscript new my-app</code></pre>
             </div>
-            <p class="step-note">Then write your code in <code>src/app.ps</code></p>
+            <p class="step-note">Then write your code in <code>src/app.pln</code></p>
           </div>
         </div>
         <div class="quickstart-step">
@@ -378,7 +378,7 @@ results.forEach((user) => {
     </div>
   </section>
 
-  <!-- CLI Section -->
+<!-- CLI Section -->
   <section id="cli" class="section section--alt">
     <div class="container">
       <div class="section-tag">Command Line</div>
@@ -393,7 +393,7 @@ results.forEach((user) => {
           <div class="cli-desc">Build and execute your application in one step.</div>
         </div>
         <div class="cli-item">
-          <div class="cli-cmd">plainscript new &lt;name&gt;</div>
+          <div class="cli-cmd">plainscript new <name></div>
           <div class="cli-desc">Scaffold a new PlainScript project with defaults.</div>
         </div>
         <div class="cli-item">
@@ -401,36 +401,40 @@ results.forEach((user) => {
           <div class="cli-desc">Auto-format all PlainScript files in your project.</div>
         </div>
         <div class="cli-item">
+          <div class="cli-cmd">plainscript check</div>
+          <div class="cli-desc">Syntax check your code without emitting output.</div>
+        </div>
+        <div class="cli-item">
           <div class="cli-cmd">plainscript doctor</div>
           <div class="cli-desc">Diagnose issues with your PlainScript installation.</div>
         </div>
         <div class="cli-item">
-          <div class="cli-cmd">plainscript check</div>
-          <div class="cli-desc">Type-check your code without emitting output.</div>
+          <div class="cli-cmd">plainscript install</div>
+          <div class="cli-desc">Install all detected dependencies.</div>
         </div>
         <div class="cli-item">
-          <div class="cli-cmd">plainscript init</div>
-          <div class="cli-desc">Initialize a plainscript.config.js in the current directory.</div>
+          <div class="cli-cmd">plainscript start</div>
+          <div class="cli-desc">Build src/app.pln and run its dist/ output.</div>
         </div>
         <div class="cli-item">
-          <div class="cli-cmd">plainscript watch</div>
-          <div class="cli-desc">Watch for file changes and recompile automatically.</div>
+          <div class="cli-cmd">plainscript add <pkg></div>
+          <div class="cli-desc">Add a package to your project.</div>
         </div>
         <div class="cli-item">
-          <div class="cli-cmd">plainscript clean</div>
-          <div class="cli-desc">Remove all compiled output and build artifacts.</div>
+          <div class="cli-cmd">plainscript remove <pkg></div>
+          <div class="cli-desc">Remove a package from your project.</div>
         </div>
         <div class="cli-item">
-          <div class="cli-cmd">plainscript info</div>
-          <div class="cli-desc">Display version, platform, and runtime information.</div>
+          <div class="cli-cmd">plainscript update</div>
+          <div class="cli-desc">Update all installed npm packages.</div>
         </div>
         <div class="cli-item">
-          <div class="cli-cmd">plainscript test</div>
-          <div class="cli-desc">Run your PlainScript test suite.</div>
+          <div class="cli-cmd">plainscript version</div>
+          <div class="cli-desc">Print the compiler version.</div>
         </div>
         <div class="cli-item">
-          <div class="cli-cmd">plainscript repl</div>
-          <div class="cli-desc">Launch the interactive PlainScript REPL shell.</div>
+          <div class="cli-cmd">plainscript help</div>
+          <div class="cli-desc">Print help text.</div>
         </div>
       </div>
     </div>
@@ -607,7 +611,7 @@ use dotenv</code></pre>
       </div>
       <div class="footer-bottom">
         <p>&copy; 2026 PlainScript. Built by Ayokunle.</p>
-        <span class="footer-badge">v1.0.1</span>
+        <span class="footer-badge">v1.0.02</span>
       </div>
     </div>
   </footer>

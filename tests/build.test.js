@@ -75,7 +75,7 @@ function write(dir, rel, content) {
 
 test('src: without src/ the project root is scanned and output goes to dist/', () => {
   const dir = tmpDir();
-  write(dir, 'messi.ps', 'show "goal"\n');
+  write(dir, 'messi.pln', 'show "goal"\n');
   const out = runCli(['build'], dir);
   assert(fs.existsSync(path.join(dir, 'dist', 'messi.js')),
     `expected dist/messi.js, got output:\n${out}`);
@@ -83,37 +83,37 @@ test('src: without src/ the project root is scanned and output goes to dist/', (
 
 test('src: an existing src/ folder becomes the source root automatically', () => {
   const dir = tmpDir();
-  write(dir, 'src/index.ps', 'show "src entry"\n');
-  write(dir, 'stray.ps', 'show "outside src"\n');
+  write(dir, 'src/index.pln', 'show "src entry"\n');
+  write(dir, 'stray.pln', 'show "outside src"\n');
   runCli(['build'], dir);
-  assert(fs.existsSync(path.join(dir, 'dist', 'index.js')), 'src/index.ps must build to dist/index.js');
+  assert(fs.existsSync(path.join(dir, 'dist', 'index.js')), 'src/index.pln must build to dist/index.js');
   assert(!fs.existsSync(path.join(dir, 'dist', 'stray.js')), 'files outside src/ must not be compiled');
 });
 
 test('src: multiple files under src/ are all compiled to dist/', () => {
   const dir = tmpDir();
-  write(dir, 'src/a.ps', 'show "a"\n');
-  write(dir, 'src/b.ps', 'show "b"\n');
+  write(dir, 'src/a.pln', 'show "a"\n');
+  write(dir, 'src/b.pln', 'show "b"\n');
   const out = runCli(['build'], dir);
-  assert(fs.existsSync(path.join(dir, 'dist', 'a.js')), 'src/a.ps must build to dist/a.js');
-  assert(fs.existsSync(path.join(dir, 'dist', 'b.js')), 'src/b.ps must build to dist/b.js');
+  assert(fs.existsSync(path.join(dir, 'dist', 'a.js')), 'src/a.pln must build to dist/a.js');
+  assert(fs.existsSync(path.join(dir, 'dist', 'b.js')), 'src/b.pln must build to dist/b.js');
   assert(out.includes('2 file(s) compiled'), `expected 2-file summary, got:\n${out}`);
 });
 
 test('src: subdirectories under src/ are mirrored into dist/', () => {
   const dir = tmpDir();
-  write(dir, 'src/lib/utils/helper.ps', 'show "helper"\n');
+  write(dir, 'src/lib/utils/helper.pln', 'show "helper"\n');
   runCli(['build'], dir);
   assert(fs.existsSync(path.join(dir, 'dist', 'lib', 'utils', 'helper.js')),
     'expected dist/lib/utils/helper.js');
 });
 
-test('src: entry is src/app.ps by default for start', () => {
+test('src: entry is src/app.pln by default for start', () => {
   const dir = tmpDir();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'app.ps'), 'show "custom-entry"\n');
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), 'show "custom-entry"\n');
   const out = runCli(['start'], dir);
-  assert(out.includes('custom-entry'), `start must execute src/app.ps, got:\n${out}`);
+  assert(out.includes('custom-entry'), `start must execute src/app.pln, got:\n${out}`);
 });
 
 // ── plainscript.config.json overrides ─────────────────────────────────────────────
@@ -121,7 +121,7 @@ test('src: entry is src/app.ps by default for start', () => {
 test('config: outDir override redirects build output', () => {
   const dir = tmpDir();
   write(dir, 'plainscript.config.json', JSON.stringify({ compilerOptions: { outDir: './build' } }));
-  write(dir, 'src/app.ps', 'show "ok"\n');
+  write(dir, 'src/app.pln', 'show "ok"\n');
   runCli(['build'], dir);
   assert(fs.existsSync(path.join(dir, 'build', 'app.js')), 'expected build/app.js');
   assert(!fs.existsSync(path.join(dir, 'dist', 'app.js')), 'default dist/ must not appear when outDir is overridden');
@@ -130,8 +130,8 @@ test('config: outDir override redirects build output', () => {
 test('config: rootDir override changes source discovery root', () => {
   const dir = tmpDir();
   write(dir, 'plainscript.config.json', JSON.stringify({ compilerOptions: { rootDir: './lib' } }));
-  write(dir, 'lib/core.ps', 'show "core"\n');
-  write(dir, 'src/other.ps', 'show "other"\n');
+  write(dir, 'lib/core.pln', 'show "core"\n');
+  write(dir, 'src/other.pln', 'show "other"\n');
   runCli(['build'], dir);
   assert(fs.existsSync(path.join(dir, 'dist', 'core.js')), 'expected dist/core.js from lib/ sources');
   assert(!fs.existsSync(path.join(dir, 'dist', 'other.js')), 'files outside rootDir must not compile');
@@ -140,17 +140,17 @@ test('config: rootDir override changes source discovery root', () => {
 test('config: exclude skips named directories', () => {
   const dir = tmpDir();
   write(dir, 'plainscript.config.json', JSON.stringify({ compilerOptions: { exclude: ['vendor'] } }));
-  write(dir, 'src/app.ps', 'show "app"\n');
-  write(dir, 'src/vendor/old.ps', 'show "old"\n');
+  write(dir, 'src/app.pln', 'show "app"\n');
+  write(dir, 'src/vendor/old.pln', 'show "old"\n');
   runCli(['build'], dir);
-  assert(fs.existsSync(path.join(dir, 'dist', 'app.js')), 'src/app.ps must compile');
+  assert(fs.existsSync(path.join(dir, 'dist', 'app.js')), 'src/app.pln must compile');
   assert(!fs.existsSync(path.join(dir, 'dist', 'vendor', 'old.js')), 'excluded directory must not compile');
 });
 
 test('config: combined outDir + rootDir overrides', () => {
   const dir = tmpDir();
   write(dir, 'plainscript.config.json', JSON.stringify({ compilerOptions: { outDir: './build', rootDir: './lib' } }));
-  write(dir, 'lib/app.ps', 'show "from-lib"\n');
+  write(dir, 'lib/app.pln', 'show "from-lib"\n');
   runCli(['build'], dir);
   assert(fs.existsSync(path.join(dir, 'build', 'app.js')), 'expected build/app.js');
 });
@@ -158,16 +158,16 @@ test('config: combined outDir + rootDir overrides', () => {
 test('config: start uses rootDir and outDir from config', () => {
   const dir = tmpDir();
   write(dir, 'plainscript.config.json', JSON.stringify({ compilerOptions: { rootDir: './app', outDir: './build' } }));
-  write(dir, 'app/index.ps', 'show "config-start"\n');
+  write(dir, 'app/index.pln', 'show "config-start"\n');
   const out = runCli(['start'], dir);
   assert(out.includes('config-start'), `start must use config rootDir, got:\n${out}`);
 });
 
 // ── Build model behaviour ────────────────────────────────────────────────────
 
-test('build: source filenames are preserved (messi.ps -> dist/messi.js)', () => {
+test('build: source filenames are preserved (messi.pln -> dist/messi.js)', () => {
   const dir = tmpDir();
-  write(dir, 'messi.ps', 'remember club as "inter miami"\nshow club\n');
+  write(dir, 'messi.pln', 'remember club as "inter miami"\nshow club\n');
   runCli(['build'], dir);
   const js = fs.readFileSync(path.join(dir, 'dist', 'messi.js'), 'utf8');
   assert(js.includes('let club = "inter miami"'), 'generated JS must match the source program');
@@ -177,30 +177,30 @@ test('build: source filenames are preserved (messi.ps -> dist/messi.js)', () => 
 
 test('build: directory structure under the source root is preserved', () => {
   const dir = tmpDir();
-  write(dir, 'src/a/b/deep.ps', 'show "deep"\n');
+  write(dir, 'src/a/b/deep.pln', 'show "deep"\n');
   runCli(['build'], dir);
   assert(fs.existsSync(path.join(dir, 'dist', 'a', 'b', 'deep.js')), 'expected dist/a/b/deep.js');
 });
 
 test('build: never writes dist/index.js for a differently named source', () => {
   const dir = tmpDir();
-  write(dir, 'messi.ps', 'show "goal"\n');
+  write(dir, 'messi.pln', 'show "goal"\n');
   runCli(['build'], dir);
   assert(!fs.existsSync(path.join(dir, 'dist', 'index.js')), 'output name must follow the source name');
 });
 
 test('build: an explicit file argument builds just that file into dist/', () => {
   const dir = tmpDir();
-  write(dir, 'one.ps', 'show "one"\n');
-  write(dir, 'two.ps', 'show "two"\n');
-  runCli(['build', 'two.ps'], dir);
+  write(dir, 'one.pln', 'show "one"\n');
+  write(dir, 'two.pln', 'show "two"\n');
+  runCli(['build', 'two.pln'], dir);
   assert(fs.existsSync(path.join(dir, 'dist', 'two.js')), 'expected dist/two.js');
   assert(!fs.existsSync(path.join(dir, 'dist', 'one.js')), 'other sources must stay unbuilt');
 });
 
 test('build: compilation is deterministic (identical bytes across rebuilds)', () => {
   const dir = tmpDir();
-  write(dir, 'det.ps', 'remember n as 7\nshow n\n');
+  write(dir, 'det.pln', 'remember n as 7\nshow n\n');
   runCli(['build'], dir);
   const first = fs.readFileSync(path.join(dir, 'dist', 'det.js'), 'utf8');
   fs.rmSync(path.join(dir, 'dist'), { recursive: true, force: true });
@@ -211,19 +211,19 @@ test('build: compilation is deterministic (identical bytes across rebuilds)', ()
 
 test('build: node_modules and hidden directories are never scanned', () => {
   const dir = tmpDir();
-  write(dir, 'keep.ps', 'show "kept"\n');
+  write(dir, 'keep.pln', 'show "kept"\n');
   write(dir, 'node_modules', 'junk', 'junk.js', 'not-plainscript');
-  write(dir, 'node_modules', 'junk', 'fake.ps', 'show "should not compile"');
-  write(dir, '.hidden', 'secret.ps', 'show "should not compile"');
+  write(dir, 'node_modules', 'junk', 'fake.pln', 'show "should not compile"');
+  write(dir, '.hidden', 'secret.pln', 'show "should not compile"');
   const out = runCli(['build'], dir);
-  assert(!out.includes('fake.ps') && !out.includes('secret.ps'), `excluded dirs leaked into the build:\n${out}`);
+  assert(!out.includes('fake.pln') && !out.includes('secret.pln'), `excluded dirs leaked into the build:\n${out}`);
   assert(!fs.existsSync(path.join(dir, 'dist', 'fake.js')), 'node_modules must not be compiled');
   assert(!fs.existsSync(path.join(dir, 'dist', 'secret.js')), 'hidden dirs must not be compiled');
 });
 
 test('build: a stale dist is not re-scanned as source', () => {
   const dir = tmpDir();
-  write(dir, 'loop.ps', 'show "v1"\n');
+  write(dir, 'loop.pln', 'show "v1"\n');
   runCli(['build'], dir);
   const out = runCli(['build'], dir);
   assert(out.includes('1 file(s) compiled'), `dist/ contents leaked into discovery:\n${out}`);
@@ -232,16 +232,16 @@ test('build: a stale dist is not re-scanned as source', () => {
 test('build: with no sources at all the CLI teaches instead of crashing', () => {
   const dir = tmpDir();
   const out = runCli(['build'], dir);
-  assert(out.toLowerCase().includes('no .ps files found'), `expected a teaching error, got:\n${out}`);
+  assert(out.toLowerCase().includes('no .pln files found'), `expected a teaching error, got:\n${out}`);
 });
 
 // ── Run model: scratch execution, nothing left in the project ────────────────
 
 test('run: executes correctly and leaves zero files behind in the project', () => {
   const dir = tmpDir();
-  write(dir, 'go.ps', 'show "ran fine"\n');
+  write(dir, 'go.pln', 'show "ran fine"\n');
   const before = fs.readdirSync(dir).sort().join(',');
-  const out = runCli(['run', 'go.ps'], dir);
+  const out = runCli(['run', 'go.pln'], dir);
   assert(out.includes('ran fine'), `program did not run:\n${out}`);
   assert(out.includes('Done.'), `expected completion marker:\n${out}`);
   const after = fs.readdirSync(dir).sort().join(',');
@@ -262,14 +262,14 @@ function writeLocalPackage(projectDir, pkgName, mainSrc) {
 test('run: requires resolve against project node_modules even from the scratch dir', () => {
   const dir = tmpDir();
   writeLocalPackage(dir, 'fakerunpkg', 'module.exports = "resolved-ok"');
-  write(dir, 'app.ps', 'use fakerunpkg\nshow fakerunpkg\n');
-  const out = runCli(['run', 'app.ps'], dir);
+  write(dir, 'app.pln', 'use fakerunpkg\nshow fakerunpkg\n');
+  const out = runCli(['run', 'app.pln'], dir);
   assert(out.includes('resolved-ok'), `NODE_PATH resolution failed:\n${out}`);
 });
 
-test('start: builds src/app.ps into dist and executes that output', () => {
+test('start: builds src/app.pln into dist and executes that output', () => {
   const dir = tmpDir();
-  write(dir, path.join('src', 'app.ps'), 'show "started-from-dist"\n');
+  write(dir, path.join('src', 'app.pln'), 'show "started-from-dist"\n');
   const out = runCli(['start'], dir);
   assert(out.includes('started-from-dist'), `start did not execute:\n${out}`);
   assert(fs.existsSync(path.join(dir, 'dist', 'app.js')), 'start must persist the built output in dist/');
@@ -280,12 +280,12 @@ test('start: builds src/app.ps into dist and executes that output', () => {
 test('integration: a multi-file project imports are bundled and the dist output runs standalone', () => {
   const dir = tmpDir();
   // Use only core statements so no packages are needed.
-  write(dir, path.join('src', 'index.ps'), [
-    'import "./helpers/greet.ps"',
+  write(dir, path.join('src', 'index.pln'), [
+    'import "./helpers/greet.pln"',
     '',
     'greet("PlainScript")',
   ].join('\n'));
-  write(dir, path.join('src', 'helpers', 'greet.ps'), [
+  write(dir, path.join('src', 'helpers', 'greet.pln'), [
     'make greet(who)',
     '    show `Hello ${who}`',
     'done',
@@ -301,16 +301,16 @@ test('integration: a multi-file project imports are bundled and the dist output 
 
 // ── Integration: npm-package-style project ───────────────────────────────────
 
-test('integration: an npm-package-style project builds src/index.ps -> dist/index.js consumable by Node', () => {
+test('integration: an npm-package-style project builds src/index.pln -> dist/index.js consumable by Node', () => {
   const dir = tmpDir();
   write(dir, 'package.json', JSON.stringify({
     name: 'my-plainscript-package',
-    version: '1.0.1',
+    version: '1.0.02',
     main: 'dist/index.js',
     scripts: { build: 'plainscript build' },
     devDependencies: { plainscript: '^0.1.7' },
   }, null, 2));
-  write(dir, path.join('src', 'index.ps'), [
+  write(dir, path.join('src', 'index.pln'), [
     'remember greeting as "published"',
     'show `package says ${greeting}`',
   ].join('\n'));
