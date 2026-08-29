@@ -70,7 +70,7 @@ const TOKEN = {
   BETWEEN:     'BETWEEN',
   AND:         'AND',
   OR:          'OR',          // v2.1.1 — logical or in conditions
-  INSTANCEOF:  'INSTANCEOF',  // v1.0.02 — instanceof condition
+  INSTANCEOF:  'INSTANCEOF',  // v1.0.2 — instanceof condition
   // v0.6 — Express DX
   WEB:         'WEB',
   ROUTE_KW:    'ROUTE_KW',

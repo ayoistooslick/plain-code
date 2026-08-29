@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — Reflection, hashing and tokens
+// PlainScript v1.0.2 — Reflection, hashing and tokens
 
 remember user as
     name is "Ada"

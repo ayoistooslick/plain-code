@@ -3,7 +3,7 @@
 > **Purpose:** This file is a coding guide. If you are an AI (or a human) asked
 > to write PlainScript source, read this file — it teaches you **how to code in
 > PlainScript**. It documents the language, the CLI, and the project model
-> **exactly as implemented in the `plainscript-lang` npm package v1.0.02**. Every
+> **exactly as implemented in the `plainscript-lang` npm package v1.0.2**. Every
 > example below was verified against the real compiler.
 >
 > **Resources:**
@@ -117,7 +117,7 @@ All commands also work through `npx` and npm scripts.
 | `plainscript remove <pkg>`     | Uninstall a package from the project                              |
 | `plainscript update`           | `npm update` for all installed packages                           |
 | `plainscript doctor`           | Environment + project health report                               |
-| `plainscript version`          | Print `PlainScript v1.0.02`                                               |
+| `plainscript version`          | Print `PlainScript v1.0.2`                                               |
 | `plainscript help`             | Command reference                                                 |
 
 ### Build semantics (the important one)
@@ -839,14 +839,14 @@ before publishing:
 ```json
 {
     "name": "greet-pkg",
-    "version": "1.0.02",
+    "version": "1.0.2",
     "main": "dist/index.js",
     "scripts": {
         "build": "plainscript build",
         "prepare": "plainscript build"
     },
     "devDependencies": {
-        "plainscript-lang": "^1.0.02"
+        "plainscript-lang": "^1.0.2"
     }
 }
 ```
@@ -900,7 +900,7 @@ include suggestions ("Did you mean ...") — trust them.
 
 ---
 
-## 19. 1.0.02: TypeScript-parity capabilities
+## 19. 1.0.2: TypeScript-parity capabilities
 
 These complete the capability-gap audit (`docs/CAPABILITY_GAP_AUDIT.md`). They are
 IOPL-native — PlainScript grammar, not TypeScript syntax.
@@ -982,7 +982,7 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
 ## 20. Copy-paste prompt for your AI
 
 > You are writing PlainScript (`.pln`) source that compiles with the `plainscript`
-> compiler v1.0.02. Follow these rules strictly:
+> compiler v1.0.2. Follow these rules strictly:
 >
 > - Every block ends with `end`. No braces, no semicolons.
 > - Variables: `let x is V`, reassign `x is now V`. Print with
@@ -1040,5 +1040,5 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
 
 ---
 
-*Every claim in this file reflects the deterministic `plainscript` compiler v1.0.02.
+*Every claim in this file reflects the deterministic `plainscript` compiler v1.0.2.
 When in doubt: `plainscript check` is ground truth.*

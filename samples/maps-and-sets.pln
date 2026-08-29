@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — Maps and Sets
+// PlainScript v1.0.2 — Maps and Sets
 
 remember users as keyMap()
 mapSet(users, "ada", { role: "admin" })

@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — Record kinds, generators and the test DSL
+// PlainScript v1.0.2 — Record kinds, generators and the test DSL
 //
 // Run with:  plainscript run examples/record-kinds.pln
 //

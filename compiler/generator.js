@@ -1315,7 +1315,7 @@ const BUILTIN_DECLARATIONS = {
     return `__formatDate(${value}, ${pattern})`;
   },
 
-  // ── v1.0.02 — Native Date/DateTime/Regex support (IOPL-native, no JS gateway needed).
+  // ── v1.0.2 — Native Date/DateTime/Regex support (IOPL-native, no JS gateway needed).
   // Create a new Date object. With no args: now. With 1 arg: parse ISO string or timestamp.
   // With multiple args: year, month (1-12), day, hour, min, sec, ms.
   newDate: (args, context) => {
@@ -1674,7 +1674,7 @@ const BUILTIN_DECLARATIONS = {
     return `fs.appendFileSync(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)} + '\\n', 'utf8')`;
   },
 
-  // ── v1.0.02 — Extended Math functions (IOPL-native).
+  // ── v1.0.2 — Extended Math functions (IOPL-native).
   abs: (args, context) => `Math.abs(${generateExpr(args[0], context)})`,
   min: (args, context) => `Math.min(${args.map(a => generateExpr(a, context)).join(', ')})`,
   max: (args, context) => `Math.max(${args.map(a => generateExpr(a, context)).join(', ')})`,
@@ -1714,7 +1714,7 @@ const BUILTIN_DECLARATIONS = {
   hypot: (args, context) => `Math.hypot(${args.map(a => generateExpr(a, context)).join(', ')})`,
   cbrt: (args, context) => `Math.cbrt(${generateExpr(args[0], context)})`,
 
-  // ── v1.0.02 — Extended String functions (IOPL-native).
+  // ── v1.0.2 — Extended String functions (IOPL-native).
   trim: (args, context) => `String(${generateExpr(args[0], context)}).trim()`,
   trimStart: (args, context) => `String(${generateExpr(args[0], context)}).trimStart()`,
   trimEnd: (args, context) => `String(${generateExpr(args[0], context)}).trimEnd()`,
@@ -1746,7 +1746,7 @@ const BUILTIN_DECLARATIONS = {
   toString: (args, context) => `String(${generateExpr(args[0], context)}).toString()`,
   stringValueOf: (args, context) => `String(${generateExpr(args[0], context)}).valueOf()`,
 
-  // ── v1.0.02 — Extended Array/Collection functions (IOPL-native).
+  // ── v1.0.2 — Extended Array/Collection functions (IOPL-native).
   push: (args, context) => `(${generateExpr(args[0], context)}).push(${args.slice(1).map(a => generateExpr(a, context)).join(', ')})`,
   pop: (args, context) => `(${generateExpr(args[0], context)}).pop()`,
   shift: (args, context) => `(${generateExpr(args[0], context)}).shift()`,
@@ -1784,7 +1784,7 @@ const BUILTIN_DECLARATIONS = {
   values: (args, context) => `Object.values(${generateExpr(args[0], context)})`,
   entries: (args, context) => `Object.entries(${generateExpr(args[0], context)})`,
 
-  // ── v1.0.02 — Extended Object functions (IOPL-native).
+  // ── v1.0.2 — Extended Object functions (IOPL-native).
   assign: (args, context) => `Object.assign(${args.map(a => generateExpr(a, context)).join(', ')})`,
   create: (args, context) => `Object.create(${generateExpr(args[0], context)}${args.length > 1 ? ', ' + generateExpr(args[1], context) : ''})`,
   defineProperty: (args, context) => `Object.defineProperty(${args.map(a => generateExpr(a, context)).join(', ')})`,
@@ -1804,7 +1804,7 @@ const BUILTIN_DECLARATIONS = {
   seal: (args, context) => `Object.seal(${generateExpr(args[0], context)})`,
   hasOwn: (args, context) => `Object.hasOwn(${generateExpr(args[0], context)}, ${generateExpr(args[1], context)})`,
 
-  // ── v1.0.02 — Promise/Async utilities (IOPL-native).
+  // ── v1.0.2 — Promise/Async utilities (IOPL-native).
   Promise: {
     resolve: (args, context) => `Promise.resolve(${generateExpr(args[0], context)})`,
     reject: (args, context) => `Promise.reject(${generateExpr(args[0], context)})`,
@@ -1838,11 +1838,11 @@ const BUILTIN_DECLARATIONS = {
     return `Promise.race([${generateExpr(args[0], context)}, new Promise((_, r) => setTimeout(() => r(new Error('Timed out')), ${ms}))])`;
   },
 
-  // ── v1.0.02 — JSON utilities (IOPL-native).
+  // ── v1.0.2 — JSON utilities (IOPL-native).
   jsonParse: (args, context) => `JSON.parse(${generateExpr(args[0], context)})`,
   stringify: (args, context) => `JSON.stringify(${generateExpr(args[0], context)}${args.length > 1 ? ', ' + generateExpr(args[1], context) : ''}${args.length > 2 ? ', ' + generateExpr(args[2], context) : ''})`,
 
-  // ── v1.0.02 — Type checking utilities (IOPL-native).
+  // ── v1.0.2 — Type checking utilities (IOPL-native).
   isArray: (args, context) => `Array.isArray(${generateExpr(args[0], context)})`,
   isInteger: (args, context) => `Number.isInteger(${generateExpr(args[0], context)})`,
   isNaN: (args, context) => `Number.isNaN(${generateExpr(args[0], context)})`,
@@ -1851,12 +1851,12 @@ const BUILTIN_DECLARATIONS = {
   parseInt: (args, context) => `parseInt(${generateExpr(args[0], context)}${args.length > 1 ? ', ' + generateExpr(args[1], context) : ''})`,
   parseFloat: (args, context) => `parseFloat(${generateExpr(args[0], context)})`,
 
-  // ── v1.0.02 — Array static methods (IOPL-native).
+  // ── v1.0.2 — Array static methods (IOPL-native).
   arrayFrom: (args, context) => `Array.from(${generateExpr(args[0], context)}${args.length > 1 ? ', ' + generateExpr(args[1], context) : ''})`,
   arrayOf: (args, context) => `Array.of(${args.map(a => generateExpr(a, context)).join(', ')})`,
   arrayIsArray: (args, context) => `Array.isArray(${generateExpr(args[0], context)})`,
 
-  // ── v1.0.02 — Object static methods (IOPL-native).
+  // ── v1.0.2 — Object static methods (IOPL-native).
   objectFromEntries: (args, context) => `Object.fromEntries(${generateExpr(args[0], context)})`,
   objectGetOwnPropertySymbols: (args, context) => `Object.getOwnPropertySymbols(${generateExpr(args[0], context)})`,
   objectGetOwnPropertyDescriptors: (args, context) => `Object.getOwnPropertyDescriptors(${generateExpr(args[0], context)})`,
@@ -1880,7 +1880,7 @@ const BUILTIN_DECLARATIONS = {
   objectFreeze: (args, context) => `Object.freeze(${generateExpr(args[0], context)})`,
   objectSeal: (args, context) => `Object.seal(${generateExpr(args[0], context)})`,
 
-  // ── v1.0.02 — Symbol support (IOPL-native).
+  // ── v1.0.2 — Symbol support (IOPL-native).
   symbol: (args, context) => `Symbol(${args.length > 0 ? generateExpr(args[0], context) : 'undefined'})`,
   symbolFor: (args, context) => `Symbol.for(${generateExpr(args[0], context)})`,
   symbolKeyFor: (args, context) => `Symbol.keyFor(${generateExpr(args[0], context)})`,
@@ -1897,7 +1897,7 @@ const BUILTIN_DECLARATIONS = {
   symbolToPrimitive: (_args) => `Symbol.toPrimitive`,
   symbolUnscopables: (_args) => `Symbol.unscopables`,
 
-  // ── v1.0.02 — Math static methods (IOPL-native).
+  // ── v1.0.2 — Math static methods (IOPL-native).
   mathAbs: (args, context) => `Math.abs(${generateExpr(args[0], context)})`,
   mathMin: (args, context) => `Math.min(${args.map(a => generateExpr(a, context)).join(', ')})`,
   mathMax: (args, context) => `Math.max(${args.map(a => generateExpr(a, context)).join(', ')})`,
@@ -1935,7 +1935,7 @@ const BUILTIN_DECLARATIONS = {
   mathHypot: (args, context) => `Math.hypot(${args.map(a => generateExpr(a, context)).join(', ')})`,
   mathCbrt: (args, context) => `Math.cbrt(${generateExpr(args[0], context)})`,
 
-  // ── v1.0.02 — TypedArray support (IOPL-native).
+  // ── v1.0.2 — TypedArray support (IOPL-native).
   int8Array: (args, context) => `new Int8Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
   uint8Array: (args, context) => `new Uint8Array(${args.map(a => generateExpr(a, context)).join(', ')})`,
   uint8ClampedArray: (args, context) => `new Uint8ClampedArray(${args.map(a => generateExpr(a, context)).join(', ')})`,
@@ -1950,7 +1950,7 @@ const BUILTIN_DECLARATIONS = {
   dataView: (args, context) => `new DataView(${args.map(a => generateExpr(a, context)).join(', ')})`,
   arrayBuffer: (args, context) => `new ArrayBuffer(${args.map(a => generateExpr(a, context)).join(', ')})`,
 
-  // ── v1.0.02 — Global objects access (IOPL-native).
+  // ── v1.0.2 — Global objects access (IOPL-native).
   globalThis: (_args) => `globalThis`,
   console: (_args) => `console`,
   process: (_args) => `process`,
@@ -2406,7 +2406,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // Names are emitted as a JS factory that returns a fresh plain object with
     // declared defaults. Constructors prompt for required fields at compile
     // time via `create a Person with ...` (see GenerateExpr CreateKind).
-    // v1.0.02 — supports `extends` for inheritance.
+    // v1.0.2 — supports `extends` for inheritance.
     case 'DefineKindStatement': {
       let defaults = '';
       if (node.extends) {

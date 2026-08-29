@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — Concurrency: combinators, timeouts and workers
+// PlainScript v1.0.2 — Concurrency: combinators, timeouts and workers
 //
 // Run with:  plainscript run examples/concurrency.pln
 //

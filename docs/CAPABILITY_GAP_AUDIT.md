@@ -1,4 +1,4 @@
-# PlainScript 1.0.02 — Capability-Gap Audit vs. TypeScript / Node.js
+# PlainScript 1.0.2 — Capability-Gap Audit vs. TypeScript / Node.js
 
 > **Purpose.** PlainScript's goal is **capability parity**, not syntax parity, with
 > modern TypeScript + Node.js. We do not clone TypeScript's syntax or its static
@@ -6,16 +6,16 @@
 > (IOPL) — you describe *what* you want, and the deterministic compiler decides
 > *how* to implement it in JavaScript.
 >
-> This document is the complete working audit for the 1.0.02 milestone. For every
+> This document is the complete working audit for the 1.0.2 milestone. For every
 > major TypeScript/Node.js capability area, it records:
 >
-> - **Status** — what PlainScript 1.0.02 already does,
+> - **Status** — what PlainScript 1.0.2 already does,
 > - **Gap** — what is missing for real-world capability parity,
 > - **Resolution** — either an *IOPL-native implementation* (shipped in this
 >   release and covered by tests) or an explicit *rationale* for why the
 >   capability is unnecessary / already supplied by the host runtime.
 >
-> **Gate:** PlainScript must NOT be declared 1.0.02 "ready" until this audit is
+> **Gate:** PlainScript must NOT be declared 1.0.2 "ready" until this audit is
 > complete and its shipped resolutions are exercised by the test suite.
 >
 > ---
@@ -366,7 +366,7 @@ rows without reducing capability parity.
 
 ---
 
-## 21. 1.0.02 readiness gate
+## 21. 1.0.2 readiness gate
 
 The audit is **complete** only when:
 
@@ -376,13 +376,13 @@ The audit is **complete** only when:
 3. The runtime stdlib table, knowledge base, and README document every new
    capability.
 
-Until then the package version remains **below 1.0.02**.
+Until then the package version remains **below 1.0.2**.
 
 ---
 
 ## 22. v2.2.0 — AI/ML, data/storage & web additions
 
-The v2.0–v2.2 releases close further gaps beyond the 1.0.02 audit across the
+The v2.0–v2.2 releases close further gaps beyond the 1.0.2 audit across the
 AI/ML, data/storage and web/full-stack surface. All features below are
 IOPL-native (intent-oriented) rather than TypeScript-syntax clones.
 

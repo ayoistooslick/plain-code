@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — Concurrency combinators
+// PlainScript v1.0.2 — Concurrency combinators
 
 make slow()
     sleep(200)

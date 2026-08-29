@@ -1827,7 +1827,7 @@ test('plainscript help includes "route"', () => {
   if (!out.includes('route')) throw new Error('"route" missing from help');
 });
 
-// â”€â”€ v1.0.02 â€” Lexer edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.2 â€” Lexer edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” Lexer edge cases');
 
@@ -1869,7 +1869,7 @@ test('throws on unexpected character', () => {
   }
 });
 
-// â”€â”€ v1.0.02 â€” Compiler expression edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.2 â€” Compiler expression edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” Expression edge cases');
 
@@ -1908,7 +1908,7 @@ test('function call result used in expression', () => {
   if (!js.includes('add(1, 2) + 3')) throw new Error('missing expression with call');
 });
 
-// â”€â”€ v1.0.02 â€” Error message quality â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.2 â€” Error message quality â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” Error message quality');
 
@@ -1962,7 +1962,7 @@ test('missing "as" in remember gives helpful message', () => {
   }
 });
 
-// â”€â”€ v1.0.02 â€” Formatter additional coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.2 â€” Formatter additional coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” Formatter additional coverage');
 
@@ -1996,7 +1996,7 @@ test('format: object literal body is indented', () => {
   if (!result.includes('    name is "Ayokunle"')) throw new Error('object body not indented');
 });
 
-// â”€â”€ v1.0.02 â€” CLI additional coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.2 â€” CLI additional coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” CLI additional coverage');
 
@@ -2075,7 +2075,7 @@ test('plainscript run on a nonexistent file exits with a friendly error', () => 
   }
 });
 
-// â”€â”€ v1.0.02 â€” Compiler regression tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ v1.0.2 â€” Compiler regression tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 console.log('\nv1.0 â€” Regression tests');
 
@@ -2619,7 +2619,7 @@ function writeLocalPackage(projectDir, pkgName, mainSrc) {
   fs.mkdirSync(pkgDir, { recursive: true });
   fs.writeFileSync(
     path.join(pkgDir, 'package.json'),
-    JSON.stringify({ name: pkgName, version: '1.0.02', main: 'index.js' })
+    JSON.stringify({ name: pkgName, version: '1.0.2', main: 'index.js' })
   );
   fs.writeFileSync(path.join(pkgDir, 'index.js'), mainSrc);
 }

@@ -1,6 +1,6 @@
 {
   "name": "@plainscript/oauth-sdk",
-  "version": "1.0.02",
+  "version": "1.0.2",
   "description": "A unified OAuth 2.0 npm SDK authored in PlainScript. One interface across providers: authorization URLs, token exchange, and token validation.",
   "main": "dist/index.js",
   "type": "commonjs",
@@ -13,6 +13,6 @@
     "dist"
   ],
   "devDependencies": {
-    "plainscript-lang": "^1.0.02"
+    "plainscript-lang": "^1.0.2"
   }
 }

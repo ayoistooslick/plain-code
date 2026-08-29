@@ -1,6 +1,6 @@
 # PlainScript Language Extension — Changelog
 
-## [1.0.02]
+## [1.0.2]
 
 - Initial release of the PlainScript language extension
 - Syntax highlighting for all PlainScript keywords via the bundled TextMate grammar (`source.plainscript`)

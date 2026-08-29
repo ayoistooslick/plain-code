@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — Hello World
+// PlainScript v1.0.2 — Hello World
 
 remember name as "World"
 show "Hello, " + name + "!"

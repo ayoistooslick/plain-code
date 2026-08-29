@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — API key protection, rate limits and tokens
+// PlainScript v1.0.2 — API key protection, rate limits and tokens
 //
 // Run with:  API_KEY=my-secret plainscript run examples/auth-api.pln
 // Then try:
@@ -22,7 +22,7 @@ remember secret as env("TOKEN_SECRET")
 route get "/status"
     reply json
         status is "ok"
-        version is "1.0.02"
+        version is "1.0.2"
     done
 done
 

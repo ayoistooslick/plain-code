@@ -552,7 +552,7 @@ done
   // deployment only needs the generated dist/ output.
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
     name,
-    version: '1.0.02',
+    version: '1.0.2',
     description: `A PlainScript v${VERSION} application`,
     main: 'dist/app.js',
     scripts: {

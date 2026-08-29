@@ -31,7 +31,7 @@ Syntax highlighting and language support for the [PlainScript programming langua
    cd plainscript-vscode
    vsce package
    ```
-   This produces `plainscript-language-1.0.02.vsix`.
+   This produces `plainscript-language-1.0.2.vsix`.
 4. Install the VSIX in VS Code:
    - Open VS Code
    - Press `Ctrl+Shift+P` / `Cmd+Shift+P`

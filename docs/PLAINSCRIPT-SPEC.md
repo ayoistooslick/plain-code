@@ -1,6 +1,6 @@
-# PlainScript Language Specification (v1.0.02)
+# PlainScript Language Specification (v1.0.2)
 
-Version: 1.0.02
+Version: 1.0.2
 Status: Stable
 File Extension: .pln
 
@@ -478,5 +478,5 @@ symbol
 
 ---
 
-This document is the single source of truth for PlainScript v1.0.02.
+This document is the single source of truth for PlainScript v1.0.2.
 Every compiler implementation must follow this specification.

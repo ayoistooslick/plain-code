@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — Command line and environment
+// PlainScript v1.0.2 — Command line and environment
 
 show args()                    // everything after "plainscript run file.pln"
 

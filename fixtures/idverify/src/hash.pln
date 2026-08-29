@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — Cryptographic helpers for the ID-verification SDK.
+// PlainScript v1.0.2 — Cryptographic helpers for the ID-verification SDK.
 //
 // This module uses only Node built-ins (crypto) plus PlainScript's stdlib
 // helpers (sha256, textToBytes, bytesToText, base64Encode, base64Decode), so it

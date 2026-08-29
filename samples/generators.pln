@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — Generators (yield + spread of)
+// PlainScript v1.0.2 — Generators (yield + spread of)
 
 make countUp(n)
     remember i as 0

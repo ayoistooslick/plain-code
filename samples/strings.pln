@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — String and number helpers
+// PlainScript v1.0.2 — String and number helpers
 
 show uppercase("hello")          // HELLO
 show lowercase("WORLD")          // world

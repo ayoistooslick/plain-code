@@ -4,7 +4,7 @@ All notable changes to PlainScript are documented here.
 
 ---
 
-## [1.0.02] — 2026
+## [1.0.2] — 2026
 
 ### Fixed
 
@@ -21,7 +21,7 @@ All notable changes to PlainScript are documented here.
 
 ### Changed
 
-- Version bumped to **v1.0.02** across the compiler, package metadata, templates,
+- Version bumped to **v1.0.2** across the compiler, package metadata, templates,
   fixtures, examples, samples, and documentation.
 
 ---

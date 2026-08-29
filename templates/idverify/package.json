@@ -1,6 +1,6 @@
 {
   "name": "@plainscript/idverify-sdk",
-  "version": "1.0.02",
+  "version": "1.0.2",
   "description": "An ID-verification npm SDK authored 100% in PlainScript. Fingerprints documents with SHA-256, parses machine-readable zones, and verifies document records.",
   "main": "dist/index.js",
   "type": "commonjs",
@@ -13,6 +13,6 @@
     "dist"
   ],
   "devDependencies": {
-    "plainscript-lang": "^1.0.02"
+    "plainscript-lang": "^1.0.2"
   }
 }

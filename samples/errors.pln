@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — Error handling
+// PlainScript v1.0.2 — Error handling
 
 make risky(text)
     remember decoded as jsonDecode(text)

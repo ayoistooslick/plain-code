@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — SQLite database
+// PlainScript v1.0.2 — SQLite database
 
 database "app.db"
 

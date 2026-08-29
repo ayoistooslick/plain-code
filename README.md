@@ -13,7 +13,7 @@
 
 PlainScript is an Intent-Oriented Programming Language (IOPL). You describe **what** you want; the compiler decides **how** to implement it in JavaScript.
 
-**Current version:** v1.0.02 — the `plainscript` npm package with a TypeScript-style production build (`plainscript build` → `dist/`, source names preserved).
+**Current version:** v1.0.2 — the `plainscript` npm package with a TypeScript-style production build (`plainscript build` → `dist/`, source names preserved).
 
 ---
 
@@ -106,7 +106,7 @@ For projects that need custom output or source directories, add a
         "build": "plainscript build",
         "prepare": "plainscript build"
     },
-    "devDependencies": { "plainscript-lang": "^1.0.02" }
+    "devDependencies": { "plainscript-lang": "^1.0.2" }
 }
 ```
 
@@ -283,7 +283,7 @@ val nullish is now "default"
 print val
 ```
 
-### TypeScript-parity capabilities (1.0.02)
+### TypeScript-parity capabilities (1.0.2)
 
 The full capability-gap audit lives in [`docs/CAPABILITY_GAP_AUDIT.md`](https://github.com/ayoistooslick/plainscript/blob/main/docs/CAPABILITY_GAP_AUDIT.md).
 These features close it in PlainScript's own grammar:

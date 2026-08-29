@@ -1,4 +1,4 @@
-// PlainScript v1.0.02 — Functions
+// PlainScript v1.0.2 — Functions
 
 make greet(name)
     show "Hello, " + name + "!"
