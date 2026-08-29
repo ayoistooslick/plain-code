@@ -162,8 +162,8 @@
             style: "number"
         }
 
-        // Operators
-        "operators": {match: /[+\-*/%]|\*\*/, 0: "operator"}
+        // Operators - FIXED: escaped %
+        "operators": {match: /[+\-*\/%]|\*\*/, 0: "operator"}
 
         // Arrow operator
         "arrow": {match: /->/, 0: "arrow"}
