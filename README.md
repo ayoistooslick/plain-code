@@ -1,7 +1,7 @@
 # PlainScript
 
 [![CI](https://github.com/ayoistooslick/plainscript/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/ayoistooslick/plainscript/actions/workflows/npm-publish.yml)
-[![npm version](https://badge.fury.io/js/plainscript-lang.svg?icon=si%3Anpm)](https://www.npmjs.com/package/plainscript-lang)
+[![npm version](https://badge.fury.io/js/plainscript-lang.svg)](https://www.npmjs.com/package/plainscript-lang)
 [![Downloads](https://img.shields.io/badge/downloads-1.1GB/month-green)](https://www.npmjs.com/package/plainscript-lang)
 
 <p align="center">
