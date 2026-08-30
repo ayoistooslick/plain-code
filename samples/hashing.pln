@@ -8,7 +8,7 @@ done
 show typeOf(user)           // record
 show typeOf("hi")           // text
 show typeOf(42)             // number
-show typeOf([1, 2])         // array
+show typeOf(list with 1, 2) // array
 
 show fieldsOf(user)         // [ 'name', 'age' ]
 show sizeOf(user)           // 2
@@ -26,6 +26,6 @@ remember stored as hashPassword("s3cret")
 show checkPassword("s3cret", stored)      // true
 show checkPassword("wrong", stored)       // false
 
-remember token as createToken({ sub: "user-1" }, "secret-key", 3600)
+remember token as createToken(record with sub "user-1" done, "secret-key", 3600)
 remember claims as readToken(token, "secret-key")
 show sub of claims

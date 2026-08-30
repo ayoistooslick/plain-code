@@ -10,6 +10,8 @@
         "declaration", #C678DD, #C678DD, @BI
         // Comparison operators (is, contains, between, starts with, etc.)
         "comparison", #56B6C2, #56B6C2
+        // English syntax operators (at_position, of_kind, has_field, etc.)
+        "englishOp", #56B6C2, #56B6C2
         // Assignment (is now)
         "assignment", #E06C75, #E06C75
         // Strings
@@ -103,6 +105,11 @@
         "comparisons": {match: keywordsToRegex(
             "is greater less than to above below at least most not empty contains starts ends with between and or"
         ), 0: "comparison"}
+
+        // English syntax operators (near-English alternatives)
+        "englishSyntaxOps": {match: keywordsToRegex(
+            "at_position of_kind has_field starts_as ends_as made_of uses fills raises handled_by choosing more_than fewer_than same_as different_from"
+        ), 0: "englishOp"}
 
         // Assignment
         "assignment": {match: keywordsToRegex(
@@ -233,6 +240,9 @@
 
         // Comparison
         {include: "comparisons"}
+
+        // English syntax operators
+        {include: "englishSyntaxOps"}
 
         // Assignment
         {include: "assignment"}

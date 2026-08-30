@@ -1,8 +1,7 @@
-remember players as [
+remember players as list with
     "Haaland",
     "Foden",
     "Rodri"
-]
 
 for each player in players
     show player
@@ -10,7 +9,7 @@ done
 
 remember count as 0
 
-while count is less than 3
+while count is fewer than 3
     count becomes count + 1
 done
 

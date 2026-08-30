@@ -1,5 +1,5 @@
 web app
-accept uploads limit "5 MB" allow ["image/png", "image/jpeg"] folder "uploads"
+accept uploads limit "5 MB" allow list with "image/png", "image/jpeg" folder "uploads"
 
 route post "/verify"
     remember found as uploads("id")

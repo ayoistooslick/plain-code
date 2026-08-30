@@ -176,6 +176,69 @@ function parse(tokens) {
       return { type: 'BinaryCondition', left, op: 'instanceof', right };
     }
 
+    // v2.4 — "has field" → "x" in obj (contextual: "has" followed by "field")
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'has' &&
+        peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'field') {
+      advance(); // has
+      advance(); // field
+      const right = parseExpression();
+      return { type: 'BinaryCondition', left: right, op: 'in', right: left };
+    }
+    // v2.4 — "starts as" → startsWith (contextual: "starts" followed by "as")
+    if (peek().type === TOKEN.STARTS && peekAt(1).type === TOKEN.AS) {
+      advance(); // starts
+      advance(); // as
+      const right = parseExpression();
+      return { type: 'StringCondition', left, method: 'startsWith', right };
+    }
+    // v2.4 — "ends as" → endsWith (contextual: "ends" followed by "as")
+    if (peek().type === TOKEN.ENDS && peekAt(1).type === TOKEN.AS) {
+      advance(); // ends
+      advance(); // as
+      const right = parseExpression();
+      return { type: 'StringCondition', left, method: 'endsWith', right };
+    }
+    // v2.4 — "made of" → includes (contextual: "made" followed by "of")
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'made' &&
+        peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'of') {
+      advance(); // made
+      advance(); // of
+      const right = parseExpression();
+      return { type: 'StringCondition', left, method: 'includes', right };
+    }
+    // v2.4 — "more than" → > (contextual: "more" followed by "than")
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'more' &&
+        peekAt(1).type === TOKEN.THAN) {
+      advance(); // more
+      advance(); // than
+      const right = parseExpression();
+      return { type: 'BinaryCondition', left, op: '>', right };
+    }
+    // v2.4 — "fewer than" → < (contextual: "fewer" followed by "than")
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'fewer' &&
+        peekAt(1).type === TOKEN.THAN) {
+      advance(); // fewer
+      advance(); // than
+      const right = parseExpression();
+      return { type: 'BinaryCondition', left, op: '<', right };
+    }
+    // v2.4 — "same as" → === (contextual: "same" followed by "as")
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'same' &&
+        peekAt(1).type === TOKEN.AS) {
+      advance(); // same
+      advance(); // as
+      const right = parseExpression();
+      return { type: 'BinaryCondition', left, op: '===', right };
+    }
+    // v2.4 — "different from" → !== (contextual: "different" followed by "from")
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'different' &&
+        peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'from') {
+      advance(); // different
+      advance(); // from
+      const right = parseExpression();
+      return { type: 'BinaryCondition', left, op: '!==', right };
+    }
+
     // ── Non-"is" operators ──────────────────────────────────────────────────
     if (peek().type === TOKEN.CONTAINS) {
       advance();
@@ -332,6 +395,13 @@ function parse(tokens) {
     if (token.type === TOKEN.INCLUDE)     return parseImport();  // alias for import
     if (token.type === TOKEN.LOAD)        return parseImport();  // alias for import
     if (token.type === TOKEN.WHEN)        return parseWhen();
+    // v2.3 — English-like function declaration: "to add a and b together ... done"
+    if (token.type === TOKEN.TO && peekAt(1).type === TOKEN.IDENTIFIER) return parseToFunction();
+    // v2.4 — "list with" and "record with" as expressions
+    if (token.type === TOKEN.IDENTIFIER && token.value === 'list' && peekAt(1).type === TOKEN.WITH) return parseListWith();
+    if (token.type === TOKEN.IDENTIFIER && token.value === 'record' && peekAt(1).type === TOKEN.WITH) return parseRecordWith(false);
+    if (token.type === TOKEN.LIST_WITH) return parseListWith();
+    if (token.type === TOKEN.RECORD_WITH) return parseRecordWith(false);
     if (token.type === TOKEN.LISTEN)      return parseListen();
     if (token.type === TOKEN.START_ON)    return parseListen();  // "start on port 3000"
     if (token.type === TOKEN.SERVE_ON)    return parseListen();  // "serve on port 3000"
@@ -383,6 +453,12 @@ function parse(tokens) {
     if (token.type === TOKEN.STREAM)     return parseStreamStatement();
 
     if (token.type === TOKEN.EOF) return null;
+
+    if (token.type === TOKEN.RAISES) {
+      advance();
+      const value = parseExpression();
+      return { type: 'ThrowStatement', value };
+    }
 
     // Statements starting with an identifier: call, becomes, index/member becomes
     if (token.type === TOKEN.IDENTIFIER) {
@@ -578,7 +654,7 @@ function parse(tokens) {
 
       // v2.2.0 — redirect to "<url>": sends an HTTP redirect from a route
       // handler. "redirect(...)" calls and "redirect becomes x" stay ordinary.
-      if (token.value === 'redirect' && peekAt(1).value === 'to') {
+      if (token.value === 'redirect' && (peekAt(1).value === 'to' || peekAt(1).type === TOKEN.TO)) {
         advance(); // redirect
         advance(); // to
         const url = parseExpression();
@@ -827,18 +903,18 @@ function parse(tokens) {
       }
     }
 
-    // "let" uses "is" for simple vars, but also accepts "as" for both simple and destructuring
+    // "let" uses "is" or "be" for simple vars, but also accepts "as" for both simple and destructuring
     // "remember" always uses "as"
     const isDestructuring = target && typeof target === 'object' && (target.type === 'ArrayPattern' || target.type === 'ObjectPattern');
-    const assignToken = isLet ? (peek().type === TOKEN.IS ? TOKEN.IS : TOKEN.AS) : TOKEN.AS;
-    const expectedKeyword = (isLet && peek().type === TOKEN.IS) ? 'is' : 'as';
+    const assignToken = isLet ? ((peek().type === TOKEN.IS || peek().type === TOKEN.BE) ? peek().type : TOKEN.AS) : TOKEN.AS;
+    const expectedKeyword = (isLet && (peek().type === TOKEN.IS || peek().type === TOKEN.BE)) ? (peek().type === TOKEN.BE ? 'be' : 'is') : 'as';
     consume(
       assignToken,
       `Expected keyword "${expectedKeyword}" after the variable name.\n\nExample:\n  ${isLet ? 'let age is 16' : 'remember age as 16'}`
     );
 
-    // Object literal: next token is IDENTIFIER followed by IS
-    if (peek().type === TOKEN.IDENTIFIER && peekAt(1).type === TOKEN.IS) {
+    // Object literal: next token is IDENTIFIER followed by IS or BE
+    if (peek().type === TOKEN.IDENTIFIER && (peekAt(1).type === TOKEN.IS || peekAt(1).type === TOKEN.BE)) {
       return { type: 'RememberStatement', name: target, value: parseObjectLiteral() };
     }
 
@@ -951,6 +1027,8 @@ function parseAsk() {
             after.type === TOKEN.PERCENT || after.type === TOKEN.PLUS ||
             after.type === TOKEN.MINUS || after.type === TOKEN.LBRACKET ||
             after.type === TOKEN.DOT ||
+            after.type === TOKEN.TIMES_WORD || after.type === TOKEN.DIVIDED_BY_WORD ||
+            after.type === TOKEN.PLUS_WORD || after.type === TOKEN.MINUS_WORD ||
             (after.type === TOKEN.IDENTIFIER &&
               ['of', 'length', 'above', 'below', 'contains', 'matches', 'becomes'].includes(after.value))
           );
@@ -986,6 +1064,109 @@ function parseAsk() {
     consume(TOKEN.RPAREN, 'Expected ")" to close the parameter list.');
     const body = parseBody(`function "${name}"`);
     return { type: 'FunctionDeclaration', name, params, body };
+  }
+
+  // v2.3 — English-like function declaration: "to <name> <a> and <b> together ... done"
+  // Parameters are identifiers joined by "and". Body ends with "together" or "done".
+  function parseToFunction() {
+    consume(TOKEN.TO);
+    const nameToken = peek();
+    if (nameToken.type !== TOKEN.IDENTIFIER) {
+      throw new Error(makeError(
+        'Expected a function name after "to".\n\nExample:\n  to add a and b together\n    give a + b\n  together',
+        nameToken
+      ));
+    }
+    const name = advance().value;
+    const params = [];
+    // Parameters are identifiers joined by "and"
+    while (peek().type !== TOKEN.TOGETHER && peek().type !== TOKEN.DONE) {
+      if (peek().type === TOKEN.AND) {
+        advance(); // skip "and" between parameters
+        continue;
+      }
+      if (peek().type === TOKEN.EOF) {
+        throw new Error(makeError(
+          `Expected "together" or "done" to close function "${name}" before end of file.`,
+          peek()
+        ));
+      }
+      const paramToken = peek();
+      if (paramToken.type !== TOKEN.IDENTIFIER) {
+        throw new Error(makeError(
+          `Expected a parameter name or "together"/"done" in function "${name}".`,
+          paramToken
+        ));
+      }
+      params.push({ name: advance().value });
+    }
+    const body = parseBody(`function "${name}"`);
+    return { type: 'FunctionDeclaration', name, params, body };
+  }
+
+  // v2.3 — English-like array literal: "list with 1, 2, 3"
+  // Parse comma-separated elements for "list with" (shared helper)
+  function parseListWithElements() {
+    const elements = [];
+    if (peek().type !== TOKEN.DONE && peek().type !== TOKEN.TOGETHER && peek().type !== TOKEN.EOF &&
+        peek().type !== TOKEN.FOLDER &&
+        !(peek().type === TOKEN.IDENTIFIER && (peek().value === 'folder' || peek().value === 'done' || peek().value === 'together'))) {
+      elements.push(parseExpression());
+      while (peek().type === TOKEN.COMMA) {
+        advance(); // consume comma
+        elements.push(parseExpression());
+      }
+    }
+    return elements;
+  }
+
+  function parseListWith() {
+    // Accept both "list_with" keyword and contextual "list" + "with"
+    if (peek().type === TOKEN.LIST_WITH) {
+      consume(TOKEN.LIST_WITH);
+    } else {
+      advance(); // "list"
+      consume(TOKEN.WITH, 'Expected "with" after "list".');
+    }
+    const elements = parseListWithElements();
+    return { type: 'ArrayLiteral', elements };
+  }
+
+  // v2.3 — English-like object literal: "record with name 'Alice' and age 30"
+  // consumeTerminator: true when used as expression (done closes record), false when standalone statement
+  function parseRecordWith(consumeTerminator) {
+    // Accept both "record_with" keyword and contextual "record" + "with"
+    if (peek().type === TOKEN.RECORD_WITH) {
+      consume(TOKEN.RECORD_WITH);
+    } else {
+      advance(); // "record"
+      consume(TOKEN.WITH, 'Expected "with" after "record".');
+    }
+    const properties = [];
+    while (peek().type !== TOKEN.DONE && peek().type !== TOKEN.TOGETHER && peek().type !== TOKEN.EOF) {
+      const keyToken = peek();
+      if (keyToken.type !== TOKEN.IDENTIFIER) {
+        throw new Error(makeError(
+          'Expected a property name after "record with".\n\nExample:\n  record with name "Alice" and age 30',
+          keyToken
+        ));
+      }
+      advance(); // consume key
+      const key = keyToken.value;
+      if (peek().type === TOKEN.DONE || peek().type === TOKEN.TOGETHER || peek().type === TOKEN.EOF || peek().type === TOKEN.AND) {
+        properties.push({ key, value: { type: 'UndefinedLiteral' } });
+      } else {
+        const value = parseNullish();
+        properties.push({ key, value });
+      }
+      if (peek().type === TOKEN.AND) {
+        advance(); // consume "and"
+      }
+    }
+    if (consumeTerminator && (peek().type === TOKEN.DONE || peek().type === TOKEN.TOGETHER)) {
+      advance(); // consume done/together when used as expression
+    }
+    return { type: 'InlineObjectLiteral', properties };
   }
 
   function parseParamList() {
@@ -1209,7 +1390,7 @@ function parseAsk() {
       }
       advance(); // from
       const start = parseExpression();
-      if (peek().type === TOKEN.IDENTIFIER && peek().value === 'to') {
+      if (peek().type === TOKEN.TO || (peek().type === TOKEN.IDENTIFIER && peek().value === 'to')) {
         advance(); // to
       } else {
         throw new Error(makeError(
@@ -1319,6 +1500,38 @@ function parseAsk() {
   // when socket connects|sends message|disconnects   → v2.1.0 websocket handlers
   function parseWhen() {
     consume(TOKEN.WHEN);
+
+    // v2.3 — "when <condition> ... done": English-like if statement.
+    // Detect: when <expr> is ... / when <expr> above ... etc.
+    // Must come after existing "when" event-handler checks.
+    // Check if next token starts a condition (not someone, not "nothing", not socket,
+    // not a string followed by "happens")
+    const nextToken = peek();
+    const isEventWhen =
+      (nextToken.type === TOKEN.STRING && peekAt(1).type === TOKEN.HAPPENS) ||
+      nextToken.type === TOKEN.SOMEONE ||
+      (nextToken.type === TOKEN.IDENTIFIER && (nextToken.value === 'nothing' || nextToken.value === 'socket'));
+
+    if (!isEventWhen) {
+      const condition = parseCondition();
+      // Optional "then" keyword
+      if (peek().type === TOKEN.THEN) {
+        advance(); // consume "then"
+      }
+      const consequent = [];
+      while (peek().type !== TOKEN.DONE && peek().type !== TOKEN.TOGETHER) {
+        if (peek().type === TOKEN.EOF) {
+          throw new Error(makeError(
+            'Expected keyword "done" to close the "when" block before end of file.',
+            peek()
+          ));
+        }
+        const stmt = parseStatement();
+        if (stmt) consequent.push(stmt);
+      }
+      advance(); // consume DONE or TOGETHER
+      return { type: 'IfStatement', condition, consequent, alternate: null };
+    }
 
     // v2.1.1 — "when nothing matches … done" registers the 404 catch-all.
     // It must appear after every route in the source; the generated handler
@@ -1724,12 +1937,20 @@ function parseAsk() {
 
   // ── v2.1.1 — error handling, retries and backend middleware ───────────────
 
+  function isHandledBy() {
+    return peek().type === TOKEN.IDENTIFIER && peek().value === 'handled' &&
+           peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'by';
+  }
+
   // try … [recover [when <err> catches "<ErrorType>"]] [finally …] … done
+  // also: try … done handled by … done  (v2.4 English alternative)
   function parseTryStatement() {
     advance(); // try
     const tryBody = [];
+    // Parse try body - stop at "done", "recover", "finally", or "handled by"
     while (!(peek().type === TOKEN.DONE ||
-             (peek().type === TOKEN.IDENTIFIER && (peek().value === 'recover' || peek().value === 'finally')))) {
+             (peek().type === TOKEN.IDENTIFIER && (peek().value === 'recover' || peek().value === 'finally')) ||
+             isHandledBy())) {
       if (peek().type === TOKEN.EOF) {
         throw new Error(makeError(
           'Expected keyword "done" to close the "try" block before end of file.',
@@ -1739,15 +1960,20 @@ function parseAsk() {
       const stmt = parseStatement();
       if (stmt) tryBody.push(stmt);
     }
+    // Consume the "done" that closes the try body (if present)
+    // "handled by" before done means recover is inline (no done separator)
+    if (peek().type === TOKEN.DONE) {
+      advance(); // consume "done" that closes try body
+    }
     const catches = [];
-    while (peek().type !== TOKEN.DONE && !(peek().type === TOKEN.IDENTIFIER && peek().value === 'finally')) {
-      if (peek().type === TOKEN.EOF) {
-        throw new Error(makeError(
-          'Expected keyword "done" to close the "try" block before end of file.',
-          peek()
-        ));
+    // Check for recover/handled-by/finally sections (may be multiple recover blocks)
+    while ((peek().type === TOKEN.IDENTIFIER && peek().value === 'recover') || isHandledBy()) {
+      if (isHandledBy()) {
+        advance(); // handled
+        advance(); // by
+      } else {
+        advance(); // recover
       }
-      advance(); // recover
       let paramName = null;
       let errorType = null;
       if (peek().type === TOKEN.AS) {
@@ -1766,7 +1992,8 @@ function parseAsk() {
       }
       const recoverBody = [];
       while (peek().type !== TOKEN.DONE &&
-             !(peek().type === TOKEN.IDENTIFIER && (peek().value === 'recover' || peek().value === 'finally'))) {
+             !(peek().type === TOKEN.IDENTIFIER && (peek().value === 'recover' || peek().value === 'finally')) &&
+             !isHandledBy()) {
         if (peek().type === TOKEN.EOF) {
           throw new Error(makeError(
             'Expected keyword "done" to close the "recover" block before end of file.',
@@ -1776,6 +2003,7 @@ function parseAsk() {
         const stmt = parseStatement();
         if (stmt) recoverBody.push(stmt);
       }
+      advance(); // consume "done" that closes recover body
       catches.push({ param: paramName, errorType, body: recoverBody });
     }
     let finallyBody = null;
@@ -1792,8 +2020,9 @@ function parseAsk() {
         const stmt = parseStatement();
         if (stmt) finallyBody.push(stmt);
       }
+      advance(); // consume "done" that closes the finally block
     }
-    advance(); // done
+    // No final "done" advance here — the enclosing parseBody() consumes it
     return { type: 'TryStatement', body: tryBody, catches, finallyBody };
   }
 
@@ -1808,7 +2037,8 @@ function parseAsk() {
       ));
     }
     const timesToken = peek();
-    if (timesToken.type !== TOKEN.IDENTIFIER || timesToken.value !== 'times') {
+    if (!((timesToken.type === TOKEN.IDENTIFIER && timesToken.value === 'times') ||
+          timesToken.type === TOKEN.TIMES_WORD)) {
       throw new Error(makeError(
         'Expected "times" after the number of retries.\n\nExample:\n  retry 3 times',
         timesToken
@@ -1865,16 +2095,25 @@ function parseAsk() {
       }
       if (peek().type === TOKEN.IDENTIFIER && peek().value === 'allow' && mimes === null) {
         advance(); // allow
-        const list = parseArrayLiteral();
-        for (const element of list.elements) {
+        let elements;
+        // v2.4 — accept "list with" as alternative to bracket syntax
+        if (peek().type === TOKEN.IDENTIFIER && peek().value === 'list' &&
+            peekAt(1).type === TOKEN.WITH) {
+          advance(); // "list"
+          advance(); // "with"
+          elements = parseListWithElements();
+        } else {
+          elements = parseArrayLiteral().elements;
+        }
+        for (const element of elements) {
           if (element.type !== 'StringLiteral') {
             throw new Error(makeError(
-              'MIME types in "accept uploads allow [...]" must be strings.\n\nExample:\n  accept uploads allow ["image/png", "image/jpeg"]',
+              'MIME types in "accept uploads allow" must be strings.\n\nExample:\n  accept uploads allow list with "image/png", "image/jpeg"',
               peek()
             ));
           }
         }
-        mimes = list.elements.map(element => element.value);
+        mimes = elements.map(element => element.value);
         continue;
       }
       // ("folder" lexes as the FOLDER keyword, so both token shapes count.)
@@ -1924,7 +2163,7 @@ function parseAsk() {
     const name = consume(TOKEN.STRING,
       'Expected a cookie name string after "set cookie".\n\nExample:\n  set cookie "theme" to "dark"').value;
     const toToken = peek();
-    if (toToken.type !== TOKEN.IDENTIFIER || toToken.value !== 'to') {
+    if (toToken.type !== TOKEN.IDENTIFIER && toToken.type !== TOKEN.TO) {
       throw new Error(makeError(
         'Expected "to" after the cookie name.\n\nExample:\n  set cookie "theme" to "dark"',
         toToken
@@ -1969,7 +2208,7 @@ function parseAsk() {
     advance(); // limit
     advance(); // requests
     const toToken = peek();
-    if (toToken.type !== TOKEN.IDENTIFIER || toToken.value !== 'to') {
+    if (toToken.type !== TOKEN.IDENTIFIER && toToken.type !== TOKEN.TO) {
       throw new Error(makeError(
         'Expected "to" after "limit requests".\n\nExample:\n  limit requests to 100 per minute',
         toToken
@@ -2009,7 +2248,7 @@ function parseAsk() {
     const condition = parseCondition();
 
     const consequent = [];
-    while (peek().type !== TOKEN.OTHERWISE && peek().type !== TOKEN.DONE) {
+    while (peek().type !== TOKEN.OTHERWISE && peek().type !== TOKEN.DONE && peek().type !== TOKEN.TOGETHER) {
       if (peek().type === TOKEN.EOF) {
         throw new Error(makeError(
           'Expected keyword "done" before end of file to close the "if" block.',
@@ -2031,7 +2270,7 @@ function parseAsk() {
         alternate = [parseElseIfChain()];
       } else {
         alternate = [];
-        while (peek().type !== TOKEN.DONE) {
+        while (peek().type !== TOKEN.DONE && peek().type !== TOKEN.TOGETHER) {
           if (peek().type === TOKEN.EOF) {
             throw new Error(makeError(
               'Expected keyword "done" before end of file to close the "otherwise" block.',
@@ -2044,7 +2283,7 @@ function parseAsk() {
       }
     }
 
-    advance(); // consume DONE
+    advance(); // consume DONE or TOGETHER
     return { type: 'IfStatement', condition, consequent, alternate };
   }
 
@@ -2057,7 +2296,7 @@ function parseAsk() {
     const condition = parseCondition();
 
     const consequent = [];
-    while (peek().type !== TOKEN.OTHERWISE && peek().type !== TOKEN.DONE) {
+    while (peek().type !== TOKEN.OTHERWISE && peek().type !== TOKEN.DONE && peek().type !== TOKEN.TOGETHER) {
       if (peek().type === TOKEN.EOF) {
         throw new Error(makeError(
           'Expected keyword "done" before end of file to close the "otherwise if" block.',
@@ -2076,7 +2315,7 @@ function parseAsk() {
         alternate = [parseElseIfChain()];
       } else {
         alternate = [];
-        while (peek().type !== TOKEN.DONE) {
+        while (peek().type !== TOKEN.DONE && peek().type !== TOKEN.TOGETHER) {
           if (peek().type === TOKEN.EOF) {
             throw new Error(makeError(
               'Expected keyword "done" before end of file to close the "otherwise" block.',
@@ -2096,7 +2335,7 @@ function parseAsk() {
 
   function parseBody(context) {
     const body = [];
-    while (peek().type !== TOKEN.DONE) {
+    while (peek().type !== TOKEN.DONE && peek().type !== TOKEN.TOGETHER) {
       if (peek().type === TOKEN.EOF) {
         throw new Error(makeError(
           `Expected keyword "done" to close the ${context} before end of file.`,
@@ -2106,7 +2345,7 @@ function parseAsk() {
       const stmt = parseStatement();
       if (stmt) body.push(stmt);
     }
-    advance(); // consume DONE
+    advance(); // consume DONE or TOGETHER
     return body;
   }
 
@@ -2120,6 +2359,15 @@ function parseAsk() {
   //   unary        := "-" unary | "wait for" unary | primary
   //   primary      := atom with postfix chains (indexing, members, of, length, optional chaining)
   function parseExpression() {
+    if (peek().type === TOKEN.CHOOSING) {
+      advance();
+      const condition = parseCondition();
+      if (peek().type === TOKEN.THEN) advance();
+      const consequent = parseExpression();
+      if (peek().type === TOKEN.OTHERWISE) advance();
+      const alternate = parseExpression();
+      return { type: 'ConditionalExpression', condition, consequent, alternate };
+    }
     let left = parseNullish();
     return left;
   }
@@ -2136,10 +2384,14 @@ function parseAsk() {
 
   function parseAdditive() {
     let left = parseTerm();
-    while (peek().type === TOKEN.PLUS || peek().type === TOKEN.MINUS) {
-      const operator = advance().value;
+    while (peek().type === TOKEN.PLUS || peek().type === TOKEN.MINUS ||
+           peek().type === TOKEN.PLUS_WORD || peek().type === TOKEN.MINUS_WORD) {
+      const opToken = advance();
+      const op = opToken.type === TOKEN.PLUS_WORD ? '+' :
+                 opToken.type === TOKEN.MINUS_WORD ? '-' :
+                 opToken.value;
       const right = parseTerm();
-      left = { type: 'BinaryExpression', operator, left, right };
+      left = { type: 'BinaryExpression', operator: op, left, right };
     }
     return left;
   }
@@ -2149,11 +2401,16 @@ function parseAsk() {
     while (
       peek().type === TOKEN.STAR ||
       peek().type === TOKEN.SLASH ||
-      peek().type === TOKEN.PERCENT
+      peek().type === TOKEN.PERCENT ||
+      peek().type === TOKEN.TIMES_WORD ||
+      peek().type === TOKEN.DIVIDED_BY_WORD
     ) {
-      const operator = advance().value;
+      const opToken = advance();
+      const op = opToken.type === TOKEN.TIMES_WORD ? '*' :
+                 opToken.type === TOKEN.DIVIDED_BY_WORD ? '/' :
+                 opToken.value;
       const right = parsePower();
-      left = { type: 'BinaryExpression', operator, left, right };
+      left = { type: 'BinaryExpression', operator: op, left, right };
     }
     return left;
   }
@@ -2214,6 +2471,16 @@ function parseAsk() {
 
   // primary → itemExpr | atom (postfix)*
   function parsePrimary() {
+    // v2.4 — "record with" and "list with" as expressions (contextual)
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'record' &&
+        peekAt(1).type === TOKEN.WITH) {
+      return parseRecordWith(true);
+    }
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'list' &&
+        peekAt(1).type === TOKEN.WITH) {
+      return parseListWith();
+    }
+
     // v1.0.1 — record constructor: `create a Person with name "Ada" and age 17`.
     // `create` then an article ("a"/"an") then a kind name then "with" pairs.
     if (peek().type === TOKEN.IDENTIFIER && peek().value === 'create') {
@@ -2321,6 +2588,11 @@ function parseAsk() {
       } else if (peek().type === TOKEN.IDENTIFIER && peek().value === 'length') {
         advance();
         node = { type: 'LengthExpression', object: node };
+      } else if (peek().type === TOKEN.AT && peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'position') {
+        advance(); // at
+        advance(); // position
+        const idx = consume(TOKEN.NUMBER, 'Expected a number after "at position".').value;
+        node = { type: 'IndexExpression', object: node, index: { type: 'NumberLiteral', value: idx } };
       } else {
         break;
       }
@@ -2340,6 +2612,9 @@ function parseAsk() {
     if (first.type  !== TOKEN.IDENTIFIER) return null;
     if (second.type !== TOKEN.IDENTIFIER) return null;
     if (third.type  !== TOKEN.IDENTIFIER) return null;
+
+    // v2.4 — skip "different from" which is a comparison, not an item expression
+    if (second.value === 'different' && third.value === 'from') return null;
 
     // "first from players" / "last from players" — missing noun
     if ((first.value === 'first' || first.value === 'last') && second.value === 'from') {
@@ -2442,6 +2717,18 @@ function parseAsk() {
     }
 
     if (token.type === TOKEN.IDENTIFIER || token.type === TOKEN.BACK) {
+      if (peekAt(1).type === TOKEN.USES || peekAt(1).type === TOKEN.FILLS) {
+        const callee = { type: 'Identifier', name: token.value };
+        advance();
+        advance(); // uses/fills
+        const args = [];
+        while (peek().type !== TOKEN.TOGETHER && peek().type !== TOKEN.DONE && peek().type !== TOKEN.EOF) {
+          if (peek().type === TOKEN.COMMA) { advance(); continue; }
+          args.push(parseExpression());
+        }
+        if (peek().type === TOKEN.TOGETHER) advance();
+        return { type: 'CallExpression', callee, args };
+      }
       if (peekAt(1).type === TOKEN.LPAREN) return parseCallExpression();
       // Handle 'this' and 'super' as special identifiers
       if (token.value === 'this') {
@@ -2620,7 +2907,12 @@ function parseAsk() {
       } else {
         key = consume(TOKEN.IDENTIFIER, 'Expected a property name.').value;
       }
-      consume(TOKEN.IS, `Expected "is" after property name "${key}".\n\nExample:\n  name is "Ayokunle"`);
+      // Accept both "is" and "be" as the property separator
+      if (peek().type === TOKEN.BE) {
+        advance(); // consume "be"
+      } else {
+        consume(TOKEN.IS, `Expected "is" after property name "${key}".\n\nExample:\n  name is "Ayokunle"`);
+      }
       const value = parseExpression();
       properties.push({ key, value });
     }
@@ -2639,7 +2931,19 @@ function parseAsk() {
           peek()
         ));
       }
-      const key = consume(TOKEN.IDENTIFIER, 'Expected a property name.').value;
+      // v2.4 — accept keyword tokens as property names (e.g., "to" in mail transport)
+      const keyToken = peek();
+      if (keyToken.type === TOKEN.IDENTIFIER || keyToken.type === TOKEN.TO ||
+          keyToken.type === TOKEN.FROM || keyToken.type === TOKEN.AND ||
+          keyToken.type === TOKEN.OR || keyToken.type === TOKEN.NOT ||
+          keyToken.type === TOKEN.IN || keyToken.type === TOKEN.WITH ||
+          keyToken.type === TOKEN.AS || keyToken.type === TOKEN.IF ||
+          keyToken.type === TOKEN.OTHERWISE) {
+        advance();
+      } else {
+        throw new Error(makeError('Expected a property name.', keyToken));
+      }
+      const key = keyToken.value;
       consume(TOKEN.IS, `Expected "is" after property name "${key}".\n\nExample:\n  ${key} is "value"`);
       const value = parseExpression();
       properties.push({ key, value });
@@ -3088,9 +3392,10 @@ function parseAsk() {
       args.push(parseExpression());
     }
     // v1.1 — collection expressions: add(item to list) / remove(item from list) / write(data to "file")
-    if (args.length === 1 && peek().type === TOKEN.IDENTIFIER &&
-        (peek().value === 'to' || peek().value === 'from')) {
-      separator = peek().value;
+    if (args.length === 1 && (
+        (peek().type === TOKEN.IDENTIFIER && (peek().value === 'to' || peek().value === 'from')) ||
+        peek().type === TOKEN.TO)) {
+      separator = peek().value === 'to' ? 'to' : peek().value;
       advance();
       if (peek().type === TOKEN.EOF) {
         throw new Error(makeError(`Expected a value after "${separator}".`, peek()));

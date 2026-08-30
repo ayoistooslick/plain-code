@@ -1,6 +1,6 @@
 // PlainScript v1.0.2 — Collection helpers
 
-remember scores as [90, 55, 70, 55, 30]
+remember scores as list with 90, 55, 70, 55, 30
 
 show sort(scores)          // [ 30, 55, 55, 70, 90 ]
 show reverse(scores)       // [ 30, 55, 70, 55, 90 ]
@@ -22,20 +22,19 @@ show values(user)          // [ 'Ada', 17 ]
 show hasKey(user, "age")   // true
 show hasKey(user, "city")  // false
 
-remember joined as merge(user, { country: "Nigeria" })
+remember joined as merge(user, record with country "Nigeria" done)
 show country of joined
 
 remember numbers as range(1, 6)     // [ 1, 2, 3, 4, 5 ]
 show sum(numbers)
 
-remember nested as [[1, 2], [3, [4]]]
+remember nested as list with list with 1, 2, list with 3, list with 4
 show flatten(nested)                 // [ 1, 2, 3, 4 ]
 
-remember crew as [
-    { name: "Ada",    team: "red"  },
-    { name: "Bo",     team: "blue" },
-    { name: "Cy",     team: "red"  }
-]
+remember crew as list with
+    record with name "Ada" team "red" done,
+    record with name "Bo" team "blue" done,
+    record with name "Cy" team "red" done
 
 show groupBy(crew, "team")
 show pick(user, "name")

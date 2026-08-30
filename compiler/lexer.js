@@ -104,6 +104,17 @@ const TOKEN = {
   // v1.0.1 — generators. "yield" is a JavaScript reserved word, so it becomes a
   // real keyword token (a variable named `yield` is illegal in JS anyway).
   YIELD:        'YIELD',
+  // v2.3 — English-like syntax keywords
+  TO:           'TO',           // "to add a and b together" function syntax
+  TOGETHER:     'TOGETHER',     // function block terminator alternative
+  BE:           'BE',           // "let x be 5" alternative to "let x is 5"
+  THEN:         'THEN',         // "when ... then" alternative
+  PLUS_WORD:    'PLUS_WORD',    // "a plus b" alternative to "a + b"
+  MINUS_WORD:   'MINUS_WORD',   // "a minus b" alternative to "a - b"
+  TIMES_WORD:   'TIMES_WORD',   // "a times b" alternative to "a * b"
+  DIVIDED_BY_WORD: 'DIVIDED_BY_WORD', // "a divided by b" alternative to "a / b"
+  LIST_WITH:    'LIST_WITH',    // "list with 1, 2, 3" alternative to "[1, 2, 3]"
+  RECORD_WITH:  'RECORD_WITH',  // "record with name 'Alice'" alternative to object literal
   // Punctuation
   LBRACE:      'LBRACE',   // { — inline object literal (v1.2)
   RBRACE:      'RBRACE',   // }
@@ -141,6 +152,11 @@ const TOKEN = {
   SYMBOL_KW:   'SYMBOL_KW', // symbol keyword
   DEBUGGER_KW: 'DEBUGGER_KW', // debugger keyword
   IMPORT_META: 'IMPORT_META', // import.meta
+  // v2.4 — Near-English intent-oriented syntax (single-word keywords)
+  RAISES:        'RAISES',        // "raise expr" throw alternative
+  CHOOSING:      'CHOOSING',      // "choosing cond then a otherwise b" ternary
+  USES:          'USES',          // "x uses a, b together" function call
+  FILLS:         'FILLS',         // "fill x with a, b together" function call
   // End of input
   EOF:         'EOF',
 };
@@ -250,6 +266,23 @@ const KEYWORDS = {
   yield:      TOKEN.YIELD,
   symbol:     TOKEN.SYMBOL_KW,
   debugger:   TOKEN.DEBUGGER_KW,
+  // v2.3 — English-like syntax keywords
+  to:         TOKEN.TO,
+  together:   TOKEN.TOGETHER,
+  be:         TOKEN.BE,
+  then:       TOKEN.THEN,
+  plus:       TOKEN.PLUS_WORD,
+  minus:      TOKEN.MINUS_WORD,
+  times:      TOKEN.TIMES_WORD,
+  divided_by: TOKEN.DIVIDED_BY_WORD,
+  list_with:  TOKEN.LIST_WITH,
+  record_with: TOKEN.RECORD_WITH,
+  // v2.4 — Near-English intent-oriented syntax (single-word keywords)
+  raise:        TOKEN.RAISES,
+  raises:       TOKEN.RAISES,
+  choosing:     TOKEN.CHOOSING,
+  uses:         TOKEN.USES,
+  fills:        TOKEN.FILLS,
 };
 
 // Keywords that introduce raw SQL blocks (content up to "done" is collected verbatim).

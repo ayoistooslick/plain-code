@@ -8,7 +8,7 @@
 make parseSettings(raw)
     remember settings as jsonDecode(raw)
     if settings is empty
-        give { theme: "light" }
+        give record with theme "light" done
     otherwise
         give settings
     done
@@ -20,7 +20,7 @@ try
     show theme of settings
 recover as err
     show "falling back: " + message of err
-    remember settings as { theme: "dark" }
+    remember settings as record with theme "dark" done
     show theme of settings
 done
 
@@ -40,7 +40,7 @@ done
 show "survived the failed read"
 
 // Automatic retry with a delay
-remember logs as []
+remember logs as list
 make fetchStatus()
     add("trying…" to logs)
     give read("status.db.json")

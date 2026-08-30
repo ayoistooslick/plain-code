@@ -141,10 +141,11 @@ All commands also work through `npx` and npm scripts.
 
 1. **Every block ends with `end`.** No braces, no semicolons anywhere.
 2. **Variables:** declare `let x is V`; reassign `x is now V`.
-3. **Conditions MUST contain a comparison.** No truthy checks:
+3. **Conditions MUST contain a comparison.** No truthy checks. Use `same as`, `different from`, `more than`, `fewer than`, `is at least`, `is at most`, `made of`, `starts as`, `ends as`, or `between A and B`:
 
 ```text
 if name                      // INVALID — truthy check
+if finished same as true     // correct (English syntax)
 if finished is true          // correct
 ```
 
@@ -200,24 +201,24 @@ print greeting
 
 ### Comparisons
 
-| PlainScript                           | JavaScript         |
-|--------------------------------|--------------------|
-| `is` / `is equal to`           | `===`              |
-| `is not`                       | `!==`              |
-| `is greater than` / `is above` | `>`                |
-| `is less than` / `is below`    | `<`                |
-| `is at least` / `is at most`   | `>=` / `<=`        |
-| `is empty` / `is not empty`    | `.length === 0 / > 0` |
-| `contains "x"`                 | `.includes("x")`   |
-| `starts with "x"` / `ends with "x"` | `.startsWith / .endsWith` |
-| `between A and B`              | `>= A && <= B`     |
-| `is true` / `is false`         | `=== true/false`   |
+| PlainScript                           | English syntax              | JavaScript         |
+|--------------------------------|-----------------------------|--------------------|
+| `is` / `is equal to`           | `same as`                   | `===`              |
+| `is not`                       | `different from`            | `!==`              |
+| `is greater than` / `is above` | `more than`                 | `>`                |
+| `is less than` / `is below`    | `fewer than`                | `<`                |
+| `is at least` / `is at most`   |                             | `>=` / `<=`        |
+| `is empty` / `is not empty`    |                             | `.length === 0 / > 0` |
+| `contains "x"`                 | `made of "x"`               | `.includes("x")`   |
+| `starts with "x"` / `ends with "x"` | `starts as "x"` / `ends as "x"` | `.startsWith / .endsWith` |
+| `between A and B`              |                             | `>= A && <= B`     |
+| `is true` / `is false`         |                             | `=== true/false`   |
 
-Combine with `and`, `or`, `not`.
+Combine with `and`, `or`, `not`. The English syntax forms (`same as`, `different from`, `more than`, `fewer than`, `made of`, `starts as`, `ends as`) are all valid alternatives.
 
 ```plainscript
 let age is 21
-if age is at least 18 and age is below 65
+if age is at least 18 and age fewer than 65
     print "working age"
 otherwise
     print "not working age"
@@ -232,7 +233,7 @@ end
 ### Loops
 
 ```plainscript
-let players is ["Haaland", "Foden", "Rodri"]
+let players is list with "Haaland", "Foden", "Rodri"
 for each player in players
     print player
 end
@@ -274,7 +275,7 @@ CommonJS `module.exports` for them, so built files work with `require()`.
 ### Collections and objects
 
 ```plainscript
-let players is ["Haaland", "Foden", "Rodri"]
+let players is list with "Haaland", "Foden", "Rodri"
 
 print first player from players        // players[0]
 print last player from players         // players[length - 1]
@@ -284,27 +285,27 @@ first player from players is now "Palmer"
 print players length                   // .length
 add("Marmoush" to players)            // push
 remove("Rodri" from players)          // remove by value
-if players contains "Foden"
+if players made of "Foden"
     print "found"
 end
 
-let user is { name: "Ayo", age: 17 }
+let user is record with name "Ayo", age 17 done
 print name of user                     // property chains read right-to-left
 user.age is now 18
 
-let config is
-    host is "localhost"
-    port is 3000
-end
+let config is record with
+    host "localhost"
+    port 3000
+done
 print host of config
 ```
 
 Destructuring:
 
 ```plainscript
-let nums is [1, 2, 3]
+let nums is list with 1, 2, 3
 let [a, b, c] is nums
-let obj is {x: 10, y: 20}
+let obj is record with x 10, y 20 done
 let {x, y} is obj
 ```
 
@@ -413,8 +414,8 @@ route get "/teams"
 end
 
 route post "/players"
-    let missing is validate(body of request, ["name", "email"])
-    if length of missing is greater than 0
+    let missing is validate(body of request, list with "name", "email")
+    if length of missing more than 0
         status 400
         print missing
     otherwise
@@ -481,7 +482,7 @@ start 3000
 
 ```plainscript
 web app
-accept uploads limit "5 MB" allow ["image/png", "image/jpeg"] folder "uploads"
+accept uploads limit "5 MB" allow list with "image/png", "image/jpeg" folder "uploads"
 
 route post "/scan"
     let file is upload("doc")
@@ -615,9 +616,9 @@ if ok of r is true
     print data of r
 end
 
-let body is { name: "Ada" }
+let body is record with name "Ada" done
 let created is post "https://api.example.com/users" with body
-    headers { accept: "application/json" }
+    headers record with accept "application/json" done
     timeout 5000
 end
 
@@ -742,7 +743,7 @@ whatsapp bot
             print "Welcome!"
         end
 
-        if message.text contains "help"
+        if message.text made of "help"
             print `Commands: /start /help`
         end
     end
@@ -767,8 +768,8 @@ whatsapp bot
 end
 ```
 
-- Inside `on message`, `message` holds `{ text, chat, sender, name, id,
-  time, isGroup }`; `print` answers the current chat; `log message` prints it.
+- Inside `on message`, `message` holds `record with text, chat, sender, name, id,
+  time, isGroup done`; `print` answers the current chat; `log message` prints it.
 - Own messages and status broadcasts are ignored; groups work; transient
   disconnects reconnect after 3 seconds.
 
@@ -918,16 +919,16 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
   objects — `jsonEncode`, `send mail`, DB rows all work unchanged. For different
   shapes, compose with `merge(a, b)` instead of `extends`.
 
-- **Concurrency:** `all of [e1, e2]`, `any of [e1, e2]`, `settled of [e1, e2]`
-  (returns `{ status, value | reason }` records), and `withTimeout(promise, ms)`.
-  Example: `let both is all of [fetchPage(), fetchApi()]`.
+- **Concurrency:** `all of list with e1, e2 done`, `any of list with e1, e2 done`, `settled of list with e1, e2 done`
+  (returns `record with status, value | reason done` records), and `withTimeout(promise, ms)`.
+  Example: `let both is all of list with fetchPage(), fetchApi() done`.
 
 - **Generators:** use `yield` inside `define ... end`; the function becomes a
   generator. Consume with `for each` or `spread of`.
   ```plainscript
   define countUp(n)
       let i is 0
-      while i is less than n
+      while i fewer than n
         i is now i + 1
         yield i
       end
@@ -950,7 +951,7 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
   ```
 
 - **CLI & processes:** `args()` returns `process.argv.slice(2)`;
-  `let r is runCommand("node", ["-v"])` → `r.ok`, `r.code`, `r.stdout`, `r.stderr`.
+  `let r is runCommand("node", list with "-v" done)` → `r.ok`, `r.code`, `r.stdout`, `r.stderr`.
 
 - **Filesystem & paths:** `fileSize(p)`, `fileType(p)` (`file`/`directory`),
   `lastModified(p)`, `walkFolder(dir)` (recursive file list); `joinPath(a, b)`,
@@ -968,7 +969,7 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
   ```plainscript
   test "addition"
       check add(2, 3) equals 5
-      check "hello" contains "ell"
+      check "hello" made of "ell"
       check jsonDecode("nope") raises "JSON"
   end
   ```
@@ -988,10 +989,13 @@ IOPL-native — PlainScript grammar, not TypeScript syntax.
 > - Variables: `let x is V`, reassign `x is now V`. Print with
 >   `print X` or `print(X)`.
 > - Conditions MUST contain a comparison; combine with `and/or/not`; use
->   `is true`/`is false`; no truthy checks; no `otherwise if` — nest.
+>   `is true`/`is false` or English forms `same as`, `different from`,
+>   `more than`, `fewer than`; no truthy checks; no `otherwise if` — nest.
 > - Never write `await`: use `wait for <expr>` or self-awaiting statements.
 > - No method calls on values: use `length(x)`, `add(v to list)`,
->   `remove(v from list)`, `x contains y`, `first x from xs`, `name of rec`.
+>   `remove(v from list)`, `x made of y`, `first x from xs`, `name of rec`.
+> - Collections: use `list with a, b, c` for arrays and `record with key val done` for objects. Access array elements with `x at position i` or `item i from xs`.
+> - String checks: use `x starts as "prefix"` and `x ends as "suffix"`.
 > - Functions: `define f(a, b) ... end`, return with `give back`, call `f(1, 2)`.
 >   Top-level functions are auto-exported from built files (CommonJS).
 > - Raw JS: not needed anymore — everything is natively supported.

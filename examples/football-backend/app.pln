@@ -55,9 +55,9 @@ route get "/teams"
 done
 
 route post "/teams"
-    remember missing as validate(body of request, ["name"])
+    remember missing as validate(body of request, list with "name")
     remember problems as length(missing)
-    if problems is greater than 0
+    if problems more than 0
         status 400
         reply missing
     otherwise

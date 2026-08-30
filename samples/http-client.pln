@@ -5,16 +5,14 @@ remember users as get "https://jsonplaceholder.typicode.com/users"
 if ok of users is true
     show length(data of users)
     if length(data of users) is greater than 0
-        remember firstUser as data of users[0]
+        remember firstUser as data of users at position 0
         show name of firstUser
     done
 otherwise
     show "request failed with status " + status of users
 done
 
-remember created as post "https://jsonplaceholder.typicode.com/posts" with {
-    title: "Hello from PlainScript"
-}
+remember created as post "https://jsonplaceholder.typicode.com/posts" with record with title "Hello from PlainScript" done
 
 show status of created
 

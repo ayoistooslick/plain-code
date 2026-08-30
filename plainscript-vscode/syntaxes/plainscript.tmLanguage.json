@@ -60,7 +60,7 @@
             "patterns": [
                 {
                     "name": "keyword.control.plainscript",
-                    "match": "\\b(if|otherwise|for|each|every|in|while|when|listen|try|recover|retry|times|wait|enable|destroy|accept|require|using|end)\\b"
+                    "match": "\\b(if|otherwise|for|each|every|in|while|when|listen|try|recover|retry|times|wait|enable|destroy|accept|require|using|end|at|position|of|kind|has|field|starts|as|ends|made|uses|fills|raises|handled|choosing|then|more|fewer|same|different|from)\\b"
                 },
                 {
                     "name": "keyword.declaration.plainscript",
@@ -72,7 +72,7 @@
                 },
                 {
                     "name": "keyword.operator.plainscript",
-                    "match": "\\b(as|give|reply|serve|note|print|broadcast|log|ask|ocr|send|load|run|test|check|spread|yield|merge|create|kind|called)\\b"
+                    "match": "\\b(as|give|reply|serve|note|print|broadcast|log|ask|ocr|send|load|run|test|check|spread|yield|merge|create|kind|called|at_position|of_kind|has_field|starts_as|ends_as|made_of|uses|fills|raises|handled_by|choosing|more_than|fewer_than|same_as|different_from)\\b"
                 },
                 {
                     "name": "keyword.operator.comparison.plainscript",

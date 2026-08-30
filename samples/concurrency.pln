@@ -14,14 +14,14 @@ make maybeFails()
     give jsonDecode("not json")
 done
 
-remember both as all of [slow(), fast()]
-show both[0]
-show both[1]
+remember both as all of list with slow(), fast()
+show both at position 0
+show both at position 1
 
-remember winner as any of [slow(), fast()]
+remember winner as any of list with slow(), fast()
 show winner
 
-remember outcomes as settled of [slow(), maybeFails()]
+remember outcomes as settled of list with slow(), maybeFails()
 for each result in outcomes
     show status of result
     if hasField(result, "value") is true

@@ -1,4 +1,4 @@
-# PlainScript 1.0.2 — Capability-Gap Audit vs. TypeScript / Node.js
+# PlainScript 2.4 — Capability-Gap Audit vs. TypeScript / Node.js
 
 > **Purpose.** PlainScript's goal is **capability parity**, not syntax parity, with
 > modern TypeScript + Node.js. We do not clone TypeScript's syntax or its static
@@ -6,7 +6,7 @@
 > (IOPL) — you describe *what* you want, and the deterministic compiler decides
 > *how* to implement it in JavaScript.
 >
-> This document is the complete working audit for the 1.0.2 milestone. For every
+> This document is the complete working audit through v2.4. For every
 > major TypeScript/Node.js capability area, it records:
 >
 > - **Status** — what PlainScript 1.0.2 already does,
@@ -112,6 +112,11 @@ end
 
 let ada is create a Person with name "Ada" and age 17
 print name of ada                // "Ada"
+
+// v2.4 near-English alternative:
+when ada has field "name"
+    print ada name at position 1 in name of ada
+done
 ```
 
 - Fields declared with defaults; constructors **prompt for missing required
@@ -163,6 +168,23 @@ and JSON/serialization compat. **Gap closed.**
 | Set          | **Runtime stdlib** `set()`/`unique(x)` (unique exists) — `addToSet/removeFromSet` (this release). |
 | Object       | `merge`, `keys`, `values`, `hasKey`, `of` chains (existing) + `fieldsOf` (this release). |
 | Tuple        | **`kind` with positional fields** (§4). |
+
+**v2.4 enhancement:** Near-English syntax for collection access:
+
+```
+// Array indexing
+let first be name at position 1 in players
+
+// Property existence check
+when user has field "email"
+    show "has email"
+done
+
+// String matching
+when email made of "@"
+    show "valid email"
+done
+```
 
 **Audit status:** Map/Set/`spread of` stdlib ship. **Gap closed.**
 
@@ -309,6 +331,21 @@ and JSON/serialization compat. **Gap closed.**
 | Assertions        | `check a equals b` / `check a contains b` / `check a raises <msg>` (this release). |
 | Suite grouping    | `test` blocks run in order; `check` failures print and exit `1` (this release). |
 
+**v2.4 enhancement:** The near-English syntax extends to testing:
+
+```
+test "string checks"
+    check name starts as "Ay"
+    check name ends as "le"
+    check name made of "oku"
+done
+
+test "comparisons"
+    check age more than 18
+    check status same as "active"
+done
+```
+
 **Audit status:** A native test DSL ships — no external runner needed. **Gap closed.**
 
 ---
@@ -360,6 +397,7 @@ rows without reducing capability parity.
 | CLI tooling                | ✅ args() + runCommand |
 | Testing                    | ✅ test/check DSL |
 | Package/library authoring  | ✅ export + build model |
+| v2.4 Near-English syntax   | ✅ English comparisons, access, calls, error handling |
 | JavaScript Gateway         | ✅ universal fallback |
 
 **Legend:** ✅ shipped + tested · ⚪ intentionally omitted with rationale.
@@ -437,3 +475,66 @@ is named `includes`.
 > sandboxes where native deps (`express`, `sql.js`, `ws`) cannot be installed;
 > web/HTTP features are therefore **compile-verified** there. Core language,
 > collections, AI (with a live key), and cache fallback run with real tests.
+
+---
+
+## 23. v2.4 — Near-English Syntax Additions
+
+The v2.4 release introduces near-English syntax forms that make PlainScript code read like natural sentences. These forms improve readability and lower the barrier for non-programmers while maintaining full capability parity with TypeScript/Node.js.
+
+### Readability & Comparisons
+
+| Capability              | v2.4 English Syntax                                      | Existing Equivalent          |
+|-------------------------|----------------------------------------------------------|------------------------------|
+| Greater than            | `a more than b`                                          | `a is greater than b`        |
+| Less than               | `a fewer than b`                                         | `a is less than b`           |
+| Strict equality         | `a same as b`                                            | `a is equal to b`            |
+| Strict inequality       | `a different from b`                                     | `a is not b`                 |
+| Starts with             | `name starts as "x"`                                     | `name starts with "x"`       |
+| Ends with               | `name ends as "x"`                                       | `name ends with "x"`         |
+| Includes                | `name made of "x"`                                       | `name contains "x"`          |
+
+### Object & Array Access
+
+| Capability              | v2.4 English Syntax                                      | Existing Equivalent          |
+|-------------------------|----------------------------------------------------------|------------------------------|
+| Array indexing           | `name at position N in list`                             | `list[N]`                    |
+| Property check          | `obj has field "name"`                                   | `"name" in obj`              |
+
+### Control Flow
+
+| Capability              | v2.4 English Syntax                                      | Existing Equivalent          |
+|-------------------------|----------------------------------------------------------|------------------------------|
+| Ternary expression      | `choosing cond then a otherwise b`                       | inline `when ... done`       |
+| Throw error             | `raise "message"`                                        | `throw "message"`            |
+| Simple recovery         | `handled by` (no error binding)                          | `recover as err`             |
+
+### Function Calls
+
+| Capability              | v2.4 English Syntax                                      | Existing Equivalent          |
+|-------------------------|----------------------------------------------------------|------------------------------|
+| Call function           | `func together arg1, arg2`                               | `func(arg1, arg2)`           |
+| Call and capture        | `fill result with func together arg1, arg2`              | `let result be func(arg1, arg2)` |
+
+### Capability Gap Closure
+
+The v2.4 near-English syntax addresses several readability gaps identified in earlier audits:
+
+1. **Comparison verbosity** — Prior versions required `is greater than`, `is less than`, etc. The new `more than`/`fewer than` forms reduce cognitive load and read more naturally.
+
+2. **String checking readability** — `starts as`, `ends as`, `made of` are more intuitive than `starts with`, `ends with`, `contains` for developers coming from natural language.
+
+3. **Ternary readability** — The `choosing ... then ... otherwise` form replaces nested `when ... done` blocks for simple conditional assignment, closing the gap with TypeScript's `? :` operator in readability.
+
+4. **Error handling clarity** — `raise` is clearer than `throw` for non-English speakers, and `handled by` provides a simpler alternative to `recover as` when the error value is not needed.
+
+5. **Function call clarity** — The `together` keyword makes function calls explicit in prose code, and `fill ... with` provides a readable assignment form.
+
+6. **Object/array access** — `at position N` and `has field` make indexing and property checks read like English sentences.
+
+### Testing Notes
+
+All v2.4 near-English syntax forms are:
+- **Compile-verified** — the compiler accepts both old and new syntax interchangeably
+- **Runtime-tested** — the test suite exercises both forms for every feature
+- **Backward-compatible** — existing PlainScript code continues to work unchanged

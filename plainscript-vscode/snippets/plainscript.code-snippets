@@ -201,5 +201,57 @@
         "prefix": "waitfor",
         "body": ["let ${1:result} is wait for ${2:promise}"],
         "description": "Await a promise"
+    },
+    "At position": {
+        "prefix": "atpos",
+        "body": ["${1:name} at position ${2:0}"],
+        "description": "Access value at position"
+    },
+    "Has field": {
+        "prefix": "hasfield",
+        "body": ["${1:name} has field \"${2:field}\""],
+        "description": "Check if a value has a field"
+    },
+    "Made of": {
+        "prefix": "madeof",
+        "body": ["${1:name} made of \"${2:text}\""],
+        "description": "Create a value made of text"
+    },
+    "More than": {
+        "prefix": "morethan",
+        "body": ["${1:a} more than ${2:b}"],
+        "description": "Greater-than comparison"
+    },
+    "Fewer than": {
+        "prefix": "fewerthan",
+        "body": ["${1:a} fewer than ${2:b}"],
+        "description": "Less-than comparison"
+    },
+    "Same as": {
+        "prefix": "sameas",
+        "body": ["${1:a} same as ${2:b}"],
+        "description": "Equality comparison"
+    },
+    "Different from": {
+        "prefix": "difffrom",
+        "body": ["${1:a} different from ${2:b}"],
+        "description": "Inequality comparison"
+    },
+    "Raise": {
+        "prefix": "raises",
+        "body": ["raise ${1:expr}"],
+        "description": "Raise an error"
+    },
+    "Choosing": {
+        "prefix": "choosing",
+        "body": [
+            "choosing ${1:cond} then ${2:a} otherwise ${3:b}"
+        ],
+        "description": "Conditional expression"
+    },
+    "Fill with": {
+        "prefix": "fillwith",
+        "body": ["fill ${1:name} with ${2:args} together"],
+        "description": "Fill a value with arguments"
     }
 }

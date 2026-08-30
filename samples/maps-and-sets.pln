@@ -1,8 +1,8 @@
 // PlainScript v1.0.2 — Maps and Sets
 
 remember users as keyMap()
-mapSet(users, "ada", { role: "admin" })
-mapSet(users, "bo", { role: "viewer" })
+mapSet(users, "ada", record with role "admin" done)
+mapSet(users, "bo", record with role "viewer" done)
 
 show mapGet(users, "ada")
 show mapHas(users, "bo")     // true

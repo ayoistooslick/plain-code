@@ -1,6 +1,6 @@
-# PlainScript Language Specification (v1.0.2)
+# PlainScript Language Specification (v2.4)
 
-Version: 1.0.2
+Version: 2.4
 Status: Stable
 File Extension: .pln
 
@@ -41,42 +41,45 @@ Every keyword should be understandable by a 12-year-old.
 
 Declare:
 
-    let name is "Ayokunle"
-    let age is 16
+    let name be "Ayokunle"
+    let age be 16
+    remember age as 16
 
 Reassign:
 
-    age is now 17
-    age is now 20
-    age is now 21
+    set age to 17
+    set age to 20
+    set age to 21
+
+All three forms are valid; `let x be V` is the preferred form.
 
 ---
 
 ## Printing
 
-    print "Hello"
-    print("Hello")
-    print age
-    print(players[0])
-    print user.name
+    show "Hello"
+    show("Hello")
+    show age
+    show(players[0])
+    show user.name
 
-Both keyword form (`print expr`) and call form (`print(expr)`) are valid and produce identical output.
+Both keyword form (`show expr`) and call form (`show(expr)`) are valid and produce identical output.
 
 ---
 
 ## Conditions
 
-    if age is 18
-        print "Adult"
+    when age is 18
+        show "Adult"
     otherwise
-        print "Minor"
-    end
+        show "Minor"
+    done
 
-    if age is 18
-        print "Adult"
+    when age is 18
+        show "Adult"
     else
-        print "Minor"
-    end
+        show "Minor"
+    done
 
 ### Comparison Operators
 
@@ -96,25 +99,118 @@ Both keyword form (`print expr`) and call form (`print(expr)`) are valid and pro
 | `starts with "x"`            | `.startsWith("x")` |
 | `ends with "x"`              | `.endsWith("x")`   |
 | `between A and B`            | `>= A && <= B`     |
+| `a more than b`              | `>`                |
+| `a fewer than b`             | `<`                |
+| `a same as b`                | `===`              |
+| `a different from b`         | `!==`              |
+| `name starts as "x"`         | `.startsWith("x")` |
+| `name ends as "x"`           | `.endsWith("x")`   |
+| `name made of "x"`           | `.includes("x")`   |
+
+---
+
+## v2.4 Near-English Syntax
+
+PlainScript v2.4 introduces near-English syntax forms that make code read like natural sentences. These forms are fully interchangeable with their existing equivalents.
+
+### Array Position Access
+
+    let first be name at position 1 in list
+
+Equivalent to `list[0]` (0-indexed). The phrase `at position N` provides readable array indexing.
+
+### Property Existence Check
+
+    when obj has field "name"
+        show "exists"
+    done
+
+Equivalent to `"name" in obj`. The phrase `has field` reads naturally for property checks.
+
+### String Matching
+
+    when name starts as "Ay"
+        show "starts with prefix"
+    done
+
+    when name ends as "le"
+        show "ends with suffix"
+    done
+
+    when name made of "oku"
+        show "contains substring"
+    done
+
+These are English alternatives to `starts with`, `ends with`, and `contains`.
+
+### Comparison Operators
+
+    when a more than b
+        show "a is greater"
+    done
+
+    when a fewer than b
+        show "a is smaller"
+    done
+
+    when a same as b
+        show "equal"
+    done
+
+    when a different from b
+        show "not equal"
+    done
+
+These replace `is greater than`, `is less than`, `is equal to`, and `is not`.
+
+### Function Calls with `together`
+
+    greet together
+    add together 5, 7
+    fill result with add together 5, 7
+
+The `together` keyword marks a function call. The `fill ... with` form captures the return value.
+
+### Throwing Errors
+
+    raise "something went wrong"
+
+Equivalent to `throw new Error("something went wrong")`.
+
+### Recover Alternatives
+
+    try
+        riskyOperation()
+    handled by
+        show "fallback"
+    done
+
+The `handled by` clause is an alternative to `recover as` for simpler error recovery where the error value is not needed.
+
+### Ternary Expressions
+
+    let label be choosing age is more than 18 then "adult" otherwise "minor"
+
+Equivalent to `age > 18 ? "adult" : "minor"`. Reads as a natural English decision.
 
 ---
 
 ## Functions
 
-    define greet()
-        print "Hello"
-    end
+    to greet
+        show "Hello"
+    done
 
-    define add(a, b)
+    to add a and b together
         give back a + b
-    end
+    done
 
-    function multiply(x, y)
-        return x * y
-    end
+    to multiply x and y together
+        give back x * y
+    done
 
     greet()
-    print add(5, 7)
+    show add(5, 7)
 
 ---
 
@@ -123,30 +219,30 @@ Both keyword form (`print expr`) and call form (`print(expr)`) are valid and pro
 For each:
 
     for each player in players
-        print player
-    end
+        show player
+    done
 
 For every (alias for for each):
 
     for every item in basket
-        print item
-    end
+        show item
+    done
 
 For index:
 
     for index i from 0 to 9
-        print i
-    end
+        show i
+    done
 
     for index i from 10 to 1
-        print i
-    end
+        show i
+    done
 
 While:
 
     while age is less than 18
-        age is now age + 1
-    end
+        set age to age + 1
+    done
 
 ---
 
@@ -154,55 +250,55 @@ While:
 
 Arrays:
 
-    let players is ["Haaland", "Foden", "Rodri"]
-    let first is players[0]
-    players[1] is now "Palmer"
+    let players be list with "Haaland", "Foden", "Rodri"
+    let first be players[0]
+    set players[1] to "Palmer"
 
 Destructuring:
 
-    let nums is [1, 2, 3]
-    let [a, b, c] is nums
-    let obj is {x: 10, y: 20}
-    let {x, y} is obj
+    let nums be list with 1, 2, 3
+    let [a, b, c] be nums
+    let obj be record with x 10 and y 20
+    let {x, y} be obj
 
 Objects:
 
-    let user is
-        name is "Ayokunle"
-        age is 17
-    end
+    let user be record with
+        name "Ayokunle"
+        age 17
+    done
 
-    print name of user
-    user.age is now 18
+    show name of user
+    set user.age to 18
 
 Spread:
 
-    let more is [...nums, 4]
+    let more be [...nums, 4]
 
 ---
 
 ## Record Kinds (Classes)
 
-    define a kind called "Person" with
+    to define a kind called "Person" with
         name is ""
         age is 0
-    end
+    done
 
-    let ada is create a Person with name "Ada" and age 17
-    print name of ada
-    print ada.age
+    let ada be create a Person with name "Ada" and age 17
+    show name of ada
+    show ada.age
 
 ---
 
 ## Logical Assignment
 
-    let flag is false
+    let flag be false
     flag or is true
-    print flag
+    show flag
 
-    let val is null
+    let val be null
     val nullish is "default"
-    print val
+    show val
 
 ---
 
@@ -213,39 +309,39 @@ Spread:
 
         group "/api"
             route get "/teams"
-                let rows is query
+                let rows be query
                     select id, name from teams order by name
-                end
-                print rows
-            end
+                done
+                show rows
+            done
 
             route post "/players"
-                let missing is validate(body of request, ["name", "email"])
-                if length of missing is greater than 0
+                let missing be validate(body of request, list with "name", "email")
+                when length of missing is greater than 0
                     status 400
-                    print missing
+                    show missing
                 otherwise
-                    print "created"
-                end
-            end
-        end
+                    show "created"
+                done
+            done
+        done
 
         start 3000
-    end
+    done
 
 Classic Express style also works:
 
     use express
-    let app is express()
+    let app be express()
     serve folder "public"
 
     when someone visits "/"
-        print "Hello!"
-    end
+        show "Hello!"
+    done
 
     listen on 3000
-        print "running"
-    end
+        show "running"
+    done
 
 ---
 
@@ -255,27 +351,27 @@ Classic Express style also works:
 
     execute
         CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)
-    end
+    done
 
     insert
         INSERT INTO users (name) VALUES ('Alice')
-    end
+    done
 
     query
         SELECT * FROM users
-    end
+    done
 
 Placeholders:
 
     database "app.db"
-    let who is "ana"
+    let who be "ana"
     insert
         INSERT INTO users (name) VALUES ({who})
-    end
+    done
 
-    let adults is query
+    let adults be query
         SELECT * FROM users WHERE age >= {minAge}
-    end
+    done
 
 Transactions:
 
@@ -283,8 +379,8 @@ Transactions:
     transaction
         insert
             INSERT INTO users (name) VALUES ('bob')
-        end
-    end
+        done
+    done
 
 PostgreSQL:
 
@@ -294,17 +390,17 @@ PostgreSQL:
 
 ## HTTP Client
 
-    let r is get "https://api.example.com/users"
-    if ok of r is true
-        print status of r
-        print data of r
-    end
+    let r be get "https://api.example.com/users"
+    when ok of r is true
+        show status of r
+        show data of r
+    done
 
-    let body is { name: "Ada" }
-    let created is post "https://api.example.com/users" with body
+    let body be record with name "Ada"
+    let created be post "https://api.example.com/users" with body
         headers { accept: "application/json" }
         timeout 5000
-    end
+    done
 
     delete "https://api.example.com/users/9"
 
@@ -313,14 +409,14 @@ PostgreSQL:
 ## Error Handling
 
     try
-        let data is jsonDecode(raw)
+        let data be jsonDecode(raw)
     recover as err
-        print "bad json: " + message of err
-    end
+        show "bad json: " + message of err
+    done
 
     retry 3 times every 5 seconds
         wait for fetch("https://flaky.api")
-    end
+    done
 
 ---
 
@@ -330,13 +426,13 @@ PostgreSQL:
         check add(2, 3) equals 5
         check "hello" contains "ell"
         check jsonDecode("not json") raises "JSON"
-    end
+    done
 
 ---
 
 ## Exports
 
-    let configVersion is 3
+    let configVersion be 3
     export configVersion
 
 ---
@@ -426,6 +522,12 @@ define kind
 test check export
 debugger
 symbol
+at position has field
+starts as ends as made of
+more than fewer than same as different from
+together fill with
+raise handled by
+choosing then
 
 ---
 
@@ -478,5 +580,5 @@ symbol
 
 ---
 
-This document is the single source of truth for PlainScript v1.0.2.
+This document is the single source of truth for PlainScript v2.4.
 Every compiler implementation must follow this specification.

@@ -121,9 +121,9 @@ standard `package.json` semantics apply.
 ### Variables
 
 ```plainscript
-let name is "Ayokunle"
-let age is 16
-age is now 17
+let name be "Ayokunle"
+let age be 16
+set age to 17
 ```
 
 ### String Templates
@@ -131,11 +131,11 @@ age is now 17
 Backtick-delimited strings preserve whitespace and support `${expression}` interpolation:
 
 ```plainscript
-let name is "World"
-let greeting is `Hello ${name}!`
-print greeting
+let name be "World"
+let greeting be `Hello ${name}!`
+show greeting
 
-let email is `Dear ${customer},
+let email be `Dear ${customer},
 
 Thank you for your order #${orderId}.
 
@@ -148,79 +148,90 @@ Interpolation compiles directly to JavaScript template literals — it is not ev
 ### Conditions
 
 ```plainscript
-if age is at least 18
-    print "Adult"
+when age is at least 18
+    show "Adult"
 otherwise
-    print "Teenager"
-end
+    show "Teenager"
+done
 
-if name contains "PlainScript"
-    print "Found it"
-end
+when name contains "PlainScript"
+    show "Found it"
+done
 
-if score between 90 and 100
-    print "A grade"
-end
+when score between 90 and 100
+    show "A grade"
+done
 ```
+
+English alternatives: `same as` (`===`), `different from` (`!==`), `more than` (`>`), `fewer than` (`<`).
 
 All comparison operators:
 
 | PlainScript                  | JavaScript         |
 |------------------------|--------------------|
 | `is` / `is equal to`  | `===`              |
+| `same as`              | `===`              |
 | `is not`               | `!==`              |
+| `different from`       | `!==`              |
 | `is greater than` / `is above` | `>`       |
+| `more than`            | `>`                |
 | `is less than` / `is below`    | `<`       |
+| `fewer than`           | `<`                |
 | `is at least`          | `>=`               |
 | `is at most`           | `<=`               |
 | `is empty`             | `.length === 0`    |
 | `is not empty`         | `.length > 0`      |
 | `contains "x"`         | `.includes("x")`   |
+| `made of "x"`          | `.includes("x")`   |
 | `starts with "x"`      | `.startsWith("x")` |
+| `starts as "x"`        | `.startsWith("x")` |
 | `ends with "x"`        | `.endsWith("x")`   |
+| `ends as "x"`          | `.endsWith("x")`   |
 | `between A and B`      | `>= A && <= B`     |
+| `has field "x"`        | `"x" in obj`       |
+| `at position key`      | `obj[key]`         |
 
 ### Functions
 
 ```plainscript
-define add(a, b)
+to add a and b together
     give back a + b
-end
-print add(5, 7)
+done
+show add(5, 7)
 
-function multiply(x, y)
-    return x * y
-end
+to multiply x and y together
+    give back x * y
+done
 ```
 
 ### Arrays & Objects
 
 ```plainscript
-let players is ["Haaland", "Foden", "Rodri"]
-print players[0]
-players[1] is now "Palmer"
+let players be list with "Haaland", "Foden", "Rodri"
+show players[0]
+set players[1] to "Palmer"
 
-let user is
-    name is "Ayokunle"
-    age is 17
-end
-print user.name
+let user be record with
+    name "Ayokunle"
+    age 17
+done
+show user.name
 ```
 
 ### Loops
 
 ```plainscript
 for each player in players
-    print player
-end
+    show player
+done
 
 for every item in basket    // alias for "for each"
-    print item
-end
+    show item
+done
 
 while age is less than 18
-    age is now age + 1
-end
+    set age to age + 1
+done
 ```
 
 ### PlainScript Expressions
@@ -230,11 +241,11 @@ Collections, properties, and files read like sentences.
 **Items**
 
 ```plainscript
-let players is ["Haaland", "Foden", "Rodri"]
+let players be list with "Haaland", "Foden", "Rodri"
 
-print first player from players   // players[0]
-print last player from players    // players[players.length - 1]
-print player two from players     // players[1]
+show first player from players   // players[0]
+show last player from players    // players[players.length - 1]
+show player two from players     // players[1]
 first player from players is now "Haaland"  // players[0] = "Haaland"
 ```
 
@@ -243,20 +254,22 @@ Number words from `one` to `twenty` map to one-based positions: `player one` is 
 **Collections**
 
 ```plainscript
-print players length              // players.length
+show players length              // players.length
 add("Palmer" to players)         // players.push("Palmer")
 remove("Rodri" from players)     // players.splice(players.indexOf("Rodri"), 1)
 
-if players contains "Foden"      // players.includes("Foden")
-    print "Found"
-end
+when players contains "Foden"      // players.includes("Foden")
+    show "Found"
+done
 ```
+
+English alternatives: `made of` (`.includes()`), `starts as` (`.startsWith()`), `ends as` (`.endsWith()`), `has field` (`in`), `at position` (`[]`).
 
 **Properties**
 
 ```plainscript
-print name of user                // user.name
-print city of address of customer // customer.address.city
+show name of user                // user.name
+show city of address of customer // customer.address.city
 name of user is now "Ayo"       // user.name = "Ayo"
 ```
 
@@ -265,7 +278,7 @@ name of user is now "Ayo"       // user.name = "Ayo"
 **Files**
 
 ```plainscript
-let data is read("users.txt")   // fs.readFileSync("users.txt", 'utf8')
+let data be read("users.txt")   // fs.readFileSync("users.txt", 'utf8')
 write(data to "users.txt")           // fs.writeFileSync(data, "users.txt", 'utf8')
 ```
 
@@ -274,13 +287,13 @@ The older `readFile()` / `writeFile()` forms still work and are unchanged.
 ### Logical Assignment
 
 ```plainscript
-let flag is false
+let flag be false
 flag or is now true
-print flag
+show flag
 
-let val is null
+let val be null
 val nullish is now "default"
-print val
+show val
 ```
 
 ### TypeScript-parity capabilities (1.0.2)
@@ -288,7 +301,7 @@ print val
 The full capability-gap audit lives in [`docs/CAPABILITY_GAP_AUDIT.md`](https://github.com/ayoistooslick/plainscript/blob/main/docs/CAPABILITY_GAP_AUDIT.md).
 These features close it in PlainScript's own grammar:
 
-- **Record kinds (classes):** `define a kind called "Person" with name is "" end`
+- **Record kinds (classes):** `to define a kind called "Person" with name "" end`
   + `create a Person with name "Ada" and age 17`. Plain-object instances; unknown
   fields throw.
 - **Concurrency:** `all of [...]`, `any of [...]`, `settled of [...]`,
@@ -337,14 +350,14 @@ so data survives restarts either way.
 ### HTTP client
 
 ```plainscript
-let r is get "https://api.example.com/users"
-if ok of r
-    print status of r
-    print data of r
-end
+let r be get "https://api.example.com/users"
+when ok of r
+    show status of r
+    show data of r
+done
 
-let created is post url with body
-    headers { accept: "application/json" }
+let created be post url with body
+    headers record with accept "application/json" done
     timeout 5000
 ```
 
@@ -356,12 +369,12 @@ awaits raw promises when you need it.
 ### Passwords and tokens (built-in auth)
 
 ```plainscript
-let hash is hashPassword("correct horse")
-if checkPassword(password of body of request, hash)
-    let token is createToken(user, env("TOKEN_SECRET"), 3600)
-end
+let hash be hashPassword("correct horse")
+when checkPassword(password of body of request, hash)
+    let token be createToken(user, env("TOKEN_SECRET"), 3600)
+done
 
-let payload is readToken(token, env("TOKEN_SECRET"))
+let payload be readToken(token, env("TOKEN_SECRET"))
 ```
 
 `hashPassword`/`checkPassword` use scrypt; tokens are HMAC-signed with an
@@ -375,17 +388,17 @@ enable sessions "a-long-random-secret"
 
 route post "/login"
     user of session of request is username of body of request
-    print "welcome"
-end
+    show "welcome"
+done
 
 route get "/me"
-    print user of session of request
-end
+    show user of session of request
+done
 
 route post "/logout"
     destroy session
-    print "bye"
-end
+    show "bye"
+done
 ```
 
 Sessions ride an HMAC-signed `HttpOnly` cookie (`plainscript.sid`). The store is
@@ -394,13 +407,13 @@ in-memory: restarting the server signs everyone out.
 ### File uploads
 
 ```plainscript
-accept uploads limit "5 MB" allow ["image/png", "image/jpeg"] folder "uploads"
+accept uploads limit "5 MB" allow list with "image/png", "image/jpeg" folder "uploads"
 
 route post "/scan"
-    let file is upload("doc")
+    let file be upload("doc")
     ocr path of file as text
-    print "scanned: " + text
-end
+    show "scanned: " + text
+done
 ```
 
 Files arrive as records with `name`, `type`, `size`, `data` (buffer) and
@@ -411,7 +424,7 @@ types 415. `uploads("docs")` returns every file under a field name.
 
 ```plainscript
 set cookie "theme" to "dark" expires in 7 days
-print cookie("theme")
+show cookie("theme")
 clear cookie "theme"
 ```
 
@@ -431,7 +444,7 @@ google oauth
     secret is env("GOOGLE_SECRET")
     callback is "https://myapp.dev/auth/google/callback"
     landing is "/dashboard"
-end
+done
 ```
 
 Registers `/auth/google` (redirect) and `/auth/google/callback`
@@ -443,24 +456,24 @@ user and the browser lands on `landing`.
 ```plainscript
 when nothing matches
     status 404
-    print json
+    show json
         error is "No such road"
-    end
-end
+    done
+done
 ```
 
 ### Error handling and retries
 
 ```plainscript
 try
-    let data is jsonDecode(raw)
+    let data be jsonDecode(raw)
 recover as err
-    print "bad json: " + message of err
-end
+    show "bad json: " + message of err
+done
 
 retry 3 times every 5 seconds
     wait for fetch("https://flaky.api")
-end
+done
 ```
 
 ---
@@ -471,7 +484,7 @@ No imports needed. These functions are built into the compiler:
 
 | PlainScript                    | Description                        |
 |--------------------------|------------------------------------|
-| `print(x)`              | Print a value (`console.log`)      |
+| `show(x)`               | Print a value (`console.log`)      |
 | `readFile("path")`      | Read a file as UTF-8 text          |
 | `writeFile("path", data)` | Write text to a file            |
 | `read("path")`          | Read a file as UTF-8 text   |
@@ -498,15 +511,15 @@ No imports needed. These functions are built into the compiler:
 web app
 
 route "/"
-    print "Hello from PlainScript!"
-end
+    show "Hello from PlainScript!"
+done
 
 route "/api/status"
-    print json
+    show json
         status is "ok"
         version is "2.0"
-    end
-end
+    done
+done
 
 start 3000
 ```
@@ -520,15 +533,15 @@ database "app.db"
 
 execute
     CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)
-end
+done
 
 insert
     INSERT INTO users (name) VALUES ('Alice')
-end
+done
 
-let rows is query
+let rows be query
     SELECT * FROM users
-end
+done
 ```
 
 ---
@@ -547,23 +560,23 @@ allow cors
 group "/api"
 
     route get "/users"
-        let users is query
+        let users be query
             SELECT * FROM users
-        end
-        print users
-    end
+        done
+        show users
+    done
 
     route post "/users"
-        let missing is validate(body of request, ["name", "email"])
-        if length of missing is greater than 0
+        let missing be validate(body of request, list with "name", "email")
+        when length of missing is greater than 0
             status 400
-            print missing
+            show missing
         otherwise
-            print "created"
-        end
-    end
+            show "created"
+        done
+    done
 
-end
+done
 
 start env("PORT")
 ```
@@ -581,8 +594,8 @@ database "app.db"                    // or: postgres env("DATABASE_URL")
 transaction
     insert
         INSERT INTO users (name) VALUES ({who})
-    end
-end
+    done
+done
 ```
 
 Placeholders `{likeThis}` bind to PlainScript variables. `postgres "..."` switches
@@ -596,30 +609,30 @@ mail transport
     port is 587
     user is env("EMAIL_USER")
     pass is env("EMAIL_PASS")
-end
+done
 
 send mail
     from is "hello@plainscript.dev"
     to is "you@example.com"
     subject is "Hello from PlainScript"
     text is "Sent from a PlainScript program."
-end
+done
 ```
 
 ### Cron and background jobs
 
 ```plainscript
 every 5 minutes
-    print "heartbeat"
-end
+    show "heartbeat"
+done
 
 schedule "0 2 * * *"
-    print "nightly cleanup"
-end
+    show "nightly cleanup"
+done
 
-define resize(name)
-    print `resizing ${name}`
-end
+to resize name
+    show `resizing ${name}`
+done
 
 run background resize("photo.png")
 ```
@@ -630,18 +643,18 @@ run background resize("photo.png")
 websocket server on 8080
     when socket connects
         send socket "Welcome!"
-    end
+    done
     when socket sends message
         broadcast message
-    end
-end
+    done
+done
 ```
 
 ### Cache (Redis with in-memory fallback)
 
 ```plainscript
 cache env("REDIS_URL")          // omit for an in-memory Map store with TTL
-let token is cacheGet("token")
+let token be cacheGet("token")
 cacheSet("greeting", "hi", 60)
 cacheDelete("greeting")
 ```
@@ -652,15 +665,15 @@ back to an in-memory store, so naive caching works out of the box.
 ### AI / ML
 
 ```plainscript
-let reply is chat("gpt-4o-mini", [
-    { role: "user", content: "Say hello in two words" }
-])
+let reply be chat("gpt-4o-mini", list with
+    record with role "user" and content "Say hello in two words"
+done)
 
-let vec is embedText("text-embedding-3-small", "PlainScript rocks")
-let score is similarity(vec, embedText("text-embedding-3-small", "I love PlainScript"))
+let vec be embedText("text-embedding-3-small", "PlainScript rocks")
+let score be similarity(vec, embedText("text-embedding-3-small", "I love PlainScript"))
 
-let tags is ai_tags("PlainScript is an intent-oriented language")
-let article is ai_post("Welcome to PlainScript", ["why IOPL", "quick start"])
+let tags be ai_tags("PlainScript is an intent-oriented language")
+let article be ai_post("Welcome to PlainScript", list with "why IOPL", "quick start")
 ```
 
 `chat` and `embedText` are async OpenAI-compatible calls (from `OPENAI_API_KEY`,
@@ -669,13 +682,13 @@ override with `options.apiKey`/`options.baseURL`); `similarity` returns -1..1.
 ### Pagination
 
 ```plainscript
-let page is paginate(allUsers, 2, 10)
-print page.items          # second page of 10
-print page.hasNext        # true if another page exists
+let page be paginate(allUsers, 2, 10)
+show page.items          # second page of 10
+show page.hasNext        # true if another page exists
 ```
 
 `paginate(list, page, perPage)` returns
-`{ items, count, page, pages, perPage, hasNext, hasPrev }`.
+`record with items, count, page, pages, perPage, hasNext, hasPrev done`.
 
 ---
 
@@ -685,9 +698,9 @@ print page.hasNext        # true if another page exists
 import "./math.pln"
 import "./utils.pln"
 
-print PI
+show PI
 
-print double(5)
+show double(5)
 ```
 
 Imports are bundled per entry: `plainscript build` gives every source file its own
@@ -700,24 +713,24 @@ standalone output under `dist/`, with imported code inlined.
 ```plainscript
 use express
 
-let app is express()
+let app be express()
 
 serve folder "public"
 
 when someone visits "/"
-    print "Hello from PlainScript!"
-end
+    show "Hello from PlainScript!"
+done
 
 when someone visits "/api/status"
-    print json
+    show json
         status is "ok"
         version is "0.3"
-    end
-end
+    done
+done
 
 listen on 3000
-    print "Server running at http://localhost:3000"
-end
+    show "Server running at http://localhost:3000"
+done
 ```
 
 ---
@@ -736,16 +749,16 @@ whatsapp bot
     on message
         log message                         // print the normalized record
 
-        if message.text is "/start"
-            print "Welcome!"
-        end
+        when message.text is "/start"
+            show "Welcome!"
+        done
 
-        if message.text is "/help"
-            print `Available commands:
+        when message.text is "/help"
+            show `Available commands:
 /start /help`
-        end
-    end
-end
+        done
+    done
+done
 ```
 
 - `login qr` prints a scannable QR code; `login pairing "<number>"` prints an
@@ -760,11 +773,11 @@ ask "WhatsApp number: " as phone
 whatsapp bot
     auth "session"
     login pairing phone
-end
+done
 ```
 
-- Inside `on message`, `message` holds `{ text, chat, sender, name, id,
-  time, isGroup }`; `print` answers the current chat.
+- Inside `on message`, `message` holds `record with text, chat, sender, name, id,
+  time, isGroup done`; `print` answers the current chat.
 - The bot ignores its own messages and status broadcasts and keeps working in
   groups; transient disconnects reconnect after 3 seconds.
 

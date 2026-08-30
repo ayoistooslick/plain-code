@@ -4,6 +4,31 @@ All notable changes to PlainScript are documented here.
 
 ---
 
+## v2.4 — Near-English Intent-Oriented Syntax
+
+### New English syntax forms
+- `name at position N` — array indexing (alternative to `name[N]`)
+- `obj has field "name"` — property check (alternative to `"name" in obj`)
+- `name starts as "x"` — string startsWith (alternative to `name.startsWith("x")`)
+- `name ends as "x"` — string endsWith (alternative to `name.endsWith("x")`)
+- `name made of "x"` — string includes (alternative to `name.includes("x")`)
+- `a more than b` — greater than (alternative to `a > b`)
+- `a fewer than b` — less than (alternative to `a < b`)
+- `a same as b` — strict equality (alternative to `a === b`)
+- `a different from b` — strict inequality (alternative to `a !== b`)
+- `name uses arg1, arg2 together` — function call (alternative to `name(arg1, arg2)`)
+- `fill name with arg1, arg2 together` — function call (alternative)
+- `raise expr` — throw error (alternative to `throw expr`)
+- `handled by` — error recovery (alternative to `recover as`)
+- `choosing cond then a otherwise b` — ternary (alternative to `cond ? a : b`)
+
+### Improvements
+- All documentation updated to prefer English syntax
+- All examples and samples rewritten in English syntax
+- VSCode extension updated with new syntax highlighting and snippets
+
+---
+
 ## [1.0.2] — 2026
 
 ### Fixed

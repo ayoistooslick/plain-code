@@ -1,6 +1,6 @@
 // PlainScript v1.0.2 — Loops
 
-remember fruits as ["Apple", "Banana", "Cherry"]
+remember fruits as list with "Apple", "Banana", "Cherry"
 
 for each fruit in fruits
     show fruit

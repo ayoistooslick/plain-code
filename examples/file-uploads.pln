@@ -10,7 +10,7 @@
 
 web app
 
-accept uploads limit "5 MB" allow ["image/png", "image/jpeg", "text/plain"]
+accept uploads limit "5 MB" allow list with "image/png", "image/jpeg", "text/plain"
 
 route post "/upload"
     remember file as upload("file")

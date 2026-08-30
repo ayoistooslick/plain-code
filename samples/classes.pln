@@ -8,8 +8,8 @@ done
 
 remember ada as create a Person with name "Ada" and age 17
 show name of ada
-show ada.age
-show ada.country
+show age of ada
+show country of ada
 
-ada.age becomes 18
-show ada.age
+age of ada becomes 18
+show age of ada

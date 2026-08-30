@@ -1,6 +1,6 @@
 // PlainScript v1.1.0 — PlainScript Expressions
 
-remember players as ["Haaland", "Foden", "Rodri"]
+remember players as list with "Haaland", "Foden", "Rodri"
 
 show first player from players
 show last player from players

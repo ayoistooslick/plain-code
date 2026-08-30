@@ -53,7 +53,7 @@ done
 route get "/api/search"
     remember q as query("q")
     remember limit as query("limit")
-    remember results as []
+    remember results as list
     reply json
         q is q
         limit is limit

@@ -1,6 +1,6 @@
 // PlainScript v1.1 — PlainScript Expressions Examples
 
-remember players as ["Haaland", "Foden", "Rodri"]
+remember players as list with "Haaland", "Foden", "Rodri"
 
 // Items
 show first player from players

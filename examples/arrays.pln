@@ -1,13 +1,12 @@
-remember players as [
+remember players as list with
     "Haaland",
     "Foden",
     "Rodri"
-]
 
-show players[0]
+show players at position 0
 
-players[1] becomes "Palmer"
+players at position 1 becomes "Palmer"
 
-show players[1]
+show players at position 1
 
 show length(players)

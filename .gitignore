@@ -17,9 +17,9 @@ dist/
 
 # Logs
 *.log
+log.txt
 
 # Scratch / ad-hoc test artifacts
 data
 out.bin
 output.txt
-log.txt

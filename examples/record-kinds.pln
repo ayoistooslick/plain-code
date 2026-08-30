@@ -1,4 +1,4 @@
-// PlainScript v1.0.2 — Record kinds, generators and the test DSL
+// PlainScript v2.1 — Record kinds, generators and the test DSL
 //
 // Run with:  plainscript run examples/record-kinds.pln
 //
@@ -18,7 +18,7 @@ show title of fav
 show pages of fav
 show rating of fav
 
-remember extended as merge(fav, { author: "Ada" })
+remember extended as merge(fav, record with author "Ada" done)
 show author of extended
 show fieldsOf(extended)
 
@@ -40,4 +40,4 @@ make makeTitles(catalog)
     done
 done
 
-show spread of makeTitles([fav, extended])
+show spread of makeTitles(list with fav, extended)

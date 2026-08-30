@@ -29,9 +29,9 @@ group "/api"
     done
 
     route post "/users"
-        remember missing as validate(body of request, ["name", "email"])
+        remember missing as validate(body of request, list with "name", "email")
         remember count as length(missing)
-        if count is greater than 0
+        if count more than 0
             status 400
             reply missing
         otherwise
@@ -50,8 +50,8 @@ group "/api"
         remember found as query
             SELECT * FROM users WHERE id = {id}
         done
-        if length(found) is greater than 0
-            reply found[0]
+        if length(found) more than 0
+            reply found at position 0
         otherwise
             status 404
             reply "not found"

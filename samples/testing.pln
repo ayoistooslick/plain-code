@@ -14,11 +14,11 @@ test "addition"
 done
 
 test "strings"
-    check "PlainScript" contains "Script"
-    check "hello" contains "ell"
+    check "PlainScript" made of "Script"
+    check "hello" made of "ell"
 done
 
 test "json"
-    check jsonDecode("{\"name\":\"Ada\"}") equals { name: "Ada" }
+    check jsonDecode("{\"name\":\"Ada\"}") equals record with name "Ada" done
     check jsonDecode("not json") raises "JSON"
 done

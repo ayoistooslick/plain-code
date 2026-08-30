@@ -3394,6 +3394,9 @@ function generateExpr(node, context = createGenerationContext()) {
       return `{ ${props} }`;
     }
 
+    case 'ConditionalExpression':
+      return `(${generateExpr(node.condition, context)} ? ${generateExpr(node.consequent, context)} : ${generateExpr(node.alternate, context)})`;
+
     case 'NullishCoalesceExpression':
       return `(${generateExpr(node.left, context)} ?? ${generateExpr(node.right, context)})`;
 

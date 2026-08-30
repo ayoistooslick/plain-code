@@ -5,7 +5,7 @@
 // gather / filter / total map, filter and reduce in place; match routes a
 // value to behaviour.
 
-remember scores as [70, 45, 92, 38, 60]
+remember scores as list with 70, 45, 92, 38, 60
 
 gather each score in scores giving score + 5
 show scores                      // [ 75, 50, 97, 43, 65 ]
@@ -13,7 +13,7 @@ show scores                      // [ 75, 50, 97, 43, 65 ]
 filter each score in scores when score is at least 60
 show scores                      // [ 75, 97, 65 ]
 
-remember prices as [19.99, 4.99, 29.99]
+remember prices as list with 19.99, 4.99, 29.99
 total each price in prices giving price
 show prices                      // 54.97
 
