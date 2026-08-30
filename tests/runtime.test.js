@@ -7,7 +7,7 @@
 //   auth:     scrypt password hashing, signed tokens
 //   database: portable engine chain (native probe + wasm fallback)
 //
-// Run with: node tests/v211.test.js
+// Run with: node tests/runtime.test.js
 
 const fs = require('fs');
 const os = require('os');

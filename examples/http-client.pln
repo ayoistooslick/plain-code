@@ -11,7 +11,7 @@ show "GET users -> " + text(status of users) + ", count " + text(length(data of 
 
 // POST an inline object, sent as JSON
 remember created as post "https://jsonplaceholder.typicode.com/posts" with record with
-    title "Hello from PlainScript",
+    title "Hello from PlainScript" and
     userId 1
 done
 show "POST -> status " + text(status of created)
@@ -21,8 +21,8 @@ done
 
 // PUT replaces the whole resource
 remember replaced as put "https://jsonplaceholder.typicode.com/posts/1" with record with
-    title "Updated",
-    body "new body",
+    title "Updated" and
+    body "new body" and
     userId 1
 done
 show "PUT -> status " + text(status of replaced)

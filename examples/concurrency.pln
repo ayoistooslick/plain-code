@@ -7,12 +7,12 @@
 
 make fetchUsers()
     sleep(300)
-    give record with source "users", count 42 done
+    give record with source "users" and count 42 done
 done
 
 make fetchOrders()
     sleep(150)
-    give record with source "orders", count 17 done
+    give record with source "orders" and count 17 done
 done
 
 make flakyFetch()

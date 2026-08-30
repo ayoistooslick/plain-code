@@ -1,0 +1,1 @@
+- [Runtime package setup](runtime-package-setup.md) — package installs can switch the active Node runtime and rewrite lock metadata; audit and stage only intentional project changes.

@@ -12,7 +12,7 @@ Syntax highlighting and language support for the [PlainScript programming langua
 - **Auto-closing pairs** — `()`, `[]`, `{}`, `""`, ` `` `
 - **Comment toggling** — `Ctrl+/` / `Cmd+/` toggles `//` line comments
 - **Bracket matching** — highlights matching brackets
-- **Code folding** — fold `define`/`if`/`for each`/`while`/`when`/`listen` blocks
+- **Code folding** — fold `to`/`for each`/`while`/`when`/`web app`/`route` blocks
 - **Snippets** — common PlainScript patterns (variables, functions, loops, web apps, databases, tests)
 
 ---
@@ -50,11 +50,11 @@ Syntax highlighting and language support for the [PlainScript programming langua
 
 | Category    | Keywords                                                                 |
 |-------------|--------------------------------------------------------------------------|
-| Control     | `if` `otherwise` `end` `for` `each` `in` `while` `when` `listen`       |
-| Declaration | `let` `define` `function` `use` `import` `export`                       |
-| Action      | `is now` `as` `give back` `print` `reply` `serve` `note`                |
-| Comparison  | `is` `greater` `less` `than` `above` `below` `at` `least` `most` `not` `empty` `contains` `starts` `ends` `with` `between` `and` `or` |
-| Backend     | `web` `app` `route` `start` `database` `query` `insert` `cache` `mail`  |
+| Control     | `otherwise` `else` `done` `for` `each` `every` `in` `while` `when` `try` `recover` |
+| Declaration | `let` `remember` `set` `to` `use` `import` `export`                       |
+| Action      | `be` `give back` `show` `serve` `raise` `fill`                          |
+| Comparison  | `is` `equal` `greater` `less` `than` `above` `below` `at` `least` `most` `not` `empty` `contains` `starts` `ends` `with` `between` `and` `or` |
+| Backend     | `web` `app` `group` `route` `start` `database` `query` `insert` `update` `delete` |
 | Constant    | `true` `false` `null`                                                    |
 
 ---

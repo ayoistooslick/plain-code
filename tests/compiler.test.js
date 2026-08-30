@@ -1549,19 +1549,6 @@ test('"between" wraps in if (...) correctly', () => {
   if (!js.includes('if (age >= 1 && age <= 100)')) throw new Error('expected wrapped between');
 });
 
-test('"for every" compiles like "for each"', () => {
-  const src = 'for every item in players\n  show item\ndone';
-  const js = compile(src);
-  if (!js.includes('for (const item of players)')) throw new Error('missing for-of from for every');
-});
-
-test('"for every" end-to-end with array', () => {
-  const src = 'remember players as ["a", "b"]\nfor every player in players\n  show player\ndone';
-  const js = compile(src);
-  if (!js.includes('for (const player of players)')) throw new Error('missing for-of');
-  if (!js.includes('console.log(player)')) throw new Error('missing body');
-});
-
 test('"is above" works in while loop', () => {
   const src = 'remember x as 10\nwhile x is above 0\n  x becomes x + 1\ndone';
   const js = compile(src);

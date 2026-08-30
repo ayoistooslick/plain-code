@@ -4,9 +4,9 @@
 print("Hello from print!")
 
 // time and date
-remember now as time()
+remember currentTime as time()
 remember today as date()
-show now
+show currentTime
 show today
 
 // JSON encoding and decoding

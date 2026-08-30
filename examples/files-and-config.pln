@@ -22,7 +22,7 @@ show walkFolder("example-output")
 
 remember settings as
     app is "plainscript"
-    limits is record with requests 100, window "hour" done
+    limits is record with requests 100 and window "hour" done
 done
 
 remember encoded as yamlEncode(settings)

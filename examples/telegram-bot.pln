@@ -21,8 +21,8 @@ done
 
 // Status command
 when someone sends "/status"
-    remember now as date()
-    reply "Current time: " + now
+    remember currentDate as date()
+    reply "Current time: " + currentDate
 done
 
 // Callback handlers for the inline keyboard buttons

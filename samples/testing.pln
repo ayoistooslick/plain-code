@@ -14,8 +14,8 @@ test "addition"
 done
 
 test "strings"
-    check "PlainScript" made of "Script"
-    check "hello" made of "ell"
+    check "PlainScript" contains "Script"
+    check "hello" contains "ell"
 done
 
 test "json"

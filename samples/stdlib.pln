@@ -13,8 +13,8 @@ remember decoded as jsonDecode(encoded)
 show decoded
 
 // Time
-remember now as time()
-show now
+remember currentTime as time()
+show currentTime
 
 remember today as date()
 show today

@@ -16,8 +16,13 @@ show floor(3.9)                  // 3
 show ceiling(3.1)                // 4
 show round(3.7)                  // 4
 
-show "PlainScript" starts as "Plain"
-show "PlainScript" ends as "Script"
+if "PlainScript" starts as "Plain"
+    show "PlainScript starts with Plain"
+done
+
+if "PlainScript" ends as "Script"
+    show "PlainScript ends with Script"
+done
 show truncate("A very long sentence", 7) // A very…
 
 remember id as "7"

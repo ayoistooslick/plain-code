@@ -9,7 +9,7 @@ done
 
 remember count as 0
 
-while count is fewer than 3
+while count fewer than 3
     count becomes count + 1
 done
 

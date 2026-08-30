@@ -14,5 +14,5 @@ show code of result
 remember dir as walkFolder(".")
 show length(dir)
 
-remember now as formatDate(date(), "YYYY-MM-DD")
-show now
+remember currentDate as formatDate(date(), "YYYY-MM-DD")
+show currentDate

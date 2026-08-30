@@ -6,7 +6,7 @@
 
 const { test, assert, run } = require('./_util');
 
-test('variables: remember/become read/reassign an identifier', () => {
+test('variables: remember/becomes read/reassign an identifier', () => {
   const out = run(`
 remember name as "Ada"
 show name

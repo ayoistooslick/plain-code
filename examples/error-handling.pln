@@ -24,11 +24,12 @@ recover as err
     show theme of settings
 done
 
-// Multiple typed recover clauses win on error name
+// Typed recover clauses can select errors by name
 try
     remember parsed as jsonDecode("also not json")
 recover when err catches "SyntaxError"
     show "JSON parse error caught: " + message of err
+done
 recover as err
     show "some other error: " + message of err
 done
