@@ -1,25 +1,6 @@
-use express
-
-remember app as express()
-
-serve folder "public"
-
-when someone visits "/"
-    reply "Hello from PlainScript!"
+// PlainScript 1.0.2-rfc: minimal server.
+web app
+route get "/"
+    reply "Hello from PlainScript"
 done
-
-when someone visits "/about"
-    reply "This server is written in PlainScript."
-done
-
-when someone visits "/api/status"
-    reply json
-        status is "ok"
-        language is "PlainScript"
-        version is "0.3"
-    done
-done
-
-listen on 3000
-    show "Server running at http://localhost:3000"
-done
+start 3000

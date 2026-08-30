@@ -1,20 +1,9 @@
-// PlainScript v1.0.2 — reusable module, imported by app.pln
+// PlainScript 1.0.2-rfc: an imported module.
 
-remember PI as 3.14
+remember PI as 3.14159
 
-make double(n)
-    give n * 2
+make circleArea(radius)
+    give PI * radius * radius
 done
 
-make square(n)
-    give n * n
-done
-
-make circumference(radius)
-    give 2 * PI * radius
-done
-
-export PI
-export double
-export square
-export circumference
+export circleArea

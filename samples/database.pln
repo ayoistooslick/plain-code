@@ -1,22 +1,8 @@
-// PlainScript v1.0.2 — SQLite database
-
-database "app.db"
-
+// PlainScript 1.0.2-rfc: SQLite query blocks.
+database "sample.db" using "wasm"
 execute
-    CREATE TABLE IF NOT EXISTS users (
-        id   INTEGER PRIMARY KEY,
-        name TEXT NOT NULL
-    )
+    CREATE TABLE IF NOT EXISTS notes (body TEXT)
 done
-
-insert
-    INSERT INTO users (name) VALUES ('Alice')
-done
-
-insert
-    INSERT INTO users (name) VALUES ('Bob')
-done
-
-query
-    SELECT * FROM users
+remember notes as query
+    SELECT body FROM notes
 done

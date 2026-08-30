@@ -1,41 +1,8 @@
-// PlainScript v2.1 — Databases: SQLite, parameters and transactions
-//
-// Run with:  plainscript run examples/database.pln
-//
-// SQL placeholders are written {likeThis} and bind to PlainScript variables of
-// the same name. A transaction block runs all enclosed writes atomically.
-
-database "plainscript-demo.db"
-
+// PlainScript 1.0.2-rfc: SQLite database.
+database "app.db" using "wasm"
 execute
-    CREATE TABLE IF NOT EXISTS users (
-        name TEXT,
-        age NUMBER
-    )
+    CREATE TABLE IF NOT EXISTS notes (body TEXT)
 done
-
-remember who as "ana"
-insert
-    INSERT INTO users (name, age) VALUES ({who}, 30)
+remember notes as query
+    SELECT body FROM notes
 done
-
-// Several writes that must succeed or fail together
-transaction
-    insert
-        INSERT INTO users (name, age) VALUES ('bo', 31)
-    done
-    insert
-        INSERT INTO users (name, age) VALUES ('cy', 40)
-    done
-done
-
-remember minAge as 30
-remember adults as query
-    SELECT name FROM users WHERE age >= {minAge} ORDER BY name
-done
-
-for each row in adults
-    show row.name
-done
-
-show "Database demo complete"

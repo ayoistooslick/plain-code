@@ -1,68 +1,8 @@
-// PlainScript v2.1 — A real REST API
-//
-// Run with:  plainscript run examples/rest-api.pln
-// Try:       curl http://localhost:3000/api/users
-//
-// Demonstrates method routes, route groups, CORS, request validation,
-// path/query/header accessors, status codes and a SQLite database.
-
-database "rest-api-demo.db"
-
-execute
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        email TEXT
-    )
-done
-
+// PlainScript 1.0.2-rfc: JSON REST route.
 web app
-allow cors
-
-group "/api"
-
-    route get "/users"
-        remember users as query
-            SELECT * FROM users
-        done
-        reply users
+route get "/api/status"
+    reply json
+        status is "ok"
     done
-
-    route post "/users"
-        remember missing as validate(body of request, list with "name", "email")
-        remember count as length(missing)
-        if count more than 0
-            status 400
-            reply missing
-        otherwise
-            remember who as body of request.name
-            remember mail as body of request.email
-            insert
-                INSERT INTO users (name, email) VALUES ({who}, {mail})
-            done
-            status 201
-            reply "created"
-        done
-    done
-
-    route get "/users/:id"
-        remember id as param("id")
-        remember found as query
-            SELECT * FROM users WHERE id = {id}
-        done
-        if length(found) more than 0
-            reply found at position 0
-        otherwise
-            status 404
-            reply "not found"
-        done
-    done
-
 done
-
-route get "/health"
-    remember token as header("x-token")
-    reply "ok"
-done
-
 start 3000

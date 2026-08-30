@@ -1,3 +1,2 @@
-remember name as "Ayokunle"
-
-show name
+// PlainScript 1.0.2-rfc: hello world.
+show "Hello, PlainScript!"

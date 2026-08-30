@@ -1,2 +1,2 @@
-// PlainScript v1.0.2 — entry file for `plainscript start`
-show "Application started by PlainScript"
+// PlainScript 1.0.2-rfc: start command entry point.
+show "PlainScript started"

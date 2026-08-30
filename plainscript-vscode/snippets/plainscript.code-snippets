@@ -1,254 +1,102 @@
 {
-    "Let variable": {
-        "prefix": "let",
-        "body": ["let ${1:name} be ${2:value}"],
-        "description": "Declare a variable"
-    },
-    "Reassign variable": {
-        "prefix": "reassign",
-        "body": ["set ${1:name} to ${2:value}"],
-        "description": "Set a variable value"
-    },
-    "Show value": {
-        "prefix": "show",
-        "body": ["show ${1:value}"],
-        "description": "Show a value"
-    },
-    "When statement": {
-        "prefix": "when",
-        "body": [
-            "when ${1:condition}",
-            "    show ${2:\"yes\"}",
-            "done"
-        ],
-        "description": "When block"
-    },
-    "When / otherwise": {
-        "prefix": "wheno",
-        "body": [
-            "when ${1:condition}",
-            "    show ${2:\"yes\"}",
-            "otherwise",
-            "    show ${3:\"no\"}",
-            "done"
-        ],
-        "description": "When / otherwise block"
-    },
-    "Function": {
-        "prefix": "to",
-        "body": [
-            "to ${1:name}",
-            "    ${3:show \"hello\"}",
-            "done"
-        ],
-        "description": "Define a function with PlainScript's to syntax"
-    },
-    "Function with parameters": {
-        "prefix": "tog",
-        "body": [
-            "to ${1:name} ${2:a} and ${3:b} together",
-            "    give back ${4:a + b}",
-            "done"
-        ],
-        "description": "Define a function with a return value"
-    },
-    "For each loop": {
-        "prefix": "foreach",
-        "body": [
-            "for each ${1:item} in ${2:collection}",
-            "    show ${1:item}",
-            "done"
-        ],
-        "description": "For each loop"
-    },
-    "While loop": {
-        "prefix": "while",
-        "body": [
-            "while ${1:x} is less than ${2:10}",
-            "    set ${1:x} to ${1:x} + 1",
-            "done"
-        ],
-        "description": "While loop"
-    },
-    "Array literal": {
-        "prefix": "arr",
-        "body": [
-            "let ${1:items} be [",
-            "    ${2:\"item1\"},",
-            "    ${3:\"item2\"}",
-            "]"
-        ],
-        "description": "Declare an array"
-    },
-    "Object literal": {
-        "prefix": "obj",
-        "body": [
-            "let ${1:obj} be record with ${2:key} ${3:\"value\"}"
-        ],
-        "description": "Declare an object"
-    },
-    "Web app": {
-        "prefix": "webapp",
-        "body": [
-            "web app",
-            "    route get \"/\"",
-            "        show \"${1:Hello from PlainScript!}\"",
-            "    done",
-            "    start ${2:3000}",
-            "done"
-        ],
-        "description": "Web app boilerplate"
-    },
-    "Route": {
-        "prefix": "route",
-        "body": [
-            "route get \"${1:/path}\"",
-            "    show ${2:\"Hello\"}",
-            "done"
-        ],
-        "description": "Define a route"
-    },
-    "Express app": {
-        "prefix": "express",
-        "body": [
-            "use express",
-            "",
-            "let app be express()",
-            "",
-            "when someone visits \"${1:/}\"",
-            "    show \"${2:Hello from PlainScript!}\"",
-            "done",
-            "",
-            "listen on ${3:3000}",
-            "    show \"Server running on port ${3:3000}\"",
-            "done"
-        ],
-        "description": "Classic Express app boilerplate"
-    },
-    "Database": {
-        "prefix": "database",
-        "body": [
-            "database \"${1:app.db}\"",
-            "",
-            "execute",
-            "    CREATE TABLE IF NOT EXISTS ${2:items} (id INTEGER PRIMARY KEY, ${3:name} TEXT)",
-            "done"
-        ],
-        "description": "SQLite database setup"
-    },
-    "Query": {
-        "prefix": "query",
-        "body": [
-            "query",
-            "    SELECT * FROM ${1:table}",
-            "done"
-        ],
-        "description": "SQL query block"
-    },
-    "Between comparison": {
-        "prefix": "between",
-        "body": ["when ${1:x} between ${2:1} and ${3:10}"],
-        "description": "Between comparison"
-    },
-    "Contains check": {
-        "prefix": "contains",
-        "body": ["when ${1:text} contains ${2:\"word\"}"],
-        "description": "String contains check"
-    },
-    "Try / recover": {
-        "prefix": "try",
-        "body": [
-            "try",
-            "    ${1:show \"risky operation\"}",
-            "recover as err",
-            "    show \"Error: \" + message of err",
-            "done"
-        ],
-        "description": "Try / recover error handling"
-    },
-    "JSON encode/decode": {
-        "prefix": "json",
-        "body": [
-            "let ${1:encoded} be jsonEncode(${2:value})",
-            "let ${2:decoded} be jsonDecode(${1:encoded})"
-        ],
-        "description": "JSON encode and decode"
-    },
-    "Record kind": {
-        "prefix": "kind",
-        "body": [
-            "to define a kind called \"${1:Person}\" with",
-            "    ${2:name} is ${3:\"\"}",
-            "done",
-            "",
-            "let ${4:instance} be create a ${1:Person} with ${2:name} \"${5:Alice}\""
-        ],
-        "description": "Define a record kind (class)"
-    },
-    "Test block": {
-        "prefix": "test",
-        "body": [
-            "test \"${1:my test}\"",
-            "    check ${2:add(2, 3)} equals ${3:5}",
-            "done"
-        ],
-        "description": "Native test block"
-    },
-    "Wait for": {
-        "prefix": "waitfor",
-        "body": ["let ${1:result} be wait for ${2:promise}"],
-        "description": "Await a promise"
-    },
-    "At position": {
-        "prefix": "atpos",
-        "body": ["${1:name} at position ${2:1}"],
-        "description": "Access value at position"
-    },
-    "Has field": {
-        "prefix": "hasfield",
-        "body": ["${1:name} has field \"${2:field}\""],
-        "description": "Check if a value has a field"
-    },
-    "Made of": {
-        "prefix": "madeof",
-        "body": ["${1:name} made of \"${2:text}\""],
-        "description": "Check whether a value contains text"
-    },
-    "More than": {
-        "prefix": "morethan",
-        "body": ["${1:a} more than ${2:b}"],
-        "description": "Greater-than comparison"
-    },
-    "Fewer than": {
-        "prefix": "fewerthan",
-        "body": ["${1:a} fewer than ${2:b}"],
-        "description": "Less-than comparison"
-    },
-    "Same as": {
-        "prefix": "sameas",
-        "body": ["${1:a} same as ${2:b}"],
-        "description": "Equality comparison"
-    },
-    "Different from": {
-        "prefix": "difffrom",
-        "body": ["${1:a} different from ${2:b}"],
-        "description": "Inequality comparison"
-    },
-    "Raise": {
-        "prefix": "raises",
-        "body": ["raise ${1:expr}"],
-        "description": "Raise an error"
-    },
-    "Choosing": {
-        "prefix": "choosing",
-        "body": [
-            "choosing ${1:cond} then ${2:a} otherwise ${3:b}"
-        ],
-        "description": "Conditional expression"
-    },
-    "Fill with": {
-        "prefix": "fillwith",
-        "body": ["fill ${1:name} with ${2:args} together"],
-        "description": "Fill a value with arguments"
-    }
+  "Remember variable": {
+    "prefix": "remember",
+    "body": ["remember ${1:name} as ${2:value}"],
+    "description": "Declare a PlainScript value"
+  },
+  "Let variable": {
+    "prefix": "let",
+    "body": ["let ${1:name} be ${2:value}"],
+    "description": "Declare a value with the let alias"
+  },
+  "Assignment": {
+    "prefix": "becomes",
+    "body": ["${1:name} becomes ${2:value}"],
+    "description": "Update a value"
+  },
+  "Show": {
+    "prefix": "show",
+    "body": ["show ${1:value}"],
+    "description": "Print a value"
+  },
+  "If block": {
+    "prefix": "if",
+    "body": ["if ${1:condition}", "    ${2:show \"yes\"}", "otherwise", "    ${3:show \"no\"}", "done"],
+    "description": "Conditional block"
+  },
+  "Function": {
+    "prefix": "make",
+    "body": ["make ${1:name}(${2:arg})", "    ${3:give ${2:arg}}", "done"],
+    "description": "Define a function"
+  },
+  "For each loop": {
+    "prefix": "foreach",
+    "body": ["for each ${1:item} in ${2:items}", "    show ${1:item}", "done"],
+    "description": "Iterate a collection"
+  },
+  "For index loop": {
+    "prefix": "forindex",
+    "body": ["for index ${1:i} from 0 to ${2:10}", "    show ${1:i}", "done"],
+    "description": "Iterate a numeric range"
+  },
+  "While loop": {
+    "prefix": "while",
+    "body": ["while ${1:count} is less than ${2:10}", "    ${1:count} becomes ${1:count} + 1", "done"],
+    "description": "Repeat while a condition is true"
+  },
+  "List": {
+    "prefix": "list",
+    "body": ["list with ${1:\"one\"}, ${2:\"two\"}"],
+    "description": "Create a readable list"
+  },
+  "Record": {
+    "prefix": "record",
+    "body": ["record with ${1:name} ${2:\"Ada\"} and ${3:active} ${4:true} done"],
+    "description": "Create a record value"
+  },
+  "Record kind": {
+    "prefix": "kind",
+    "body": ["define a kind called \"${1:Person}\" with", "    ${2:name} is ${3:\"\"}", "done", "", "remember ${4:person} as create a ${1:Person} with ${2:name} ${5:\"Ada\"}"],
+    "description": "Define and construct a record kind"
+  },
+  "Web app": {
+    "prefix": "webapp",
+    "body": ["web app", "    route get \"${1:/health}\"", "        reply json", "            ok is true", "        done", "    done", "start ${2:3000}"],
+    "description": "Create a web application"
+  },
+  "Route": {
+    "prefix": "route",
+    "body": ["route ${1:get} \"${2:/path}\"", "    reply ${3:\"ok\"}", "done"],
+    "description": "Create an HTTP route"
+  },
+  "SQLite database": {
+    "prefix": "database",
+    "body": ["database \"${1:app.db}\" using \"wasm\"", "execute", "    ${2:CREATE TABLE items (name TEXT)}", "done"],
+    "description": "Open SQLite"
+  },
+  "SQL query": {
+    "prefix": "query",
+    "body": ["remember ${1:rows} as query", "    SELECT * FROM ${2:items}", "done"],
+    "description": "Run a SQL query"
+  },
+  "Try recover": {
+    "prefix": "try",
+    "body": ["try", "    ${1:show \"work\"}", "recover as ${2:error}", "    show message of ${2:error}", "finally", "    show \"finished\""],
+    "description": "Recover from an error"
+  },
+  "HTTP request": {
+    "prefix": "get",
+    "body": ["remember ${1:response} as get \"${2:https://example.com}\" timeout ${3:5000}"],
+    "description": "Make an HTTP request"
+  },
+  "Test": {
+    "prefix": "test",
+    "body": ["test \"${1:works}\"", "    check ${2:add(2, 3)} equals ${3:5}", "done"],
+    "description": "Define a native test"
+  },
+  "Import": {
+    "prefix": "import",
+    "body": ["import { ${1:name} } from \"${2:./module.pln}\""],
+    "description": "Import a module"
+  }
 }

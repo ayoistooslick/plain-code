@@ -1,15 +1,13 @@
-// oauth · src/index.pln
-// The public entry point for the unified OAuth SDK. Re-exports the whole
-// provider + flow + token surface so `require("oauth")` returns a single object.
-
-import "./crypto.pln"
-import "./providers.pln"
-import "./oauth.pln"
-
-export providerConfig
-export buildAuthUrl
-export exchangeCode
-export generateState
-export issueAccessToken
-export issueRefreshToken
-export validateToken
+// PlainScript 1.0.2-rfc: OAuth route starter.
+web app
+route get "/auth/start"
+    remember provider as query("provider")
+    redirect to `https://example.com/oauth/authorize?provider=${provider}`
+done
+route get "/auth/callback"
+    remember code as query("code")
+    reply json
+        received is code
+    done
+done
+start 3000

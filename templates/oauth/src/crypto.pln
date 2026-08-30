@@ -1,35 +1,5 @@
-// oauth · src/crypto.pln
-// Token and state primitives for the OAuth SDK. Wraps PlainScript's built-in
-// auth helpers (createToken/readToken) so access and refresh tokens carry rich
-// claims and can be validated anywhere.
-
-make generateState()
-    give uuid()
+// PlainScript 1.0.2-rfc: state token helper.
+make createState(value)
+    give sha256(value)
 done
-
-make issueAccessToken(provider, subject, secret, ttl)
-    remember claims as
-        sub is subject
-        provider is provider
-        kind is "access"
-    done
-    give createToken(claims, secret, ttl)
-done
-
-make issueRefreshToken(provider, subject, secret)
-    remember claims as
-        sub is subject
-        provider is provider
-        kind is "refresh"
-    done
-    give createToken(claims, secret, 2592000)
-done
-
-make validateToken(token, secret)
-    give readToken(token, secret)
-done
-
-export generateState
-export issueAccessToken
-export issueRefreshToken
-export validateToken
+export createState

@@ -1,0 +1,1 @@
+- [Canonical syntax workflow](canonical-syntax.md) — compiler grammar is authoritative; keep examples and user-facing references checkable against it.

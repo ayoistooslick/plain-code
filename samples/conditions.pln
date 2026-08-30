@@ -1,27 +1,7 @@
-// PlainScript v1.0.2 — Conditions and comparisons
-
-remember score as 85
-
-if score is at least 90
-    show "A grade"
+// PlainScript 1.0.2-rfc: readable conditions.
+remember score as 87
+if score is at least 80
+    show "pass"
 otherwise
-    show "Not an A"
-done
-
-if score between 80 and 89
-    show "B grade"
-done
-
-remember name as "PlainScript"
-
-if name contains "PlainScript"
-    show "Found it"
-done
-
-if name starts with "P"
-    show "Starts with P"
-done
-
-if name ends with "n"
-    show "Ends with n"
+    show "review"
 done

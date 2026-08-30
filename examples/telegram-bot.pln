@@ -1,42 +1,6 @@
-// Telegram bot with buttons and callbacks
-//
-// Creates a polling Telegram bot that answers commands and handles
-// inline keyboard callbacks.
-
-bot env("BOT_TOKEN")
-
-// Start command: welcome message with an inline keyboard
+// PlainScript 1.0.2-rfc: Telegram bot.
+bot env("TELEGRAM_BOT_TOKEN")
 when someone sends "/start"
-    reply "Welcome to the PlainScript bot!" with buttons
-        "Help" -> "help"
-        "About" -> "about"
-        "Status" -> "status"
-    done
+    reply "Welcome"
 done
-
-// Help command
-when someone sends "/help"
-    reply "Available commands:\n/start - Show menu\n/help - Show this help\n/status - Bot status"
-done
-
-// Status command
-when someone sends "/status"
-    remember currentDate as date()
-    reply "Current time: " + currentDate
-done
-
-// Callback handlers for the inline keyboard buttons
-when someone clicks "help"
-    reply "This bot demonstrates the Telegram integration."
-done
-
-when someone clicks "about"
-    reply "Built with PlainScript - an Intent-Oriented Programming Language."
-done
-
-when someone clicks "status"
-    reply "The bot is running."
-done
-
-// Boot long polling
 start telegram bot

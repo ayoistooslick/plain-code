@@ -1,10 +1,11 @@
+// PlainScript 1.0.2-rfc: upload and OCR verification service.
+
 web app
 accept uploads limit "5 MB" allow list with "image/png", "image/jpeg" folder "uploads"
 
 route post "/verify"
     remember found as uploads("id")
-    remember count as length(found)
-    if count is 0
+    if length(found) is 0
         status 400
         reply json
             error is "Attach the ID image in the id field"

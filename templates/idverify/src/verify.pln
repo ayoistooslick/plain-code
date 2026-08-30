@@ -1,19 +1,6 @@
-// idverify · src/verify.pln
-// The verification workflow: take a document record, fingerprint it, and
-// return a deterministic verification result.
-
-import "./hash.pln"
-
-make verifyDocument(fields)
-    remember result as
-        holder is fields.holder
-        documentType is fields.documentType
-        number is fields.number
-        ok is true
-        fingerprint is fingerprint(fields)
-        verifiedAt is time()
-    done
-    give result
+// PlainScript 1.0.2-rfc: verification helper.
+import { fingerprint } from "./hash.pln"
+make verify(document)
+    give record with verified true and fingerprint fingerprint(document) done
 done
-
-export verifyDocument
+export verify

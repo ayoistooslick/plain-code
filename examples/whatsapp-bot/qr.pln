@@ -1,8 +1,12 @@
-whatsapp bot
-    auth "session"
-    login qr
+// PlainScript 1.0.2-rfc: WhatsApp QR login.
 
+whatsapp bot
+    auth "plain-script-whatsapp"
+    login qr
     on message
         log message
+        if message.text is "/start"
+            reply "Welcome"
+        done
     done
 done

@@ -1,12 +1,4 @@
-remember players as list with
-    "Haaland",
-    "Foden",
-    "Rodri"
-
-show players at position 0
-
-players at position 1 becomes "Palmer"
-
-show players at position 1
-
-show length(players)
+// PlainScript 1.0.2-rfc: array literals and indexing.
+remember values as [1, 2, 3]
+show values[0]
+show length(values)

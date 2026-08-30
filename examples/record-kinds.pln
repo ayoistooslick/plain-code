@@ -1,43 +1,7 @@
-// PlainScript v2.1 — Record kinds, generators and the test DSL
-//
-// Run with:  plainscript run examples/record-kinds.pln
-//
-// Defines a schema, builds instances, composes records, streams values from
-// generators, and verifies behaviour with the built-in test runner.
-
-define a kind called "Book" with
-    title is ""
-    pages is 0
-    rating is 0
+// PlainScript 1.0.2-rfc: record kind construction.
+define a kind called "Player" with
+    name is ""
+    goals is 0
 done
-
-remember fav as create a Book with title "IOPL in Action" and pages 240
-fav.rating becomes 4.5
-
-show title of fav
-show pages of fav
-show rating of fav
-
-remember extended as merge(fav, record with author "Ada" done)
-show author of extended
-show fieldsOf(extended)
-
-test "book schema"
-    check title of fav equals "IOPL in Action"
-    check rating of fav equals 4.5
-    check hasField(fav, "author") equals false
-done
-
-test "generator"
-    remember ids as spread of range(1, 4)
-    check length(ids) equals 3
-    check sum(ids) equals 6
-done
-
-make makeTitles(catalog)
-    for each book in catalog
-        yield title of book
-    done
-done
-
-show spread of makeTitles(list with fav, extended)
+remember player as create a Player with name "Ada" and goals 4
+show player.name

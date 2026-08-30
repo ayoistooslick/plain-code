@@ -1,11 +1,5 @@
-make greet()
-    show "Hello"
+// PlainScript 1.0.2-rfc: functions.
+make greet(name)
+    give `Hello, ${name}!`
 done
-
-greet()
-
-make add(a, b)
-    give a + b
-done
-
-show add(5, 7)
+show greet("Ada")

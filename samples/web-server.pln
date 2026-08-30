@@ -1,17 +1,8 @@
-// PlainScript v1.0.2 — Web server (Express shorthand)
-
+// PlainScript 1.0.2-rfc: web route.
 web app
-
-route "/"
-    reply "Hello from PlainScript!"
-done
-
-route "/api/status"
+route get "/health"
     reply json
-        status is "ok"
-        version is "1.0.2"
-        language is "PlainScript"
+        ok is true
     done
 done
-
 start 3000

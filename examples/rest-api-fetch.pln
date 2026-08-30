@@ -1,94 +1,10 @@
-// REST API with upstream fetches — multi-source integration example
-//
-// A REST API that calls other APIs with the built-in HTTP client and
-// combines the results. Everything here compiles deterministically:
-// no rules, no AI, no hidden code generation.
-
+// PlainScript 1.0.2-rfc: fetch an upstream API from a route.
 web app
-
-// Health check
-route get "/health"
+route get "/proxy"
+    remember upstream as get "https://example.com/data" timeout 5000
     reply json
-        status is "ok"
-        version is "0.1.7"
+        status is upstream.status
+        data is upstream.body
     done
 done
-
-// Fetch a random user from randomuser.me
-route get "/api/random-user"
-    remember response as get "https://randomuser.me/api/"
-    if ok of response is true
-        reply data of response
-    otherwise
-        status 502
-        reply json
-            error is "Failed to fetch user"
-        done
-    done
-done
-
-// Fetch multiple APIs and combine the results
-route get "/api/dashboard"
-    remember userRes as get "https://randomuser.me/api/"
-    remember jokeRes as get "https://official-joke-api.appspot.com/random_joke"
-
-    remember user as null
-    remember joke as null
-
-    if ok of userRes is true
-        user becomes first person from results of data of userRes
-    done
-
-    if ok of jokeRes is true
-        joke becomes data of jokeRes
-    done
-
-    reply json
-        user is user
-        joke is joke
-    done
-done
-
-// Search with query parameters
-route get "/api/search"
-    remember q as query("q")
-    remember limit as query("limit")
-    remember results as list
-    reply json
-        q is q
-        limit is limit
-        results is results
-    done
-done
-
-// Create an item
-route post "/api/items"
-    reply json
-        created is true
-        item is body of request
-    done
-done
-
-// Update an item
-route put "/api/items/:id"
-    remember id as param("id")
-    reply json
-        updated is id
-        item is body of request
-    done
-done
-
-// Delete an item
-route delete "/api/items/:id"
-    remember id as param("id")
-    reply json
-        deleted is id
-    done
-done
-
-when nothing matches
-    status 404
-    reply "no such road"
-done
-
 start 3000

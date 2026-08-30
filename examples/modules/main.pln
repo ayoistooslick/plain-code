@@ -1,0 +1,4 @@
+// PlainScript 1.0.2-rfc: named imports.
+
+import { circleArea } from "./math.pln"
+show circleArea(2)

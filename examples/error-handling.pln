@@ -1,55 +1,7 @@
-// PlainScript v1.0.2 — Robust error handling
-//
-// Run with:  plainscript run examples/error-handling.pln
-//
-// Shows deterministic recovery: typed "recover" blocks, silent swallowing,
-// and automatic retries with backoff for flaky operations.
-
-make parseSettings(raw)
-    remember settings as jsonDecode(raw)
-    if settings is empty
-        give record with theme "light" done
-    otherwise
-        give settings
-    done
-done
-
-// Recover with the thrown value
+// PlainScript 1.0.2-rfc: recovery and cleanup.
 try
-    remember settings as parseSettings("{ bad json")
-    show theme of settings
-recover as err
-    show "falling back: " + message of err
-    remember settings as record with theme "dark" done
-    show theme of settings
-done
-
-// Typed recover clauses can select errors by name
-try
-    remember parsed as jsonDecode("also not json")
-recover when err catches "SyntaxError"
-    show "JSON parse error caught: " + message of err
-done
-recover as err
-    show "some other error: " + message of err
-done
-
-// Swallow failures silently when no recover is present
-try
-    remember probe as read("does-not-exist.txt")
-done
-show "survived the failed read"
-
-// Automatic retry with a delay
-remember logs as list
-make fetchStatus()
-    add("trying…" to logs)
-    give read("status.db.json")
-done
-
-retry 3 times every 1 second
-    remember body as fetchStatus()
-    show body
-done
-
-show length(logs)
+    show "work"
+recover as error
+    show message of error
+finally
+    show "finished"

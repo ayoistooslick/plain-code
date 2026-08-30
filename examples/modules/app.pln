@@ -1,16 +1,3 @@
-// PlainScript v1.0.2 — Importing your own modules
-//
-// Run with:  plainscript run examples/modules/app.pln
-//
-// Files are compiled in dependency order (deepest first), so the helpers in
-// math.pln are visible here before app.pln runs.
-
-import "./math.pln"
-
-show PI                     // 3.14
-show double(21)             // 42
-show square(9)              // 81
-show circumference(10)      // 62.8
-
-remember radius as 2.5
-show "circle area: " + text(square(radius) * PI)
+// PlainScript 1.0.2-rfc: module entry point.
+import { circleArea } from "./math.pln"
+show circleArea(2)

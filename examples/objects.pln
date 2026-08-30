@@ -1,12 +1,4 @@
-remember user as
-    name is "Ayokunle"
-    age is 17
-    country is "Nigeria"
-done
-
+// PlainScript 1.0.2-rfc: object literals and member access.
+remember user as {name: "Ada", active: true}
 show user.name
-show user.age
-
-user.age becomes 18
-
-show user.age
+user.active becomes false

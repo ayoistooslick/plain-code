@@ -1,21 +1,5 @@
-// PlainScript v1.0.2 — Functions
-
-make greet(name)
-    show "Hello, " + name + "!"
+// PlainScript 1.0.2-rfc: functions.
+make double(value)
+    give value + value
 done
-
-make add(a, b)
-    give a + b
-done
-
-make max(a, b)
-    if a is at least b
-        give a
-    otherwise
-        give b
-    done
-done
-
-greet("World")
-show add(5, 7)
-show max(10, 3)
+show double(21)

@@ -1,40 +1,7 @@
-// PlainScript v1.1 — PlainScript Expressions Examples
-
-remember players as list with "Haaland", "Foden", "Rodri"
-
-// Items
-show first player from players
-show last player from players
-show player two from players
-
-first player from players becomes "Kane"
-show first player from players
-
-// Collections
-show players length
-
-add("Palmer" to players)
-show players length
-
-remove("Rodri" from players)
-show players length
-
-if players contains "Foden"
-    show "Foden is in the squad"
+// PlainScript 1.0.2-rfc: expression operators.
+remember sumValue as (2 + 3) * 4
+if sumValue is 20
+    show "exact"
+otherwise
+    show "other"
 done
-
-// Properties
-remember user as
-    name is "Ayokunle"
-    age is 17
-done
-
-show name of user
-
-name of user becomes "Ayo"
-show name of user
-
-// Files
-write("Hello from PlainScript Expressions" to "expressions.txt")
-remember content as read("expressions.txt")
-show content

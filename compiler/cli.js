@@ -88,13 +88,13 @@ ${section('THE LANGUAGE IN EIGHT LINES')}
   try ... recover as err ... done      retry 3 times every 5s  errors
 
 ${section('ALSO SHIPPED')}
-  Comparisons and stdlib (v1.0) · PlainScript Expressions (v1.1) ·
-  JavaScript gateway with ask (v1.1.1) · OCR · Telegram bots ·
-  WhatsApp bots (v2.1.1) ·
-  email · schedules · WebSocket · cache (v2.1) ·
-  sessions · uploads · cookies · rate limits · api keys · OAuth (v2.1.1)
+  Comparisons and stdlib · PlainScript Expressions ·
+  console input with ask · OCR · Telegram bots ·
+  WhatsApp bots ·
+  email · schedules · WebSocket · cache ·
+  sessions · uploads · cookies · rate limits · api keys · OAuth
   JSON body · redirect · AI chat/embeddings · vector similarity ·
-  paginate · collection & string primitives (v2.2)
+  paginate · collection & string primitives
 
 ${section('FIRST RUN')}
   plainscript new hello               scaffolds hello/ with a live web app
@@ -525,34 +525,30 @@ function cmdNew(projectName) {
   fs.mkdirSync(path.join(dir, 'public'));
   fs.mkdirSync(path.join(dir, 'src'));
 
-  // src/app.pln — starter Express app
-  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), `use express
-
-remember app as express()
+  // src/app.pln — starter web app
+  fs.writeFileSync(path.join(dir, 'src', 'app.pln'), `web app
 
 serve folder "public"
 
-when someone visits "/"
+route get "/"
     reply "Hello from PlainScript!"
 done
 
-when someone visits "/api/status"
+route get "/api/status"
     reply json
         status is "ok"
-        version is "1.0"
+        version is "1.0.2-rfc"
     done
 done
 
-listen on 3000
-    show "Server running at http://localhost:3000"
-done
+start 3000
 `);
 
   // package.json — plain Node semantics; PlainScript itself is a devDependency and
   // deployment only needs the generated dist/ output.
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
     name,
-    version: '1.0.1',
+    version: VERSION,
     description: `A PlainScript v${VERSION} application`,
     main: 'dist/app.js',
     scripts: {

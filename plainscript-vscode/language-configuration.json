@@ -1,31 +1,34 @@
 {
-    "comments": {
-        "lineComment": "//"
-    },
-    "brackets": [
-        ["(", ")"],
-        ["[", "]"],
-        ["{", "}"]
-    ],
-    "autoClosingPairs": [
-        { "open": "(", "close": ")" },
-        { "open": "[", "close": "]" },
-        { "open": "{", "close": "}" },
-        { "open": "\"", "close": "\"", "notIn": ["string", "comment"] },
-        { "open": "`", "close": "`", "notIn": ["string", "comment"] }
-    ],
-    "surroundingPairs": [
-        ["(", ")"],
-        ["[", "]"],
-        ["{", "}"],
-        ["\"", "\""],
-        ["`", "`"]
-    ],
-    "folding": {
-        "markers": {
-            "start": "^\\s*(to\\b|for (each|index)\\b|while\\b|when\\b|web app\\b|group\\b|route\\b|listen on\\b|try\\b|retry\\b|test\\b|let\\s+.*\\b(record|list)\\s+with\\b|let\\s+.*\\bpost\\b.*\\bwith\\b)",
-            "end": "^\\s*(done)\\b"
-        }
-    },
-    "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)"
+  "comments": {
+    "lineComment": "//"
+  },
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"]
+  ],
+  "autoClosingPairs": [
+    ["\"", "\""],
+    ["`", "`"],
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"]
+  ],
+  "surroundingPairs": [
+    ["\"", "\""],
+    ["`", "`"],
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"]
+  ],
+  "indentationRules": {
+    "increaseIndentPattern": "^\\s*(if|otherwise|make|define|function|for|while|when|route|web|database|query|insert|update|delete|execute|try|recover|finally|test|match|switch|websocket|bot|whatsapp)\\b.*$",
+    "decreaseIndentPattern": "^\\s*(done|otherwise|finally|recover)\\b.*$"
+  },
+  "folding": {
+    "markers": {
+      "start": "^\\s*(if|make|define|function|for|while|when|route|web|try|test|match|switch|websocket|bot|whatsapp)\\b",
+      "end": "^\\s*done\\b"
+    }
+  }
 }

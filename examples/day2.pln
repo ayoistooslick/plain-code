@@ -1,7 +1,7 @@
-remember age as 16
-
-if age is greater than 12
-    show "Teenager"
+// PlainScript 1.0.2-rfc: conditional blocks.
+remember age as 21
+if age is at least 18
+    show "adult"
 otherwise
-    show "Child"
+    show "minor"
 done

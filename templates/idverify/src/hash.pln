@@ -1,22 +1,5 @@
-// idverify · src/hash.pln
-// Cryptographic helpers for the ID-verification SDK. Uses only Node built-ins
-// (crypto) plus PlainScript's stdlib (sha256, textToBytes, bytesToText,
-// base64Encode), so it runs anywhere Node does.
-
-use crypto
-
-make fingerprint(doc)
-    give sha256(jsonEncode(doc))
+// PlainScript 1.0.2-rfc: reusable digest helper.
+make fingerprint(value)
+    give sha256(jsonEncode(value))
 done
-
-make digestText(textVal)
-    give sha256(textVal)
-done
-
-make toBase64(bytes)
-    give base64Encode(bytesToText(bytes))
-done
-
 export fingerprint
-export digestText
-export toBase64

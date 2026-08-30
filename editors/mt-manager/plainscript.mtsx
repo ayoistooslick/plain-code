@@ -4,296 +4,74 @@
     hide: false
     ignoreCase: false
     styles: [
-        // Keywords & control flow
         "keyword", #C678DD, #C678DD, @B
-        // Declarations (let, define, function, use, import, export)
         "declaration", #C678DD, #C678DD, @BI
-        // Comparison operators (is, contains, between, starts with, etc.)
         "comparison", #56B6C2, #56B6C2
-        // English syntax operators (at_position, of_kind, has_field, etc.)
-        "englishOp", #56B6C2, #56B6C2
-        // Assignment (is now)
         "assignment", #E06C75, #E06C75
-        // Strings
         "string", #98C379, #98C379
-        // String escapes
-        "strEscape", #D19A66, #D19A66
-        // Template strings
         "template", #98C379, #56B6C2
-        // Template interpolation
-        "templateInterp", #E5C07B, #E5C07B
-        // Numbers
-        "number", #D19A66, #D19A66
-        // Comments
+        "number", #D19E66, #D19E66
         "comment", #5C6370, #5C6370, @I
-        // Functions (define, function)
         "function", #61AFEF, #61AFEF, @B
-        // Function calls
-        "functionCall", #61AFEF, #61AFEF
-        // Builtin stdlib
         "builtin", #E5C07B, #E5C07B
-        // Constants (true, false, null)
-        "constant", #D19A66, #D19A66, @B
-        // Operators (+, -, *, /, %, **)
+        "constant", #D19E66, #D19E66, @B
         "operator", #56B6C2, #56B6C2
-        // Arrow (->)
-        "arrow", #C678DD, #C678DD
-        // Web keywords (web app, route, start, group)
         "web", #E06C75, #E06C75, @B
-        // Database keywords (database, query, insert, execute, transaction)
         "database", #E5C07B, #E5C07B, @B
-        // Backend keywords (sessions, mail, cache, oauth, websocket, etc.)
-        "backend", #D19A66, #D19A66
-        // Errors / error handling (try, recover, retry)
         "error", #E06C75, #E06C75, @U
-        // Record kinds (kind, create)
-        "kind", #C678DD, #C678DD, @B
-        // Test keywords (test, check, equals, raises)
         "test", #98C379, #98C379, @B
-        // Concurrency (all of, any of, settled of, wait for)
-        "concurrency", #56B6C2, #56B6C2, @B
-        // Boolean/null literals
-        "literal", #D19A66, #D19A66, @B
     ]
     comment: {startsWith: "//"}
     bracketPairs: ["{}", "[]", "()"]
     defines: [
-        // Comments
         "comment": {match: /\/\/.*$/, 0: "comment"}
 
-        // Block comment (/* ... */)
-        "blockComment": {
-            start: {match: /\/\*/}
-            end: {match: /\*\//}
-            style: "comment"
-        }
-
-        // Double-quoted strings
-        "string-double": {
+        "string": {
             start: {match: /"/, 0: "string"}
             end: {match: /"/, 0: "string"}
             style: "string"
-            contains: [
-                {match: /\\./, 0: "strEscape"}
-            ]
+            contains: [{match: /\\./, 0: "string"}]
         }
 
-        // Backtick template strings
-        "template-string": {
+        "template": {
             start: {match: /`/, 0: "template"}
             end: {match: /`/, 0: "template"}
             style: "template"
-            contains: [
-                {match: /\\./, 0: "strEscape"}
-                {match: /\$\{/, 0: "templateInterp"}
-            ]
         }
 
-        // Keywords
-        "keywords": {match: keywordsToRegex(
-            "if otherwise for each every in while when listen"
-            "try recover retry times wait enable destroy"
-            "accept require using end"
-        ), 0: "keyword"}
+        "number": {match: /\b\d+(\.\d+)?n?\b/, 0: "number"}
+        "constant": {match: /\b(true|false|null|undefined)\b/, 0: "constant"}
+        "operator": {match: /\?\?|\?\.|\*\*|->|[+\-*\/%]/, 0: "operator"}
+        "function": {match: /\b[A-Za-z_][A-Za-z0-9_]*(?=\s*\()/, 0: "function"}
 
-        // Declarations
-        "declarations": {match: keywordsToRegex(
-            "let define function use import export database web bot whatsapp"
-        ), 0: "declaration"}
-
-        // Comparison operators
-        "comparisons": {match: keywordsToRegex(
-            "is greater less than to above below at least most not empty contains starts ends with between and or"
-        ), 0: "comparison"}
-
-        // English syntax operators (near-English alternatives)
-        "englishSyntaxOps": {match: keywordsToRegex(
-            "at_position of_kind has_field starts_as ends_as made_of uses fills raises handled_by choosing more_than fewer_than same_as different_from"
-        ), 0: "englishOp"}
-
-        // Assignment
-        "assignment": {match: keywordsToRegex(
-            "is now set to change to give back return"
-        ), 0: "assignment"}
-
-        // Web keywords
-        "webKeywords": {match: keywordsToRegex(
-            "app route start group allow cors validate status param nothing matches redirect folder"
-        ), 0: "web"}
-
-        // Database keywords
-        "databaseKeywords": {match: keywordsToRegex(
-            "query insert update delete execute transaction postgres native wasm"
-        ), 0: "database"}
-
-        // Backend keywords
-        "backendKeywords": {match: keywordsToRegex(
-            "sessions session uploads limit requests api key google oauth cookie expires"
-            "schedule background websocket socket connects disconnects mail transport headers timeout"
-            "cache redis get post put patch delete"
-        ), 0: "backend"}
-
-        // Error handling
-        "errorKeywords": {match: keywordsToRegex(
-            "try recover retry"
-        ), 0: "error"}
-
-        // Record kinds
-        "kindKeywords": {match: keywordsToRegex(
-            "kind called create"
-        ), 0: "kind"}
-
-        // Test keywords
-        "testKeywords": {match: keywordsToRegex(
-            "test check equals contains raises"
-        ), 0: "test"}
-
-        // Concurrency
-        "concurrencyKeywords": {match: keywordsToRegex(
-            "all of any of settled of wait for spread of yield"
-        ), 0: "concurrency"}
-
-        // Constants
-        "constants": {match: keywordsToRegex("true false null"), 0: "constant"}
-
-        // Keywords for special constructs
-        "specialKeywords": {match: keywordsToRegex(
-            "print log ask ocr send broadcast reply serve note as give"
-            "someone visits sends clicks matching on json done"
-            "print first last from length of add remove to in"
-        ), 0: "builtin"}
-
-        // Numbers
-        "numbers": {
-            number: "10|16|F|E|_"
-            style: "number"
+        "declaration": {
+            match: /\b(remember|let|make|define|function|use|import|export|database|postgres|record|list|create|websocket|bot|whatsapp|ocr)\b/
+            0: "declaration"
         }
 
-        // Operators - FIXED: escaped %
-        "operators": {match: /[+\-*\/%]|\*\*/, 0: "operator"}
+        "web": {
+            match: /\b(web|route|start|listen|reply|respond|serve|allow|cors|status|redirect|param|query|header|upload|uploads)\b/
+            0: "web"
+        }
 
-        // Arrow operator
-        "arrow": {match: /->/, 0: "arrow"}
+        "database": {
+            match: /\b(database|postgres|query|insert|update|delete|execute|transaction|native|wasm)\b/
+            0: "database"
+        }
 
-        // Dots (property access)
-        "dots": {match: /\./, 0: "operator"}
+        "error": {
+            match: /\b(try|recover|finally|retry|throw|raise|raises|catch|catches)\b/
+            0: "error"
+        }
 
-        // Commas
-        "commas": {match: /,/, 0: "operator"}
+        "test": {
+            match: /\b(test|check|equals|contains|raises)\b/
+            0: "test"
+        }
 
-        // Braces
-        "braces": {match: /[{}]/, 0: "operator"}
-
-        // Parentheses
-        "parens": {match: /[()]/, 0: "operator"}
-
-        // Square brackets
-        "brackets": {match: /[\[\]]/, 0: "operator"}
-
-        // Colon (key-value)
-        "colons": {match: /:/, 0: "operator"}
-
-        // Function declaration: define name(...)
-        "funcDecl": {match: /\b(?:define|function)\s+(\w+)/, 1: "function"}
-
-        // Function call
-        "funcCall": {match: /\b(\w+)(?=\s*\()/, 0: "functionCall"}
-
-        // Stdlib builtins
-        "builtins": {match: keywordsToRegex(
-            "print readFile writeFile appendFile fileExists copyFile moveFile deleteFile"
-            "makeFolder deleteFolder listFolder readBytes writeBytes read write"
-            "sleep time date jsonEncode jsonDecode env exit uuid"
-            "length uppercase lowercase trim replace split join number text"
-            "floor ceiling random round sort reverse unique sum smallest largest"
-            "keys values hasKey merge"
-            "hashPassword checkPassword createToken readToken validate"
-            "param query header upload uploads cookie"
-            "cacheGet cacheSet cacheDelete"
-            "paginate chat embedText similarity ai_tags ai_post"
-            "typeOf fieldsOf valueOf hasField sizeOf"
-            "base64Encode base64Decode textToBytes bytesToText sha256 sha1 md5"
-            "yamlDecode yamlEncode loadModule runCommand args"
-            "fileSize fileType lastModified walkFolder joinPath baseName folderOf extensionOf"
-            "writeLine appendLine"
-            "keyMap mapSet mapGet mapHas mapDelete newSet addToSet removeFromSet setHas unique"
-            "allOf anyOf settledOf withTimeout"
-            "range clamp first last flatten includes pick omit groupBy"
-            "startsWith endsWith truncate padStart padEnd"
-            "loadEnvFile"
-        ), 0: "builtin"}
-    ]
-    contains: [
-        // Comments (highest priority)
-        {include: "comment"}
-        {include: "blockComment"}
-
-        // Strings
-        {include: "string-double"}
-        {include: "template-string"}
-
-        // Declarations
-        {include: "declarations"}
-
-        // Keywords
-        {include: "keywords"}
-
-        // Comparison
-        {include: "comparisons"}
-
-        // English syntax operators
-        {include: "englishSyntaxOps"}
-
-        // Assignment
-        {include: "assignment"}
-
-        // Web keywords
-        {include: "webKeywords"}
-
-        // Database keywords
-        {include: "databaseKeywords"}
-
-        // Backend keywords
-        {include: "backendKeywords"}
-
-        // Error keywords
-        {include: "errorKeywords"}
-
-        // Kind keywords
-        {include: "kindKeywords"}
-
-        // Test keywords
-        {include: "testKeywords"}
-
-        // Concurrency
-        {include: "concurrencyKeywords"}
-
-        // Constants
-        {include: "constants"}
-
-        // Special keywords
-        {include: "specialKeywords"}
-
-        // Numbers
-        {include: "numbers"}
-
-        // Builtins
-        {include: "builtins"}
-
-        // Function declarations
-        {include: "funcDecl"}
-
-        // Function calls
-        {include: "funcCall"}
-
-        // Operators
-        {include: "operators"}
-        {include: "arrow"}
-        {include: "dots"}
-        {include: "commas"}
-        {include: "braces"}
-        {include: "parens"}
-        {include: "brackets"}
-        {include: "colons"}
+        "keyword": {
+            match: /\b(if|otherwise|else|for|each|every|index|from|to|while|in|when|on|done|give|return|yield|break|continue|with|and|or|not|between|is|same|different|more|fewer|at|least|most|has|field|instanceof|use|import|export|show|print|display|accept|require|enable|limit|cache|schedule|background|socket|message|broadcast|send)\b/
+            0: "keyword"
+        }
     ]
 }

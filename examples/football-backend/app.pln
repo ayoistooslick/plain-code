@@ -1,29 +1,31 @@
+// PlainScript 1.0.2-rfc: a complete authenticated SQLite API.
+
 web app
-database ":memory:"
+database ":memory:" using "wasm"
 enable sessions "touchline-session-secret"
 remember coachHash as hashPassword("touchline")
 
 execute
-    create table teams (
-        id integer primary key autoincrement,
-        name text not null,
-        played integer default 0,
-        won integer default 0,
-        drawn integer default 0,
-        lost integer default 0
+    CREATE TABLE teams (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        played INTEGER DEFAULT 0,
+        won INTEGER DEFAULT 0,
+        drawn INTEGER DEFAULT 0,
+        lost INTEGER DEFAULT 0
     )
 done
 
 insert
-    insert into teams (name, played, won, drawn, lost) values
-    ('Thunder FC', 3, 2, 1, 0),
-    ('Harbor City', 3, 1, 1, 1),
-    ('Old Dock', 3, 0, 2, 1)
+    INSERT INTO teams (name, played, won, drawn, lost) VALUES
+    ("Thunder FC", 3, 2, 1, 0),
+    ("Harbor City", 3, 1, 1, 1),
+    ("Old Dock", 3, 0, 2, 1)
 done
 
 route post "/login"
-    remember ok as checkPassword(password of body of request, coachHash)
-    if ok is true
+    remember valid as checkPassword(password of body of request, coachHash)
+    if valid is true
         user of session of request becomes username of body of request
         reply json
             token is createToken(username of body of request, "touchline-secret")
@@ -47,7 +49,7 @@ require api key from "coach-key-42"
 
 route get "/teams"
     remember rows as query
-        select id, name, played, won, drawn, lost from teams order by name
+        SELECT id, name, played, won, drawn, lost FROM teams ORDER BY name
     done
     reply json
         teams is rows
@@ -56,14 +58,13 @@ done
 
 route post "/teams"
     remember missing as validate(body of request, list with "name")
-    remember problems as length(missing)
-    if problems more than 0
+    if length(missing) more than 0
         status 400
         reply missing
     otherwise
         remember teamName as name of body of request
         insert
-            insert into teams (name, played, won, drawn, lost) values ({teamName}, 0, 0, 0, 0)
+            INSERT INTO teams (name, played, won, drawn, lost) VALUES ({teamName}, 0, 0, 0, 0)
         done
         reply json
             added is teamName
@@ -73,7 +74,7 @@ done
 
 route get "/standings"
     remember rows as query
-        select name, won, drawn, lost from teams order by won desc, name
+        SELECT name, won, drawn, lost FROM teams ORDER BY won DESC, name
     done
     reply json
         standings is rows

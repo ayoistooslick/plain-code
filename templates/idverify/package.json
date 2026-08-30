@@ -1,18 +1,10 @@
 {
-  "name": "@plainscript/idverify-sdk",
-  "version": "1.0.1",
-  "description": "An ID-verification npm SDK authored 100% in PlainScript. Fingerprints documents with SHA-256, parses machine-readable zones, and verifies document records.",
-  "main": "dist/index.js",
+  "name": "plainscript-idverify-template",
+  "version": "1.0.2-rfc",
+  "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "plainscript build",
-    "prepare": "plainscript build",
-    "demo": "plainscript run src/demo.pln"
-  },
-  "files": [
-    "dist"
-  ],
-  "devDependencies": {
-    "plainscript-lang": "^1.0.1"
+    "build": "plainscript build src/app.pln -o build/app.js",
+    "start": "node build/app.js"
   }
 }

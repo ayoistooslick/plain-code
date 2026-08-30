@@ -1,154 +1,75 @@
 {
-    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-    "name": "PlainScript",
-    "scopeName": "source.plainscript",
-    "fileTypes": [".pln"],
-    "patterns": [
-        { "include": "#comments" },
-        { "include": "#strings" },
-        { "include": "#template-strings" },
-        { "include": "#numbers" },
-        { "include": "#keywords" },
-        { "include": "#operators" },
-        { "include": "#function-names" },
-        { "include": "#identifiers" }
-    ],
-    "repository": {
-        "comments": {
-            "patterns": [
-                {
-                    "name": "comment.line.double-slash.plainscript",
-                    "match": "//.*$"
-                },
-                {
-                    "name": "comment.line.note.plainscript",
-                    "match": "^\\s*note\\s*:.*$"
-                }
-            ]
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "PlainScript",
+  "scopeName": "source.plainscript",
+  "fileTypes": ["pln"],
+  "patterns": [
+    {"include": "#comments"},
+    {"include": "#strings"},
+    {"include": "#numbers"},
+    {"include": "#keywords"},
+    {"include": "#operators"},
+    {"include": "#functions"}
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {"name": "comment.line.double-slash.plainscript", "match": "//.*$"}
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.plainscript",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [{"name": "constant.character.escape.plainscript", "match": "\\\\."}]
         },
-        "strings": {
-            "name": "string.quoted.double.plainscript",
-            "begin": "\"",
-            "end": "\"",
-            "patterns": [
-                {
-                    "name": "constant.character.escape.plainscript",
-                    "match": "\\\\."
-                }
-            ]
-        },
-        "template-strings": {
-            "name": "string.template.plainscript",
-            "begin": "`",
-            "end": "`",
-            "patterns": [
-                {
-                    "name": "constant.character.escape.plainscript",
-                    "match": "\\\\."
-                },
-                {
-                    "name": "meta.embedded.line.plainscript",
-                    "match": "\\$\\{[^}]*\\}"
-                }
-            ]
-        },
-        "numbers": {
-            "name": "constant.numeric.plainscript",
-            "match": "\\b-?\\d+(\\.\\d+)?\\b"
-        },
-        "keywords": {
-            "patterns": [
-                {
-                    "name": "keyword.control.plainscript",
-                    "match": "\\b(otherwise|else|for|each|every|in|index|from|to|while|when|listen|try|recover|retry|times|wait|enable|destroy|accept|require|at|position|of|kind|has|field|starts|as|ends|made|uses|fills|raises|handled|choosing|then|more|fewer|same|different|with|together|be|called|done)\\b"
-                },
-                {
-                    "name": "keyword.declaration.plainscript",
-                    "match": "\\b(let|remember|set|define|use|import|export|database|web|route|group|test|check|postgres|record|list|create|raise|show|fill)\\b"
-                },
-                {
-                    "name": "keyword.operator.assignment.plainscript",
-                    "match": "\\b(give back)\\b"
-                },
-                {
-                    "name": "keyword.operator.plainscript",
-                    "match": "\\b(show|serve|folder|ask|ocr|send|spread|create|raise|export|all|any|settled|withTimeout|first|last|read|write|fileExists|unique|sort|reverse|get|post|put|patch|delete|update|execute|transaction|query|insert|headers|timeout|allow|cors|validate|status|json|message|length|accept|limit)\\b"
-                },
-                {
-                    "name": "keyword.operator.comparison.plainscript",
-                    "match": "\\b(is|equal|greater|less|than|above|below|at|least|most|not|empty|contains|starts|ends|with|between|and|or|more|fewer|same|different|from)\\b"
-                },
-                {
-                    "name": "keyword.other.web.plainscript",
-                    "match": "\\b(app|route|start|group|allow|cors|validate|status|param|nothing|matches|redirect|folder)\\b"
-                },
-                {
-                    "name": "keyword.other.database.plainscript",
-                    "match": "\\b(query|insert|update|delete|execute|transaction|postgres|native|wasm)\\b"
-                },
-                {
-                    "name": "keyword.other.backend.plainscript",
-                    "match": "\\b(sessions|session|uploads|limit|requests|api|key|google|oauth|cookie|expires|schedule|background|websocket|socket|connects|disconnects|mail|transport|headers|timeout|cache|redis|database)\\b"
-                },
-                {
-                    "name": "keyword.other.plainscript",
-                    "match": "\\b(someone|visits|sends|clicks|matching|on|json|done|get|post|put|patch|use)\\b"
-                },
-                {
-                    "name": "support.function.stdlib.plainscript",
-                    "match": "\\b(length|uppercase|lowercase|trim|replace|split|join|number|text|floor|ceiling|random|round|sort|reverse|unique|sum|smallest|largest|keys|values|hasKey|merge|readFile|writeFile|appendFile|fileExists|copyFile|moveFile|deleteFile|makeFolder|deleteFolder|listFolder|readBytes|writeBytes|read|write|sleep|time|date|jsonEncode|jsonDecode|env|exit|uuid|cacheGet|cacheSet|cacheDelete|hashPassword|checkPassword|createToken|readToken|validate|param|query|header|upload|uploads|cookie|sendMessage|sendPhoto|getChat|getMyChats|editMessage|paginate|chat|embedText|similarity|ai_tags|ai_post|typeOf|fieldsOf|valueOf|hasField|sizeOf|base64Encode|base64Decode|textToBytes|bytesToText|sha256|sha1|md5|yamlDecode|yamlEncode|loadModule|runCommand|args|fileSize|fileType|lastModified|walkFolder|joinPath|baseName|folderOf|extensionOf|writeLine|appendLine|keyMap|mapSet|mapGet|mapHas|mapDelete|newSet|addToSet|removeFromSet|setHas|unique|spread|allOf|anyOf|settledOf|withTimeout|range|clamp|first|last|flatten|includes|pick|omit|groupBy|startsWith|endsWith|truncate|padStart|padEnd|loadEnvFile|newDate|now|nowSec|year|month|day|hours|minutes|seconds|toISO|toLocaleDate|toLocaleTime|toUTC|formatDate|addTime|subTime|diffTime|startOfDay|endOfDay|startOfMonth|endOfMonth|startOfYear|endOfYear|parseDate|regex|regexMatch|regexMatchAll|replaceRegex|splitRegex|coalesce)(?=\\s*\\()"
-                },
-                {
-                    "name": "constant.language.plainscript",
-                    "match": "\\b(true|false|null)\\b"
-                }
-            ]
-        },
-        "operators": {
-            "patterns": [
-                {
-                    "name": "keyword.operator.arrow.plainscript",
-                    "match": "->"
-                },
-                {
-                    "name": "keyword.operator.arithmetic.plainscript",
-                    "match": "[+\\-*/%]"
-                },
-                {
-                    "name": "punctuation.accessor.plainscript",
-                    "match": "\\."
-                },
-                {
-                    "name": "punctuation.separator.comma.plainscript",
-                    "match": ","
-                },
-                {
-                    "name": "punctuation.section.braces.plainscript",
-                    "match": "[{}]"
-                },
-                {
-                    "name": "punctuation.separator.key-value.plainscript",
-                    "match": ":"
-                }
-            ]
-        },
-        "function-names": {
-            "patterns": [
-                {
-                    "comment": "Function declaration: to name",
-                    "match": "(?<=\\bto\\s+)(?!define\\b)(\\w+)(?=\\s|$)",
-                    "name": "entity.name.function.plainscript"
-                },
-                {
-                    "comment": "Function call: name(...)",
-                    "match": "\\b(\\w+)(?=\\s*\\()",
-                    "name": "entity.name.function.call.plainscript"
-                }
-            ]
-        },
-        "identifiers": {
-            "name": "variable.other.plainscript",
-            "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        {
+          "name": "string.template.plainscript",
+          "begin": "`",
+          "end": "`",
+          "patterns": [
+            {"name": "constant.character.escape.plainscript", "match": "\\\\."},
+            {"name": "meta.embedded.line.plainscript", "match": "\\$\\{[^}]*\\}"}
+          ]
         }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.plainscript",
+      "match": "\\b\\d+(\\.\\d+)?n?\\b"
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.plainscript",
+          "match": "\\b(if|otherwise|else|for|each|every|index|from|to|while|in|when|listen|route|web|start|done|try|recover|finally|retry|times|wait|accept|require|enable|limit|test|match|against|switch|case|default|break|continue|return|give|yield|on|with|and|or|not|between|contains|starts|ends|is|same|different|more|fewer|at|least|most|has|field|instanceof)\\b"
+        },
+        {
+          "name": "keyword.declaration.plainscript",
+          "match": "\\b(remember|let|make|define|function|use|import|export|database|postgres|create|record|list|websocket|bot|whatsapp|ocr)\\b"
+        },
+        {
+          "name": "keyword.other.plainscript",
+          "match": "\\b(show|print|display|give|becomes|is_now|set_to|change_to|reply|respond|serve|folder|json|query|insert|update|delete|execute|transaction|cache|schedule|background|socket|connects|disconnects|message|broadcast|send|upload|uploads|cookie|session|api|key|cors)\\b"
+        },
+        {
+          "name": "constant.language.plainscript",
+          "match": "\\b(true|false|null|undefined)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {"name": "keyword.operator.plainscript", "match": "\\?\\?|\\?\\.|\\*\\*|->|\\+|-|\\*|/|%|\\b(plus|minus|times|divided by)\\b"},
+        {"name": "punctuation.separator.plainscript", "match": "[.,:()\\[\\]{}]"}
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {"name": "entity.name.function.plainscript", "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\()"}
+      ]
     }
+  }
 }

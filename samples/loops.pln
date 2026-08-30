@@ -1,15 +1,5 @@
-// PlainScript v1.0.2 — Loops
-
-remember fruits as list with "Apple", "Banana", "Cherry"
-
-for each fruit in fruits
-    show fruit
+// PlainScript 1.0.2-rfc: loops.
+remember values as list with 1, 2, 3
+for each value in values
+    show value
 done
-
-remember count as 0
-
-while count is below 5
-    count becomes count + 1
-done
-
-show count

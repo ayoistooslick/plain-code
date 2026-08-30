@@ -1,16 +1,18 @@
-remember players as list with
-    "Haaland",
-    "Foden",
-    "Rodri"
+// PlainScript 1.0.2-rfc: collection and numeric loops.
 
-for each player in players
-    show player
+remember colors as list with "red", "green", "blue"
+
+for each color in colors
+    show color
+done
+
+for index position from 0 to 2
+    show position
+    show colors at position 1
 done
 
 remember count as 0
-
-while count fewer than 3
+while count is less than 3
+    show count
     count becomes count + 1
 done
-
-show count

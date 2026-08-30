@@ -1,14 +1,13 @@
-whatsapp bot
-    auth "session"
-    login pairing "2348012345678"
+// PlainScript 1.0.2-rfc: WhatsApp pairing login.
 
+whatsapp bot
+    auth "plain-script-whatsapp"
+    login pairing "2348012345678"
     on message
         log message
-
         if message.text is "/start"
             reply "Welcome!"
         done
-
         if message.text is "/help"
             reply `Available commands:
 /start /help`

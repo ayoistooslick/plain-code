@@ -1,71 +1,28 @@
-# PlainScript Language — VS Code Extension
+# PlainScript Language Support
 
-Syntax highlighting and language support for the [PlainScript programming language](https://github.com/ayoistooslick/plainscript) (`.pln` files).
+VS Code syntax support for PlainScript `1.0.2-rfc`.
 
----
+The extension provides:
 
-## Features
+- `.pln` language registration
+- current keyword, comparison, string, template, number, and function scopes
+- folding and indentation for `done` blocks
+- snippets for the maintained declaration, web, SQL, async, test, and module forms
 
-- **Syntax highlighting** — keywords, strings, numbers, comments, operators, and function names
-- **File icon** — `.pln` files get a distinctive icon in the file tree
-- **Language registration** — VS Code recognises `.pln` as PlainScript source
-- **Auto-closing pairs** — `()`, `[]`, `{}`, `""`, ` `` `
-- **Comment toggling** — `Ctrl+/` / `Cmd+/` toggles `//` line comments
-- **Bracket matching** — highlights matching brackets
-- **Code folding** — fold `to`/`for each`/`while`/`when`/`web app`/`route` blocks
-- **Snippets** — common PlainScript patterns (variables, functions, loops, web apps, databases, tests)
+The compiler is the authority for accepted syntax. Validate source with:
 
----
+```bash
+node compiler/cli.js check path/to/file.pln
+```
 
-## Installation
+## Development
 
-### Option A — Install from VSIX (recommended for now)
+Open this folder in VS Code and press `F5` to launch an Extension Development
+Host. The extension has no build step.
 
-1. Clone or download this repository.
-2. Install `vsce` if you haven't already:
-   ```bash
-   npm install -g @vscode/vsce
-   ```
-3. Package the extension:
-   ```bash
-   cd plainscript-vscode
-   vsce package
-   ```
-   This produces `plainscript-language-1.0.2.vsix`.
-4. Install the VSIX in VS Code:
-   - Open VS Code
-   - Press `Ctrl+Shift+P` / `Cmd+Shift+P`
-   - Run **Extensions: Install from VSIX…**
-   - Select the `.vsix` file
+## Package
 
-### Option B — Development mode (no packaging needed)
-
-1. Open the `plainscript-vscode` folder in VS Code.
-2. Press `F5` to launch the **Extension Development Host** — a new VS Code window opens with the extension active.
-3. Open any `.pln` file to see syntax highlighting immediately.
-
----
-
-## Highlighted keywords
-
-| Category    | Keywords                                                                 |
-|-------------|--------------------------------------------------------------------------|
-| Control     | `otherwise` `else` `done` `for` `each` `every` `in` `while` `when` `try` `recover` |
-| Declaration | `let` `remember` `set` `to` `use` `import` `export`                       |
-| Action      | `be` `give back` `show` `serve` `raise` `fill`                          |
-| Comparison  | `is` `equal` `greater` `less` `than` `above` `below` `at` `least` `most` `not` `empty` `contains` `starts` `ends` `with` `between` `and` `or` |
-| Backend     | `web` `app` `group` `route` `start` `database` `query` `insert` `update` `delete` |
-| Constant    | `true` `false` `null`                                                    |
-
----
-
-## Requirements
-
-- VS Code 1.70 or later
-- No other extensions required
-
----
-
-## License
-
-MIT
+```bash
+npm install
+npx vsce package
+```
