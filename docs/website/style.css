@@ -576,7 +576,7 @@ pre{font-family:var(--font-mono);font-size:.875rem;line-height:1.7;overflow-x:au
 }
 
 /* ═══════════════════════════════
-   RESPONSIVE — 1024px
+   RESPONSIVE: 1024px
    ═══════════════════════════════ */
 @media(max-width:1024px){
   .features-grid{grid-template-columns:repeat(2,1fr)}
@@ -584,7 +584,7 @@ pre{font-family:var(--font-mono);font-size:.875rem;line-height:1.7;overflow-x:au
 }
 
 /* ═══════════════════════════════
-   RESPONSIVE — 800px
+   RESPONSIVE: 800px
    ═══════════════════════════════ */
 @media(max-width:800px){
   .hero{padding:calc(var(--nav-h) + 48px) 0 64px}
@@ -604,7 +604,7 @@ pre{font-family:var(--font-mono);font-size:.875rem;line-height:1.7;overflow-x:au
 }
 
 /* ═══════════════════════════════
-   RESPONSIVE — 600px
+   RESPONSIVE: 600px
    ═══════════════════════════════ */
 @media(max-width:600px){
   .section{padding:48px 16px}
@@ -623,7 +623,7 @@ pre{font-family:var(--font-mono);font-size:.875rem;line-height:1.7;overflow-x:au
 }
 
 /* ═══════════════════════════════
-   RESPONSIVE — 480px
+   RESPONSIVE: 480px
    ═══════════════════════════════ */
 @media(max-width:480px){
   .hero-title{font-size:1.8rem}
