@@ -2619,7 +2619,7 @@ function writeLocalPackage(projectDir, pkgName, mainSrc) {
   fs.mkdirSync(pkgDir, { recursive: true });
   fs.writeFileSync(
     path.join(pkgDir, 'package.json'),
-    JSON.stringify({ name: pkgName, version: '1.0.2', main: 'index.js' })
+    JSON.stringify({ name: pkgName, version: '1.0.1', main: 'index.js' })
   );
   fs.writeFileSync(path.join(pkgDir, 'index.js'), mainSrc);
 }
