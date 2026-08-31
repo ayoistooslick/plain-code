@@ -912,9 +912,10 @@ function parse(tokens) {
       target = parseInlineObjectLiteral(true); // returns InlineObjectLiteral with properties, destructuring mode
       target.type = 'ObjectPattern';
     } else {
-      // Allow "back" and "total" as variable names
+      // Allow contextual keywords as variable names in remember declarations
       let nameToken = peek();
-      if (nameToken.type === TOKEN.BACK || nameToken.type === TOKEN.TOTAL) {
+      const REMEMBER_KEYWORDS = new Set([TOKEN.BACK, TOKEN.TOTAL, TOKEN.REPLY, TOKEN.RESPOND, TOKEN.SEND_BACK, TOKEN.FILE_KW]);
+      if (REMEMBER_KEYWORDS.has(nameToken.type)) {
         advance();
         target = nameToken.value;
       } else {
