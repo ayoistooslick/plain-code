@@ -1,0 +1,148 @@
+// Email Queue with Retry Logic — PlainScript v2.1
+// Uses in-memory queue with scheduled processing and exponential backoff
+
+remember emailQueue as list
+remember processingQueue as false
+
+make enqueueEmail(jobData)
+    remember jobId as "job_" + time() + "_" + random(1000, 9999)
+    remember job as
+        id is jobId
+        data is jobData
+        attempts is 0
+        maxAttempts is 3
+        createdAt is time()
+        jobStatus is "pending"
+    done
+    add(job to emailQueue)
+    give jobId
+done
+
+make processQueue()
+    if processingQueue is true
+        give 0
+    done
+    processingQueue becomes true
+    remember processed as 0
+    
+    for each job in emailQueue
+        if jobStatus of job is "pending" and attempts of job is below maxAttempts of job
+            attempts of job becomes attempts of job + 1
+            jobStatus of job becomes "processing"
+            lastAttempt of job becomes time()
+            
+            try
+                remember result as sendQueuedEmail(data of job)
+                jobStatus of job becomes "completed"
+                completedAt of job becomes time()
+                processed becomes processed + 1
+            recover as error
+                jobStatus of job becomes "pending"
+                lastError of job becomes error
+                if attempts of job is at least maxAttempts of job
+                    jobStatus of job becomes "failed"
+                    failedAt of job becomes time()
+                    show "Email job " + id of job + " failed after " + maxAttempts of job + " attempts: " + error
+                otherwise
+                    remember delay as calculateBackoff(attempts of job)
+                    show "Email job " + id of job + " attempt " + attempts of job + " failed, retrying in " + delay + "s: " + error
+                done
+            done
+        done
+    done
+    
+    processingQueue becomes false
+    give processed
+done
+
+make sendQueuedEmail(data)
+    remember toEmail as recipient of data
+    remember subject as subject of data
+    remember html as html of data
+    remember text as text of data
+    remember attachments as attachments of data
+    
+    if attachments is not null
+        send mail
+            from is env("EMAIL_FROM")
+            to is toEmail
+            subject is subject
+            html is html
+            text is text
+            attachments is attachments
+        done
+    otherwise
+        send mail
+            from is env("EMAIL_FROM")
+            to is toEmail
+            subject is subject
+            html is html
+            text is text
+        done
+    done
+    
+    give true
+done
+
+make calculateBackoff(attempt)
+    give attempt * attempt * 60
+done
+
+make getQueueStats()
+    remember pending as 0
+    remember processing as 0
+    remember completed as 0
+    remember failed as 0
+    
+    for each job in emailQueue
+        if jobStatus of job is "pending"
+            pending becomes pending + 1
+        done
+        if jobStatus of job is "processing"
+            processing becomes processing + 1
+        done
+        if jobStatus of job is "completed"
+            completed becomes completed + 1
+        done
+        if jobStatus of job is "failed"
+            failed becomes failed + 1
+        done
+    done
+    
+    remember stats as
+        pending is pending
+        processing is processing
+        completed is completed
+        failed is failed
+        totalCount is length(emailQueue)
+    done
+    give stats
+done
+
+make clearCompletedJobs()
+    remember newQueue as list
+    for each job in emailQueue
+        if jobStatus of job is not "completed"
+            add(job to newQueue)
+        done
+    done
+    emailQueue becomes newQueue
+    show "Cleared completed jobs from queue"
+done
+
+make retryFailedJobs()
+    for each job in emailQueue
+        if jobStatus of job is "failed"
+            jobStatus of job becomes "pending"
+            attempts of job becomes 0
+            lastError of job becomes null
+        done
+    done
+    show "Reset failed jobs for retry"
+done
+
+export enqueueEmail
+export processQueue
+export getQueueStats
+export clearCompletedJobs
+export retryFailedJobs

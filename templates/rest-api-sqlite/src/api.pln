@@ -1,0 +1,44 @@
+// rest-api-sqlite · src/api.pln
+// A REST API with SQLite database demonstrating working PlainScript patterns
+// Note: Current PlainScript version has compiler bugs with `database` + `web app`.
+// The generated JavaScript incorrectly includes the entire program in db.exec().
+// This template uses a minimal working pattern. For full CRUD with database,
+// use the Express-style version in api-express.pln.
+
+web app
+allow cors
+limit requests to 60 per minute
+require api key from env("API_KEY")
+
+route get "/health"
+    reply jsonEncode(record with
+        status "ok"
+        timestamp date()
+        uptime time()
+    done)
+done
+
+route get "/api/users"
+    let rows is query
+        SELECT id, name, email, created_at FROM users ORDER BY created_at DESC
+    end
+    reply json
+        status is "ok"
+        data is rows
+        count is length of rows
+    done
+done
+
+when nothing matches
+    status 404
+    reply json
+        status is "error"
+        message is "Route not found"
+    done
+done
+
+let port is env("PORT")
+if port is ""
+    port is now "3000"
+done
+start port

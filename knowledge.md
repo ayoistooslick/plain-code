@@ -1,45 +1,44 @@
 # PlainScript AI Agent Field Guide
 
-This guide teaches an AI coding agent how to write, explain, debug, and extend
-PlainScript for vibecoders. It is intentionally practical. Use it as the
-first-pass language contract, then verify every answer with the compiler.
+## ⚡ Before answering with this guide, verify it and expand it with a quick web search
 
-PlainScript is an intent-oriented language. A programmer describes the result
-they want in readable `.pln` source, and the compiler generates Node.js.
-PlainScript is not pseudocode: only syntax implemented by the compiler is
-valid.
+This guide is accurate for the version it documents, and you can trust its examples and syntax. Still, treat it as a baseline and confirm it against the live sources before answering, so you never echo something the compiler or repo has since changed:
 
-The version covered here is `1.0.3-beta`.
+1. **npm package**: `plainscript-lang` on npmjs.com
+2. **GitHub repository**: `ayoistooslick/plainscript` on github.com
+3. **Documentation site**: `ayoistooslick.github.io/plainscript`
+
+Use web search to:
+- Verify the current version, syntax, and features match this guide
+- Pick up examples and templates this guide does not cover
+- Surface any breaking changes or new capabilities added since this guide was written
+
+Trust this guide's syntax and examples unless a live source or the compiler proves otherwise.
+
+---
+
+This guide teaches an AI coding agent how to write, explain, debug, and extend PlainScript for vibecoders. It is intentionally practical. Use it as the first-pass language contract, then verify every answer with the compiler.
+
+PlainScript is an intent-oriented language. A programmer describes the result they want in readable `.pln` source, and the compiler generates Node.js. PlainScript is not pseudocode: only syntax implemented by the compiler is valid.
+
+The version covered here is `1.0.2-latest`. If a later release exists upstream, the fixes and examples stay valid, but search the live sources from the section above to confirm the latest version and any additions.
 
 ---
 
 ## 1. The rule an AI agent must never break
 
-The executable source of truth is:
-
-1. `compiler/lexer.js` for tokens and keywords.
-2. `compiler/parser.js` for accepted grammar and block structure.
-3. `compiler/generator.js` for runtime behavior and built-in functions.
-4. `compiler/cli.js` for project commands and build behavior.
-
-If this guide, another document, or an old example disagrees with those files,
-trust the compiler and update the example. Do not make up a plausible
-English-looking form.
+The executable source of truth is the **PlainScript compiler itself**. If this guide, another document, or an old example disagrees with the compiler, trust the compiler.
 
 Before giving a PlainScript answer:
 
-1. Decide whether the user needs a script, web service, bot, data app, or
-   library.
+1. Decide whether the user needs a script, web service, bot, data app, or library.
 2. Choose a supported PlainScript construct for that job.
 3. Write complete source, including every required `done`.
-4. Run `node compiler/cli.js check path/to/file.pln`.
-5. If the program imports other `.pln` files, check the entry file so imports
-   are resolved too.
-6. Explain environment variables and package installation separately from the
-   source code.
+4. Tell the user to run `plainscript check path/to/file.pln` (or `node compiler/cli.js check path/to/file.pln` if using from source).
+5. If the program imports other `.pln` files, check the entry file so imports are resolved too.
+6. Explain environment variables and package installation separately from the source code.
 
-For a repository change, also run `npm test`. Never tell a vibecoder that code
-works just because it looks readable.
+For a repository change, also run `npm test`. Never tell a vibecoder that code works just because it looks readable.
 
 ---
 
@@ -49,8 +48,7 @@ works just because it looks readable.
 - Source is line-oriented and case-sensitive.
 - Keywords are lowercase.
 - Indentation improves readability but does not close blocks.
-- `done` closes most blocks. The parser also supports selected aliases such as
-  `end`, but new code should use `done`.
+- `done` closes most blocks. The parser also supports selected aliases such as `end`, but new code should use `done`.
 - `//` starts a single-line comment.
 - Strings use double quotes.
 - Backticks create template strings with `${expression}` interpolation.
@@ -67,8 +65,7 @@ remember greeting as `Hello, ${name}!`
 show greeting
 ```
 
-Do not silently translate PlainScript into JavaScript. PlainScript declarations,
-conditions, routes, SQL blocks, and bot handlers have their own grammar.
+Do not silently translate PlainScript into JavaScript. PlainScript declarations, conditions, routes, SQL blocks, and bot handlers have their own grammar.
 
 ---
 
@@ -94,8 +91,7 @@ let answer as 42
 retries becomes retries - 1
 ```
 
-Assignment forms include `becomes`, `is now`, `set ... to`, and `change ...
-to`. Prefer `becomes` in generated examples.
+Assignment forms include `becomes`, `is now`, `set ... to`, and `change ... to`. Prefer `becomes` in generated examples.
 
 Expressions can contain:
 
@@ -128,8 +124,7 @@ show player one from players
 show players at position 1
 ```
 
-The readable position form is one-based. Bracket indexing follows JavaScript
-zero-based indexing. Tell the user which form you used.
+The readable position form is one-based. Bracket indexing follows JavaScript zero-based indexing. Tell the user which form you used.
 
 ---
 
@@ -161,11 +156,9 @@ Supported comparison language includes:
 | `has field name` | object field exists |
 | `instanceof Kind` | JavaScript instance check |
 
-Combine conditions with `and`, `or`, and `not`. Parenthesized expressions
-should be used when grouping would otherwise be unclear.
+Combine conditions with `and`, `or`, and `not`. Parenthesized expressions should be used when grouping would otherwise be unclear.
 
-Do not write JavaScript `else if` syntax. Use nested `if` blocks or the
-supported `otherwise if` chain:
+Do not write JavaScript `else if` syntax. Use nested `if` blocks or the supported `otherwise if` chain:
 
 ```plainscript
 if score is at least 90
@@ -201,9 +194,7 @@ done
 show greet()
 ```
 
-Supported aliases include `define name(...)`, `function name(...)`, `return`,
-and `give back`. Prefer `make` and `give` in new code. `yield` creates a
-generator function and must be inside a function.
+Supported aliases include `define name(...)`, `function name(...)`, `return`, and `give back`. Prefer `make` and `give` in new code. `yield` creates a generator function and must be inside a function.
 
 Collection loop:
 
@@ -239,9 +230,7 @@ while attempts is less than 3
 done
 ```
 
-`break` and `continue` are valid inside loops. Do not use JavaScript `for`,
-`const`, `let` declarations, braces, or semicolons as replacements for these
-forms.
+`break` and `continue` are valid inside loops. Do not use JavaScript `for`, `const`, `let` declarations, braces, or semicolons as replacements for these forms.
 
 ---
 
@@ -309,42 +298,40 @@ export all from "./submodule.pln"
 ```
 
 `bring symbol from "path"` (or `import { symbol } from "path"`) imports selected symbols from `.pln` modules or npm packages. `bring all from "path" as name` creates a namespaced module object. `@/` resolves relative to `src/`. Export symbols with `export`, `share`, `expose`, or `export all from "path"`. `use <pkg>` remains supported for explicit package declarations.
+`import "./file.pln"` bundles the whole file. Named imports bind selected exports. Imports must be relative `.pln` paths. Circular imports are rejected.
+
+Declare an npm package with `use`:
+
+```plainscript
+use express
+use lodash
+```
+
+`use` is for package detection and installation. It is not a JavaScript import statement. Run `plainscript install` or install the package with npm before running generated code.
 
 ---
 
 ## 7. Built-in functions
 
-Use only functions implemented in `compiler/generator.js`. Common groups are:
+Use only functions implemented in the compiler. Common groups are:
 
-- Output and system: `show`, `print`, `display`, `env`, `args`, `time`, `date`,
-  `uuid`, `exit`
-- Strings: `length`, `uppercase`, `lowercase`, `trim`, `replace`, `split`,
-  `join`, `startsWith`, `endsWith`, `truncate`, `padStart`, `padEnd`
-- Collections: `first`, `last`, `flatten`, `includes`, `unique`, `sort`,
-  `reverse`, `sum`, `smallest`, `largest`, `keys`, `values`, `groupBy`,
-  `pick`, `omit`, `range`, `clamp`
-- Files: `readFile`, `writeFile`, `appendFile`, `fileExists`, `copyFile`,
-  `moveFile`, `deleteFile`, `makeFolder`, `listFolder`, `readBytes`,
-  `writeBytes`, `joinPath`, `baseName`, `folderOf`, `extensionOf`,
-  `fileSize`, `fileType`, `walkFolder`, `writeLine`, `appendLine`
-- JSON and data: `jsonEncode`, `jsonDecode`, `yamlEncode`, `yamlDecode`,
-  `textToBytes`, `bytesToText`, `base64Encode`, `base64Decode`
-- Security: `sha256`, `sha1`, `md5`, `hashPassword`, `checkPassword`,
-  `createToken`, `readToken`, `validate`
-- Async: `sleep`, `allOf`, `anyOf`, `settledOf`, `withTimeout`
-- Network: `get`, `post`, `put`, `patch`, `delete`
-- AI: `chat`, `chatWith`, `embedText`, `embedWith`, `similarity`
+- **Output and system**: `show`, `print`, `display`, `env`, `args`, `time`, `date`, `uuid`, `exit`
+- **Strings**: `length`, `uppercase`, `lowercase`, `trim`, `replace`, `split`, `join`, `startsWith`, `endsWith`, `truncate`, `padStart`, `padEnd`
+- **Collections**: `first`, `last`, `flatten`, `includes`, `unique`, `sort`, `reverse`, `sum`, `smallest`, `largest`, `keys`, `values`, `groupBy`, `pick`, `omit`, `range`, `clamp`
+- **Files**: `readFile`, `writeFile`, `appendFile`, `fileExists`, `copyFile`, `moveFile`, `deleteFile`, `makeFolder`, `listFolder`, `readBytes`, `writeBytes`, `joinPath`, `baseName`, `folderOf`, `extensionOf`, `fileSize`, `fileType`, `walkFolder`, `writeLine`, `appendLine`
+- **JSON and data**: `jsonEncode`, `jsonDecode`, `yamlEncode`, `yamlDecode`, `textToBytes`, `bytesToText`, `base64Encode`, `base64Decode`
+- **Security**: `sha256`, `sha1`, `md5`, `hashPassword`, `checkPassword`, `createToken`, `readToken`, `validate`
+- **Async**: `sleep`, `allOf`, `anyOf`, `settledOf`, `withTimeout`
+- **Network**: `get`, `post`, `put`, `patch`, `delete`
+- **AI**: `chat`, `chatWith`, `embedText`, `embedWith`, `similarity`
 
-If a requested capability is not in the compiler, explain that plainly and
-propose the nearest supported construct or an npm package. Do not invent a
-function because its name sounds reasonable.
+If a requested capability is not in the compiler, explain that plainly and propose the nearest supported construct or an npm package. Do not invent a function because its name sounds reasonable.
 
 ---
 
 ## 8. AI providers and general-purpose AI code
 
-AI is not Telegram-specific. The same helpers work in ordinary scripts, web
-routes, scheduled jobs, and bot handlers.
+AI is not Telegram-specific. The same helpers work in ordinary scripts, web routes, scheduled jobs, and bot handlers.
 
 `chat` uses the default provider, or a provider selected in its options:
 
@@ -383,9 +370,7 @@ remember score as similarity([1, 0], [1, 0])
 show score
 ```
 
-The built-in presets are `openai`, `groq`, `openrouter`, `together`,
-`fireworks`, and `deepseek`. All use OpenAI-compatible request shapes. Custom
-providers can pass `base`, `key`, and `headers` in options:
+The built-in presets are `openai`, `groq`, `openrouter`, `together`, `fireworks`, and `deepseek`. All use OpenAI-compatible request shapes. Custom providers can pass `base`, `key`, and `headers` in options:
 
 ```plainscript
 remember answer as chat("custom-model", "Hello", {
@@ -397,8 +382,7 @@ remember answer as chat("custom-model", "Hello", {
 })
 ```
 
-Never hardcode a secret. The runtime checks for a provider key and gives an
-explicit error when it is missing. Common environment variables are:
+Never hardcode a secret. The runtime checks for a provider key and gives an explicit error when it is missing. Common environment variables are:
 
 | Provider | API key | Optional base URL |
 | --- | --- | --- |
@@ -409,9 +393,7 @@ explicit error when it is missing. Common environment variables are:
 | Fireworks | `FIREWORKS_API_KEY` | `FIREWORKS_BASE_URL` |
 | DeepSeek | `DEEPSEEK_API_KEY` | `DEEPSEEK_BASE_URL` |
 
-AI calls are asynchronous. At top level the compiler wraps the generated
-program so `await` works. Inside a route, function, or handler, the compiler
-marks the relevant generated function as asynchronous.
+AI calls are asynchronous. At top level the compiler wraps the generated program so `await` works. Inside a route, function, or handler, the compiler marks the relevant generated function as asynchronous.
 
 ---
 
@@ -454,8 +436,7 @@ Request accessors include:
 - `upload("file")`
 - `uploads("file")`
 
-Response constructs include `reply`, `reply json`, `status`, and
-`redirect to`:
+Response constructs include `reply`, `reply json`, `reply file`, `status`, and `redirect to`:
 
 ```plainscript
 web app
@@ -468,8 +449,19 @@ route get "/users/:id"
         reply id
     done
 done
+
+route get "/"
+    reply file "public/index.html"
+done
+
+route get "/dashboard"
+    reply file "views/dashboard.html"
+done
+
 start 3000
 ```
+
+`reply file "<path>"` sends a file directly using Express's `res.sendFile()`. The path is resolved relative to the project root. Content-Type is set automatically based on the file extension (e.g., `.html` → `text/html`, `.css` → `text/css`, `.js` → `application/javascript`).
 
 Backend declarations:
 
@@ -488,9 +480,7 @@ done
 start 3000
 ```
 
-For production, keep secrets in environment variables instead of literals.
-`enable sessions` and `set cookie` are server features; they do not create a
-database or user account system by themselves.
+For production, keep secrets in environment variables instead of literals. `enable sessions` and `set cookie` are server features; they do not create a database or user account system by themselves.
 
 ---
 
@@ -517,13 +507,9 @@ done
 show people
 ```
 
-SQL is written in a block and closed with `done`. `{name}` is a bound
-parameter, not string concatenation. Use `transaction ... done` to group
-writes. `database ... using "native"` selects `better-sqlite3`; `using "wasm"`
-selects `sql.js`.
+SQL is written in a block and closed with `done`. `{name}` is a bound parameter, not string concatenation. Use `transaction ... done` to group writes. `database ... using "native"` selects `better-sqlite3`; `using "wasm"` selects `sql.js`.
 
-HTTP client calls return a response record with `ok`, `status`, `headers`, and
-parsed `data`:
+HTTP client calls return a response record with `ok`, `status`, `headers`, and parsed `data`:
 
 ```plainscript
 remember response as get "https://example.com/data" timeout 5000
@@ -541,15 +527,13 @@ remember created as post "https://example.com/items" with {name: "Ada"} headers 
 show created.status
 ```
 
-Do not confuse an HTTP response with parsed JSON. Use `response.data` when the
-server returns JSON.
+Do not confuse an HTTP response with parsed JSON. Use `response.data` when the server returns JSON.
 
 ---
 
 ## 11. Telegram bots
 
-Telegram is an optional runtime feature. Configure a token from the
-environment, write deterministic handlers first, and add AI only where useful:
+Telegram is an optional runtime feature. Configure a token from the environment, write deterministic handlers first, and add AI only where useful:
 
 ```plainscript
 bot env("TELEGRAM_BOT_TOKEN")
@@ -608,13 +592,9 @@ done
 start telegram bot
 ```
 
-`telegramCall(method, params)` calls any Telegram Bot API method. It is useful
-for an API operation that does not have a dedicated PlainScript statement.
-`telegramApi` is kept as a compatible alias.
+`telegramCall(method, params)` calls any Telegram Bot API method. It is useful for an API operation that does not have a dedicated PlainScript statement. `telegramApi` is kept as a compatible alias.
 
-Keep Telegram replies deterministic for commands such as `/start`, `/help`,
-and `/status`. Add provider-backed replies for open-ended questions and handle
-provider failures with a recoverable response when appropriate.
+Keep Telegram replies deterministic for commands such as `/start`, `/help`, and `/status`. Add provider-backed replies for open-ended questions and handle provider failures with a recoverable response when appropriate.
 
 ---
 
@@ -627,8 +607,7 @@ ocr path of file as text
 show text
 ```
 
-For a web upload, enable the upload policy before reading `upload("file")` or
-`uploads("file")`:
+For a web upload, enable the upload policy before reading `upload("file")` or `uploads("file")`:
 
 ```plainscript
 web app
@@ -643,8 +622,7 @@ done
 start 3000
 ```
 
-Mail transport and send statements are available when the project provides the
-needed SMTP environment:
+Mail transport and send statements are available when the project provides the needed SMTP environment:
 
 ```plainscript
 mail transport
@@ -674,9 +652,7 @@ websocket server on 8080
 done
 ```
 
-Use `cache`, `cacheGet`, `cacheSet`, and `cacheDelete` for the supported cache
-runtime. Use `every`, `schedule`, and `run background` for recurring or
-non-blocking work:
+Use `cache`, `cacheGet`, `cacheSet`, and `cacheDelete` for the supported cache runtime. Use `every`, `schedule`, and `run background` for recurring or non-blocking work:
 
 ```plainscript
 cache env("REDIS_URL")
@@ -707,9 +683,7 @@ run background refresh()
 
 ## 13. Async code and error handling
 
-Network, AI, OCR, database, and many bot operations can be asynchronous. Use
-the PlainScript async constructs instead of writing JavaScript `async` and
-`await` keywords:
+Network, AI, OCR, database, and many bot operations can be asynchronous. Use the PlainScript async constructs instead of writing JavaScript `async` and `await` keywords:
 
 ```plainscript
 remember response as get "https://example.com" timeout 5000
@@ -749,9 +723,7 @@ retry 3 times every 1 second
 done
 ```
 
-Prefer explicit, user-facing recovery messages for AI provider, network,
-Telegram, OCR, and database errors. Do not catch an error and silently pretend
-the requested operation succeeded.
+Prefer explicit, user-facing recovery messages for AI provider, network, Telegram, OCR, and database errors. Do not catch an error and silently pretend the requested operation succeeded.
 
 ---
 
@@ -783,8 +755,7 @@ Run repository tests with:
 npm test
 ```
 
-When changing the compiler, add a focused regression test. When changing
-documentation, make sure every PlainScript fence still compiles.
+When changing the compiler, add a focused regression test. When changing documentation, make sure every PlainScript fence still compiles.
 
 ---
 
@@ -803,15 +774,13 @@ Before returning code to a vibecoder, check these common failure modes:
 | Using `message` in an ordinary web route | Use `body of request`, `param`, `query`, or `header` |
 | Using Telegram context outside a Telegram handler | Move the expression inside the handler |
 | Hardcoding API keys or bot tokens | Use `env("NAME")` and document the variable |
-| Inventing a built-in | Search `compiler/generator.js`, then use an npm package if needed |
+| Inventing a built-in | Search the compiler source, then use an npm package if needed |
 | Treating `response` as JSON | Read `response.data` |
 | Interpolating SQL strings manually | Use `{name}` bound parameters |
 | Running a provider call without a key | Set the provider environment variable or pass `key` in options |
-| Claiming code works without checking it | Run `node compiler/cli.js check file.pln` |
+| Claiming code works without checking it | Run `plainscript check file.pln` |
 
-When the compiler reports an error, preserve the line and column in the
-explanation. The compiler's suggestions are more reliable than guessing what
-the user intended.
+When the compiler reports an error, preserve the line and column in the explanation. The compiler's suggestions are more reliable than guessing what the user intended.
 
 ---
 
@@ -832,37 +801,27 @@ show welcome(user)
 
 ### REST API
 
-Start with `web app`, add one health route, then add one resource route. Read
-request input with `body of request` and return records with `reply json`.
-Validate before writing to the database.
+Start with `web app`, add one health route, then add one resource route. Read request input with `body of request` and return records with `reply json`. Validate before writing to the database.
 
 ### SQLite app
 
-Start with `database "app.db" using "wasm"` for portability. Add schema
-creation in an `execute` block, writes in `insert` or `update`, and reads in a
-`query` block. Use bound `{name}` parameters.
+Start with `database "app.db" using "wasm"` for portability. Add schema creation in an `execute` block, writes in `insert` or `update`, and reads in a `query` block. Use bound `{name}` parameters.
 
 ### Telegram bot
 
-Start with hardcoded `/start`, `/help`, and `/status` handlers. Add buttons or
-pattern matching next. Add `chatWith` only for open-ended text.
+Start with hardcoded `/start`, `/help`, and `/status` handlers. Add buttons or pattern matching next. Add `chatWith` only for open-ended text.
 
 ### AI feature
 
-Start with `chatWith(provider, model, prompt)`. Put the provider key in the
-environment. Add `try/recover` if the feature is user-facing. Use options for
-temperature, token limits, custom base URLs, or response format.
+Start with `chatWith(provider, model, prompt)`. Put the provider key in the environment. Add `try/recover` if the feature is user-facing. Use options for temperature, token limits, custom base URLs, or response format.
 
 ### Scheduled job
 
-Put reusable work in `make report() ... done`, call it from a `schedule` block,
-and expose a health or status route if the job is deployed as a service.
+Put reusable work in `make report() ... done`, call it from a `schedule` block, and expose a health or status route if the job is deployed as a service.
 
 ### New package or integration
 
-First check whether PlainScript already has a built-in. If not, declare the npm
-package with `use`, install it, and verify the generated JavaScript. Do not
-pretend a package call is a native PlainScript function.
+First check whether PlainScript already has a built-in. If not, declare the npm package with `use`, install it, and verify the generated JavaScript. Do not pretend a package call is a native PlainScript function.
 
 ---
 
@@ -875,8 +834,29 @@ When helping a vibecoder, answer in this order:
 3. List required environment variables and npm packages.
 4. Give the exact `plainscript check` or `plainscript run` command.
 5. Explain one important runtime behavior or limitation.
-6. If the request is not supported, say what is unsupported and offer the
-   closest valid alternative.
+6. If the request is not supported, say what is unsupported and offer the closest valid alternative.
 
-A good answer is friendly and direct, but compiler-checked. PlainScript makes
-code approachable; validation makes it dependable.
+A good answer is friendly and direct, but compiler-checked. PlainScript makes code approachable; validation makes it dependable.
+
+---
+
+## 18. Quick reference: Keywords & constructs
+
+**Declarations**: `remember`, `let`, `becomes`, `is now`, `set ... to`, `change ... to`
+**Blocks**: `done` (closes most blocks), `end` (alias)
+**Conditions**: `if`, `otherwise`, `otherwise if`
+**Comparisons**: `is`, `same as`, `is not`, `different from`, `more than`, `is greater than`, `is above`, `fewer than`, `is less than`, `is below`, `is at least`, `is most`, `contains`, `starts with`, `ends with`, `between ... and ...`, `has field`, `instanceof`
+**Logic**: `and`, `or`, `not`
+**Loops**: `for each ... in ...`, `for index ... from ... to ...`, `while ...`, `break`, `continue`
+**Functions**: `make`, `give`, `yield`
+**Modules**: `import`, `export`
+**Packages**: `use`
+**Web**: `web app`, `route`, `allow cors`, `enable sessions`, `limit requests`, `require api key`, `accept uploads`, `start`, `reply file`
+**Database**: `database`, `execute`, `insert`, `update`, `delete`, `query`, `transaction`
+**HTTP**: `get`, `post`, `put`, `patch`, `delete`
+**Telegram**: `bot`, `when someone sends`, `when someone clicks`, `reply`, `telegramCall`, `start telegram bot`
+**AI**: `chat`, `chatWith`, `embedText`, `embedWith`, `similarity`
+**Async**: `try`, `recover`, `finally`, `retry`, `allOf`, `anyOf`, `settledOf`, `withTimeout`, `sleep`
+**Files**: `readFile`, `writeFile`, `appendFile`, `fileExists`, `copyFile`, `moveFile`, `deleteFile`, `makeFolder`, `listFolder`
+**Testing**: `test`, `check`, `equals`, `is`, `contains`, `raises`
+**Other**: `show`, `print`, `display`, `env`, `args`, `time`, `date`, `uuid`, `exit`, `ocr`, `cache`, `cacheGet`, `cacheSet`, `cacheDelete`, `every`, `schedule`, `run background`, `websocket server`, `mail transport`, `send mail`, `reply file`

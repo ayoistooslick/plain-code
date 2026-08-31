@@ -1,0 +1,19 @@
+{
+  "name": "@plainscript/telegram-bot-template",
+  "version": "1.0.0",
+  "description": "A complete, publish-ready Telegram bot template written in PlainScript with hardcoded replies for commands and inline keyboard callbacks.",
+  "main": "dist/bot.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "plainscript build",
+    "prepare": "plainscript build",
+    "start": "node dist/bot.js",
+    "dev": "plainscript run src/bot.pln"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "plainscript-lang": "^1.0.2"
+  }
+}

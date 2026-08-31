@@ -1,0 +1,83 @@
+// Email Attachments — PlainScript v2.1
+// Handles file attachments for emails
+
+make createAttachment(filePath, fileName)
+    remember attachment as
+        path is filePath
+        filename is fileName
+        contentType is guessContentType(fileName)
+    done
+    give attachment
+done
+
+make createAttachmentFromBase64(base64Content, fileName, contentType)
+    remember attachment as
+        content is base64Content
+        filename is fileName
+        contentType is contentType
+        encoding is "base64"
+    done
+    give attachment
+done
+
+make createAttachmentFromBuffer(buffer, fileName, contentType)
+    remember attachment as
+        content is buffer
+        filename is fileName
+        contentType is contentType
+    done
+    give attachment
+done
+
+make guessContentType(fileName)
+    remember ext as lower(fileName)
+    remember dotPos as lastIndexOf(ext, ".")
+    if dotPos is at least 0
+        remember ext as substring(ext, dotPos + 1)
+    done
+    
+    if ext is "pdf"
+        give "application/pdf"
+    otherwise if ext is "png"
+        give "image/png"
+    otherwise if ext is "jpg" or ext is "jpeg"
+        give "image/jpeg"
+    otherwise if ext is "gif"
+        give "image/gif"
+    otherwise if ext is "txt"
+        give "text/plain"
+    otherwise if ext is "csv"
+        give "text/csv"
+    otherwise if ext is "json"
+        give "application/json"
+    otherwise if ext is "html" or ext is "htm"
+        give "text/html"
+    otherwise if ext is "zip"
+        give "application/zip"
+    otherwise if ext is "doc" or ext is "docx"
+        give "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    otherwise if ext is "xls" or ext is "xlsx"
+        give "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    otherwise
+        give "application/octet-stream"
+    done
+done
+
+make validateAttachment(attachment)
+    if attachment is null
+        give false
+    done
+    if filename of attachment is null or filename of attachment is ""
+        give false
+    done
+    if path of attachment is null and content of attachment is null
+        give false
+    done
+    give true
+done
+
+export createAttachment
+export createAttachmentFromBase64
+export createAttachmentFromBuffer
+export guessContentType
+export validateAttachment

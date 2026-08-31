@@ -1,0 +1,547 @@
+// mycli · src/cli.pln
+// A complete CLI tool template with argument parsing, interactive prompts,
+// colored output, and subcommands. Written 100% in PlainScript.
+
+// ─── ANSI Color Codes ───
+remember RESET as "\x1b[0m"
+remember BOLD as "\x1b[1m"
+remember DIM as "\x1b[2m"
+remember RED as "\x1b[31m"
+remember GREEN as "\x1b[32m"
+remember YELLOW as "\x1b[33m"
+remember BLUE as "\x1b[34m"
+remember MAGENTA as "\x1b[35m"
+remember CYAN as "\x1b[36m"
+remember WHITE as "\x1b[37m"
+remember BG_RED as "\x1b[41m"
+remember BG_GREEN as "\x1b[42m"
+remember BG_YELLOW as "\x1b[43m"
+remember BG_BLUE as "\x1b[44m"
+
+// ─── Global State ───
+remember VERSION as "1.0.0"
+remember APP_NAME as "mycli"
+
+remember g_verbose as false
+remember g_quiet as false
+remember g_args as list
+remember g_command as ""
+
+// ─── Utility Functions ───
+make log(level, message)
+    if g_quiet is true
+        if level is not "error"
+            give none
+        done
+    done
+    if level is "debug"
+        if g_verbose is false
+            give none
+        done
+    done
+
+    remember prefix as ""
+    remember color as RESET
+    if level is "info"
+        prefix becomes "ℹ "
+        color becomes BLUE
+    otherwise if level is "success"
+        prefix becomes "✓ "
+        color becomes GREEN
+    otherwise if level is "warn"
+        prefix becomes "⚠ "
+        color becomes YELLOW
+    otherwise if level is "error"
+        prefix becomes "✗ "
+        color becomes RED
+    otherwise if level is "debug"
+        prefix becomes "» "
+        color becomes DIM
+    otherwise
+        prefix becomes "  "
+    done
+
+    print(color + prefix + message + RESET)
+done
+
+make colorize(text, color)
+    give color + text + RESET
+done
+
+make printBanner()
+    print(CYAN + BOLD + "┌────────────────────────────────────┐" + RESET)
+    print(CYAN + BOLD + "│ " + MAGENTA + APP_NAME + " v" + VERSION + CYAN + " - CLI Tool Template " + CYAN + BOLD + "│" + RESET)
+    print(CYAN + BOLD + "└────────────────────────────────────┘" + RESET)
+    print("")
+done
+
+make printUsage()
+    print(BOLD + "Usage:" + RESET + " " + APP_NAME + " <command> [options]")
+    print("")
+    print(BOLD + "Commands:" + RESET)
+    print("  " + GREEN + "init" + RESET + "       Initialize a new project")
+    print("  " + GREEN + "build" + RESET + "      Build the project for production")
+    print("  " + GREEN + "deploy" + RESET + "    Deploy the project to a target")
+    print("  " + GREEN + "config" + RESET + "    Manage configuration")
+    print("  " + GREEN + "help" + RESET + "       Show this help message")
+    print("")
+    print(BOLD + "Global Options:" + RESET)
+    print("  " + YELLOW + "-v, --verbose" + RESET + "   Enable verbose output")
+    print("  " + YELLOW + "-q, --quiet" + RESET + "     Suppress non-error output")
+    print("  " + YELLOW + "--version" + RESET + "       Show version number")
+    print("  " + YELLOW + "-h, --help" + RESET + "       Show this help message")
+    print("")
+    print(BOLD + "Examples:" + RESET)
+    print("  " + DIM + "$ " + APP_NAME + " init --name my-project --template react" + RESET)
+    print("  " + DIM + "$ " + APP_NAME + " build --production --out dist" + RESET)
+    print("  " + DIM + "$ " + APP_NAME + " deploy --target aws --region us-east-1" + RESET)
+    print("  " + DIM + "$ " + APP_NAME + " config set api.key abc123" + RESET)
+done
+
+make printCommandHelp(command)
+    if command is "init"
+        print(BOLD + "init - Initialize a new project" + RESET)
+        print("")
+        print(BOLD + "Usage:" + RESET + " " + APP_NAME + " init [options]")
+        print("")
+        print(BOLD + "Options:" + RESET)
+        print("  " + YELLOW + "-n, --name <name>" + RESET + "        Project name")
+        print("  " + YELLOW + "-t, --template <template>" + RESET + "  Project template (react, vue, vanilla, node)")
+        print("  " + YELLOW + "-d, --dir <directory>" + RESET + "     Target directory (default: current)")
+        print("  " + YELLOW + "--git" + RESET + "                  Initialize git repository")
+        print("  " + YELLOW + "--install" + RESET + "               Install dependencies after init")
+        print("  " + YELLOW + "-y, --yes" + RESET + "                Skip all prompts, use defaults")
+    otherwise if command is "build"
+        print(BOLD + "build - Build the project for production" + RESET)
+        print("")
+        print(BOLD + "Usage:" + RESET + " " + APP_NAME + " build [options]")
+        print("")
+        print(BOLD + "Options:" + RESET)
+        print("  " + YELLOW + "-o, --out <dir>" + RESET + "        Output directory (default: dist)")
+        print("  " + YELLOW + "-p, --production" + RESET + "    Production build (minified)")
+        print("  " + YELLOW + "--source-map" + RESET + "          Generate source maps")
+        print("  " + YELLOW + "--clean" + RESET + "               Clean output directory before build")
+        print("  " + YELLOW + "--watch" + RESET + "               Watch for changes and rebuild")
+    otherwise if command is "deploy"
+        print(BOLD + "deploy - Deploy the project to a target" + RESET)
+        print("")
+        print(BOLD + "Usage:" + RESET + " " + APP_NAME + " deploy [options]")
+        print("")
+        print(BOLD + "Options:" + RESET)
+        print("  " + YELLOW + "-t, --target <target>" + RESET + "  Deploy target (aws, vercel, netlify, docker, k8s)")
+        print("  " + YELLOW + "-r, --region <region>" + RESET + "  Target region")
+        print("  " + YELLOW + "-e, --env <environment>" + RESET + "  Environment (staging, production)")
+        print("  " + YELLOW + "--dry-run" + RESET + "             Simulate deployment without changes")
+        print("  " + YELLOW + "--force" + RESET + "               Force deployment without confirmation")
+    otherwise if command is "config"
+        print(BOLD + "config - Manage configuration" + RESET)
+        print("")
+        print(BOLD + "Usage:" + RESET + " " + APP_NAME + " config <subcommand> [options]")
+        print("")
+        print(BOLD + "Subcommands:" + RESET)
+        print("  " + GREEN + "get <key>" + RESET + "        Get a configuration value")
+        print("  " + GREEN + "set <key> <value>" + RESET + "  Set a configuration value")
+        print("  " + GREEN + "list" + RESET + "            List all configuration")
+        print("  " + GREEN + "delete <key>" + RESET + "     Delete a configuration value")
+        print("  " + GREEN + "reset" + RESET + "           Reset to defaults")
+        print("")
+        print(BOLD + "Options:" + RESET)
+        print("  " + YELLOW + "--global" + RESET + "          Use global config")
+        print("  " + YELLOW + "--local" + RESET + "           Use local config (default)")
+    otherwise
+        printUsage()
+    done
+done
+
+// ─── Argument Parsing ───
+make parseArgs(rawArgs)
+    remember parsed as list
+    remember i as 0
+    while i fewer than length(rawArgs)
+        remember arg as rawArgs[i]
+        if arg starts with "--"
+            remember longOpt as substring(arg, 2)
+            remember eqIdx as indexOf(longOpt, "=")
+            if eqIdx is at least 0
+                remember flagRecord as record with type "flag" and name substring(longOpt, 0, eqIdx) and value substring(longOpt, eqIdx + 1) done
+                push(parsed, flagRecord)
+            otherwise
+                if i + 1 fewer than length(rawArgs) and not rawArgs[i + 1] starts with "-"
+                    remember flagRecord as record with type "flag" and name longOpt and value rawArgs[i + 1] done
+                    push(parsed, flagRecord)
+                    i becomes i + 1
+                otherwise
+                    remember flagRecord as record with type "flag" and name longOpt and value true done
+                    push(parsed, flagRecord)
+                done
+            done
+        otherwise
+            if arg starts with "-" and length(arg) is greater than 1
+                remember shortOpts as substring(arg, 1)
+                remember j as 0
+                while j fewer than length(shortOpts)
+                    remember opt as shortOpts[j]
+                    if j is length(shortOpts) - 1 and i + 1 fewer than length(rawArgs) and not rawArgs[i + 1] starts with "-"
+                        remember flagRecord as record with type "flag" and name opt and value rawArgs[i + 1] done
+                        push(parsed, flagRecord)
+                        i becomes i + 1
+                    otherwise
+                        remember flagRecord as record with type "flag" and name opt and value true done
+                        push(parsed, flagRecord)
+                    done
+                    j becomes j + 1
+                done
+            otherwise
+                remember argRecord as record with type "arg" and value arg done
+                push(parsed, argRecord)
+            done
+        done
+        i becomes i + 1
+    done
+    give parsed
+done
+
+make getFlag(parsed, names, defaultVal)
+    remember i as 0
+    while i fewer than length(parsed)
+        remember item as parsed[i]
+        if item.type is "flag"
+            remember j as 0
+            while j fewer than length(names)
+                if item.name is names[j]
+                    give item.value
+                done
+                j becomes j + 1
+            done
+        done
+        i becomes i + 1
+    done
+    give defaultVal
+done
+
+make getArgs(parsed)
+    remember args as list
+    remember i as 0
+    while i fewer than length(parsed)
+        if parsed[i].type is "arg"
+            push(args, parsed[i].value)
+        done
+        i becomes i + 1
+    done
+    give args
+done
+
+make hasFlag(parsed, names)
+    remember i as 0
+    while i fewer than length(parsed)
+        remember item as parsed[i]
+        if item.type is "flag"
+            remember j as 0
+            while j fewer than length(names)
+                if item.name is names[j]
+                    give true
+                done
+                j becomes j + 1
+            done
+        done
+        i becomes i + 1
+    done
+    give false
+done
+
+// ─── Command Implementations ───
+make cmdInit(parsed)
+    log("info", "Initializing new project...")
+
+    remember name as getFlag(parsed, list with "n", "name", "")
+    remember template as getFlag(parsed, list with "t", "template", "vanilla")
+    remember dir as getFlag(parsed, list with "d", "dir", ".")
+    remember withGit as hasFlag(parsed, list with "git")
+    remember withInstall as hasFlag(parsed, list with "install")
+    remember skipPrompts as hasFlag(parsed, list with "y", "yes")
+
+    if skipPrompts is false
+        if name is ""
+            ask "Project name: " as name
+        done
+        ask "Template (react/vue/vanilla/node) [vanilla]: " as tplChoice
+        if tplChoice is not ""
+            template becomes tplChoice
+        done
+        ask "Target directory [.]: " as dirChoice
+        if dirChoice is not ""
+            dir becomes dirChoice
+        done
+        ask "Initialize git repository? (y/N): " as gitChoice
+        if lower(gitChoice) is "y"
+            withGit becomes true
+        done
+        ask "Install dependencies? (y/N): " as installChoice
+        if lower(installChoice) is "y"
+            withInstall becomes true
+        done
+    done
+
+    if name is ""
+        log("error", "Project name is required")
+        give false
+    done
+
+    log("info", "Creating project '" + colorize(name, BOLD) + "' with template '" + colorize(template, CYAN) + "' in '" + colorize(dir, CYAN) + "'")
+
+    // Simulate project creation
+    log("debug", "Creating directory structure...")
+    log("debug", "Writing package.json...")
+    log("debug", "Writing source files...")
+    if withGit is true
+        log("debug", "Initializing git repository...")
+    done
+    if withInstall is true
+        log("debug", "Installing dependencies...")
+    done
+
+    log("success", "Project '" + name + "' created successfully!")
+    print("")
+    print("  " + DIM + "cd " + name + RESET)
+    if withInstall is false
+        print("  " + DIM + "npm install" + RESET)
+    done
+    print("  " + DIM + APP_NAME + " build" + RESET)
+
+    give true
+done
+
+make cmdBuild(parsed)
+    log("info", "Building project...")
+
+    remember outDir as getFlag(parsed, list with "o", "out", "dist")
+    remember production as hasFlag(parsed, list with "p", "production")
+    remember sourceMap as hasFlag(parsed, list with "source-map")
+    remember clean as hasFlag(parsed, list with "clean")
+    remember watch as hasFlag(parsed, list with "watch")
+
+    log("info", "Output directory: " + colorize(outDir, CYAN))
+    remember modeStr as "development"
+    if production is true
+        modeStr becomes "production"
+    done
+    log("info", "Mode: " + colorize(modeStr, CYAN))
+
+    if clean is true
+        log("info", "Cleaning output directory...")
+    done
+
+    if watch is true
+        log("info", "Watching for changes...")
+    done
+
+    // Simulate build steps
+    log("debug", "Resolving dependencies...")
+    log("debug", "Compiling source files...")
+    log("debug", "Optimizing assets...")
+    if sourceMap is true
+        log("debug", "Generating source maps...")
+    done
+    if production is true
+        log("debug", "Minifying output...")
+    done
+
+    log("success", "Build completed successfully in " + colorize(outDir, GREEN) + "/")
+    give true
+done
+
+make cmdDeploy(parsed)
+    log("info", "Preparing deployment...")
+
+    remember target as getFlag(parsed, list with "t", "target", "vercel")
+    remember region as getFlag(parsed, list with "r", "region", "us-east-1")
+    remember env as getFlag(parsed, list with "e", "env", "production")
+    remember dryRun as hasFlag(parsed, list with "dry-run")
+    remember force as hasFlag(parsed, list with "force")
+
+    remember validTargets as list with "aws", "vercel", "netlify", "docker", "k8s", "firebase"
+    remember targetValid as false
+    remember i as 0
+    while i fewer than length(validTargets)
+        if validTargets[i] is target
+            targetValid becomes true
+        done
+        i becomes i + 1
+    done
+
+    if targetValid is false
+        log("error", "Invalid target: " + target)
+        log("info", "Valid targets: " + join(validTargets, ", "))
+        give false
+    done
+
+    log("info", "Target: " + colorize(target, CYAN))
+    log("info", "Region: " + colorize(region, CYAN))
+    log("info", "Environment: " + colorize(env, CYAN))
+
+    if dryRun is true
+        log("warn", "DRY RUN - No changes will be made")
+    done
+
+    if force is false and dryRun is false
+        ask "Deploy to target (environment)? (y/N): " as confirm
+        if lower(confirm) is not "y"
+            log("info", "Deployment cancelled")
+            give false
+        done
+    done
+
+    log("info", "Deploying...")
+    log("debug", "Validating configuration...")
+    log("debug", "Building deployment package...")
+    log("debug", "Uploading artifacts...")
+    log("debug", "Running health checks...")
+
+    if dryRun is true
+        log("success", "Dry run completed successfully!")
+    otherwise
+        log("success", "Deployment completed successfully!")
+        log("info", "URL: " + colorize("https://" + target + "-" + name + ".example.com", BLUE))
+    done
+
+    give true
+done
+
+make cmdConfig(parsed)
+    remember args as getArgs(parsed)
+    if length(args) is 0
+        log("error", "Config subcommand required")
+        printCommandHelp("config")
+        give false
+    done
+
+    remember subcmd as args[0]
+    remember isGlobal as hasFlag(parsed, list with "global")
+    remember isLocal as hasFlag(parsed, list with "local")
+
+    remember scope as "local"
+    if isGlobal is true
+        scope becomes "global"
+    done
+
+    if subcmd is "get"
+        if length(args) fewer than 2
+            log("error", "Config key required")
+            give false
+        done
+        remember key as args[1]
+        log("info", "Getting " + scope + " config: " + colorize(key, CYAN))
+        log("success", key + " = " + colorize("value_for_" + key, GREEN))
+    otherwise if subcmd is "set"
+        if length(args) fewer than 3
+            log("error", "Config key and value required")
+            give false
+        done
+        remember key as args[1]
+        remember value as args[2]
+        log("info", "Setting " + scope + " config: " + colorize(key, CYAN) + " = " + colorize(value, CYAN))
+        log("success", "Config updated")
+    otherwise if subcmd is "list"
+        log("info", "Listing " + scope + " configuration:")
+        print("  " + CYAN + "api.key" + RESET + " = " + GREEN + "abc123" + RESET)
+        print("  " + CYAN + "deploy.target" + RESET + " = " + GREEN + "vercel" + RESET)
+        print("  " + CYAN + "build.outDir" + RESET + " = " + GREEN + "dist" + RESET)
+    otherwise if subcmd is "delete"
+        if length(args) fewer than 2
+            log("error", "Config key required")
+            give false
+        done
+        remember key as args[1]
+        log("info", "Deleting " + scope + " config: " + colorize(key, CYAN))
+        log("success", "Config deleted")
+    otherwise if subcmd is "reset"
+        ask "Reset all configuration? (y/N): " as confirm
+        if lower(confirm) is "y"
+            log("warn", "Resetting " + scope + " configuration...")
+            log("success", "Configuration reset to defaults")
+        otherwise
+            log("info", "Reset cancelled")
+        done
+    otherwise
+        log("error", "Unknown config subcommand: " + subcmd)
+        printCommandHelp("config")
+        give false
+    done
+
+    give true
+done
+
+make cmdHelp(parsed)
+    remember args as getArgs(parsed)
+    if length(args) is greater than 0
+        printCommandHelp(args[0])
+    otherwise
+        printUsage()
+    done
+    give true
+done
+
+make cmdVersion()
+    print(APP_NAME + " v" + VERSION)
+    give true
+done
+
+// ─── Main Entry Point ───
+make main(rawArgs)
+    g_args becomes parseArgs(rawArgs)
+
+    // Handle global flags first
+    if hasFlag(g_args, list with "version") is true
+        cmdVersion()
+        give 0
+    done
+
+    if hasFlag(g_args, list with "h", "help") is true
+        printBanner()
+        printUsage()
+        give 0
+    done
+
+    g_verbose becomes hasFlag(g_args, list with "v", "verbose")
+    g_quiet becomes hasFlag(g_args, list with "q", "quiet")
+
+    remember args as getArgs(g_args)
+    if length(args) is 0
+        printBanner()
+        printUsage()
+        give 0
+    done
+
+    g_command becomes args[0]
+    remember commandArgs as substring(g_args, 1)
+
+    remember success as false
+    if g_command is "init"
+        success becomes cmdInit(commandArgs)
+    otherwise if g_command is "build"
+        success becomes cmdBuild(commandArgs)
+    otherwise if g_command is "deploy"
+        success becomes cmdDeploy(commandArgs)
+    otherwise if g_command is "config"
+        success becomes cmdConfig(commandArgs)
+    otherwise if g_command is "help"
+        success becomes cmdHelp(commandArgs)
+    otherwise
+        log("error", "Unknown command: " + g_command)
+        print("")
+        printUsage()
+        give 1
+    done
+
+    if success is true
+        give 0
+    otherwise
+        give 1
+    done
+done
+
+// ─── Export for module usage ───
+export main
+export parseArgs
+export log
+export colorize

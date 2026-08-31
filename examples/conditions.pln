@@ -1,4 +1,4 @@
-// PlainScript 1.0.3-beta: conditions and string predicates.
+// PlainScript 1.0.2-latest: conditions and string predicates.
 
 remember score as 87
 remember label as "PlainScript"

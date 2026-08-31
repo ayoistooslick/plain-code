@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.3-beta
+## 1.0.2-latest
 
 - Rebuilt snippets around the current PlainScript grammar.
 - Rebuilt TextMate scopes for current blocks, literals, operators, and calls.

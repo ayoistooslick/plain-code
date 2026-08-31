@@ -1,0 +1,314 @@
+// websocket-chat · src/server.pln
+// Complete WebSocket chat server with rooms, user tracking, and broadcast
+// Broadcasts all messages to all clients; clients filter by room
+
+remember users as []
+remember rooms as []
+
+websocket server on 3001
+
+when socket connects
+    show "New connection"
+done
+
+when socket sends message
+    // Parse JSON message
+    remember parsed as jsonDecode(message)
+    remember action as action of parsed
+    remember payload as payload of parsed
+    remember userId as userId of parsed
+
+    // Find current user by socket
+    remember currentUser as null
+    for each user in users
+        if user.socket is socket
+            currentUser becomes user
+        done
+    done
+
+    if action is "join"
+        remember name as name of payload
+        remember roomName as room of payload
+        if roomName is null
+            roomName becomes "general"
+        done
+
+        if currentUser is null
+            remember newUserId as uuid()
+            remember newUser as { id: newUserId, name: name, room: roomName, socket: socket }
+            users becomes users + [newUser]
+            currentUser becomes newUser
+        otherwise
+            currentUser.name becomes name
+            currentUser.room becomes roomName
+        done
+
+        // Ensure room exists
+        remember roomExists as false
+        for each room in rooms
+            if room.name is roomName
+                roomExists becomes true
+            done
+        done
+        if roomExists is false
+            rooms becomes rooms + [{ name: roomName, users: [] }]
+        done
+
+        // Add user to room
+        for each room in rooms
+            if room.name is roomName
+                remember userInRoom as false
+                for each u in room.users
+                    if u.id is currentUser.id
+                        userInRoom becomes true
+                    done
+                done
+                if userInRoom is false
+                    room.users becomes room.users + [currentUser]
+                done
+            done
+        done
+
+        // Get user list for room
+        remember roomUsers as []
+        for each room in rooms
+            if room.name is roomName
+                roomUsers becomes room.users
+            done
+        done
+        remember userNames as []
+        for each u in roomUsers
+            userNames becomes userNames + [u.name]
+        done
+
+        // Send welcome to joining user
+        remember welcomeMsg as jsonEncode({
+            type: "welcome",
+            userId: currentUser.id,
+            name: currentUser.name,
+            room: currentUser.room,
+            users: userNames
+        })
+        send socket welcomeMsg
+
+        // Broadcast join to all (clients filter by room)
+        remember joinMsg as jsonEncode({
+            type: "system",
+            content: name + " joined " + roomName,
+            room: roomName,
+            users: userNames,
+            timestamp: time()
+        })
+        broadcast joinMsg
+
+        show name + " (" + currentUser.id + ") joined room: " + roomName
+
+    otherwise if action is "message"
+        if currentUser is not null
+            remember msgContent as content of payload
+            remember msg as jsonEncode({
+                type: "message",
+                from: currentUser.name,
+                userId: currentUser.id,
+                content: msgContent,
+                room: currentUser.room,
+                timestamp: time()
+            })
+            // Broadcast to all - clients filter by room
+            broadcast msg
+        done
+
+    otherwise if action is "switch-room"
+        if currentUser is not null
+            remember newRoom as room of payload
+            if newRoom is null
+                newRoom becomes "general"
+            done
+
+            remember oldRoom as currentUser.room
+            if oldRoom is not newRoom
+                // Remove from old room
+                for each room in rooms
+                    if room.name is oldRoom
+                        filter each u in room.users when u.id is not currentUser.id
+                    done
+                done
+
+                // Add to new room
+                currentUser.room becomes newRoom
+                remember newRoomExists as false
+                for each room in rooms
+                    if room.name is newRoom
+                        newRoomExists becomes true
+                    done
+                done
+                if newRoomExists is false
+                    rooms becomes rooms + [{ name: newRoom, users: [] }]
+                done
+                for each room in rooms
+                    if room.name is newRoom
+                        remember userInRoom as false
+                        for each u in room.users
+                            if u.id is currentUser.id
+                                userInRoom becomes true
+                            done
+                        done
+                        if userInRoom is false
+                            room.users becomes room.users + [currentUser]
+                        done
+                    done
+                done
+
+                // Get old room users
+                remember oldRoomUsers as []
+                for each room in rooms
+                    if room.name is oldRoom
+                        oldRoomUsers becomes room.users
+                    done
+                done
+                remember oldUserNames as []
+                for each u in oldRoomUsers
+                    oldUserNames becomes oldUserNames + [u.name]
+                done
+
+                // Broadcast leave from old room
+                remember leaveMsg as jsonEncode({
+                    type: "system",
+                    content: currentUser.name + " left " + oldRoom,
+                    room: oldRoom,
+                    users: oldUserNames,
+                    timestamp: time()
+                })
+                broadcast leaveMsg
+
+                // Get new room users
+                remember newRoomUsers as []
+                for each room in rooms
+                    if room.name is newRoom
+                        newRoomUsers becomes room.users
+                    done
+                done
+                remember newUserNames as []
+                for each u in newRoomUsers
+                    newUserNames becomes newUserNames + [u.name]
+                done
+
+                // Broadcast join to new room
+                remember joinMsg2 as jsonEncode({
+                    type: "system",
+                    content: currentUser.name + " joined " + newRoom,
+                    room: newRoom,
+                    users: newUserNames,
+                    timestamp: time()
+                })
+                broadcast joinMsg2
+
+                // Notify user of room switch
+                remember switchedMsg as jsonEncode({
+                    type: "room-switched",
+                    room: newRoom,
+                    users: newUserNames
+                })
+                send socket switchedMsg
+
+                show currentUser.name + " switched from " + oldRoom + " to " + newRoom
+            done
+        done
+
+    otherwise if action is "get-rooms"
+        remember roomList as []
+        for each room in rooms
+            roomList becomes roomList + [{ name: room.name, userCount: length of room.users }]
+        done
+        remember roomsMsg as jsonEncode({
+            type: "rooms",
+            rooms: roomList
+        })
+        send socket roomsMsg
+
+    otherwise if action is "get-users"
+        remember reqRoom as room of payload
+        if reqRoom is null
+            if currentUser is not null
+                reqRoom becomes currentUser.room
+            otherwise
+                reqRoom becomes "general"
+            done
+        done
+        
+        remember roomUsers as []
+        for each room in rooms
+            if room.name is reqRoom
+                roomUsers becomes room.users
+            done
+        done
+        remember userNames as []
+        for each u in roomUsers
+            userNames becomes userNames + [u.name]
+        done
+        remember usersMsg as jsonEncode({
+            type: "users",
+            room: reqRoom,
+            users: userNames
+        })
+        send socket usersMsg
+
+    otherwise
+        show "Unknown action: " + action
+    done
+done
+
+when socket disconnects
+    // Find leaving user
+    remember leavingUser as null
+    for each user in users
+        if user.socket is socket
+            leavingUser becomes user
+        done
+    done
+
+    if leavingUser is not null
+        // Get room users
+        remember roomUsers as []
+        for each room in rooms
+            if room.name is leavingUser.room
+                roomUsers becomes room.users
+            done
+        done
+        remember userNames as []
+        for each u in roomUsers
+            userNames becomes userNames + [u.name]
+        done
+
+        // Broadcast leave to all
+        remember leaveMsg as jsonEncode({
+            type: "system",
+            content: leavingUser.name + " disconnected",
+            room: leavingUser.room,
+            users: userNames,
+            timestamp: time()
+        })
+        broadcast leaveMsg
+
+        // Remove from room
+        for each room in rooms
+            if room.name is leavingUser.room
+                filter each u in room.users when u.id is not leavingUser.id
+            done
+        done
+
+        // Remove empty rooms
+        filter each room in rooms when length of room.users is greater than 0
+
+        // Remove from users
+        filter each u in users when u.id is not leavingUser.id
+
+        show leavingUser.name + " (" + leavingUser.id + ") disconnected"
+    done
+done
+
+done
+
+show "WebSocket chat server running on port 3001"
+show "WebSocket endpoint: ws://localhost:3001"
+show "Open http://localhost:3001 in browser for test client"

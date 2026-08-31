@@ -1,4 +1,4 @@
-// PlainScript 1.0.3-beta: hardcoded and Groq-backed Telegram replies.
+// PlainScript 1.0.2-latest: hardcoded and Groq-backed Telegram replies.
 
 bot env("TELEGRAM_BOT_TOKEN")
 

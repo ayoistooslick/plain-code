@@ -1,4 +1,4 @@
-// PlainScript 1.0.3-beta: protected API with sessions.
+// PlainScript 1.0.2-latest: protected API with sessions.
 
 web app
 enable sessions env("SESSION_SECRET")
