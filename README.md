@@ -4,7 +4,7 @@
 [![npm version](https://badge.fury.io/js/plainscript-lang.svg)](https://www.npmjs.com/package/plainscript-lang)
 PlainScript is an intent-oriented language that compiles `.pln` source to
 readable Node.js. The compiler and parser in `compiler/` are the source of
-truth for version `1.0.3-beta`.
+truth for version `1.0.4-latest`.
 
 ## Quick start
 
@@ -37,7 +37,7 @@ plainscript add <package>    Add an npm package
 plainscript remove <package> Remove an npm package
 plainscript update           Update installed packages
 plainscript doctor           Inspect the local project setup
-plainscript version          Print 1.0.3-beta
+plainscript version          Print 1.0.4-latest
 ```
 
 `plainscript check` resolves imports, parses every file, generates JavaScript,

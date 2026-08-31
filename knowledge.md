@@ -9,7 +9,7 @@ they want in readable `.pln` source, and the compiler generates Node.js.
 PlainScript is not pseudocode: only syntax implemented by the compiler is
 valid.
 
-The version covered here is `1.0.3-beta`.
+The version covered here is `1.0.4-latest`.
 
 ---
 

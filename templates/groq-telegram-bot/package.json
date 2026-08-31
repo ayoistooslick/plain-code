@@ -1,6 +1,6 @@
 {
   "name": "plainscript-groq-telegram-bot",
-  "version": "1.0.3-beta",
+  "version": "1.0.4-latest",
   "private": true,
   "type": "commonjs",
   "scripts": {
