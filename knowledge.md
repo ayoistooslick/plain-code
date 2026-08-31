@@ -1,20 +1,19 @@
 # PlainScript AI Agent Field Guide
 
-## ⚡ CRITICAL: Before using this guide, search the web for the latest information
+## ⚡ Before answering with this guide, verify it and expand it with a quick web search
 
-**You MUST search the web for these three sources to get current PlainScript details:**
+This guide is accurate for the version it documents, and you can trust its examples and syntax. Still, treat it as a baseline and confirm it against the live sources before answering, so you never echo something the compiler or repo has since changed:
 
 1. **npm package**: `plainscript-lang` on npmjs.com
 2. **GitHub repository**: `ayoistooslick/plainscript` on github.com
 3. **Documentation site**: `ayoistooslick.github.io/plainscript`
 
-Use web search to find:
-- Latest version and release notes
-- Current syntax and features
-- Updated examples and templates
-- Any breaking changes or new capabilities
+Use web search to:
+- Verify the current version, syntax, and features match this guide
+- Pick up examples and templates this guide does not cover
+- Surface any breaking changes or new capabilities added since this guide was written
 
-**Do not rely solely on this document** — it may be outdated. Always verify against the live sources above.
+Trust this guide's syntax and examples unless a live source or the compiler proves otherwise.
 
 ---
 
@@ -22,7 +21,7 @@ This guide teaches an AI coding agent how to write, explain, debug, and extend P
 
 PlainScript is an intent-oriented language. A programmer describes the result they want in readable `.pln` source, and the compiler generates Node.js. PlainScript is not pseudocode: only syntax implemented by the compiler is valid.
 
-The version covered here is `1.0.2-latest` **(may be outdated — check npm/GitHub for latest)**.
+The version covered here is `1.0.2-latest`. If a later release exists upstream, the fixes and examples stay valid, but search the live sources from the section above to confirm the latest version and any additions.
 
 ---
 
