@@ -269,15 +269,19 @@ show ada.name
 
 Unknown fields on a kind should fail rather than being silently ignored.
 
-Use relative `.pln` imports:
+Use module imports and package imports:
 
 ```plainscript
-import { area } from "./geometry.pln"
-remember result as area(5)
+bring area from "./geometry.pln"
+bring all from "./geometry.pln" as geo
+bring button from "@/components/button.pln"
+bring axios from "axios"
+
+remember result as geo.area(5)
 show result
 ```
 
-Export a binding from a module:
+Export a binding or re-export from another module:
 
 ```plainscript
 make double(value)
@@ -285,21 +289,10 @@ make double(value)
 done
 
 export double
+export all from "./submodule.pln"
 ```
 
-`import "./file.pln"` bundles the whole file. Named imports bind selected
-exports. Imports must be relative `.pln` paths. Circular imports are rejected.
-
-Declare an npm package with `use`:
-
-```plainscript
-use express
-use lodash
-```
-
-`use` is for package detection and installation. It is not a JavaScript import
-statement. Run `plainscript install` or install the package with npm before
-running generated code.
+`bring symbol from "path"` (or `import { symbol } from "path"`) imports selected symbols from `.pln` modules or npm packages. `bring all from "path" as name` creates a namespaced module object. `@/` resolves relative to `src/`. Export symbols with `export`, `share`, `expose`, or `export all from "path"`. `use <pkg>` remains supported for explicit package declarations.
 
 ---
 

@@ -28,8 +28,8 @@ npx plainscript run examples/basics.pln
 ```text
 plainscript new [name]       Create an npm-ready project
 plainscript check [target]   Validate one file, a directory, or the project
-plainscript build [file]     Compile source files to dist/
-plainscript run <file>       Validate, install missing packages, and run
+plainscript build [file]     Compile source files to dist/ (--sourcemap / -m for V3 source maps)
+plainscript run <file>       Validate, install missing packages, and run (--sourcemap for inline maps)
 plainscript start            Build src/app.pln and start it
 plainscript fmt <file>       Format a source file in place
 plainscript install          Install packages detected in source
@@ -133,6 +133,46 @@ done
 
 remember player as create a Player with name "Ada" and goals 4
 ```
+
+### Compound data structures
+
+```plainscript
+// Dictionaries and Hash Maps
+remember userMap as dictionary with "name" is "Ada" and "role" is "admin" done
+put "role" as "editor" in userMap
+remember mapKeys as keys of userMap
+
+// Sets (Unique Collections)
+remember tags as set with "admin", "editor", "user" done
+remember newTags as union of tags and (set with "moderator" done)
+
+// Tuples (Immutable Sequences)
+remember point as tuple with 10, 20, 30 done
+unpack point into x, y, z
+```
+
+### Modules and imports
+
+```plainscript
+// Selective local imports
+bring circleArea and squareArea from "./math.pln"
+
+// Namespaced module imports
+bring all from "./math.pln" as math
+show math.circleArea(5)
+
+// Direct third-party package imports
+bring axios from "axios"
+bring express from "express"
+
+// Root path aliasing (@/ -> src)
+bring button from "@/components/button.pln"
+
+// Barrel re-exports
+export all from "./submodule.pln"
+```
+
+`bring symbol from "path"` and `import { symbol } from "path"` bring local module symbols or npm packages into scope. `bring all from "path" as name` creates a namespaced module object. Use `@/` to import relative to the project `src/` directory. Export symbols or re-export submodules with `export`, `share`, `expose`, or `export all from "path"`.
 
 ## AI providers and Telegram
 
