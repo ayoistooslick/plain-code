@@ -269,6 +269,22 @@ show ada.name
 
 Unknown fields on a kind should fail rather than being silently ignored.
 
+Compound data structures (Dictionaries, Hash Maps, Sets, Tuples):
+
+```plainscript
+remember userMap as dictionary with "name" is "Ada" and "role" is "admin" done
+put "role" as "editor" in userMap
+remember mapKeys as keys of userMap
+
+remember tags as set with "admin", "editor", "user" done
+remember newTags as union of tags and (set with "moderator" done)
+
+remember point as tuple with 10, 20, 30 done
+unpack point into x, y, z
+```
+
+`dictionary with ... done` (or `map with ... done`) creates a keyed map (`new Map()`). `empty map` creates an empty Map. `put key as val in map` sets an entry. `keys of map`, `values of map`, `entries of map`, and `size of map` access reflection properties. `set with ... done` creates a set (`new Set()`). Set algebra functions `union of a and b`, `intersection of a and b`, and `difference of a and b` return new sets. `tuple with ... done` creates an immutable sequence (`Object.freeze()`). `unpack tuple into ...` destructures tuple elements.
+
 Use module imports and package imports:
 
 ```plainscript
