@@ -7,11 +7,55 @@ const { tokenize } = require('./lexer');
 const { parse }    = require('./parser');
 const { generate, createGenerationContext, wrapAsync } = require('./generator');
 
-// Returns the import paths declared at the top level of an AST.
+function isLocalImportPath(p) {
+  if (!p) return false;
+  return p.startsWith('.') || p.startsWith('/') || p.startsWith('\\') || p.startsWith('@/') || p.endsWith('.pln');
+}
+
+function resolveImportPath(dir, importPath) {
+  let base;
+  if (importPath.startsWith('@/')) {
+    const srcDir = fs.existsSync(path.resolve(process.cwd(), 'src'))
+      ? path.resolve(process.cwd(), 'src')
+      : process.cwd();
+    base = path.resolve(srcDir, importPath.slice(2));
+  } else {
+    base = path.resolve(dir, importPath);
+  }
+
+  // 1. Direct match (e.g. "./math.pln")
+  if (fs.existsSync(base) && fs.statSync(base).isFile()) {
+    return base;
+  }
+  // 2. Implicit .pln extension (e.g. "./math" -> "./math.pln")
+  if (fs.existsSync(`${base}.pln`) && fs.statSync(`${base}.pln`).isFile()) {
+    return `${base}.pln`;
+  }
+  // 3. Directory index resolution (e.g. "./utils" -> "./utils/index.pln" or "./utils/app.pln")
+  if (fs.existsSync(base) && fs.statSync(base).isDirectory()) {
+    const indexPath = path.join(base, 'index.pln');
+    if (fs.existsSync(indexPath) && fs.statSync(indexPath).isFile()) {
+      return indexPath;
+    }
+    const appPath = path.join(base, 'app.pln');
+    if (fs.existsSync(appPath) && fs.statSync(appPath).isFile()) {
+      return appPath;
+    }
+  }
+  return base;
+}
+
+// Returns the local file import and re-export paths declared at the top level of an AST.
 function getImports(ast) {
-  return ast.body
-    .filter(node => node.type === 'ImportStatement')
-    .map(node => node.path);
+  const paths = [];
+  for (const node of ast.body) {
+    if (node.type === 'ImportStatement' && node.path && isLocalImportPath(node.path)) {
+      paths.push(node.path);
+    } else if (node.type === 'ExportStatement' && node.fromPath && isLocalImportPath(node.fromPath)) {
+      paths.push(node.fromPath);
+    }
+  }
+  return paths;
 }
 
 // Resolves all dependencies of entryPath using DFS topological order.
@@ -45,8 +89,8 @@ function resolveDependencies(entryPath) {
     }
 
     // Parse the file to discover its own imports.
-// Annotate any tokenise/parse error with the filename so callers see
-// "file.pln — Line N, Column N: …" rather than a bare positional message.
+    // Annotate any tokenise/parse error with the filename so callers see
+    // "file.pln — Line N, Column N: …" rather than a bare positional message.
     const source = fs.readFileSync(absPath, 'utf8');
     let tokens, ast;
     try {
@@ -61,7 +105,7 @@ function resolveDependencies(entryPath) {
     const newStack = [...stack, absPath];
     for (const importPath of getImports(ast)) {
       const dir         = path.dirname(absPath);
-      const resolvedAbs = path.resolve(dir, importPath);
+      const resolvedAbs = resolveImportPath(dir, importPath);
       visit(resolvedAbs, newStack);
     }
 
@@ -75,12 +119,39 @@ function resolveDependencies(entryPath) {
 }
 
 // Compile all files in dependency order into one JavaScript string.
-function bundle(entryPath) {
+function bundle(entryPath, options = {}) {
   const files = resolveDependencies(entryPath);
-  const context = createGenerationContext();
-  const parts = files.map(({ ast }) => generate(ast, context)).filter(js => js.trim() !== '');
-  const js = parts.join('\n');
-  return context.needsAsync ? wrapAsync(js) : js;
+  const context = createGenerationContext(options);
+  const parts = files.map(({ absPath, ast }) => {
+    const relPath = path.relative(process.cwd(), absPath).replace(/\\/g, '/') || path.basename(absPath);
+    context.sourceFile = relPath;
+    if (context.sourceMapBuilder) {
+      try {
+        const content = fs.readFileSync(absPath, 'utf8');
+        context.sourceMapBuilder.addSource(relPath, content);
+      } catch (_) { /* ignore missing content */ }
+    }
+    const res = generate(ast, context);
+    return typeof res === 'string' ? res : (res && res.code ? res.code : '');
+  }).filter(js => js && js.trim() !== '');
+  let js = parts.join('\n');
+  if (context.needsAsync) {
+    js = wrapAsync(js);
+    if (context.sourceMapBuilder) {
+      for (const m of context.sourceMapBuilder.mappings) {
+        m.generatedLine += 1;
+      }
+    }
+  }
+
+  if (options.sourceMap && context.sourceMapBuilder) {
+    return {
+      code: js,
+      map: context.sourceMapBuilder,
+      mapObject: context.sourceMapBuilder.toJSON(),
+    };
+  }
+  return js;
 }
 
 module.exports = { bundle, resolveDependencies };
