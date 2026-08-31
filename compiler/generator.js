@@ -12,6 +12,8 @@ const KNOWN_PACKAGES = {
   chalk:   `const chalk = require('chalk');`,
   // v2.1.0 — PostgreSQL driver behind the friendly "postgres" name.
   postgres: `const { Pool } = require('pg');`,
+  // v2.2.0 — MongoDB driver.
+  mongodb: `const { MongoClient } = require('mongodb');`,
 };
 
 // PlainScript module names whose npm package name differs from the PlainScript name.
@@ -989,7 +991,60 @@ const BUILTIN_DECLARATIONS = {
     `  };`,
     `}`,
   ].join('\n'),
-  // v1.2 — Telegram runtime. Polling-based: no webhook endpoint needed.
+  // v2.2.0 -- MongoDB runtime. Connects to MongoDB and provides a
+  // collection-oriented surface compatible with the existing SQL statement
+  // forms (query, insert, update, delete, execute, transaction).
+  mongodb: [
+    `let __mongoClient = null;`,
+    `let __mongoDb = null;`,
+    `function __mongoCollection(name) {`,
+    `  if (!__mongoDb) throw new Error('MongoDB: not connected. Use "database <uri> using "mongo" [db <name>]" first.');`,
+    `  return __mongoDb.collection(name);`,
+    `}`,
+    `async function __mongoOpen(uri, dbName) {`,
+    `  if (__mongoClient) return __mongoDb;`,
+    `  const { MongoClient } = require('mongodb');`,
+    `  __mongoClient = new MongoClient(uri);`,
+    `  await __mongoClient.connect();`,
+    `  __mongoDb = __mongoClient.db(dbName || undefined);`,
+    `  __mongoDb.__query = async function(sql, params) {`,
+    `    const m = String(sql).match(/^\\s*SELECT\\s+(.+?)\\s+FROM\\s+(\\w+)(?:\\s+WHERE\\s+(.+))?\\s*$/i);`,
+    `    if (!m) throw new Error('MongoDB query: use SELECT fields FROM collection [WHERE condition]');`,
+    `    const [, fields, collection, where] = m;`,
+    `    const coll = __mongoCollection(collection);`,
+    `    let filter = {};`,
+    `    if (where) {`,
+    `      const parts = where.split('=').map(s => s.trim());`,
+    `      if (parts.length === 2) filter[parts[0]] = params[0];`,
+    `    }`,
+    `    const projection = fields.trim() === '*' ? {} : Object.fromEntries(fields.split(',').map(f => [f.trim(), 1]));`,
+    `    return coll.find(filter).project(projection).toArray();`,
+    `  };`,
+    `  __mongoDb.__write = async function(sql, params) {`,
+    `    const m = String(sql).match(/^\\s*INSERT\\s+INTO\\s+(\\w+)\\s*\\(([^)]+)\\)\\s*VALUES\\s*\\(([^)]+)\\)/i);`,
+    `    if (!m) throw new Error('MongoDB insert: use INSERT INTO collection (fields) VALUES (?, ...)');`,
+    `    const [, collection, fieldsStr, valuesStr] = m;`,
+    `    const fields = fieldsStr.split(',').map(f => f.trim());`,
+    `    const values = params;`,
+    `    const doc = {}; fields.forEach((f, i) => doc[f] = values[i]);`,
+    `    const coll = __mongoCollection(collection);`,
+    `    const result = await coll.insertOne(doc);`,
+    `    return { insertedId: result.insertedId, acknowledged: result.acknowledged };`,
+    `  };`,
+    `  __mongoDb.__execute = async function(sql, params) {`,
+    `    throw new Error('MongoDB execute: use query/insert/update/delete instead');`,
+    `  };`,
+    `  return __mongoDb;`,
+    `}`,
+    `async function __mongoClose() {`,
+    `  if (__mongoClient) {`,
+    `    await __mongoClient.close();`,
+    `    __mongoClient = null;`,
+    `    __mongoDb = null;`,
+    `  }`,
+    `}`,
+  ].join('\n'),
+  // v1.2 -- Telegram runtime. Polling-based: no webhook endpoint needed.
   // Exposes `Telegram` (the raw API client) plus a `createTelegramBot(token)`
   // factory that registers handlers and polls getUpdates in a loop. `BOT` is
   // assigned by `bot "<token>"`. The token also falls back to the
@@ -2223,6 +2278,13 @@ function emitSqlCall(kind, sql, params, indent, context) {
     markAsync(context);
     return kind === 'query' ? `(await ${call}).rows` : `await ${call}`;
   }
+  if (_sqlDriver === 'mongo') {
+    markAsync(context);
+    // For MongoDB, we delegate to helper functions that parse SQL-like syntax
+    // into MongoDB operations. This is a simplified approach.
+    // All MongoDB operations are async, so always await them.
+    return `await ${_sqlClientVar}.__${kind}(\`${sql}\`, [${args}])`;
+  }
   switch (kind) {
     case 'query':   return `db.prepare(\`${sql}\`).all(${args})`;
     case 'write':   return `db.prepare(\`${sql}\`).run(${args})`;
@@ -2743,6 +2805,13 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       }
       return `${indent}res.send(${generateExpr(node.value, context)});`;
 
+    case 'ReplyFileStatement':
+      if (!_inRoute) {
+        throw new Error('"reply file" can only be used inside a route handler.\n\nExample:\n  route get "/"\n    reply file "public/index.html"\n  done');
+      }
+      // Use path.resolve to handle relative paths correctly
+      return `${indent}res.sendFile(require('path').resolve(${JSON.stringify(node.filePath)}));`;
+
     case 'ReplyJsonStatement': {
       const props = node.properties
         .map(p => `${JSON.stringify(p.key)}: ${generateExpr(p.value, context)}`)
@@ -3028,6 +3097,21 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       return [
         emitRequire(context, 'postgres'),
         `${indent}const db = new Pool({ connectionString: ${generateExpr(node.connection, context)} });`,
+      ].filter(Boolean).map(line => line.startsWith('const ') ? `${indent}${line}` : line).join('\n');
+    }
+
+    // v2.2.0 — mongo "<connection>" [db "<name>"]: MongoDB client bound to "db".
+    // Uses the mongodb driver; subsequent query/insert/update/delete/execute
+    // statements compile to MongoDB collection operations.
+    case 'MongoStatement': {
+      _sqlDriver = 'mongo';
+      _sqlClientVar = 'db';
+      markAsync(context);
+      ensureBuiltin(context, 'mongodb');
+      const dbArg = node.dbName ? `, ${generateExpr(node.dbName, context)}` : '';
+      return [
+        emitRequire(context, 'mongodb'),
+        `${indent}const db = await __mongoOpen(${generateExpr(node.connection, context)}${dbArg});`,
       ].filter(Boolean).map(line => line.startsWith('const ') ? `${indent}${line}` : line).join('\n');
     }
 

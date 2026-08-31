@@ -525,6 +525,15 @@ function parse(tokens) {
         return parsePostgres();
       }
 
+      // v2.2.0 — mongo "<connection-string>" [db "<name>"]: binds the MongoDB client.
+      // Contextual: a variable named "mongo" or "mongodb" keeps its meaning unless
+      // a connection string follows on the same line.
+      if ((token.value === 'mongo' || token.value === 'mongodb') && (
+          peekAt(1).type === TOKEN.STRING || peekAt(1).type === TOKEN.IDENTIFIER ||
+          peekAt(1).type === TOKEN.LPAREN || peekAt(1).type === TOKEN.TEMPLATE_STRING)) {
+        return parseMongo();
+      }
+
       // v2.1.0 — cache "<redis-url>" / cache env("REDIS_URL"): connects the
       // shared Redis client used by cacheGet / cacheSet / cacheDelete.
       // Contextual like "postgres": a variable named "cache" keeps its
@@ -890,9 +899,11 @@ function parse(tokens) {
       target = parseInlineObjectLiteral(true); // returns InlineObjectLiteral with properties, destructuring mode
       target.type = 'ObjectPattern';
     } else {
-      // Allow "back" (TOKEN.BACK) as a variable name (it's a keyword for "give back" but valid as identifier)
+      // Allow certain keywords as variable names (they're keywords in other contexts but valid as identifiers)
+      // BACK for "give back", REPLY for "reply" statement, etc.
+      const KEYWORDS_AS_IDENTIFIERS = new Set([TOKEN.BACK, TOKEN.REPLY, TOKEN.RESPOND, TOKEN.SEND_BACK]);
       let nameToken = peek();
-      if (nameToken.type === TOKEN.BACK) {
+      if (KEYWORDS_AS_IDENTIFIERS.has(nameToken.type)) {
         advance();
         target = nameToken.value;
       } else {
@@ -1686,6 +1697,7 @@ function parseAsk() {
 
 // reply <expr>  /  respond <expr>  /  send back <expr>
 // reply json\n  <key> is <val>\n...\ndone
+// reply file "<path>"
   function parseReply() {
     const isRespond = peek().type === TOKEN.RESPOND;
     const isSendBack = peek().type === TOKEN.SEND_BACK;
@@ -1713,6 +1725,12 @@ function parseAsk() {
       }
       advance(); // consume DONE
       return { type: 'ReplyJsonStatement', properties };
+    }
+    if (peek().type === TOKEN.FILE_KW) {
+      advance(); // consume file
+      const filePath = consume(TOKEN.STRING,
+        'Expected a file path string after "reply file".\n\nExample:\n  route get "/"\n    reply file "public/index.html"\n  done').value;
+      return { type: 'ReplyFileStatement', filePath };
     }
     const value = parseExpression();
 
@@ -1912,6 +1930,19 @@ function parseAsk() {
     advance(); // postgres
     const connection = parseExpression();
     return { type: 'PostgresStatement', connection };
+  }
+
+  // v2.2.0 — mongo "<connection-string>" [db "<name>"]: binds the MongoDB client.
+  // Usage: mongo "mongodb://localhost:27017" db "mydb"
+  function parseMongo() {
+    const token = advance(); // mongo or mongodb
+    const connection = parseExpression();
+    let dbName = null;
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'db') {
+      advance(); // db
+      dbName = parseExpression();
+    }
+    return { type: 'MongoStatement', connection, dbName };
   }
 
   // query/insert/update/delete/execute SQL_BODY DONE
@@ -2716,7 +2747,9 @@ function parseAsk() {
       return { type: 'ImportMetaExpression' };
     }
 
-    if (token.type === TOKEN.IDENTIFIER || token.type === TOKEN.BACK) {
+    // Keywords that can also be used as identifiers in expression context
+    const IDENTIFIER_KEYWORDS = new Set([TOKEN.BACK, TOKEN.REPLY, TOKEN.RESPOND, TOKEN.SEND_BACK]);
+    if (token.type === TOKEN.IDENTIFIER || IDENTIFIER_KEYWORDS.has(token.type)) {
       if (peekAt(1).type === TOKEN.USES || peekAt(1).type === TOKEN.FILLS) {
         const callee = { type: 'Identifier', name: token.value };
         advance();
