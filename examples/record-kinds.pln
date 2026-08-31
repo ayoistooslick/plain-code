@@ -1,4 +1,4 @@
-// PlainScript 1.0.3-beta: record kind construction.
+// PlainScript 1.0.2-latest: record kind construction.
 define a kind called "Player" with
     name is ""
     goals is 0

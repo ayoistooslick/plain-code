@@ -33,6 +33,8 @@ const PACKAGE_MAP = Object.freeze({
   // through qrcode-terminal. Neither package ever appears in PlainScript source.
   whatsapp: '@whiskeysockets/baileys',
   'wa-qrcode': 'qrcode-terminal',
+  // v2.2.0 — MongoDB driver.
+  mongodb: 'mongodb',
 });
 
 const BUILTIN_MODULES = new Set(builtinModules);
@@ -93,6 +95,9 @@ function visit(node, onUse) {
   } else if (node.type === 'PostgresStatement') {
     // v2.1.0 — `postgres "<url>"` uses node-postgres under the hood.
     onUse('postgres');
+  } else if (node.type === 'MongoStatement') {
+    // v2.2.0 — `mongo "<uri>"` uses mongodb driver under the hood.
+    onUse('mongodb');
   } else if (node.type === 'OcrStatement') {
     // v2.0.1 — `ocr "<image>" as <variable>` uses tesseract.js under the hood.
     onUse('ocr');

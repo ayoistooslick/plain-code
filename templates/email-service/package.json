@@ -1,0 +1,37 @@
+{
+  "name": "@plainscript/email-service",
+  "version": "1.0.0",
+  "description": "A complete, publish-ready email notification service template written in PlainScript with SMTP transport, HTML/text templates, queue system with retry logic, attachment support, and CLI for test emails.",
+  "main": "dist/email.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "plainscript build",
+    "prepare": "plainscript build",
+    "start": "node dist/email.js",
+    "dev": "plainscript run src/email.pln",
+    "test:send": "plainscript run src/cli.pln --send"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "email",
+    "notification",
+    "smtp",
+    "template",
+    "plainscript",
+    "mailer"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "plainscript-lang": "^1.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "croner": "^10.0.1",
+    "nodemailer": "^9.0.6"
+  }
+}

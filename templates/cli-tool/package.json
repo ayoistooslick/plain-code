@@ -1,0 +1,35 @@
+{
+  "name": "@plainscript/cli-tool-template",
+  "version": "1.0.0",
+  "description": "A complete CLI tool template written in PlainScript with argument parsing, interactive prompts, colored output, and subcommands",
+  "main": "dist/cli.js",
+  "type": "commonjs",
+  "bin": {
+    "mycli": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "plainscript build",
+    "prepare": "plainscript build",
+    "start": "node dist/cli.js",
+    "dev": "plainscript run src/cli.pln",
+    "test": "node dist/cli.js --help"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "plainscript",
+    "cli",
+    "template",
+    "command-line",
+    "argument-parsing"
+  ],
+  "author": "PlainScript Community",
+  "license": "MIT",
+  "devDependencies": {
+    "plainscript-lang": "^1.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

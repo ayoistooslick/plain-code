@@ -1,4 +1,4 @@
-// PlainScript 1.0.3-beta: authenticated webhook receiver.
+// PlainScript 1.0.2-latest: authenticated webhook receiver.
 
 web app
 require api key from env("WEBHOOK_KEY")
