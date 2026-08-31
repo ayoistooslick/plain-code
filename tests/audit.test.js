@@ -305,7 +305,8 @@ test('path helpers decompose a path', () => {
     'show folderOf("/tmp/x/hello.txt")',
     'show joinPath("/a", "b")',
   ].join('\n'));
-  assert(r.stdout, '.pln\nhello.txt\n/tmp/x\n/a/b');
+  const normalized = r.stdout.replace(/\\/g, '/');
+  assert(normalized, '.pln\nhello.txt\n/tmp/x\n/a/b');
 });
 
 test('walkFolder returns file paths', () => {
@@ -350,7 +351,11 @@ test('args() exposes command-line arguments', () => {
 });
 
 test('runCommand captures output and exit code', () => {
-  const r = run('remember out as runCommand("echo", ["hello"])\nshow out.ok\nshow out.code\nshow out.stdout');
+  const script = path.join(tmpDir, 'hello.js').replace(/\\/g, '/');
+  fs.writeFileSync(script, 'console.log("hello");');
+  const nodeBin = process.execPath.replace(/\\/g, '/');
+  const cmd = `runCommand(${JSON.stringify(nodeBin)}, [${JSON.stringify(script)}])`;
+  const r = run(`remember out as ${cmd}\nshow out.ok\nshow out.code\nshow out.stdout.trim()`);
   assert(r.stdout, 'true\n0\nhello');
 });
 

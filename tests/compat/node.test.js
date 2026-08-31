@@ -14,7 +14,7 @@ remember p as path.join("a", "b", "c.txt")
 show path.basename(p)
 show path.dirname(p)
 `);
-  assert(out.includes('c.txt') && out.includes('a/b'), `expected path ops:\n${out}`);
+  assert(out.includes('c.txt') && (out.includes('a/b') || out.includes('a\\b')), `expected path ops:\n${out}`);
 });
 
 test('use fs: existsSync/readFileSync against a real file', () => {
