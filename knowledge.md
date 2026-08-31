@@ -1,125 +1,261 @@
-# PlainScript 1.0.3-beta: AI coding specification
+# PlainScript AI Agent Field Guide
 
-This file is the compact coding contract for PlainScript. The executable
-source of truth is `compiler/lexer.js`, `compiler/parser.js`, and
-`compiler/generator.js`. If this document disagrees with those files, inspect
-the compiler and run `plainscript check`.
+This guide teaches an AI coding agent how to write, explain, debug, and extend
+PlainScript for vibecoders. It is intentionally practical. Use it as the
+first-pass language contract, then verify every answer with the compiler.
 
-## 1. Non-negotiable workflow
+PlainScript is an intent-oriented language. A programmer describes the result
+they want in readable `.pln` source, and the compiler generates Node.js.
+PlainScript is not pseudocode: only syntax implemented by the compiler is
+valid.
 
-1. Write a `.pln` file using the grammar below.
-2. Run `plainscript check path/to/file.pln`.
-3. For imports, check the entry file so the whole dependency graph is parsed.
-4. Run `plainscript fmt path/to/file.pln` only after the source checks.
-5. Run `npm test` for compiler or runtime changes.
+The version covered here is `1.0.3-beta`.
 
-Never invent English syntax from an old example. The parser accepts both
-canonical keywords and selected aliases, but new examples should use the
-canonical forms documented here.
+---
 
-## 2. Source model
+## 1. The rule an AI agent must never break
 
-- PlainScript is line-oriented and case-sensitive.
+The executable source of truth is:
+
+1. `compiler/lexer.js` for tokens and keywords.
+2. `compiler/parser.js` for accepted grammar and block structure.
+3. `compiler/generator.js` for runtime behavior and built-in functions.
+4. `compiler/cli.js` for project commands and build behavior.
+
+If this guide, another document, or an old example disagrees with those files,
+trust the compiler and update the example. Do not make up a plausible
+English-looking form.
+
+Before giving a PlainScript answer:
+
+1. Decide whether the user needs a script, web service, bot, data app, or
+   library.
+2. Choose a supported PlainScript construct for that job.
+3. Write complete source, including every required `done`.
+4. Run `node compiler/cli.js check path/to/file.pln`.
+5. If the program imports other `.pln` files, check the entry file so imports
+   are resolved too.
+6. Explain environment variables and package installation separately from the
+   source code.
+
+For a repository change, also run `npm test`. Never tell a vibecoder that code
+works just because it looks readable.
+
+---
+
+## 2. PlainScript mental model
+
+- Source files use the `.pln` extension.
+- Source is line-oriented and case-sensitive.
 - Keywords are lowercase.
-- Indentation is for readability; `done` closes a block.
-- `//` starts a comment.
-- Strings use double quotes and decode normal escapes.
-- Backticks create template strings and preserve interpolation such as
-  `` `Hello, ${name}` ``.
-- Numbers can be integers, decimals, or BigInt literals with an `n` suffix.
-- The compiler emits Node.js JavaScript and checks the emitted JavaScript.
+- Indentation improves readability but does not close blocks.
+- `done` closes most blocks. The parser also supports selected aliases such as
+  `end`, but new code should use `done`.
+- `//` starts a single-line comment.
+- Strings use double quotes.
+- Backticks create template strings with `${expression}` interpolation.
+- Arrays use JavaScript-like brackets.
+- Inline objects use braces, but braces do not replace `done` for blocks.
+- The compiler generates readable Node.js and validates the generated JavaScript.
+- The runtime target is Node.js 18 or newer.
 
-## 3. Declarations and expressions
+Correct:
 
-Use these forms for new code:
+```plainscript
+remember name as "Ada"
+remember greeting as `Hello, ${name}!`
+show greeting
+```
+
+Do not silently translate PlainScript into JavaScript. PlainScript declarations,
+conditions, routes, SQL blocks, and bot handlers have their own grammar.
+
+---
+
+## 3. Variables, values, and expressions
+
+Use `remember name as value` for a new binding:
 
 ```plainscript
 remember count as 0
-let title be "Report"
+remember title as "Inventory"
+remember enabled as true
+remember nothing as null
 count becomes count + 1
 show title
 ```
 
-`remember` requires `as`. `let` accepts `is`, `be`, or `as`. Assignment uses
-`becomes`, `is now`, `set to`, or `change to`.
-
-Expressions include literals, identifiers, calls, member access, optional
-member access, indexing, arithmetic, `??`, arrays, objects, record/list
-expressions, and HTTP calls.
+`let` is an English alias. It accepts `be`, `is`, or `as`:
 
 ```plainscript
-remember values as [1, 2, 3]
-remember item as values[0]
-remember user as {name: "Ada", active: true}
-show user?.name
-remember recordValue as record with name "Ada" and role "admin" done
-remember listValue as list with "a", "b", "c"
+let retries be 3
+let label is "ready"
+let answer as 42
+retries becomes retries - 1
 ```
 
-Use `at position` only with a numeric literal, for example
-`values at position 1`. Use `first item from values`, `last item from values`,
-or `item one from values` for readable collection access.
+Assignment forms include `becomes`, `is now`, `set ... to`, and `change ...
+to`. Prefer `becomes` in generated examples.
 
-## 4. Conditions
+Expressions can contain:
+
+- numbers, strings, booleans, `null`, and `undefined`
+- arrays and inline objects
+- arithmetic and comparisons
+- function calls
+- member access such as `user.name`
+- optional member access such as `user?.name`
+- indexing such as `items[0]`
+- template strings
+- HTTP calls
+- supported built-in functions
 
 ```plainscript
-if user.active is true and name contains "A"
-    show "match"
+remember scores as [10, 20, 30]
+remember firstScore as scores[0]
+remember user as {name: "Ada", active: true}
+show user.name
+show user?.email
+```
+
+Readable collection forms are also available:
+
+```plainscript
+remember players as list with "Ada", "Grace", "Lin"
+show first player from players
+show last player from players
+show player one from players
+show players at position 1
+```
+
+The readable position form is one-based. Bracket indexing follows JavaScript
+zero-based indexing. Tell the user which form you used.
+
+---
+
+## 4. Conditions and branching
+
+Use `if`, optional `otherwise`, and `done`:
+
+```plainscript
+if score is at least 80 and status is not "blocked"
+    show "accepted"
 otherwise
-    show "no match"
+    show "review"
 done
 ```
 
-Valid comparisons include:
+Supported comparison language includes:
 
-| PlainScript | Meaning |
+| Syntax | Meaning |
 | --- | --- |
 | `is`, `same as` | strict equality |
 | `is not`, `different from` | strict inequality |
 | `more than`, `is greater than`, `is above` | greater than |
 | `fewer than`, `is less than`, `is below` | less than |
-| `is at least`, `is most` | greater/equal or less/equal |
-| `contains`, `starts with`, `ends with`, `made of` | string checks |
+| `is at least` | greater than or equal |
+| `is most` | less than or equal |
+| `contains` | string or collection membership |
+| `starts with`, `ends with` | string prefix or suffix |
 | `between low and high` | inclusive range |
-| `has field name` | object property check |
+| `has field name` | object field exists |
 | `instanceof Kind` | JavaScript instance check |
 
-Combine conditions with `and`, `or`, and `not`. A conditional expression can
-use `choosing condition then a otherwise b`.
+Combine conditions with `and`, `or`, and `not`. Parenthesized expressions
+should be used when grouping would otherwise be unclear.
 
-## 5. Functions and control flow
+Do not write JavaScript `else if` syntax. Use nested `if` blocks or the
+supported `otherwise if` chain:
 
 ```plainscript
-make multiply(a, b)
-    give a * b
-done
-
-for each value in values
-    show value
-done
-
-for index i from 0 to 2
-    show i
-done
-
-while count is less than 5
-    count becomes count + 1
+if score is at least 90
+    show "excellent"
+otherwise if score is at least 70
+    show "good"
+otherwise
+    show "keep practicing"
 done
 ```
 
-Aliases `define name(...)`, `function name(...)`, `return`, `give back`, and
-`yield` are implemented. `yield` makes the enclosing function a generator.
-Use `break` and `continue` inside loops.
+---
 
-The English function form is:
+## 5. Functions and loops
+
+Define functions with `make`, return with `give`, and close with `done`:
 
 ```plainscript
 make add(a, b)
     give a + b
 done
+
+show add(2, 3)
 ```
 
-## 6. Records and modules
+Default parameters use `as`:
+
+```plainscript
+make greet(name as "friend")
+    give `Hello, ${name}!`
+done
+
+show greet()
+```
+
+Supported aliases include `define name(...)`, `function name(...)`, `return`,
+and `give back`. Prefer `make` and `give` in new code. `yield` creates a
+generator function and must be inside a function.
+
+Collection loop:
+
+```plainscript
+remember names as ["Ada", "Grace"]
+for each name in names
+    show name
+done
+```
+
+Numeric loop:
+
+```plainscript
+for index position from 0 to 3
+    show position
+done
+```
+
+The numeric range is inclusive. Add `by -1` for a descending loop:
+
+```plainscript
+for index position from 3 to 0 by -1
+    show position
+done
+```
+
+Conditional loop:
+
+```plainscript
+remember attempts as 0
+while attempts is less than 3
+    attempts becomes attempts + 1
+done
+```
+
+`break` and `continue` are valid inside loops. Do not use JavaScript `for`,
+`const`, `let` declarations, braces, or semicolons as replacements for these
+forms.
+
+---
+
+## 6. Records, modules, and npm packages
+
+For a one-off structured value, use an inline object or record:
+
+```plainscript
+remember customer as {name: "Ada", plan: "pro"}
+remember profile as record with name "Ada" and active true done
+show customer.name
+```
+
+For reusable data shapes, define a kind:
 
 ```plainscript
 define a kind called "Person" with
@@ -128,49 +264,166 @@ define a kind called "Person" with
 done
 
 remember ada as create a Person with name "Ada" and age 36
+show ada.name
 ```
 
-Record kind fields use `is` or `be`; record expressions use values directly:
-`record with name "Ada" and age 36 done`.
+Unknown fields on a kind should fail rather than being silently ignored.
+
+Use relative `.pln` imports:
 
 ```plainscript
 import { area } from "./geometry.pln"
-export area
+remember result as area(5)
+show result
+```
+
+Export a binding from a module:
+
+```plainscript
+make double(value)
+    give value * 2
+done
+
+export double
 ```
 
 `import "./file.pln"` bundles the whole file. Named imports bind selected
-exports. Imports must use a relative `.pln` path.
+exports. Imports must be relative `.pln` paths. Circular imports are rejected.
 
-## 7. Built-in runtime groups
+Declare an npm package with `use`:
 
-Use only implemented functions. Common groups are:
+```plainscript
+use express
+use lodash
+```
 
-- strings: `length`, `uppercase`, `lowercase`, `trim`, `replace`, `split`,
+`use` is for package detection and installation. It is not a JavaScript import
+statement. Run `plainscript install` or install the package with npm before
+running generated code.
+
+---
+
+## 7. Built-in functions
+
+Use only functions implemented in `compiler/generator.js`. Common groups are:
+
+- Output and system: `show`, `print`, `display`, `env`, `args`, `time`, `date`,
+  `uuid`, `exit`
+- Strings: `length`, `uppercase`, `lowercase`, `trim`, `replace`, `split`,
   `join`, `startsWith`, `endsWith`, `truncate`, `padStart`, `padEnd`
-- collections: `first`, `last`, `flatten`, `includes`, `unique`, `sort`,
-  `reverse`, `sum`, `smallest`, `largest`, `keys`, `values`, `groupBy`
-- files: `readFile`, `writeFile`, `appendFile`, `fileExists`, `copyFile`,
+- Collections: `first`, `last`, `flatten`, `includes`, `unique`, `sort`,
+  `reverse`, `sum`, `smallest`, `largest`, `keys`, `values`, `groupBy`,
+  `pick`, `omit`, `range`, `clamp`
+- Files: `readFile`, `writeFile`, `appendFile`, `fileExists`, `copyFile`,
   `moveFile`, `deleteFile`, `makeFolder`, `listFolder`, `readBytes`,
-  `writeBytes`, `joinPath`, `baseName`, `folderOf`, `extensionOf`
-- JSON/system: `jsonEncode`, `jsonDecode`, `env`, `time`, `date`, `uuid`,
-  `exit`, `args`
-- crypto/auth: `sha256`, `sha1`, `md5`, `hashPassword`, `checkPassword`,
+  `writeBytes`, `joinPath`, `baseName`, `folderOf`, `extensionOf`,
+  `fileSize`, `fileType`, `walkFolder`, `writeLine`, `appendLine`
+- JSON and data: `jsonEncode`, `jsonDecode`, `yamlEncode`, `yamlDecode`,
+  `textToBytes`, `bytesToText`, `base64Encode`, `base64Decode`
+- Security: `sha256`, `sha1`, `md5`, `hashPassword`, `checkPassword`,
   `createToken`, `readToken`, `validate`
-- async: `sleep`, `allOf`, `anyOf`, `settledOf`, `withTimeout`
-- network/AI helpers: `get`, `post`, `put`, `patch`, `delete`, `chat`,
-  `chatWith`, `embedText`, `embedWith`, `similarity`
+- Async: `sleep`, `allOf`, `anyOf`, `settledOf`, `withTimeout`
+- Network: `get`, `post`, `put`, `patch`, `delete`
+- AI: `chat`, `chatWith`, `embedText`, `embedWith`, `similarity`
 
-`wait for expression` and `await expression` create an await expression.
+If a requested capability is not in the compiler, explain that plainly and
+propose the nearest supported construct or an npm package. Do not invent a
+function because its name sounds reasonable.
 
-## 8. Web applications
+---
+
+## 8. AI providers and general-purpose AI code
+
+AI is not Telegram-specific. The same helpers work in ordinary scripts, web
+routes, scheduled jobs, and bot handlers.
+
+`chat` uses the default provider, or a provider selected in its options:
+
+```plainscript
+remember answer as chat("llama-3.3-70b-versatile", "Explain PlainScript in one sentence", {
+    provider: "groq",
+    temperature: 0.2,
+    maxTokens: 100
+})
+show answer
+```
+
+Use `chatWith` when the provider should be obvious at the call site:
+
+```plainscript
+remember answer as chatWith("groq", "llama-3.3-70b-versatile", "Summarize this text")
+show answer
+```
+
+Messages may be a string or a list of role/content records:
+
+```plainscript
+remember messages as [
+    {role: "system", content: "Be concise."},
+    {role: "user", content: "What is PlainScript?"}
+]
+remember answer as chatWith("openrouter", "openai/gpt-4o-mini", messages)
+show answer
+```
+
+Embeddings and offline similarity:
+
+```plainscript
+remember vector as embedWith("groq", "nomic-embed-text-v1.5", "PlainScript")
+remember score as similarity([1, 0], [1, 0])
+show score
+```
+
+The built-in presets are `openai`, `groq`, `openrouter`, `together`,
+`fireworks`, and `deepseek`. All use OpenAI-compatible request shapes. Custom
+providers can pass `base`, `key`, and `headers` in options:
+
+```plainscript
+remember answer as chat("custom-model", "Hello", {
+    provider: "my-provider",
+    base: "https://ai.example.com/v1",
+    key: env("MY_PROVIDER_API_KEY"),
+    headers: { "X-Client": "my-app" },
+    responseFormat: "json"
+})
+```
+
+Never hardcode a secret. The runtime checks for a provider key and gives an
+explicit error when it is missing. Common environment variables are:
+
+| Provider | API key | Optional base URL |
+| --- | --- | --- |
+| OpenAI | `OPENAI_API_KEY` | `OPENAI_BASE_URL` |
+| Groq | `GROQ_API_KEY` | `GROQ_BASE_URL` |
+| OpenRouter | `OPENROUTER_API_KEY` | `OPENROUTER_BASE_URL` |
+| Together | `TOGETHER_API_KEY` | `TOGETHER_BASE_URL` |
+| Fireworks | `FIREWORKS_API_KEY` | `FIREWORKS_BASE_URL` |
+| DeepSeek | `DEEPSEEK_API_KEY` | `DEEPSEEK_BASE_URL` |
+
+AI calls are asynchronous. At top level the compiler wraps the generated
+program so `await` works. Inside a route, function, or handler, the compiler
+marks the relevant generated function as asynchronous.
+
+---
+
+## 9. Web applications and APIs
+
+Start a web application, add routes, and close each block:
 
 ```plainscript
 web app
 allow cors
 
-route get "/users"
+route get "/health"
     reply json
-        users is list with "Ada", "Grace"
+        ok is true
+    done
+done
+
+route post "/echo"
+    remember input as body of request
+    reply json
+        received is input
     done
 done
 
@@ -182,80 +435,220 @@ done
 start 3000
 ```
 
-Routes support `route get|post|put|patch|delete "path"`. Route blocks close
-with `done`. Request accessors include `body of request`, `param("id")`,
-`query("name")`, `header("x-token")`, `upload("file")`, and `uploads("file")`.
-Responses use `reply`, `reply json`, `status`, and `redirect to`.
+Supported route methods are `get`, `post`, `put`, `patch`, and `delete`.
+Request accessors include:
+
+- `body of request`
+- `param("id")`
+- `query("page")`
+- `header("x-token")`
+- `upload("file")`
+- `uploads("file")`
+
+Response constructs include `reply`, `reply json`, `status`, and
+`redirect to`:
+
+```plainscript
+web app
+route get "/users/:id"
+    remember id as param("id")
+    if id is empty
+        status 400
+        reply "missing id"
+    otherwise
+        reply id
+    done
+done
+start 3000
+```
 
 Backend declarations:
 
 ```plainscript
 web app
-enable sessions "a-secret"
+enable sessions "session-secret"
 limit requests to 100 per minute
 require api key from env("API_KEY")
 accept uploads limit "5 MB" allow list with "image/png" folder "uploads"
-route get "/login"
+
+route get "/preferences"
     set cookie "theme" to "dark" expires in 7 days
-    reply "ok"
+    reply "saved"
 done
+
+start 3000
 ```
 
-## 9. SQLite, SQL, HTTP, and packages
+For production, keep secrets in environment variables instead of literals.
+`enable sessions` and `set cookie` are server features; they do not create a
+database or user account system by themselves.
+
+---
+
+## 10. SQLite, SQL, HTTP, and packages
+
+Portable SQLite:
 
 ```plainscript
 database "app.db" using "wasm"
 remember name as "Ada"
+
 execute
-    CREATE TABLE people (name TEXT)
+    CREATE TABLE IF NOT EXISTS people (name TEXT)
 done
+
 insert
     INSERT INTO people (name) VALUES ({name})
 done
+
 remember people as query
     SELECT name FROM people
 done
+
+show people
 ```
 
-SQL is a block. `{name}` is a bound parameter. `transaction ... done` groups
-writes. `postgres env("DATABASE_URL")` enables PostgreSQL generation.
+SQL is written in a block and closed with `done`. `{name}` is a bound
+parameter, not string concatenation. Use `transaction ... done` to group
+writes. `database ... using "native"` selects `better-sqlite3`; `using "wasm"`
+selects `sql.js`.
 
-HTTP client syntax:
+HTTP client calls return a response record with `ok`, `status`, `headers`, and
+parsed `data`:
 
 ```plainscript
-remember response as get "https://example.com" headers {accept: "application/json"} timeout 5000
-remember result as post "https://example.com" with {ok: true}
+remember response as get "https://example.com/data" timeout 5000
+if response.ok is true
+    show response.data
+otherwise
+    show response.status
+done
 ```
 
-Package imports are explicit:
+Send a body and headers:
 
 ```plainscript
-use express
+remember created as post "https://example.com/items" with {name: "Ada"} headers {contentType: "application/json"} timeout 5000
+show created.status
 ```
 
-The package name is detected by the CLI and can be installed with
-`plainscript install`.
+Do not confuse an HTTP response with parsed JSON. Use `response.data` when the
+server returns JSON.
 
-## 10. Async, errors, schedules, and realtime
+---
+
+## 11. Telegram bots
+
+Telegram is an optional runtime feature. Configure a token from the
+environment, write deterministic handlers first, and add AI only where useful:
 
 ```plainscript
-try
-    remember value as get "https://example.com" timeout 5000
-recover as error
-    show message of error
-finally
-    show "done"
+bot env("TELEGRAM_BOT_TOKEN")
 
-retry 3 times every 1 second
-    show "attempt"
+when someone sends "/start"
+    reply "Welcome. Try /status."
 done
 
-every 5 minutes
-    show "heartbeat"
+when someone sends "/status"
+    reply "All systems are operational."
 done
 
-schedule "0 2 * * *"
-    show "nightly"
+start telegram bot
+```
+
+Pattern handlers expose update context:
+
+```plainscript
+bot env("TELEGRAM_BOT_TOKEN")
+
+when someone sends matching "/ask (.+)"
+    telegramCall("sendChatAction", {chat_id: chatId, action: "typing"})
+    remember answer as chatWith("groq", "llama-3.3-70b-versatile", message)
+    reply answer
+done
+
+start telegram bot
+```
+
+Inside Telegram handlers, these identifiers are mapped to the current update:
+
+- `message`: normalized/raw current message record
+- `text`: message text
+- `args`: words captured after a command
+- `matches`: regex capture values
+- `chat`: current chat record
+- `chatId`: current chat ID
+- `data`: callback query data
+
+Callback buttons:
+
+```plainscript
+bot env("TELEGRAM_BOT_TOKEN")
+
+when someone sends "/menu"
+    reply "Choose" with buttons
+        "About" -> "about"
+        "Help" -> "help"
+    done
+done
+
+when someone clicks "about"
+    reply "PlainScript is intent-oriented."
+done
+
+start telegram bot
+```
+
+`telegramCall(method, params)` calls any Telegram Bot API method. It is useful
+for an API operation that does not have a dedicated PlainScript statement.
+`telegramApi` is kept as a compatible alias.
+
+Keep Telegram replies deterministic for commands such as `/start`, `/help`,
+and `/status`. Add provider-backed replies for open-ended questions and handle
+provider failures with a recoverable response when appropriate.
+
+---
+
+## 12. OCR, uploads, email, and realtime
+
+OCR accepts a path or an in-memory buffer:
+
+```plainscript
+ocr path of file as text
+show text
+```
+
+For a web upload, enable the upload policy before reading `upload("file")` or
+`uploads("file")`:
+
+```plainscript
+web app
+accept uploads limit "5 MB" allow list with "image/png", "image/jpeg" folder "uploads"
+
+route post "/scan"
+    remember image as upload("document")
+    ocr image as text
+    reply text
+done
+
+start 3000
+```
+
+Mail transport and send statements are available when the project provides the
+needed SMTP environment:
+
+```plainscript
+mail transport
+    host is "smtp.example.com"
+    port is 587
+    user is env("SMTP_USER")
+    pass is env("SMTP_PASS")
+done
+
+send mail
+    to is "user@example.com"
+    subject is "Report"
+    body is "Ready"
 done
 ```
 
@@ -264,7 +657,7 @@ WebSockets:
 ```plainscript
 websocket server on 8080
     when socket connects
-        send socket "hello"
+        send socket "connected"
     done
     when socket sends message
         broadcast message
@@ -272,68 +665,209 @@ websocket server on 8080
 done
 ```
 
-Cache:
+Use `cache`, `cacheGet`, `cacheSet`, and `cacheDelete` for the supported cache
+runtime. Use `every`, `schedule`, and `run background` for recurring or
+non-blocking work:
 
 ```plainscript
 cache env("REDIS_URL")
 cacheSet("status", "ready", 60)
 remember status as cacheGet("status")
-cacheDelete("status")
-```
+show status
 
-AI providers use OpenAI-compatible request shapes. Keys are read from
-environment variables and are never hardcoded:
-
-```plainscript
-remember response as chat("llama-3.3-70b-versatile", "Hello", {
-    provider: "groq",
-    key: env("GROQ_API_KEY"),
-    base: "https://api.groq.com/openai/v1"
-})
-```
-
-Use `chatWith("groq", model, messages)` when the provider should be explicit.
-The presets are `openai`, `groq`, `openrouter`, `together`, `fireworks`, and
-`deepseek`; `base` and `key` support any OpenAI-compatible API.
-
-Bots and OCR use dedicated blocks:
-
-```plainscript
-bot env("TELEGRAM_BOT_TOKEN")
-when someone sends "/start"
-    reply "Welcome"
+every 5 minutes
+    show "heartbeat"
 done
-start telegram bot
+
+schedule "0 2 * * *"
+    show "nightly report"
+done
 ```
 
-Telegram handler context includes `message`, `text`, `args`, `matches`,
-`chat`, `chatId`, and callback `data`. `telegramCall(method, params)` exposes
-the rest of the Telegram Bot API without requiring a new compiler feature.
+`run background` takes a function call, not a bare expression:
 
 ```plainscript
-ocr path of file as text
+make refresh()
+    show "refreshing"
+done
+
+run background refresh()
 ```
 
-## 11. Tests
+---
+
+## 13. Async code and error handling
+
+Network, AI, OCR, database, and many bot operations can be asynchronous. Use
+the PlainScript async constructs instead of writing JavaScript `async` and
+`await` keywords:
 
 ```plainscript
-test "addition"
+remember response as get "https://example.com" timeout 5000
+remember answer as chatWith("groq", "llama-3.3-70b-versatile", "Say hello")
+show response.status
+show answer
+```
+
+Run independent promises together:
+
+```plainscript
+remember results as allOf([
+    get "https://example.com/a",
+    get "https://example.com/b"
+])
+show results
+```
+
+Bound failures with `try`, `recover`, and optional `finally`:
+
+```plainscript
+try
+    remember response as get "https://example.com" timeout 5000
+    show response.data
+recover as error
+    show message of error
+finally
+    show "request finished"
+```
+
+Retry a block when an operation may temporarily fail:
+
+```plainscript
+retry 3 times every 1 second
+    remember response as get "https://example.com"
+    show response.status
+done
+```
+
+Prefer explicit, user-facing recovery messages for AI provider, network,
+Telegram, OCR, and database errors. Do not catch an error and silently pretend
+the requested operation succeeded.
+
+---
+
+## 14. Native tests
+
+PlainScript has a test DSL:
+
+```plainscript
+make add(a, b)
+    give a + b
+done
+
+test "addition works"
     check add(2, 3) equals 5
 done
 ```
 
-Assertions are `equals`, `is`, `contains`, and `raises`.
+Assertions include `equals`, `is`, `contains`, and `raises`:
 
-## 12. Version and validation contract
-
-The repository version is `1.0.3-beta`. Keep package metadata, the compiler
-version module, docs, and editor metadata aligned. Every maintained `.pln`
-file under `examples/`, `samples/`, `templates/`, `fixtures/`, and
-`tests/fixtures/` must pass:
-
-```bash
-node compiler/cli.js check path/to/file.pln
+```plainscript
+test "invalid input raises"
+    check jsonDecode("not json") raises "Unexpected"
+done
 ```
 
-The two circular import fixtures intentionally fail when checked as entry
-points because they test cycle detection. Do not remove that negative test.
+Run repository tests with:
+
+```bash
+npm test
+```
+
+When changing the compiler, add a focused regression test. When changing
+documentation, make sure every PlainScript fence still compiles.
+
+---
+
+## 15. Error prevention checklist
+
+Before returning code to a vibecoder, check these common failure modes:
+
+| Mistake | Correct response |
+| --- | --- |
+| Using `const`, JavaScript `let`, or semicolons | Use `remember`, PlainScript `let`, and `done` |
+| Closing a block with indentation only | Add `done` |
+| Writing `remember x value` | Write `remember x as value` |
+| Calling `load()` for a module | Use `import "./file.pln"` or `loadModule("./file")` only if the runtime supports that helper |
+| Using `let visits` as a declaration | Use `let visits be 0` |
+| Passing a bare value to `run background` | Pass a function call such as `refresh()` |
+| Using `message` in an ordinary web route | Use `body of request`, `param`, `query`, or `header` |
+| Using Telegram context outside a Telegram handler | Move the expression inside the handler |
+| Hardcoding API keys or bot tokens | Use `env("NAME")` and document the variable |
+| Inventing a built-in | Search `compiler/generator.js`, then use an npm package if needed |
+| Treating `response` as JSON | Read `response.data` |
+| Interpolating SQL strings manually | Use `{name}` bound parameters |
+| Running a provider call without a key | Set the provider environment variable or pass `key` in options |
+| Claiming code works without checking it | Run `node compiler/cli.js check file.pln` |
+
+When the compiler reports an error, preserve the line and column in the
+explanation. The compiler's suggestions are more reliable than guessing what
+the user intended.
+
+---
+
+## 16. Project recipes for vibecoders
+
+### Small script
+
+Use a single `.pln` file with `remember`, functions, and `show`:
+
+```plainscript
+make welcome(name)
+    give `Welcome, ${name}!`
+done
+
+remember user as "Ada"
+show welcome(user)
+```
+
+### REST API
+
+Start with `web app`, add one health route, then add one resource route. Read
+request input with `body of request` and return records with `reply json`.
+Validate before writing to the database.
+
+### SQLite app
+
+Start with `database "app.db" using "wasm"` for portability. Add schema
+creation in an `execute` block, writes in `insert` or `update`, and reads in a
+`query` block. Use bound `{name}` parameters.
+
+### Telegram bot
+
+Start with hardcoded `/start`, `/help`, and `/status` handlers. Add buttons or
+pattern matching next. Add `chatWith` only for open-ended text.
+
+### AI feature
+
+Start with `chatWith(provider, model, prompt)`. Put the provider key in the
+environment. Add `try/recover` if the feature is user-facing. Use options for
+temperature, token limits, custom base URLs, or response format.
+
+### Scheduled job
+
+Put reusable work in `make report() ... done`, call it from a `schedule` block,
+and expose a health or status route if the job is deployed as a service.
+
+### New package or integration
+
+First check whether PlainScript already has a built-in. If not, declare the npm
+package with `use`, install it, and verify the generated JavaScript. Do not
+pretend a package call is a native PlainScript function.
+
+---
+
+## 17. Agent response format
+
+When helping a vibecoder, answer in this order:
+
+1. State the PlainScript approach in one sentence.
+2. Show complete `.pln` code, not a fragment with omitted block endings.
+3. List required environment variables and npm packages.
+4. Give the exact `plainscript check` or `plainscript run` command.
+5. Explain one important runtime behavior or limitation.
+6. If the request is not supported, say what is unsupported and offer the
+   closest valid alternative.
+
+A good answer is friendly and direct, but compiler-checked. PlainScript makes
+code approachable; validation makes it dependable.
