@@ -577,7 +577,7 @@ const BUILTIN_DECLARATIONS = {
     `  return { ok: response.ok, status: response.status, headers: Object.fromEntries(response.headers.entries()), data };`,
     `}`,
   ].join('\n'),
-  // 1.0.3-beta — provider-neutral AI runtime. `chat` and `embedText` speak
+  // 1.0.2-latest — provider-neutral AI runtime. `chat` and `embedText` speak
   // OpenAI-compatible APIs, including Groq, OpenRouter, Together, Fireworks,
   // and DeepSeek. A custom `base` and `key` can be supplied per call.
   ai: [

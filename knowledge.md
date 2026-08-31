@@ -22,7 +22,7 @@ This guide teaches an AI coding agent how to write, explain, debug, and extend P
 
 PlainScript is an intent-oriented language. A programmer describes the result they want in readable `.pln` source, and the compiler generates Node.js. PlainScript is not pseudocode: only syntax implemented by the compiler is valid.
 
-The version covered here is `1.0.3-beta` **(may be outdated — check npm/GitHub for latest)**.
+The version covered here is `1.0.2-latest` **(may be outdated — check npm/GitHub for latest)**.
 
 ---
 

@@ -1,4 +1,4 @@
-// PlainScript 1.0.3-beta: web route.
+// PlainScript 1.0.2-latest: web route.
 web app
 route get "/health"
     reply json
