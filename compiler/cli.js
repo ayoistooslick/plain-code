@@ -364,13 +364,13 @@ function ensureDependencies(files, install = true) {
 // Deterministic only: the lexer/parser/generator pipeline is the single
 // authoritative compiler. Unsupported syntax produces a precise compiler
 // error — there is no second compilation path (v2.1.1).
-function compile(filePath) {
+function compile(filePath, options = {}) {
   const absPath = path.resolve(filePath);
   if (!fs.existsSync(absPath)) {
     console.error(`File not found: ${filePath}`);
     process.exit(1);
   }
-  const generationContext = createGenerationContext();
+  const generationContext = createGenerationContext(options);
 
   let files;
   stage('Resolving imports', () => {
@@ -378,9 +378,38 @@ function compile(filePath) {
   });
   stage('Building dependency graph', () => files);
   stage('Checking runtime dependencies', () => ensureDependencies(files, true));
-  const js = stage('Generating JavaScript', () =>
-    files.map(({ ast }) => generate(ast, generationContext)).filter(s => s.trim()).join('\n'));
-  return generationContext.needsAsync ? wrapAsync(js) : js;
+  const parts = stage('Generating JavaScript', () =>
+    files.map(({ absPath: fileAbs, ast }) => {
+      const relPath = path.relative(process.cwd(), fileAbs).replace(/\\/g, '/') || path.basename(fileAbs);
+      generationContext.sourceFile = relPath;
+      if (generationContext.sourceMapBuilder) {
+        try {
+          const content = fs.readFileSync(fileAbs, 'utf8');
+          generationContext.sourceMapBuilder.addSource(relPath, content);
+        } catch (_) {}
+      }
+      const res = generate(ast, generationContext);
+      return typeof res === 'string' ? res : (res && res.code ? res.code : '');
+    }).filter(s => s && s.trim()));
+  let js = parts.join('\n');
+  if (generationContext.needsAsync) {
+    js = wrapAsync(js);
+    if (generationContext.sourceMapBuilder) {
+      for (const m of generationContext.sourceMapBuilder.mappings) {
+        m.generatedLine += 1;
+      }
+    }
+  }
+
+  if (options.sourceMap && generationContext.sourceMapBuilder) {
+    return {
+      code: js,
+      map: generationContext.sourceMapBuilder,
+      mapObject: generationContext.sourceMapBuilder.toJSON(),
+    };
+  }
+
+  return js;
 }
 
 // ── Commands ─────────────────────────────────────────────────────────────────
@@ -408,7 +437,14 @@ async function cmdRun(filePath, extraArgs = []) {
     console.error('Usage: plainscript run <file.pln>');
     process.exit(1);
   }
-  const js = compile(filePath);
+  const isSourcemap = process.argv.includes('--sourcemap') || process.argv.includes('-m') || process.env.PLAINSCRIPT_SOURCEMAP === 'true';
+  let js;
+  if (isSourcemap) {
+    const res = compile(filePath, { sourceMap: true, outputFile: 'out.js' });
+    js = res.code + '\n' + res.map.toInlineDataUrl() + '\n';
+  } else {
+    js = compile(filePath);
+  }
   console.log('');
   // Execute from the entry file's directory so relative assets and CWD-based
   // behaviour match a direct `node` invocation.
@@ -417,8 +453,9 @@ async function cmdRun(filePath, extraArgs = []) {
   const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'plainscript-run-'));
   const tmpFile = path.join(tmpDir, 'out.js');
   fs.writeFileSync(tmpFile, js, 'utf8');
+  const nodeFlags = isSourcemap ? ['--enable-source-maps'] : [];
   try {
-    execFileSync(process.execPath, [tmpFile, ...extraArgs], {
+    execFileSync(process.execPath, [...nodeFlags, tmpFile, ...extraArgs], {
       stdio: 'inherit',
       cwd: entryDir,
       env: { ...process.env, NODE_PATH: searchPaths.join(path.delimiter) },
@@ -434,19 +471,33 @@ async function cmdRun(filePath, extraArgs = []) {
 
 // Compile one entry and write it to outDir with its source name preserved,
 // relative to the source root when the file lives inside it.
-function buildOne(filePath, srcDir, outDir) {
+function buildOne(filePath, srcDir, outDir, options = {}) {
   const absFile = path.resolve(filePath);
   if (!fs.existsSync(absFile)) {
     console.error(`File not found: ${filePath}`);
     process.exit(1);
   }
-  const js = compile(absFile);
   const srcRoot = path.resolve(srcDir);
   let rel = path.relative(srcRoot, absFile).replace(/\.pln$/, '.js');
   if (rel.startsWith('..') || path.isAbsolute(rel)) rel = path.basename(absFile).replace(/\.pln$/, '.js');
   const outPath = path.join(path.resolve(outDir), rel);
+
+  const isSourcemap = options.sourceMap || process.argv.includes('--sourcemap') || process.argv.includes('-m') || process.env.PLAINSCRIPT_SOURCEMAP === 'true';
+
+  let code, mapObject;
+  if (isSourcemap) {
+    const res = compile(absFile, { sourceMap: true, outputFile: path.basename(outPath) });
+    code = res.code + `\n//# sourceMappingURL=${path.basename(outPath)}.map\n`;
+    mapObject = res.mapObject;
+  } else {
+    code = compile(absFile);
+  }
+
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, js, 'utf8');
+  fs.writeFileSync(outPath, code, 'utf8');
+  if (mapObject) {
+    fs.writeFileSync(outPath + '.map', JSON.stringify(mapObject, null, 2), 'utf8');
+  }
   return path.relative(process.cwd(), outPath) || outPath;
 }
 
