@@ -1,0 +1,39 @@
+{
+  "name": "@plainscript/rest-api-sqlite",
+  "version": "1.0.0",
+  "description": "A REST API template with SQLite database written in PlainScript. Includes minimal working version (web app shorthand) and full CRUD version (Express style). Note: Current PlainScript compiler has known bugs with database + web app combinations.",
+  "main": "dist/api.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "plainscript build",
+    "build:api": "plainscript build src/api.pln",
+    "build:express": "plainscript build src/api-express.pln",
+    "prepare": "plainscript build",
+    "start": "node dist/api.js",
+    "start:express": "node dist/api-express.js",
+    "dev": "plainscript run src/api.pln",
+    "dev:express": "plainscript run src/api-express.pln",
+    "check": "plainscript check src/api.pln && plainscript check src/api-express.pln"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "plainscript",
+    "rest-api",
+    "sqlite",
+    "template",
+    "web-server",
+    "database"
+  ],
+  "author": "PlainScript Community",
+  "license": "MIT",
+  "devDependencies": {
+    "plainscript-lang": "^1.0.2"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.2.1",
+    "sql.js": "^1.14.2"
+  }
+}

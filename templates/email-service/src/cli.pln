@@ -1,0 +1,67 @@
+// CLI for Email Service — PlainScript v2.1
+// Run with: plainscript run src/cli.pln --send --to=user@example.com
+
+import "./email.pln"
+
+remember args as cliArgs()
+remember sendFlag as false
+remember toEmail as null
+remember subject as "Test Email from PlainScript"
+remember type as "test"
+
+for each arg in args
+    if arg is "--send"
+        remember sendFlag as true
+    done
+    if arg starts with "--to="
+        remember toEmail as substring(arg, 5)
+    done
+    if arg starts with "--subject="
+        remember subject as substring(arg, 10)
+    done
+    if arg starts with "--type="
+        remember type as substring(arg, 7)
+    done
+done
+
+if sendFlag is false
+    show "Email Service CLI"
+    show "================="
+    show ""
+    show "Usage:"
+    show "  plainscript run src/cli.pln --send --to=user@example.com [--type=welcome|reset|newsletter|test] [--subject=\"Custom Subject\"]"
+    show ""
+    show "Options:"
+    show "  --send           Send the email"
+    show "  --to=EMAIL       Recipient email address (required)"
+    show "  --type=TYPE      Email type: welcome, reset, newsletter, test (default: test)"
+    show "  --subject=TEXT   Custom subject line"
+    show ""
+    show "Environment variables required:"
+    show "  SMTP_HOST        SMTP server hostname"
+    show "  SMTP_PORT        SMTP server port"
+    show "  SMTP_USER        SMTP username"
+    show "  SMTP_PASS        SMTP password"
+    show "  EMAIL_FROM       From email address"
+otherwise
+    if toEmail is null
+        show "Error: --to=EMAIL is required"
+    otherwise
+        show "Sending " + type + " email to " + toEmail + "..."
+        
+        if type is "welcome"
+            sendWelcomeEmail(toEmail, "Test User")
+        done
+        if type is "reset"
+            sendPasswordResetEmail(toEmail, "Test User", "abc123token", "https://example.com/reset?token=abc123token")
+        done
+        if type is "newsletter"
+            sendNewsletterEmail(toEmail, "Test User", subject, "<p>This is a test newsletter content.</p>", "This is a test newsletter content.")
+        done
+        if type is not "welcome" and type is not "reset" and type is not "newsletter"
+            sendTestEmail(toEmail)
+        done
+        
+        show "Done!"
+    done
+done

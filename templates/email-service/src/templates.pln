@@ -1,0 +1,195 @@
+// Email Templates — PlainScript v2.1
+// Provides HTML and text renderers for common email types
+
+make renderWelcomeHtml(userName)
+    give `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; text-align: center; border-radius: 8px 8px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to Our Service!</h1>
+    </div>
+    <div style="background: #f9f9f9; padding: 40px; border-radius: 0 0 8px 8px;">
+        <p style="font-size: 18px; margin-top: 0;">Hi <strong>` + userName + `</strong>,</p>
+        <p>Thank you for joining us! We're excited to have you on board.</p>
+        <p>Here are a few things to get you started:</p>
+        <ul style="padding-left: 20px;">
+            <li>Complete your profile setup</li>
+            <li>Explore our features</li>
+            <li>Check out our documentation</li>
+        </ul>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="https://example.com/dashboard" style="background: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Go to Dashboard</a>
+        </div>
+        <p style="color: #666; font-size: 14px; border-top: 1px solid #ddd; padding-top: 20px;">If you have any questions, just reply to this email — we're happy to help!</p>
+    </div>
+</body>
+</html>
+`
+done
+
+make renderWelcomeText(userName)
+    give `
+Welcome to Our Service!
+
+Hi ` + userName + `,
+
+Thank you for joining us! We're excited to have you on board.
+
+Here are a few things to get you started:
+- Complete your profile setup
+- Explore our features
+- Check out our documentation
+
+Go to Dashboard: https://example.com/dashboard
+
+If you have any questions, just reply to this email — we're happy to help!
+
+---
+The Team
+`
+done
+
+make renderPasswordResetHtml(userName, resetToken, resetUrl)
+    give `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: #dc3545; padding: 40px; text-align: center; border-radius: 8px 8px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">Password Reset Request</h1>
+    </div>
+    <div style="background: #f9f9f9; padding: 40px; border-radius: 0 0 8px 8px;">
+        <p style="font-size: 18px; margin-top: 0;">Hi <strong>` + userName + `</strong>,</p>
+        <p>We received a request to reset your password. Click the button below to create a new password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="` + resetUrl + `" style="background: #dc3545; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Reset Password</a>
+        </div>
+        <p>Or copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; color: #666; font-size: 14px;">` + resetUrl + `</p>
+        <p><strong>Your reset token:</strong> <code style="background: #eee; padding: 4px 8px; border-radius: 4px;">` + resetToken + `</code></p>
+        <p style="color: #666; font-size: 14px; border-top: 1px solid #ddd; padding-top: 20px;">This link expires in 1 hour. If you didn't request this, please ignore this email.</p>
+    </div>
+</body>
+</html>
+`
+done
+
+make renderPasswordResetText(userName, resetToken, resetUrl)
+    give `
+Password Reset Request
+
+Hi ` + userName + `,
+
+We received a request to reset your password. Use the link below to create a new password:
+
+Reset Password: ` + resetUrl + `
+
+Your reset token: ` + resetToken + `
+
+This link expires in 1 hour. If you didn't request this, please ignore this email.
+
+---
+The Team
+`
+done
+
+make renderNewsletterHtml(userName, subject, htmlContent)
+    give `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>` + subject + `</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: #2c3e50; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 24px;">` + subject + `</h1>
+    </div>
+    <div style="background: white; padding: 40px; border: 1px solid #eee; border-radius: 0 0 8px 8px;">
+        <p style="font-size: 16px; margin-top: 0;">Hi ` + userName + `,</p>
+        <div>` + htmlContent + `</div>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        <p style="color: #999; font-size: 12px; text-align: center;">You received this because you subscribed to our newsletter.<br>
+        <a href="https://example.com/unsubscribe" style="color: #999;">Unsubscribe</a> | 
+        <a href="https://example.com/preferences" style="color: #999;">Preferences</a></p>
+    </div>
+</body>
+</html>
+`
+done
+
+make renderNewsletterText(userName, subject, textContent)
+    give `
+` + subject + `
+
+Hi ` + userName + `,
+
+` + textContent + `
+
+---
+You received this because you subscribed to our newsletter.
+Unsubscribe: https://example.com/unsubscribe
+Preferences: https://example.com/preferences
+`
+done
+
+make renderTestHtml()
+    give `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Email</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: #28a745; padding: 40px; text-align: center; border-radius: 8px 8px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">✓ Test Email</h1>
+    </div>
+    <div style="background: #f9f9f9; padding: 40px; border-radius: 0 0 8px 8px;">
+        <p style="font-size: 18px; margin-top: 0;">This is a test email from the PlainScript Email Service.</p>
+        <p>If you received this, the email service is configured correctly!</p>
+        <div style="background: white; padding: 20px; border-radius: 6px; margin: 20px 0; border: 1px solid #ddd;">
+            <p style="margin: 0;"><strong>Sent at:</strong> ` + time() + `</p>
+            <p style="margin: 10px 0 0;"><strong>Service:</strong> PlainScript Email Service Template</p>
+        </div>
+        <p style="color: #666; font-size: 14px;">This is an automated test message.</p>
+    </div>
+</body>
+</html>
+`
+done
+
+make renderTestText()
+    give `
+Test Email from PlainScript Email Service
+
+This is a test email from the PlainScript Email Service.
+If you received this, the email service is configured correctly!
+
+Sent at: ` + time() + `
+Service: PlainScript Email Service Template
+
+This is an automated test message.
+`
+done
+
+export renderWelcomeHtml
+export renderWelcomeText
+export renderPasswordResetHtml
+export renderPasswordResetText
+export renderNewsletterHtml
+export renderNewsletterText
+export renderTestHtml
+export renderTestText

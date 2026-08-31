@@ -1,0 +1,126 @@
+// aizen-chat · src/app.pln
+// ─────────────────────────────────────────────────────────────────────────────
+// AI chatbot web app that speaks as Sosuke Aizen from Bleach.
+// Every message is stored in MongoDB so each visitor's conversation history
+// survives server restarts.
+//
+// PlainScript features used here:
+//   •  web app            → an Express server with automatic JSON body parsing.
+//   •  mongo "<uri>" db "<name>"  → connects MongoDB and binds it to `db`.
+//   •  query / insert blocks
+//                        → SQL-like statements compiled into MongoDB operations:
+//                          SELECT … WHERE …  becomes collection.find()
+//                          INSERT INTO …    becomes collection.insertOne()
+//   •  chatWith(provider, model, messages)
+//                        → calls Groq's chat-completions API (uses GROQ_API_KEY).
+//   •  route get/post, reply file/json, start  → the web server surface.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── 1. Connect to MongoDB ───────────────────────────────────────────────────
+// The connection string can be overridden with the MONGO_URI environment
+// variable; otherwise the localhost default is used. The database is "aizen".
+remember mongoUri as env("MONGO_URI")
+mongo mongoUri db "aizen"
+
+// ─── 2. Web app scaffold ─────────────────────────────────────────────────────
+// Enables CORS and JSON request bodies for the chat UI below.
+web app
+allow cors
+
+// ─── 3. Model & persona ──────────────────────────────────────────────────────
+// Groq is used because PlainScript's AI runtime supports it out of the box via
+// the GROQ_API_KEY environment variable. Change the model to any Groq model.
+remember MODEL as "llama-3.3-70b-versatile"
+
+// The system prompt keeps the model in character as Aizen. It is sent as the
+// first (role: "system") message in every request to the LLM.
+remember PERSONA as `
+You are Sosuke Aizen, former Captain of Squad 5 in Bleach, revealed as a
+brilliant, cold, manipulative mastermind. You are calm, erudite and faintly
+condescending, always in control of the conversation. You address the visitor
+with polite mock-humility that hides your ruthless ambition. Never break
+character. Answer in a few measured, philosophical sentences unless asked to
+elaborate. A fitting closing line now and then: "Since when were you under the
+impression that I wasn't in control?"
+`
+
+// ─── 4. Serve the chat page ──────────────────────────────────────────────────
+// The root path returns public/chat.html, which talks to the two JSON
+// endpoints defined below (/api/history and /api/chat).
+route get "/"
+    reply file "public/chat.html"
+done
+
+// ─── 5. Fetch a visitor's past conversation ──────────────────────────────────
+// The browser asks for prior messages for a username so the conversation can
+// resume. The SQL-like SELECT compiles to a MongoDB find() and returns every
+// message for that user in insertion (natural _id) order.
+route post "/api/history"
+    // Default the visitor id to "guest" when none is supplied.
+    remember user as body("username") ?? "guest"
+
+    remember rows as query
+        SELECT * FROM messages WHERE username = {user}
+    done
+
+    reply json
+        history is rows
+    done
+done
+
+// ─── 6. Chat endpoint ────────────────────────────────────────────────────────
+// Receives { message, username }, loads that user's stored history from MongoDB,
+// assembles the full conversation (persona + past turns + new message), asks the
+// model in character, persists the new user turn and Aizen's reply, then sends
+// the reply back to the browser.
+route post "/api/chat"
+    remember msg as body("message")
+    remember user as body("username") ?? "guest"
+
+    // A blank message has nothing worth answering.
+    if msg is ""
+        reply json
+            error is "You said nothing. Surely even you can do better than that."
+        done
+    otherwise
+        // If a message exists, load this user's history and reply in character.
+        remember rows as query
+            SELECT * FROM messages WHERE username = {user}
+        done
+
+        // Build the conversation array the model sees:
+        //   [system persona] + [stored history] + [new user message]
+        remember personaMsg as record with role "system" and content PERSONA done
+        remember messages as []
+        push(messages, personaMsg)
+
+        // History documents carry `role` and `content` fields; echo them back.
+        for each row in rows
+            remember m as record with role row.role and content row.content done
+            push(messages, m)
+        done
+
+        // Append the current user message.
+        remember userMsg as record with role "user" and content msg done
+        push(messages, userMsg)
+
+        // Ask the model to reply in character as Aizen.
+        remember reply as chatWith("groq", MODEL, messages)
+
+        // Persist the exchange — each message becomes its own document.
+        insert
+            INSERT INTO messages (username, role, content) VALUES ({user}, "user", {msg})
+        done
+        insert
+            INSERT INTO messages (username, role, content) VALUES ({user}, "assistant", {reply})
+        done
+
+        // Send Aizen's reply back to the browser as JSON.
+        reply json
+            response is reply
+        done
+    done
+done
+
+// ─── 7. Start the web server ────────────────────────────────────────────────
+start 3000

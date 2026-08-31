@@ -1,0 +1,126 @@
+// Email Notification Service — PlainScript v2.1
+// Compiles to dist/email.js — runs with: node dist/email.js
+// Requires env: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM
+
+import "./templates.pln"
+import "./queue.pln"
+import "./attachments.pln"
+
+mail transport
+    host is env("SMTP_HOST")
+    port is env("SMTP_PORT")
+    user is env("SMTP_USER")
+    pass is env("SMTP_PASS")
+done
+
+remember fromAddress as env("EMAIL_FROM")
+
+make sendWelcomeEmail(toEmail, userName)
+    remember html as renderWelcomeHtml(userName)
+    remember text as renderWelcomeText(userName)
+    send mail
+        from is fromAddress
+        to is toEmail
+        subject is "Welcome to Our Service, " + userName + "!"
+        html is html
+        text is text
+    done
+    show "Welcome email sent to " + toEmail
+    give true
+done
+
+make sendPasswordResetEmail(toEmail, userName, resetToken, resetUrl)
+    remember html as renderPasswordResetHtml(userName, resetToken, resetUrl)
+    remember text as renderPasswordResetText(userName, resetToken, resetUrl)
+    send mail
+        from is fromAddress
+        to is toEmail
+        subject is "Password Reset Request"
+        html is html
+        text is text
+    done
+    show "Password reset email sent to " + toEmail
+    give true
+done
+
+make sendNewsletterEmail(toEmail, userName, subject, htmlContent, textContent)
+    send mail
+        from is fromAddress
+        to is toEmail
+        subject is subject
+        html is htmlContent
+        text is textContent
+    done
+    show "Newsletter sent to " + toEmail
+    give true
+done
+
+make sendCustomEmail(toEmail, subject, htmlContent, textContent)
+    send mail
+        from is fromAddress
+        to is toEmail
+        subject is subject
+        html is htmlContent
+        text is textContent
+    done
+    show "Custom email sent to " + toEmail
+    give true
+done
+
+make sendEmailWithAttachment(toEmail, subject, htmlContent, textContent, attachmentPath, attachmentName)
+    remember attachment as createAttachment(attachmentPath, attachmentName)
+    send mail
+        from is fromAddress
+        to is toEmail
+        subject is subject
+        html is htmlContent
+        text is textContent
+        attachments is list with attachment
+    done
+    show "Email with attachment sent to " + toEmail
+    give true
+done
+
+make queueEmail(jobData)
+    remember jobId as enqueueEmail(jobData)
+    show "Email queued with ID: " + jobId
+    give jobId
+done
+
+make processEmailQueue()
+    remember processed as processQueue()
+    show "Processed " + processed + " queued emails"
+    give processed
+done
+
+make startQueueProcessor()
+    schedule "*/5 * * * *"
+        remember count as processEmailQueue()
+        if count is above 0
+            show "Queue processor: sent " + count + " emails"
+        done
+    done
+    show "Queue processor started (runs every 5 minutes)"
+done
+
+make sendTestEmail(toEmail)
+    send mail
+        from is fromAddress
+        to is toEmail
+        subject is "Test Email from PlainScript Email Service"
+        html is renderTestHtml()
+        text is renderTestText()
+    done
+    show "Test email sent to " + toEmail
+    give true
+done
+
+export sendWelcomeEmail
+export sendPasswordResetEmail
+export sendNewsletterEmail
+export sendCustomEmail
+export sendEmailWithAttachment
+export queueEmail
+export processEmailQueue
+export startQueueProcessor
+export sendTestEmail
