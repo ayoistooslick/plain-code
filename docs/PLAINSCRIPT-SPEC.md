@@ -1,4 +1,4 @@
-# PlainScript 1.0.2-rfc language specification
+# PlainScript 1.0.3-beta language specification
 
 This reference describes the syntax implemented by `compiler/lexer.js` and
 `compiler/parser.js`. The generated runtime is implemented in
@@ -102,9 +102,9 @@ Aliases `define`, `function`, `return`, and `give back` are implemented. The
 readable declaration form is:
 
 ```plainscript
-to add a and b together
+make add(a, b)
     give a + b
-together
+done
 ```
 
 `yield` creates a generator function. Functions may use `wait for` and other
@@ -183,7 +183,10 @@ Server capabilities include:
 
 ```plainscript
 enable sessions "secret"
-set cookie "theme" to "dark" expires in 7 days
+route get "/preferences"
+    set cookie "theme" to "dark" expires in 7 days
+    reply "saved"
+done
 limit requests to 100 per minute
 require api key from env("API_KEY")
 accept uploads limit "5 MB" allow list with "image/png" folder "uploads"
@@ -219,7 +222,7 @@ remember created as post "https://example.com" with {name: "Ada"} headers {accep
 
 ```plainscript
 try
-    remember value as wait for load()
+    remember value as get "https://example.com" timeout 5000
 recover as error
     show message of error
 finally
@@ -233,6 +236,38 @@ done
 Concurrency helpers are `allOf`, `anyOf`, `settledOf`, and `withTimeout`.
 Recurring blocks are `every 5 minutes ... done` and
 `schedule "0 * * * *" ... done`.
+
+## AI providers
+
+`chat(model, messages, options)` and `embedText(model, text, options)` use an
+OpenAI-compatible API. Provider presets select safe defaults for the endpoint
+and environment variable:
+
+| Provider | API key | Default base |
+| --- | --- | --- |
+| `openai` | `OPENAI_API_KEY` | `https://api.openai.com/v1` |
+| `groq` | `GROQ_API_KEY` | `https://api.groq.com/openai/v1` |
+| `openrouter` | `OPENROUTER_API_KEY` | `https://openrouter.ai/api/v1` |
+| `together` | `TOGETHER_API_KEY` | `https://api.together.xyz/v1` |
+| `fireworks` | `FIREWORKS_API_KEY` | `https://api.fireworks.ai/inference/v1` |
+| `deepseek` | `DEEPSEEK_API_KEY` | `https://api.deepseek.com/v1` |
+
+```plainscript
+remember answer as chat("llama-3.3-70b-versatile", "Hello from PlainScript", {
+    provider: "groq",
+    key: env("GROQ_API_KEY"),
+    temperature: 0.2,
+    maxTokens: 200
+})
+remember explicit as chatWith("groq", "llama-3.3-70b-versatile", "Hello")
+show answer
+```
+
+`base`, `key`, `headers`, `temperature`, `maxTokens`, and `responseFormat`
+are optional call options. Custom providers can use a provider name plus
+`base` and `key`; the runtime uses `PROVIDER_API_KEY` and
+`PROVIDER_BASE_URL` as defaults. These calls work in ordinary programs,
+routes, jobs, and messaging handlers.
 
 ## WebSockets, cache, bots, and OCR
 
@@ -260,6 +295,11 @@ when someone sends "/start"
 done
 start telegram bot
 ```
+
+Inside a Telegram handler, `message`, `text`, `args`, `matches`, `chat`,
+`chatId`, and callback `data` are update context values. Fixed replies use
+`reply "text"`; provider-backed replies can use `chatWith` before `reply`.
+`telegramCall(method, params)` invokes any Telegram Bot API method.
 
 WhatsApp uses `whatsapp bot ... done`, with `auth`, `login qr`, `login
 pairing`, and `on message` clauses. OCR uses:

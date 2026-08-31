@@ -2,7 +2,7 @@
     "name": "plainscript-language",
     "displayName": "PlainScript Language",
     "description": "Syntax highlighting and language support for the PlainScript programming language (.pln files)",
-    "version": "1.0.2-rfc",
+    "version": "1.0.3-beta",
     "publisher": "ayoistooslick",
     "engines": {
         "vscode": "^1.70.0"

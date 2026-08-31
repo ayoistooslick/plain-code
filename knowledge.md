@@ -1,4 +1,4 @@
-# PlainScript 1.0.2-rfc: AI coding specification
+# PlainScript 1.0.3-beta: AI coding specification
 
 This file is the compact coding contract for PlainScript. The executable
 source of truth is `compiler/lexer.js`, `compiler/parser.js`, and
@@ -114,9 +114,9 @@ Use `break` and `continue` inside loops.
 The English function form is:
 
 ```plainscript
-to add a and b together
+make add(a, b)
     give a + b
-together
+done
 ```
 
 ## 6. Records and modules
@@ -158,7 +158,7 @@ Use only implemented functions. Common groups are:
   `createToken`, `readToken`, `validate`
 - async: `sleep`, `allOf`, `anyOf`, `settledOf`, `withTimeout`
 - network/AI helpers: `get`, `post`, `put`, `patch`, `delete`, `chat`,
-  `embedText`, `similarity`
+  `chatWith`, `embedText`, `embedWith`, `similarity`
 
 `wait for expression` and `await expression` create an await expression.
 
@@ -190,11 +190,15 @@ Responses use `reply`, `reply json`, `status`, and `redirect to`.
 Backend declarations:
 
 ```plainscript
+web app
 enable sessions "a-secret"
-set cookie "theme" to "dark" expires in 7 days
 limit requests to 100 per minute
 require api key from env("API_KEY")
 accept uploads limit "5 MB" allow list with "image/png" folder "uploads"
+route get "/login"
+    set cookie "theme" to "dark" expires in 7 days
+    reply "ok"
+done
 ```
 
 ## 9. SQLite, SQL, HTTP, and packages
@@ -236,7 +240,7 @@ The package name is detected by the CLI and can be installed with
 
 ```plainscript
 try
-    remember value as wait for load()
+    remember value as get "https://example.com" timeout 5000
 recover as error
     show message of error
 finally
@@ -277,6 +281,21 @@ remember status as cacheGet("status")
 cacheDelete("status")
 ```
 
+AI providers use OpenAI-compatible request shapes. Keys are read from
+environment variables and are never hardcoded:
+
+```plainscript
+remember response as chat("llama-3.3-70b-versatile", "Hello", {
+    provider: "groq",
+    key: env("GROQ_API_KEY"),
+    base: "https://api.groq.com/openai/v1"
+})
+```
+
+Use `chatWith("groq", model, messages)` when the provider should be explicit.
+The presets are `openai`, `groq`, `openrouter`, `together`, `fireworks`, and
+`deepseek`; `base` and `key` support any OpenAI-compatible API.
+
 Bots and OCR use dedicated blocks:
 
 ```plainscript
@@ -286,6 +305,10 @@ when someone sends "/start"
 done
 start telegram bot
 ```
+
+Telegram handler context includes `message`, `text`, `args`, `matches`,
+`chat`, `chatId`, and callback `data`. `telegramCall(method, params)` exposes
+the rest of the Telegram Bot API without requiring a new compiler feature.
 
 ```plainscript
 ocr path of file as text
@@ -303,7 +326,7 @@ Assertions are `equals`, `is`, `contains`, and `raises`.
 
 ## 12. Version and validation contract
 
-The repository version is `1.0.2-rfc`. Keep package metadata, the compiler
+The repository version is `1.0.3-beta`. Keep package metadata, the compiler
 version module, docs, and editor metadata aligned. Every maintained `.pln`
 file under `examples/`, `samples/`, `templates/`, `fixtures/`, and
 `tests/fixtures/` must pass:

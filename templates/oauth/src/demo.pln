@@ -1,3 +1,0 @@
-// PlainScript 1.0.2-rfc: OAuth helper demo.
-import { providerUrl } from "./oauth.pln"
-show providerUrl("example")

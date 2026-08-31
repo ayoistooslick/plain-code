@@ -4,7 +4,7 @@
 [![npm version](https://badge.fury.io/js/plainscript-lang.svg)](https://www.npmjs.com/package/plainscript-lang)
 PlainScript is an intent-oriented language that compiles `.pln` source to
 readable Node.js. The compiler and parser in `compiler/` are the source of
-truth for version `1.0.2-rfc`.
+truth for version `1.0.3-beta`.
 
 ## Quick start
 
@@ -37,7 +37,7 @@ plainscript add <package>    Add an npm package
 plainscript remove <package> Remove an npm package
 plainscript update           Update installed packages
 plainscript doctor           Inspect the local project setup
-plainscript version          Print 1.0.2-rfc
+plainscript version          Print 1.0.3-beta
 ```
 
 `plainscript check` resolves imports, parses every file, generates JavaScript,
@@ -50,10 +50,10 @@ every source change.
 
 ```plainscript
 remember name as "Ada"
-let visits be 3
-let greeting be `Hello, ${name}!`
+let count is 3
+let greeting is `Hello, ${name}!`
 show greeting
-visits becomes visits + 1
+count becomes count + 1
 ```
 
 `remember name as value` is the standard declaration form. `let name be value`
@@ -134,6 +134,46 @@ done
 remember player as create a Player with name "Ada" and goals 4
 ```
 
+## AI providers and Telegram
+
+AI helpers work across command-line programs, web routes, scheduled jobs, and
+bot handlers. `chat` uses the OpenAI-compatible API shape; choose a built-in
+provider or pass a custom endpoint. API keys stay in environment variables.
+
+```plainscript
+remember answer as chat("llama-3.3-70b-versatile", "Summarize PlainScript", {
+    provider: "groq",
+    key: env("GROQ_API_KEY"),
+    temperature: 0.2
+})
+show answer
+```
+
+`groq`, `openai`, `openrouter`, `together`, `fireworks`, and `deepseek` are
+supported provider presets. `chatWith("groq", model, messages)` and
+`embedWith("groq", model, text)` are explicit provider-first forms. For any
+OpenAI-compatible service, pass `base`, `key`, and optionally `headers`.
+
+Telegram supports fixed replies, command arguments, regex captures, callbacks,
+inline buttons, and the complete raw Bot API:
+
+```plainscript
+bot env("TELEGRAM_BOT_TOKEN")
+when someone sends "/start"
+    reply "Welcome"
+done
+when someone sends matching "/ask (.+)"
+    remember answer as chatWith("groq", "llama-3.3-70b-versatile", message)
+    reply answer
+done
+start telegram bot
+```
+
+Inside a Telegram handler, `message`, `text`, `args`, `matches`, `chat`,
+`chatId`, and callback `data` refer to the current update. Use
+`telegramCall("sendChatAction", {chat_id: chatId, action: "typing"})` for API
+methods not wrapped by a named helper.
+
 ## Standard library
 
 No import is needed for built-ins such as:
@@ -144,8 +184,8 @@ remember decoded as jsonDecode(encoded)
 remember contents as readFile("notes.txt")
 writeFile("notes.txt", contents)
 remember digest as sha256("plain text")
-remember now as time()
-remember id as uuid()
+remember currentTime as time()
+remember identifier as uuid()
 ```
 
 Important groups include string and collection helpers, path and file
@@ -220,14 +260,14 @@ done
 
 ```plainscript
 try
-    remember result as wait for load()
+    remember result as get "https://example.com" timeout 5000
 recover as error
     show message of error
 finally
     show "finished"
 
 retry 3 times every 1 second
-    run background refresh()
+    show "attempt"
 done
 ```
 
@@ -269,9 +309,10 @@ The feature examples in `examples/` are the maintained reference programs:
 | auth, sessions, cookies | `examples/auth-sessions.pln` |
 | async, errors, concurrency | `examples/async-errors.pln`, `examples/concurrency.pln` |
 | WebSockets and cache | `examples/websocket.pln`, `examples/cache-schedule.pln` |
-| Telegram and WhatsApp | `examples/bots.pln`, `examples/whatsapp-bot/` |
+| Telegram, AI, and WhatsApp | `examples/bots.pln`, `examples/telegram-bot.pln`, `examples/whatsapp-bot/` |
 | OCR and uploads | `examples/ocr.pln`, `examples/id-verification/` |
 | native tests and modules | `examples/testing.pln`, `examples/modules/` |
+| real-world starters | `templates/` |
 
 ## Verification
 

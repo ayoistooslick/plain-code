@@ -1,5 +1,0 @@
-// PlainScript 1.0.2-rfc: reusable digest helper.
-make fingerprint(value)
-    give sha256(jsonEncode(value))
-done
-export fingerprint

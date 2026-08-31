@@ -687,6 +687,34 @@ test('chat compiles to an awaited AI completion call', () => {
   assertIncludes(js, 'await __aiChat("gpt-4o-mini", "hello", undefined)');
 });
 
+test('chat supports a Groq provider preset and request options', () => {
+  const js = compile([
+    'remember r as chat("llama-3.3-70b-versatile", "hello", {',
+    '  provider: "groq",',
+    '  key: env("GROQ_API_KEY"),',
+    '  temperature: 0.2,',
+    '  maxTokens: 100',
+    '})',
+  ].join('\n'));
+  assertIncludes(js, 'process.env.GROQ_API_KEY');
+  assertIncludes(js, 'https://api.groq.com/openai/v1');
+  assertIncludes(js, 'body.max_tokens = options.maxTokens');
+});
+
+test('chatWith makes the provider explicit', () => {
+  const js = compile('remember r as chatWith("groq", "llama-3.3-70b-versatile", "hello")');
+  assertIncludes(js, 'Object.assign({}, {}, { provider: "groq" })');
+});
+
+test('AI and Telegram helpers reject missing required arguments at check time', () => {
+  let chatError = '';
+  let telegramError = '';
+  try { compile('chat("model")'); } catch (e) { chatError = e.message; }
+  try { compile('telegramCall()'); } catch (e) { telegramError = e.message; }
+  assertIncludes(chatError, '"chat" needs at least 2 arguments');
+  assertIncludes(telegramError, '"telegramCall" needs at least 1 argument');
+});
+
 test('embedText compiles to an awaited AI embeddings call', () => {
   const js = compile('remember e as embedText("text-embedding-3-small", "cat")');
   assertIncludes(js, 'await __aiEmbed("text-embedding-3-small", "cat", undefined)');

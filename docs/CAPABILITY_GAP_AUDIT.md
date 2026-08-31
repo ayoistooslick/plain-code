@@ -1,4 +1,4 @@
-# PlainScript 1.0.2-rfc capability audit
+# PlainScript 1.0.3-beta capability audit
 
 This audit is intentionally grounded in the implementation, not in old
 examples. The parser and generator are the authority. A capability is listed
@@ -57,6 +57,7 @@ here only when a source program can be validated by `plainscript check`.
 | WebSockets | Implemented | `websocket server` |
 | Redis/in-memory cache | Implemented | `cache`, `cacheGet`, `cacheSet` |
 | Telegram bots | Implemented | `bot`, message/callback handlers |
+| AI providers | Implemented | `chat`, `chatWith`, `embedText`, provider presets |
 | WhatsApp bots | Implemented | `whatsapp bot` |
 | OCR | Implemented | `ocr path of file as text` |
 
@@ -96,6 +97,6 @@ before changing the language reference.
 
 ## Version boundary
 
-The repository release label is `1.0.2-rfc`. This label identifies the
+The repository release label is `1.0.3-beta`. This label identifies the
 compiler, package metadata, website, and editor tooling. It does not change
 third-party dependency versions.

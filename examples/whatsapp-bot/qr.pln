@@ -1,4 +1,4 @@
-// PlainScript 1.0.2-rfc: WhatsApp QR login.
+// PlainScript 1.0.3-beta: WhatsApp QR login.
 
 whatsapp bot
     auth "plain-script-whatsapp"

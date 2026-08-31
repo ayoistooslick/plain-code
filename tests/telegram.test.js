@@ -255,6 +255,20 @@ test('generate: bot token call binds BOT via the Telegram module factory', () =>
   }
 });
 
+test('generate: Telegram handlers expose update context values', () => {
+  const js = compileProgram([
+    'bot "0123456789:TEST"',
+    'when someone sends matching "/echo (.+)"',
+    '  remember answer as chatWith("groq", "model", message)',
+    '  telegramCall("sendChatAction", {chat_id: chatId, action: "typing"})',
+    '  reply answer',
+    'done',
+  ].join('\n'));
+  if (!js.includes('ctx.message')) throw new Error('message context was not exposed');
+  if (!js.includes('ctx.chatId')) throw new Error('chatId context was not exposed');
+  if (!js.includes('Telegram.call("sendChatAction"')) throw new Error('raw Telegram API call missing');
+});
+
 test('generate: inline object literal renders { key: value }', () => {
   const js = compile('remember data as { text: "hi", n: 2 }\nshow data');
   if (!js.includes('let data = { "text": "hi", "n": 2 };')) {

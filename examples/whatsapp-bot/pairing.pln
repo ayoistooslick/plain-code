@@ -1,4 +1,4 @@
-// PlainScript 1.0.2-rfc: WhatsApp pairing login.
+// PlainScript 1.0.3-beta: WhatsApp pairing login.
 
 whatsapp bot
     auth "plain-script-whatsapp"

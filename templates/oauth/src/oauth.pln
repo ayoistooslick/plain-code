@@ -1,5 +1,0 @@
-// PlainScript 1.0.2-rfc: provider configuration helper.
-make providerUrl(name)
-    give `https://example.com/oauth/${name}`
-done
-export providerUrl

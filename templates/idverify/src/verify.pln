@@ -1,6 +1,0 @@
-// PlainScript 1.0.2-rfc: verification helper.
-import { fingerprint } from "./hash.pln"
-make verify(document)
-    give record with verified true and fingerprint fingerprint(document) done
-done
-export verify

@@ -575,21 +575,32 @@ const BUILTIN_DECLARATIONS = {
     `  return { ok: response.ok, status: response.status, headers: Object.fromEntries(response.headers.entries()), data };`,
     `}`,
   ].join('\n'),
-  // v2.2.0 — AI/ML runtime. `chat` and `embeddings` talk to any OpenAI-compatible
-  // completions/embeddings endpoint (API key and base URL from options or env),
-  // while `similarity` is pure vector math and runs fully offline.
+  // 1.0.3-beta — provider-neutral AI runtime. `chat` and `embedText` speak
+  // OpenAI-compatible APIs, including Groq, OpenRouter, Together, Fireworks,
+  // and DeepSeek. A custom `base` and `key` can be supplied per call.
   ai: [
-    `function __aiTags() {`,
-    `  return { key: process.env.OPENAI_API_KEY, base: (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\\/$/, '') };`,
+    `function __aiTags(options = {}) {`,
+    `  const provider = String(options.provider || process.env.PLAINSCRIPT_AI_PROVIDER || 'openai').toLowerCase();`,
+    `  const providers = {`,
+    `    openai: { key: process.env.OPENAI_API_KEY, base: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1' },`,
+    `    groq: { key: process.env.GROQ_API_KEY, base: process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1' },`,
+    `    openrouter: { key: process.env.OPENROUTER_API_KEY, base: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1' },`,
+    `    together: { key: process.env.TOGETHER_API_KEY, base: process.env.TOGETHER_BASE_URL || 'https://api.together.xyz/v1' },`,
+    `    fireworks: { key: process.env.FIREWORKS_API_KEY, base: process.env.FIREWORKS_BASE_URL || 'https://api.fireworks.ai/inference/v1' },`,
+    `    deepseek: { key: process.env.DEEPSEEK_API_KEY, base: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1' },`,
+    `  };`,
+    `  const selected = providers[provider] || { key: process.env[provider.toUpperCase().replace(/[^A-Z0-9]+/g, '_') + '_API_KEY'], base: process.env[provider.toUpperCase().replace(/[^A-Z0-9]+/g, '_') + '_BASE_URL'] };`,
+    `  return { provider, key: options.key || selected.key, base: (options.base || selected.base || '').replace(/\\/$/, '') };`,
     `}`,
-    `async function __aiPost(tags, path, body) {`,
+    `async function __aiPost(tags, path, body, options = {}) {`,
     `  if (typeof fetch !== 'function') {`,
     `    throw new Error('AI calls need Node.js 18 or newer (global fetch is missing): ' + process.version);`,
     `  }`,
-    `  if (!tags.key) throw new Error('No API key for AI. Set env OPENAI_API_KEY.');`,
+    `  if (!tags.key) throw new Error('No API key for AI provider ' + tags.provider + '. Set ' + tags.provider.toUpperCase().replace(/[^A-Z0-9]+/g, '_') + '_API_KEY or pass key in chat options.');`,
+    `  const headers = Object.assign({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tags.key }, options.headers || {});`,
     `  const response = await fetch(tags.base + path, {`,
     `    method: 'POST',`,
-    `    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tags.key },`,
+    `    headers,`,
     `    body: JSON.stringify(body),`,
     `  });`,
     `  const text = await response.text();`,
@@ -599,19 +610,21 @@ const BUILTIN_DECLARATIONS = {
     `  return data;`,
     `}`,
     `async function __aiChat(model, messages, options) {`,
-    `  const tags = __aiTags();`,
-    `  if (options && options.key) tags.key = options.key;`,
-    `  if (options && options.base) tags.base = (options.base || '').replace(/\\/$/, '');`,
+    `  options = options || {};`,
+    `  const tags = __aiTags(options);`,
     `  if (typeof messages === 'string') messages = [{ role: 'user', content: messages }];`,
-    `  const data = await __aiPost(tags, '/chat/completions', { model: model, messages: messages });`,
+    `  const body = { model: model, messages: messages };`,
+    `  if (options.temperature != null) body.temperature = options.temperature;`,
+    `  if (options.maxTokens != null) body.max_tokens = options.maxTokens;`,
+    `  if (options.responseFormat != null) body.response_format = options.responseFormat;`,
+    `  const data = await __aiPost(tags, '/chat/completions', body, options);`,
     `  const choice = data.choices && data.choices[0];`,
     `  return choice && choice.message ? choice.message.content : '';`,
     `}`,
     `async function __aiEmbed(model, text, options) {`,
-    `  const tags = __aiTags();`,
-    `  if (options && options.key) tags.key = options.key;`,
-    `  if (options && options.base) tags.base = (options.base || '').replace(/\\/$/, '');`,
-    `  const data = await __aiPost(tags, '/embeddings', { model: model, input: String(text) });`,
+    `  options = options || {};`,
+    `  const tags = __aiTags(options);`,
+    `  const data = await __aiPost(tags, '/embeddings', { model: model, input: String(text) }, options);`,
     `  return (data.data && data.data[0] && data.data[0].embedding) || [];`,
     `}`,
     `function __aiSimilarity(a, b) {`,
@@ -1013,15 +1026,16 @@ const BUILTIN_DECLARATIONS = {
     `    if (!resolved) throw new Error('Telegram: bot token is missing. Use: bot "YOUR_BOT_TOKEN"');`,
     `    token = resolved; // bind the API transport to this bot's credential`,
     `    let offset = 0;`,
-    `    const onText = async (chatId, text) => {`,
+    `    const onText = async (chatId, text, rawMessage = {}) => {`,
+    `      const baseContext = { chatId, chat: rawMessage.chat || { id: chatId }, message: rawMessage, text, args: text.split(' ').slice(1), matches: [] };`,
     `      for (const { matcher, handler } of handlers.pattern) {`,
     `        const match = text.match(matcher);`,
-    `        if (match) { await handler({ chatId, text, matches: match }); return; }`,
+    `        if (match) { await handler({ ...baseContext, matches: match }); return; }`,
     `      }`,
     `      const first = text.split(' ')[0];`,
     `      for (const { matcher, handler } of handlers.command) {`,
     `        if (first === matcher) {`,
-    `          await handler({ chatId, text, args: text.split(' ').slice(1) });`,
+    `          await handler(baseContext);`,
     `          return;`,
     `        }`,
     `      }`,
@@ -1029,7 +1043,7 @@ const BUILTIN_DECLARATIONS = {
     `    const onCallback = async (data, message) => {`,
     `      for (const { matcher, handler } of handlers.callback) {`,
     `        if (data === matcher) {`,
-    `          await handler({ data, message, chatId: message.chat.id });`,
+    `          await handler({ data, message, chatId: message.chat.id, chat: message.chat, text: message.text || '', args: [], matches: [] });`,
     `          return;`,
     `        }`,
     `      }`,
@@ -1049,7 +1063,7 @@ const BUILTIN_DECLARATIONS = {
     `            const chat = (update.message || (update.callback_query || {}).message || {}).chat;`,
     `            if (chat) chats.set(chat.id, chat);`,
     `            if (update.message && update.message.text != null) {`,
-    `              await onText(update.message.chat.id, update.message.text);`,
+    `              await onText(update.message.chat.id, update.message.text, update.message);`,
     `            } else if (update.callback_query && update.callback_query.data != null) {`,
     `              await onCallback(update.callback_query.data, update.callback_query.message);`,
     `            }`,
@@ -1160,6 +1174,22 @@ const BUILTIN_DECLARATIONS = {
   editMessage: (args, context) => {
     ensureBuiltin(context, 'telegram');
     return `Telegram.editMessage(${args.map(arg => generateExpr(arg, context)).join(', ')})`;
+  },
+  telegramCall: (args, context) => {
+    ensureBuiltin(context, 'telegram');
+    requireArgs('telegramCall', args, 1, 'telegramCall("getMe", {})');
+    markAsync(context);
+    const method = generateExpr(args[0], context);
+    const params = args.length > 1 ? generateExpr(args[1], context) : '{}';
+    return `await Telegram.call(${method}, ${params})`;
+  },
+  telegramApi: (args, context) => {
+    ensureBuiltin(context, 'telegram');
+    requireArgs('telegramApi', args, 1, 'telegramApi("getMe", {})');
+    markAsync(context);
+    const method = generateExpr(args[0], context);
+    const params = args.length > 1 ? generateExpr(args[1], context) : '{}';
+    return `await Telegram.call(${method}, ${params})`;
   },
   // v2.1.0 — HTTP request accessors. Only meaningful inside a route handler,
   // where Express provides req/res.
@@ -1600,19 +1630,41 @@ const BUILTIN_DECLARATIONS = {
   // offline cosine similarity over any two equal-length numeric vectors.
   chat: (args, context) => {
     ensureBuiltin(context, 'ai');
+    requireArgs('chat', args, 2, 'chat("model", "message")');
     markAsync(context);
     const model = generateExpr(args[0], context);
     const messages = generateExpr(args[1], context);
     const options = args.length > 2 && args[2] != null ? generateExpr(args[2], context) : 'undefined';
     return `await __aiChat(${model}, ${messages}, ${options})`;
   },
+  chatWith: (args, context) => {
+    ensureBuiltin(context, 'ai');
+    requireArgs('chatWith', args, 3, 'chatWith("groq", "model", "message")');
+    markAsync(context);
+    const provider = generateExpr(args[0], context);
+    const model = generateExpr(args[1], context);
+    const messages = generateExpr(args[2], context);
+    const options = args.length > 3 && args[3] != null ? generateExpr(args[3], context) : '{}';
+    return `await __aiChat(${model}, ${messages}, Object.assign({}, ${options}, { provider: ${provider} }))`;
+  },
   embedText: (args, context) => {
     ensureBuiltin(context, 'ai');
+    requireArgs('embedText', args, 2, 'embedText("model", "text")');
     markAsync(context);
     const model = generateExpr(args[0], context);
     const text = generateExpr(args[1], context);
     const options = args.length > 2 && args[2] != null ? generateExpr(args[2], context) : 'undefined';
     return `await __aiEmbed(${model}, ${text}, ${options})`;
+  },
+  embedWith: (args, context) => {
+    ensureBuiltin(context, 'ai');
+    requireArgs('embedWith', args, 3, 'embedWith("groq", "model", "text")');
+    markAsync(context);
+    const provider = generateExpr(args[0], context);
+    const model = generateExpr(args[1], context);
+    const text = generateExpr(args[2], context);
+    const options = args.length > 3 && args[3] != null ? generateExpr(args[3], context) : '{}';
+    return `await __aiEmbed(${model}, ${text}, Object.assign({}, ${options}, { provider: ${provider} }))`;
   },
   similarity: (args, context) => {
     ensureBuiltin(context, 'ai');
@@ -2119,6 +2171,14 @@ function routeOnly(name, example) {
 function requireOneArg(name, args) {
   if (args.length !== 1) {
     throw new Error(`"${name}" takes exactly one argument.\n\nExample:\n  ${name}("field")`);
+  }
+}
+
+function requireArgs(name, args, minimum, example) {
+  if (args.length < minimum) {
+    throw new Error(
+      `"${name}" needs at least ${minimum} argument${minimum === 1 ? '' : 's'}.\n\nExample:\n  ${example}`
+    );
   }
 }
 
@@ -3358,6 +3418,18 @@ function generateExpr(node, context = createGenerationContext()) {
       // Inside route handlers, remap PlainScript's request/response to req/res
       if (_inRoute && node.name === 'request')  return 'req';
       if (_inRoute && node.name === 'response') return 'res';
+      if (_inTelegram) {
+        const telegramContext = {
+          message: 'ctx.message',
+          chat: 'ctx.chat',
+          chatId: 'ctx.chatId',
+          text: 'ctx.text',
+          args: 'ctx.args',
+          matches: 'ctx.matches',
+          data: 'ctx.data',
+        };
+        if (telegramContext[node.name]) return telegramContext[node.name];
+      }
       // Inside WhatsApp "on message" handlers, PlainScript's "message" is the
       // normalized record of the current delivery.
       if (_inWhatsApp && node.name === 'message') return '__waCtx.message';

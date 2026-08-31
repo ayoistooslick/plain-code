@@ -1,8 +1,0 @@
-// PlainScript 1.0.2-rfc: document line helper.
-make documentType(lines)
-    if length(lines) is 0
-        give "unknown"
-    done
-    give lines[0]
-done
-export documentType

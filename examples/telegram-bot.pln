@@ -1,4 +1,4 @@
-// PlainScript 1.0.2-rfc: Telegram bot.
+// PlainScript 1.0.3-beta: Telegram bot.
 bot env("TELEGRAM_BOT_TOKEN")
 when someone sends "/start"
     reply "Welcome"

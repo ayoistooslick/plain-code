@@ -1,0 +1,24 @@
+// PlainScript 1.0.3-beta: hardcoded and Groq-backed Telegram replies.
+
+bot env("TELEGRAM_BOT_TOKEN")
+
+when someone sends "/start"
+    reply "Welcome. Use /help for commands or /ask <question> for an AI answer."
+done
+
+when someone sends "/help"
+    reply "/start for a welcome, /status for a fixed answer, or /ask <question> for Groq."
+done
+
+when someone sends "/status"
+    reply "All systems are operational."
+done
+
+when someone sends matching "/ask (.+)"
+    remember answer as chatWith("groq", "llama-3.3-70b-versatile", message, {
+        temperature: 0.2
+    })
+    reply answer
+done
+
+start telegram bot

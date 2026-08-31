@@ -1,3 +1,0 @@
-// PlainScript 1.0.2-rfc: supported providers.
-remember providers as list with "example"
-export providers

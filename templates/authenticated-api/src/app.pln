@@ -1,0 +1,21 @@
+// PlainScript 1.0.3-beta: protected API with sessions.
+
+web app
+enable sessions env("SESSION_SECRET")
+require api key from env("API_KEY")
+
+route get "/api/me"
+    reply json
+        ok is true
+        user is "authenticated"
+    done
+done
+
+route post "/api/token"
+    remember token as createToken(body("user"), env("SESSION_SECRET"))
+    reply json
+        token is token
+    done
+done
+
+start 3000

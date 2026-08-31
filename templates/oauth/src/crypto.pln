@@ -1,5 +1,0 @@
-// PlainScript 1.0.2-rfc: state token helper.
-make createState(value)
-    give sha256(value)
-done
-export createState

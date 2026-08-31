@@ -1,4 +1,4 @@
-// PlainScript 1.0.2-rfc: WebSocket server handlers.
+// PlainScript 1.0.3-beta: WebSocket server handlers.
 
 websocket server on 8080
     when socket connects

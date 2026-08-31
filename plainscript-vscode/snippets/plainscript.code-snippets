@@ -89,6 +89,16 @@
     "body": ["remember ${1:response} as get \"${2:https://example.com}\" timeout ${3:5000}"],
     "description": "Make an HTTP request"
   },
+  "AI chat": {
+    "prefix": "chat",
+    "body": ["remember ${1:answer} as chatWith(\"${2:groq}\", \"${3:llama-3.3-70b-versatile}\", ${4:\"Hello\"})"],
+    "description": "Call an OpenAI-compatible AI provider"
+  },
+  "Telegram bot": {
+    "prefix": "telegram",
+    "body": ["bot env(\"TELEGRAM_BOT_TOKEN\")", "", "when someone sends \"${1:/start}\"", "    reply ${2:\"Welcome\"}", "done", "", "start telegram bot"],
+    "description": "Create a polling Telegram bot"
+  },
   "Test": {
     "prefix": "test",
     "body": ["test \"${1:works}\"", "    check ${2:add(2, 3)} equals ${3:5}", "done"],
