@@ -68,6 +68,12 @@ function visit(node, onUse) {
 
   if (node.type === 'UseStatement') {
     onUse(node.module);
+  } else if (node.type === 'ImportStatement' && node.path) {
+    // Detect npm package dependencies imported via `bring ... from "pkg"` or `import ... from "pkg"`
+    const isLocalFile = node.path.startsWith('.') || node.path.startsWith('/') || node.path.startsWith('\\') || node.path.startsWith('@/') || node.path.endsWith('.pln');
+    if (!isLocalFile) {
+      onUse(node.path);
+    }
   } else if (node.type === 'WebAppStatement') {
     // The `web app` shorthand creates an Express application.
     onUse('express');

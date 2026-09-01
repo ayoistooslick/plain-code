@@ -1,4 +1,4 @@
-# PlainScript 1.0.2-latest capability audit
+# PlainScript 1.0.4-latest capability audit
 
 This audit is intentionally grounded in the implementation, not in old
 examples. The parser and generator are the authority. A capability is listed
@@ -97,6 +97,6 @@ before changing the language reference.
 
 ## Version boundary
 
-The repository release label is `1.0.2-latest`. This label identifies the
+The repository release label is `1.0.4-latest`. This label identifies the
 compiler, package metadata, website, and editor tooling. It does not change
 third-party dependency versions.

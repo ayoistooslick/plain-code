@@ -4,16 +4,7 @@
 
 This guide is accurate for the version it documents, and you can trust its examples and syntax. Still, treat it as a baseline and confirm it against the live sources before answering, so you never echo something the compiler or repo has since changed:
 
-1. **npm package**: `plainscript-lang` on npmjs.com
-2. **GitHub repository**: `ayoistooslick/plainscript` on github.com
-3. **Documentation site**: `ayoistooslick.github.io/plainscript`
-
-Use web search to:
-- Verify the current version, syntax, and features match this guide
-- Pick up examples and templates this guide does not cover
-- Surface any breaking changes or new capabilities added since this guide was written
-
-Trust this guide's syntax and examples unless a live source or the compiler proves otherwise.
+The version covered here is `1.0.4-latest`.
 
 ---
 
@@ -258,15 +249,35 @@ show ada.name
 
 Unknown fields on a kind should fail rather than being silently ignored.
 
-Use relative `.pln` imports:
+Compound data structures (Dictionaries, Hash Maps, Sets, Tuples):
 
 ```plainscript
-import { area } from "./geometry.pln"
-remember result as area(5)
+remember userMap as dictionary with "name" is "Ada" and "role" is "admin" done
+put "role" as "editor" in userMap
+remember mapKeys as keys of userMap
+
+remember tags as set with "admin", "editor", "user" done
+remember newTags as union of tags and (set with "moderator" done)
+
+remember point as tuple with 10, 20, 30 done
+unpack point into x, y, z
+```
+
+`dictionary with ... done` (or `map with ... done`) creates a keyed map (`new Map()`). `empty map` creates an empty Map. `put key as val in map` sets an entry. `keys of map`, `values of map`, `entries of map`, and `size of map` access reflection properties. `set with ... done` creates a set (`new Set()`). Set algebra functions `union of a and b`, `intersection of a and b`, and `difference of a and b` return new sets. `tuple with ... done` creates an immutable sequence (`Object.freeze()`). `unpack tuple into ...` destructures tuple elements.
+
+Use module imports and package imports:
+
+```plainscript
+bring area from "./geometry.pln"
+bring all from "./geometry.pln" as geo
+bring button from "@/components/button.pln"
+bring axios from "axios"
+
+remember result as geo.area(5)
 show result
 ```
 
-Export a binding from a module:
+Export a binding or re-export from another module:
 
 ```plainscript
 make double(value)
@@ -274,18 +285,10 @@ make double(value)
 done
 
 export double
+export all from "./submodule.pln"
 ```
 
-`import "./file.pln"` bundles the whole file. Named imports bind selected exports. Imports must be relative `.pln` paths. Circular imports are rejected.
-
-Declare an npm package with `use`:
-
-```plainscript
-use express
-use lodash
-```
-
-`use` is for package detection and installation. It is not a JavaScript import statement. Run `plainscript install` or install the package with npm before running generated code.
+`bring symbol from "path"` (or `import { symbol } from "path"`) imports selected symbols from `.pln` modules or npm packages. `bring all from "path" as name` creates a namespaced module object. `@/` resolves relative to `src/`. Export symbols with `export`, `share`, `expose`, or `export all from "path"`. `use <pkg>` remains supported for explicit package declarations.
 
 ---
 

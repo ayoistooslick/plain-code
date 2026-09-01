@@ -347,6 +347,18 @@ function parse(tokens) {
 
   function parseStatement() {
     const token = peek();
+    const startLine = token ? token.line : undefined;
+    const startCol = token ? token.col : undefined;
+    const node = parseStatementCore();
+    if (node && typeof node === 'object' && node.line === undefined && startLine !== undefined) {
+      node.line = startLine;
+      node.col = startCol;
+    }
+    return node;
+  }
+
+  function parseStatementCore() {
+    const token = peek();
 
     // "define a kind called ..." - must check before DEFINE token dispatch
     if ((token.type === TOKEN.DEFINE || (token.type === TOKEN.IDENTIFIER && token.value === 'define')) &&
@@ -391,15 +403,18 @@ function parse(tokens) {
     }
     if (token.type === TOKEN.WHILE)       return parseWhile();
     if (token.type === TOKEN.USE)         return parseUse();
-    if (token.type === TOKEN.IMPORT)      return parseImport();
-    if (token.type === TOKEN.INCLUDE)     return parseImport();  // alias for import
-    if (token.type === TOKEN.LOAD)        return parseImport();  // alias for import
+    if (token.type === TOKEN.IMPORT || token.type === TOKEN.INCLUDE || token.type === TOKEN.LOAD ||
+        (token.type === TOKEN.IDENTIFIER && token.value === 'bring')) {
+      return parseImport();
+    }
     if (token.type === TOKEN.WHEN)        return parseWhen();
     // v2.3 — English-like function declaration: "to add a and b together ... done"
     if (token.type === TOKEN.TO && peekAt(1).type === TOKEN.IDENTIFIER) return parseToFunction();
     // v2.4 — "list with" and "record with" as expressions
     if (token.type === TOKEN.IDENTIFIER && token.value === 'list' && peekAt(1).type === TOKEN.WITH) return parseListWith();
     if (token.type === TOKEN.IDENTIFIER && token.value === 'record' && peekAt(1).type === TOKEN.WITH) return parseRecordWith(false);
+    if (token.type === TOKEN.IDENTIFIER && token.value === 'put' && peekAt(1).type !== TOKEN.LPAREN) return parsePutStatement();
+    if (token.type === TOKEN.IDENTIFIER && token.value === 'unpack') return parseUnpackStatement();
     if (token.type === TOKEN.LIST_WITH) return parseListWith();
     if (token.type === TOKEN.RECORD_WITH) return parseRecordWith(false);
     if (token.type === TOKEN.LISTEN)      return parseListen();
@@ -777,13 +792,11 @@ function parse(tokens) {
         return parseCheckStatement();
       }
 
-      // export <name>  → mark a top-level symbol for module.exports
-      if (token.value === 'export' &&
-          peekAt(1).type === TOKEN.IDENTIFIER &&
-          peekAt(2).type !== TOKEN.LPAREN) {
-        advance(); // export
-        const name = advance().value;
-        return { type: 'ExportStatement', name };
+      // export / share / expose → mark top-level symbol(s) or re-export from module
+      if ((token.value === 'export' || token.value === 'share' || token.value === 'expose' ||
+           token.type === TOKEN.SHARE || token.type === TOKEN.EXPOSE) &&
+          peekAt(1).type !== TOKEN.LPAREN && peekAt(1).type !== TOKEN.BECOMES) {
+        return parseExport();
       }
 
       // throw <value>  → raise an error for the caller's try/recover to catch.
@@ -899,11 +912,10 @@ function parse(tokens) {
       target = parseInlineObjectLiteral(true); // returns InlineObjectLiteral with properties, destructuring mode
       target.type = 'ObjectPattern';
     } else {
-      // Allow certain keywords as variable names (they're keywords in other contexts but valid as identifiers)
-      // BACK for "give back", REPLY for "reply" statement, etc.
-      const KEYWORDS_AS_IDENTIFIERS = new Set([TOKEN.BACK, TOKEN.REPLY, TOKEN.RESPOND, TOKEN.SEND_BACK, TOKEN.FILE_KW]);
+      // Allow contextual keywords as variable names in remember declarations
       let nameToken = peek();
-      if (KEYWORDS_AS_IDENTIFIERS.has(nameToken.type)) {
+      const REMEMBER_KEYWORDS = new Set([TOKEN.BACK, TOKEN.TOTAL, TOKEN.REPLY, TOKEN.RESPOND, TOKEN.SEND_BACK, TOKEN.FILE_KW]);
+      if (REMEMBER_KEYWORDS.has(nameToken.type)) {
         advance();
         target = nameToken.value;
       } else {
@@ -912,6 +924,12 @@ function parse(tokens) {
           `Expected a variable name after "${isLet ? 'let' : 'remember'}".\n\nExample:\n  ${isLet ? 'let age is 16' : 'remember age as 16'}`
         ).value;
       }
+    }
+
+    // Object literal: next token is IDENTIFIER (except dictionary/map) followed by IS or BE
+    if (peek().type === TOKEN.IDENTIFIER && peek().value !== 'dictionary' && peek().value !== 'map' && (peekAt(1).type === TOKEN.IS || peekAt(1).type === TOKEN.BE)) {
+      const init = parseInlineObjectLiteral(false);
+      return { type: 'VariableDeclaration', name: target, initializer: init, isLet, isConstant: !isLet };
     }
 
     // "let" uses "is" or "be" for simple vars, but also accepts "as" for both simple and destructuring
@@ -1178,6 +1196,122 @@ function parseAsk() {
       advance(); // consume done/together when used as expression
     }
     return { type: 'InlineObjectLiteral', properties };
+  }
+
+  function parseDictionaryWith() {
+    advance(); // dictionary or map
+    consume(TOKEN.WITH, 'Expected "with" after dictionary/map.');
+    const pairs = [];
+    if (peek().type !== TOKEN.DONE && peek().value !== 'done') {
+      while (true) {
+        if (peek().type === TOKEN.DONE || peek().value === 'done') break;
+        const key = parseExpression();
+        consume(TOKEN.IS, 'Expected "is" between key and value in dictionary/map.');
+        const value = parseExpression();
+        pairs.push({ key, value });
+        if (peek().type === TOKEN.AND || (peek().type === TOKEN.IDENTIFIER && peek().value === 'and') || peek().type === TOKEN.COMMA) {
+          advance();
+          continue;
+        }
+        break;
+      }
+    }
+    if (peek().type === TOKEN.DONE || (peek().type === TOKEN.IDENTIFIER && peek().value === 'done')) {
+      advance(); // done
+    }
+    return { type: 'DictionaryLiteral', pairs };
+  }
+
+  function parseSetWith() {
+    advance(); // set
+    consume(TOKEN.WITH, 'Expected "with" after "set".');
+    const elements = [];
+    if (peek().type !== TOKEN.DONE && peek().value !== 'done') {
+      while (true) {
+        if (peek().type === TOKEN.DONE || peek().value === 'done') break;
+        elements.push(parseExpression());
+        if (peek().type === TOKEN.COMMA || peek().type === TOKEN.AND || (peek().type === TOKEN.IDENTIFIER && peek().value === 'and')) {
+          advance();
+          continue;
+        }
+        break;
+      }
+    }
+    if (peek().type === TOKEN.DONE || (peek().type === TOKEN.IDENTIFIER && peek().value === 'done')) {
+      advance(); // done
+    }
+    return { type: 'SetLiteral', elements };
+  }
+
+  function parseTupleWith() {
+    advance(); // tuple
+    consume(TOKEN.WITH, 'Expected "with" after "tuple".');
+    const elements = [];
+    if (peek().type !== TOKEN.DONE && peek().value !== 'done') {
+      while (true) {
+        if (peek().type === TOKEN.DONE || peek().value === 'done') break;
+        elements.push(parseExpression());
+        if (peek().type === TOKEN.COMMA || peek().type === TOKEN.AND || (peek().type === TOKEN.IDENTIFIER && peek().value === 'and')) {
+          advance();
+          continue;
+        }
+        break;
+      }
+    }
+    if (peek().type === TOKEN.DONE || (peek().type === TOKEN.IDENTIFIER && peek().value === 'done')) {
+      advance(); // done
+    }
+    return { type: 'TupleLiteral', elements };
+  }
+
+  function parseTupleCall() {
+    advance(); // tuple
+    consume(TOKEN.LPAREN, 'Expected "(" after tuple.');
+    const elements = [];
+    if (peek().type !== TOKEN.RPAREN) {
+      while (true) {
+        elements.push(parseExpression());
+        if (peek().type === TOKEN.COMMA) { advance(); continue; }
+        break;
+      }
+    }
+    consume(TOKEN.RPAREN, 'Expected ")" to close tuple.');
+    return { type: 'TupleLiteral', elements };
+  }
+
+  function parsePutStatement() {
+    advance(); // put
+    const key = parseNullish();
+    consume(TOKEN.AS, 'Expected "as" between key and value in "put".');
+    const value = parseNullish();
+    if (peek().type === TOKEN.IN || (peek().type === TOKEN.IDENTIFIER && peek().value === 'in')) {
+      advance(); // in
+    } else {
+      consume(TOKEN.IN, 'Expected "in" before map variable in "put".');
+    }
+    const mapVar = parsePrimary();
+    return { type: 'PutStatement', mapVar, key, value };
+  }
+
+  function parseUnpackStatement() {
+    advance(); // unpack
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'tuple') {
+      advance(); // tuple
+    }
+    const tupleExpr = parseExpression();
+    if (peek().type === TOKEN.INTO || (peek().type === TOKEN.IDENTIFIER && peek().value === 'into')) {
+      advance(); // into
+    }
+    const variables = [];
+    while (peek().type === TOKEN.IDENTIFIER) {
+      variables.push(advance().value);
+      if (peek().type === TOKEN.COMMA || peek().type === TOKEN.AND || (peek().type === TOKEN.IDENTIFIER && peek().value === 'and')) {
+        advance();
+        continue;
+      }
+      break;
+    }
+    return { type: 'UnpackStatement', tupleExpr, variables };
   }
 
   function parseParamList() {
@@ -1448,13 +1582,19 @@ function parseAsk() {
     return { type: 'WhileStatement', condition, body };
   }
 
-  // import "./file.pln"
-  // import { name1, name2 } from "./file.pln"  (named imports — binds only the
-  //   listed symbols; the whole file is still bundled as a dependency)
+  // Enterprise & Intent-Oriented Module Importing & Exporting
+  //   bring circleArea from "./math.pln"
+  //   bring circleArea and squareArea from "./math.pln"
+  //   bring all from "./math.pln" as math
+  //   bring express from "express"
+  //   bring { get, post } from "axios"
+  //   import { circleArea, squareArea } from "./math.pln"
+  //   import all as math from "./math.pln"
+  //   import "./file.pln"
   function parseImport() {
-    consume(TOKEN.IMPORT);
+    advance(); // consume keyword (import / bring / include / load)
 
-    // Named-import form: import { a, b } from "./file.pln"
+    // Form 1: import { a, b } from "path"
     if (peek().type === TOKEN.LBRACE) {
       advance(); // {
       const names = [];
@@ -1466,12 +1606,8 @@ function parseAsk() {
         if (peek().type === TOKEN.COMMA) { advance(); continue; }
         break;
       }
-      consume(TOKEN.RBRACE,
-        'Expected "}" to close the import braces.\n\nExample:\n  import { helper } from "./util.pln"');
-      // The "from" is a plain identifier; tolerate its optional presence so
-      // both "import { x } from "./f.pln"" and "import { x } "./f.pln"" read
-      // naturally, but require it for the documented form.
-      if (peek().type === TOKEN.IDENTIFIER && peek().value === 'from') {
+      consume(TOKEN.RBRACE, 'Expected "}" to close the import braces.');
+      if (peek().type === TOKEN.FROM || (peek().type === TOKEN.IDENTIFIER && peek().value === 'from')) {
         advance(); // from
       }
       const filePath = consume(
@@ -1481,12 +1617,114 @@ function parseAsk() {
       return { type: 'ImportStatement', path: filePath, names };
     }
 
-    // Whole-module form: import "./file.pln"
+    // Form 2: bring all from "path" as math / import all as math from "path" / import * as math from "path"
+    if (peek().type === TOKEN.ALL || (peek().type === TOKEN.IDENTIFIER && peek().value === 'all') || peek().type === TOKEN.TIMES) {
+      advance(); // all or *
+      let namespace = null;
+      if (peek().type === TOKEN.AS) {
+        advance(); // as
+        namespace = consume(TOKEN.IDENTIFIER, 'Expected a namespace identifier after "as".').value;
+      }
+      if (peek().type === TOKEN.FROM || (peek().type === TOKEN.IDENTIFIER && peek().value === 'from')) {
+        advance(); // from
+      }
+      const filePath = consume(TOKEN.STRING, 'Expected a file path or package string after "from".').value;
+      if (peek().type === TOKEN.AS && !namespace) {
+        advance(); // as
+        namespace = consume(TOKEN.IDENTIFIER, 'Expected a namespace identifier after "as".').value;
+      }
+      return { type: 'ImportStatement', path: filePath, namespace };
+    }
+
+    // Form 3: bring symbol from "path" / bring a and b from "path" / bring express from "express"
+    if ((peek().type === TOKEN.IDENTIFIER || peek().type === TOKEN.PACKAGE) && peekAt(1).type !== TOKEN.STRING) {
+      const names = [];
+      const importLine = peek().line;
+      let defaultImport = null;
+      while ((peek().type === TOKEN.IDENTIFIER || peek().type === TOKEN.PACKAGE) && peek().line === importLine) {
+        if (peek().type === TOKEN.FROM || peek().value === 'from') break;
+        names.push(advance().value);
+        if (peek().type === TOKEN.AND || (peek().type === TOKEN.IDENTIFIER && peek().value === 'and') || peek().type === TOKEN.COMMA) {
+          advance();
+        }
+      }
+      if (peek().type === TOKEN.FROM || (peek().type === TOKEN.IDENTIFIER && peek().value === 'from')) {
+        advance(); // from
+      }
+      if (peek().type === TOKEN.STRING) {
+        const filePath = advance().value;
+        if (names.length === 1) {
+          defaultImport = names[0];
+        }
+        return { type: 'ImportStatement', path: filePath, names, defaultImport };
+      }
+    }
+
+    // Form 4: Whole-module form: import "./file.pln"
     const filePath = consume(
       TOKEN.STRING,
       'Expected a file path string after "import".\n\nExample:\n  import "./math.pln"'
     ).value;
     return { type: 'ImportStatement', path: filePath };
+  }
+
+  // Enterprise & Intent-Oriented Exporting
+  //   export circleArea
+  //   export circleArea and squareArea
+  //   export { circleArea, squareArea }
+  //   export all from "./math.pln"
+  //   export circleArea and squareArea from "./math.pln"
+  function parseExport() {
+    advance(); // export / share / expose
+
+    // Form 1: export all from "./math.pln" / export * from "./math.pln"
+    if (peek().type === TOKEN.ALL || (peek().type === TOKEN.IDENTIFIER && peek().value === 'all') || peek().type === TOKEN.TIMES) {
+      advance(); // all or *
+      if (peek().type === TOKEN.FROM || (peek().type === TOKEN.IDENTIFIER && peek().value === 'from')) {
+        advance(); // from
+      }
+      const fromPath = consume(TOKEN.STRING, 'Expected a file path string after "from".').value;
+      return { type: 'ExportStatement', exportAll: true, fromPath };
+    }
+
+    // Form 2: export { a, b } [from "./math.pln"]
+    if (peek().type === TOKEN.LBRACE) {
+      advance(); // {
+      const names = [];
+      while (true) {
+        names.push(consume(TOKEN.IDENTIFIER, 'Expected an identifier inside export braces.').value);
+        if (peek().type === TOKEN.COMMA) { advance(); continue; }
+        break;
+      }
+      consume(TOKEN.RBRACE, 'Expected "}" to close export braces.');
+      let fromPath = null;
+      if (peek().type === TOKEN.FROM || (peek().type === TOKEN.IDENTIFIER && peek().value === 'from')) {
+        advance(); // from
+        fromPath = consume(TOKEN.STRING, 'Expected a file path string after "from".').value;
+      }
+      return { type: 'ExportStatement', names, fromPath };
+    }
+
+    // Form 3: export a and b [from "./math.pln"] OR export a
+    const names = [];
+    const exportLine = peek().line;
+    while (peek().type === TOKEN.IDENTIFIER && peek().value !== 'from' && peek().value !== 'export' && peek().value !== 'share' && peek().value !== 'expose' && peek().line === exportLine) {
+      names.push(advance().value);
+      if (peek().type === TOKEN.AND || (peek().type === TOKEN.IDENTIFIER && peek().value === 'and') || peek().type === TOKEN.COMMA) {
+        advance();
+      }
+    }
+    let fromPath = null;
+    if (peek().type === TOKEN.FROM || (peek().type === TOKEN.IDENTIFIER && peek().value === 'from')) {
+      advance(); // from
+      fromPath = consume(TOKEN.STRING, 'Expected a file path string after "from".').value;
+    }
+    return {
+      type: 'ExportStatement',
+      name: names.length === 1 ? names[0] : null,
+      names: names.length > 0 ? names : null,
+      fromPath,
+    };
   }
 
   // use <module>            — side-effect or canonical binding
@@ -2518,6 +2756,51 @@ function parseAsk() {
     if (peek().type === TOKEN.IDENTIFIER && peek().value === 'list' &&
         peekAt(1).type === TOKEN.WITH) {
       return parseListWith();
+    }
+    if (peek().type === TOKEN.IDENTIFIER && (peek().value === 'dictionary' || peek().value === 'map') &&
+        peekAt(1).type === TOKEN.WITH) {
+      return parseDictionaryWith();
+    }
+    if ((peek().type === TOKEN.EMPTY || (peek().type === TOKEN.IDENTIFIER && peek().value === 'empty')) &&
+        (peekAt(1).value === 'dictionary' || peekAt(1).value === 'map' || peekAt(1).value === 'set')) {
+      const typeStr = peekAt(1).value;
+      advance(); advance();
+      if (typeStr === 'set') return { type: 'SetLiteral', elements: [] };
+      return { type: 'DictionaryLiteral', pairs: [] };
+    }
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'set') {
+      if (peekAt(1).type === TOKEN.WITH) return parseSetWith();
+      if (peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'from') {
+        advance(); advance();
+        const iterable = parseExpression();
+        return { type: 'SetFromExpression', iterable };
+      }
+    }
+    if (peek().type === TOKEN.IDENTIFIER && peek().value === 'tuple') {
+      if (peekAt(1).type === TOKEN.WITH) return parseTupleWith();
+      if (peekAt(1).type === TOKEN.LPAREN) return parseTupleCall();
+    }
+
+    // Set Algebra: union of a and b / intersection of a and b / difference of a and b
+    if (peek().type === TOKEN.IDENTIFIER &&
+        (peek().value === 'union' || peek().value === 'intersection' || peek().value === 'intersect' || peek().value === 'difference') &&
+        peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'of') {
+      const op = advance().value;
+      advance(); // of
+      const left = parsePrimary();
+      if (peek().type === TOKEN.AND || (peek().type === TOKEN.IDENTIFIER && peek().value === 'and')) advance();
+      const right = parseExpression();
+      return { type: 'SetAlgebraExpression', op, left, right };
+    }
+
+    // Collection reflection: keys of d / values of d / entries of d / size of d
+    if (peek().type === TOKEN.IDENTIFIER &&
+        (peek().value === 'keys' || peek().value === 'values' || peek().value === 'entries' || peek().value === 'size') &&
+        peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'of') {
+      const accessor = advance().value;
+      advance(); // of
+      const target = parsePrimary();
+      return { type: 'CollectionReflectExpression', accessor, target };
     }
 
     // v1.0.1 — record constructor: `create a Person with name "Ada" and age 17`.

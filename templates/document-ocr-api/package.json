@@ -1,6 +1,6 @@
 {
   "name": "plainscript-document-ocr-api",
-  "version": "1.0.2-latest",
+  "version": "1.0.4-latest",
   "private": true,
   "type": "commonjs",
   "scripts": {

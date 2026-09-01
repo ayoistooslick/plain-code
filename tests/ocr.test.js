@@ -1,4 +1,4 @@
-﻿// Tests for PlainScript v2.0.1 — OCR statements (tesseract.js backing).
+// Tests for PlainScript v2.0.1 — OCR statements (tesseract.js backing).
 //
 // Run with: node tests/ocr.test.js
 
@@ -73,6 +73,8 @@ test('lexer: ocr using form keeps the language string', () => {
 
 test('parser: basic ocr statement', () => {
   const node = parse(tokenize('ocr "scan.png" as text')).body[0];
+  delete node.line;
+  delete node.col;
   assert(JSON.stringify(node), JSON.stringify({
     type: 'OcrStatement',
     image: { type: 'StringLiteral', value: 'scan.png' },

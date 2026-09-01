@@ -1,6 +1,7 @@
 // Generator: converts a PlainScript AST into JavaScript source code.
 
 const { splitPackageSpec } = require('./dependency-detector');
+const { SourceMapGenerator } = require('./sourcemap');
 
 // Known runtime packages and their require() statements.
 const KNOWN_PACKAGES = {
@@ -577,7 +578,7 @@ const BUILTIN_DECLARATIONS = {
     `  return { ok: response.ok, status: response.status, headers: Object.fromEntries(response.headers.entries()), data };`,
     `}`,
   ].join('\n'),
-  // 1.0.2-latest — provider-neutral AI runtime. `chat` and `embedText` speak
+  // v2.2.0 — provider-neutral AI runtime. `chat` and `embedText` speak
   // OpenAI-compatible APIs, including Groq, OpenRouter, Together, Fireworks,
   // and DeepSeek. A custom `base` and `key` can be supplied per call.
   ai: [
@@ -2293,7 +2294,14 @@ function emitSqlCall(kind, sql, params, indent, context) {
   }
 }
 
-function createGenerationContext() {
+function createGenerationContext(options = {}) {
+  const sourceMap = options.sourceMap || false;
+  const sourceFile = options.sourceFile || 'source.pln';
+  const sourceContent = options.sourceContent || null;
+  const builder = sourceMap ? new SourceMapGenerator({ file: options.outputFile || (sourceFile ? sourceFile.replace(/\.pln$/, '.js') : 'output.js') }) : null;
+  if (builder && sourceFile) {
+    builder.addSource(sourceFile, sourceContent);
+  }
   return {
     requires: new Set(),
     pendingPrelude: [],
@@ -2302,6 +2310,11 @@ function createGenerationContext() {
     inFunction: false, // true while generating inside a function-like scope
     inHandler: false,  // true while generating a route/listener/404 response body
     loopDepth: 0,       // >0 while generating inside a for-each / for-index / while loop
+    sourceMap,
+    sourceFile,
+    sourceContent,
+    sourceMapBuilder: builder,
+    currentLine: 1,
   };
 }
 
@@ -2333,9 +2346,11 @@ function emitRequire(context, moduleName, alias) {
     const known = KNOWN_PACKAGES[bareName];
     if (known) {
       const boundAs = known.match(/const (\w+)/)[1];
-      throw new Error(
-        `"${bareName}" is part of PlainScript's built-in runtime and is already available as "${boundAs}". Remove "as ${alias}".`
-      );
+      if (alias !== boundAs) {
+        throw new Error(
+          `"${bareName}" is part of PlainScript's built-in runtime and is already available as "${boundAs}". Remove "as ${alias}".`
+        );
+      }
     }
     const key = `${npmName}\0${alias}`;
     if (context.requires.has(key)) return '';
@@ -2381,9 +2396,30 @@ function containsYield(statements) {
   return false;
 }
 
-function generate(ast, context = createGenerationContext()) {  if (ast.type !== 'Program') {
+function recordMapping(node, context) {
+  if (context && context.sourceMapBuilder && node && typeof node === 'object' && node.line) {
+    context.sourceMapBuilder.addMapping({
+      generated: { line: context.currentLine, column: 0 },
+      original: { line: node.line, column: node.col || 1 },
+      source: context.sourceFile,
+    });
+  }
+}
+
+function generate(ast, contextOrOptions = createGenerationContext(), options = {}) {
+  if (ast.type !== 'Program') {
     throw new Error(`Expected a Program node but got "${ast.type}".`);
   }
+  
+  let context;
+  let opts = options;
+  if (contextOrOptions && contextOrOptions.requires instanceof Set) {
+    context = contextOrOptions;
+  } else {
+    opts = contextOrOptions || {};
+    context = createGenerationContext(opts);
+  }
+
   // v1.0.1 — reset per-program test bookkeeping so repeated generate() calls
   // (build pipeline) start clean.
   __testCount = 0;
@@ -2391,8 +2427,27 @@ function generate(ast, context = createGenerationContext()) {  if (ast.type !== 
   __inTest = false;
 
   const preludeStart = context.pendingPrelude.length;
-  const body = ast.body.map(node => generateStatement(node, '', context)).filter(Boolean).join('\n');
-  const lines = context.pendingPrelude.slice(preludeStart).concat(body).filter(Boolean);
+
+  const bodyParts = [];
+  for (const node of ast.body) {
+    recordMapping(node, context);
+    const js = generateStatement(node, '', context);
+    if (js) {
+      bodyParts.push(js);
+      context.currentLine += js.split('\n').length;
+    }
+  }
+
+  const preludeLines = context.pendingPrelude.slice(preludeStart);
+  if (preludeLines.length > 0 && context.sourceMapBuilder) {
+    for (const m of context.sourceMapBuilder.mappings) {
+      m.generatedLine += preludeLines.length;
+    }
+  }
+
+  const body = bodyParts.join('\n');
+  const lines = preludeLines.concat(body).filter(Boolean);
+
   // Top-level functions are the module's public API: export them so a built
   // PlainScript file works as a normal CommonJS module (npm packages, require()).
   // Harmless for programs that are only executed.
@@ -2438,7 +2493,16 @@ function generate(ast, context = createGenerationContext()) {  if (ast.type !== 
     lines.push(`__runTests();`);
   }
 
-  return lines.join('\n');
+  const jsCode = lines.join('\n');
+  if (context.sourceMap && context.sourceMapBuilder) {
+    return {
+      code: jsCode,
+      map: context.sourceMapBuilder,
+      mapObject: context.sourceMapBuilder.toJSON(),
+    };
+  }
+
+  return jsCode;
 }
 
 // ── v1.0.1 — test DSL bookkeeping ───────────────────────────────────────────
@@ -2591,9 +2655,19 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       return `${indent}__check(${JSON.stringify(node.op)}, ${a}, ${b});`;
     }
 
-    // v1.0.1 — export <name>: mark a top-level symbol for module.exports.
-    case 'ExportStatement':
-      return `${indent}module.exports.${node.name} = ${node.name};`;
+    // Enterprise & Intent-Oriented Exporting
+    case 'ExportStatement': {
+      if (node.exportAll && node.fromPath) {
+        return `${indent}Object.assign(module.exports, require(${JSON.stringify(node.fromPath)}));`;
+      }
+      const names = node.names || (node.name ? [node.name] : []);
+      if (node.fromPath) {
+        const exports = names.map(n => `module.exports.${n} = require(${JSON.stringify(node.fromPath)}).${n};`);
+        return exports.map(e => `${indent}${e}`).join('\n');
+      }
+      const exports = names.map(n => `module.exports.${n} = ${n};`);
+      return exports.map(e => `${indent}${e}`).join('\n');
+    }
 
     // v1.0.1 — generators: `yield <expr>` (or bare `yield`).
     case 'YieldStatement': {
@@ -2605,11 +2679,53 @@ function generateStatement(node, indent = '', context = createGenerationContext(
         : `${indent}yield;`;
     }
 
+    case 'PutStatement': {
+      const target = generateExpr(node.mapVar, context);
+      const key = generateExpr(node.key, context);
+      const val = generateExpr(node.value, context);
+      return `${indent}${target}.set(${key}, ${val});`;
+    }
+
+    case 'UnpackStatement': {
+      const tuple = generateExpr(node.tupleExpr, context);
+      const vars = node.variables.join(', ');
+      return `${indent}let [${vars}] = ${tuple};`;
+    }
+
     case 'ExpressionStatement':
       return `${indent}${generateExpr(node.expression, context)};`;
 
-    case 'ImportStatement':
-      return ''; // resolved at bundle time by the bundler
+    // Enterprise & Intent-Oriented Importing
+    case 'ImportStatement': {
+      if (!node.path) return '';
+      const isLocalFile = node.path.startsWith('.') || node.path.startsWith('/') || node.path.startsWith('\\') || node.path.startsWith('@/') || node.path.endsWith('.pln');
+      if (!isLocalFile) {
+        // Third-party npm package import
+        if (node.namespace) {
+          const pkg = emitRequire(context, node.path, node.namespace);
+          return pkg ? `${indent}${pkg}` : '';
+        }
+        if (node.defaultImport) {
+          const pkg = emitRequire(context, node.path, node.defaultImport);
+          return pkg ? `${indent}${pkg}` : '';
+        }
+        if (node.names && node.names.length > 0) {
+          const reqName = node.path.replace(/[^a-zA-Z0-9_$]/g, '_');
+          emitRequire(context, node.path, `__pkg_${reqName}`);
+          const destructuring = `const { ${node.names.join(', ')} } = __pkg_${reqName};`;
+          return `${indent}${destructuring}`;
+        }
+        const pkg = emitRequire(context, node.path, null);
+        return pkg ? `${indent}${pkg}` : '';
+      }
+
+      // Local PlainScript module import
+      if (node.namespace) {
+        const modVar = node.path.replace(/[^a-zA-Z0-9_$]/g, '_');
+        return `${indent}const ${node.namespace} = typeof __module_${modVar} !== 'undefined' ? __module_${modVar} : require(${JSON.stringify(node.path)});`;
+      }
+      return '';
+    }
 
     case 'UseStatement': {
       const pkg = emitRequire(context, node.module, node.alias);
@@ -3461,6 +3577,53 @@ function generateLValue(node, context) {
 
 function generateExpr(node, context = createGenerationContext()) {
   switch (node.type) {
+    case 'DictionaryLiteral': {
+      if (!node.pairs || node.pairs.length === 0) return 'new Map()';
+      const pairs = node.pairs.map(p => `[${generateExpr(p.key, context)}, ${generateExpr(p.value, context)}]`);
+      return `new Map([${pairs.join(', ')}])`;
+    }
+    case 'SetLiteral': {
+      if (!node.elements || node.elements.length === 0) return 'new Set()';
+      const elements = node.elements.map(e => generateExpr(e, context));
+      return `new Set([${elements.join(', ')}])`;
+    }
+    case 'SetFromExpression': {
+      return `new Set(${generateExpr(node.iterable, context)})`;
+    }
+    case 'TupleLiteral': {
+      const elements = node.elements.map(e => generateExpr(e, context));
+      return `Object.freeze([${elements.join(', ')}])`;
+    }
+    case 'SetAlgebraExpression': {
+      const left = generateExpr(node.left, context);
+      const right = generateExpr(node.right, context);
+      if (node.op === 'union') {
+        return `new Set([...${left}, ...${right}])`;
+      }
+      if (node.op === 'intersection' || node.op === 'intersect') {
+        return `new Set([...${left}].filter(__x => ${right}.has(__x)))`;
+      }
+      if (node.op === 'difference') {
+        return `new Set([...${left}].filter(__x => !${right}.has(__x)))`;
+      }
+      return `new Set([...${left}, ...${right}])`;
+    }
+    case 'CollectionReflectExpression': {
+      const target = generateExpr(node.target, context);
+      if (node.accessor === 'keys') {
+        return `Array.from(${target}.keys())`;
+      }
+      if (node.accessor === 'values') {
+        return `Array.from(${target}.values())`;
+      }
+      if (node.accessor === 'entries') {
+        return `Array.from(${target}.entries())`;
+      }
+      if (node.accessor === 'size') {
+        return `(${target} instanceof Map || ${target} instanceof Set ? ${target}.size : (${target} && ${target}.size !== undefined ? ${target}.size : ${target}?.length))`;
+      }
+      return `${target}.${node.accessor}`;
+    }
     case 'StringLiteral':    return JSON.stringify(node.value);
     case 'NumberLiteral':    return String(node.value);
     // v2.1.1 — boolean and null literals are PlainScript keywords.
