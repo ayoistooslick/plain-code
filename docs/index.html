@@ -4,14 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="PlainScript 1.0.3 language reference and examples">
+  <meta name="theme-color" content="#070c16">
   <title>PlainScript 1.0.3</title>
   <link rel="stylesheet" href="website/style.css">
 </head>
 <body>
-  <header class="site-nav">
+  <div class="bg-scrim" aria-hidden="true"></div>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+  <header class="site-nav" id="site-nav">
     <div class="container nav-inner">
       <a class="nav-logo" href="#">
-        <img src="logo.jpg" alt="" class="nav-logo-image">
+        <span class="nav-logo-mark" aria-hidden="true">&gt;_</span>
         <span>PlainScript</span>
         <span class="logo-ver">1.0.3</span>
       </a>
@@ -27,7 +31,7 @@
   <main>
     <section class="hero">
       <div class="container hero-content">
-        <p class="hero-badge">1.0.3: Node.js programming for everyone</p>
+        <p class="hero-badge" data-reveal>1.0.3: Node.js programming for everyone</p>
         <h1 class="hero-title">Code that reads like plain English.</h1>
         <p class="hero-lead">Write what you want in plain words. PlainScript turns it into JavaScript — simple, readable, and easy to check.</p>
         <div class="hero-actions">
@@ -43,14 +47,14 @@ done</code></pre>
 
     <section id="quickstart" class="section">
       <div class="container">
-        <p class="section-tag">Quick start</p>
-        <h2 class="section-title">A simple three-step workflow.</h2>
+        <p class="section-tag" data-reveal>Quick start</p>
+        <h2 class="section-title" data-reveal>A simple three-step workflow.</h2>
         <div class="three-column">
-          <article class="info-card"><span class="card-number">01</span><h3>Write</h3><p>Create a <code>.pln</code> file with readable code blocks.</p></article>
-          <article class="info-card"><span class="card-number">02</span><h3>Check</h3><p>Run <code>plainscript check file.pln</code> to catch mistakes.</p></article>
-          <article class="info-card"><span class="card-number">03</span><h3>Build</h3><p>Run <code>plainscript build</code> to get your files in <code>dist/</code>.</p></article>
+          <article class="info-card" data-reveal><span class="card-number">01</span><h3>Write</h3><p>Create a <code>.pln</code> file with readable code blocks.</p></article>
+          <article class="info-card" data-reveal><span class="card-number">02</span><h3>Check</h3><p>Run <code>plainscript check file.pln</code> to catch mistakes.</p></article>
+          <article class="info-card" data-reveal><span class="card-number">03</span><h3>Build</h3><p>Run <code>plainscript build</code> to get your files in <code>dist/</code>.</p></article>
         </div>
-        <pre class="code-window"><code>npx plainscript new hello
+        <pre class="code-window" data-reveal><code>npx plainscript new hello
 cd hello
 npx plainscript check
 npx plainscript build
@@ -60,27 +64,27 @@ npm start</code></pre>
 
     <section id="language" class="section section--alt">
       <div class="container">
-        <p class="section-tag">Language</p>
-        <h2 class="section-title">A small set of words you already know.</h2>
+        <p class="section-tag" data-reveal>Language</p>
+        <h2 class="section-title" data-reveal>A small set of words you already know.</h2>
         <div class="feature-grid">
-          <article class="feature-card"><h3>Variables</h3><p>Store values with <code>remember name as "Ada"</code> and change them with <code>becomes</code>.</p></article>
-          <article class="feature-card"><h3>Conditions</h3><p>Compare things with <code>is at least</code>, <code>contains</code>, <code>between</code>, and more.</p></article>
-          <article class="feature-card"><h3>Functions</h3><p>Create functions with <code>make</code>, return with <code>give</code>, and close with <code>done</code>.</p></article>
-          <article class="feature-card"><h3>Records</h3><p>Model your data with record kinds and easy constructors.</p></article>
-          <article class="feature-card"><h3>Modules</h3><p>Import code with <code>bring ... from</code>, <code>@/</code> aliases, and re-exports.</p></article>
-          <article class="feature-card"><h3>Compound Types</h3><p>Use dictionaries, sets, and tuples with unpacking.</p></article>
-          <article class="feature-card"><h3>Web apps</h3><p>Set up routes, JSON responses, sessions, cookies, uploads, and auth.</p></article>
-          <article class="feature-card"><h3>Data and async</h3><p>Work with SQLite, HTTP, files, schedules, concurrency, and WebSockets.</p></article>
-          <article class="feature-card"><h3>AI providers</h3><p>Call Groq and other OpenAI-compatible providers using your own keys.</p></article>
+          <article class="feature-card" data-reveal><h3>Variables</h3><p>Store values with <code>remember name as "Ada"</code> and change them with <code>becomes</code>.</p></article>
+          <article class="feature-card" data-reveal><h3>Conditions</h3><p>Compare things with <code>is at least</code>, <code>contains</code>, <code>between</code>, and more.</p></article>
+          <article class="feature-card" data-reveal><h3>Functions</h3><p>Create functions with <code>make</code>, return with <code>give</code>, and close with <code>done</code>.</p></article>
+          <article class="feature-card" data-reveal><h3>Records</h3><p>Model your data with record kinds and easy constructors.</p></article>
+          <article class="feature-card" data-reveal><h3>Modules</h3><p>Import code with <code>bring ... from</code>, <code>@/</code> aliases, and re-exports.</p></article>
+          <article class="feature-card" data-reveal><h3>Compound Types</h3><p>Use dictionaries, sets, and tuples with unpacking.</p></article>
+          <article class="feature-card" data-reveal><h3>Web apps</h3><p>Set up routes, JSON responses, sessions, cookies, uploads, and auth.</p></article>
+          <article class="feature-card" data-reveal><h3>Data and async</h3><p>Work with SQLite, HTTP, files, schedules, concurrency, and WebSockets.</p></article>
+          <article class="feature-card" data-reveal><h3>AI providers</h3><p>Call Groq and other OpenAI-compatible providers using your own keys.</p></article>
         </div>
       </div>
     </section>
 
     <section id="capabilities" class="section">
       <div class="container">
-        <p class="section-tag">Capabilities</p>
-        <h2 class="section-title">Everything you need is built in.</h2>
-        <div class="capability-list">
+        <p class="section-tag" data-reveal>Capabilities</p>
+        <h2 class="section-title" data-reveal>Everything you need is built in.</h2>
+        <div class="capability-list" data-reveal>
           <span>JSON</span><span>SQLite and SQL</span><span>HTTP client</span><span>Auth and sessions</span><span>Files</span><span>Packages</span><span>Async</span><span>Errors</span><span>Concurrency</span><span>WebSockets</span><span>Cache</span><span>Bots</span><span>OCR</span><span>Tests</span><span>Modules</span><span>Source Maps</span><span>Compound Types</span>
         </div>
       </div>
@@ -88,10 +92,10 @@ npm start</code></pre>
 
     <section id="library" class="section section--alt">
       <div class="container">
-        <p class="section-tag">Feature library</p>
-        <h2 class="section-title">Examples you can try today.</h2>
+        <p class="section-tag" data-reveal>Feature library</p>
+        <h2 class="section-title" data-reveal>Examples you can try today.</h2>
         <p class="section-lead">These snippets use the PlainScript 1.0.3 grammar.</p>
-        <div class="library-toolbar">
+        <div class="library-toolbar" data-reveal>
           <label class="sr-only" for="lib-search">Search examples</label>
           <input id="lib-search" class="lib-search-input" type="search" placeholder="Search examples">
           <div id="lib-filters" class="lib-filters" aria-label="Filter examples"></div>
@@ -103,8 +107,8 @@ npm start</code></pre>
 
     <section class="section">
       <div class="container split">
-        <div><p class="section-tag">Reference</p><h2 class="section-title">The compiler is the source of truth.</h2></div>
-        <div><p>Read the <a href="PLAINSCRIPT-SPEC.md">language specification</a> and the <a href="../knowledge.md">AI coding specification</a>. The repository's <code>examples/</code> directory has runnable examples.</p><p>Validate a file with <code>node compiler/cli.js check path/to/file.pln</code>.</p></div>
+        <div data-reveal><p class="section-tag">Reference</p><h2 class="section-title">The compiler is the source of truth.</h2></div>
+        <div data-reveal><p>Read the <a href="PLAINSCRIPT-SPEC.md">language specification</a> and the <a href="../knowledge.md">AI coding specification</a>. The repository's <code>examples/</code> directory has runnable examples.</p><p>Validate a file with <code>node compiler/cli.js check path/to/file.pln</code>.</p></div>
       </div>
     </section>
   </main>
@@ -112,6 +116,16 @@ npm start</code></pre>
   <footer class="site-footer">
     <div class="container footer-bottom"><span>PlainScript</span><span>1.0.3</span></div>
   </footer>
-  <script src="website/script.js"></script>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script type="module" src="website/script.js"></script>
 </body>
 </html>

@@ -1,6 +1,155 @@
+import * as THREE from "three";
+
 (() => {
   "use strict";
 
+  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ── three.js animated background ──────────────────────────────────────
+  function mountBackground() {
+    const canvas = document.getElementById("bg-canvas");
+    if (!canvas || !window.WebGLRenderingContext) return;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 100);
+    camera.position.z = 16;
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    // Distant particle field
+    const starCount = prefersReduced ? 0 : 800;
+    const positions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      positions[i * 3]     = (Math.random() - 0.5) * 34;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 22;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 30;
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    const starMat = new THREE.PointsMaterial({
+      color: 0x46e6b4,
+      size: 0.09,
+      transparent: true,
+      opacity: 0.55,
+      sizeAttenuation: true,
+      depthWrite: false,
+    });
+    const stars = new THREE.Points(starGeo, starMat);
+    group.add(stars);
+
+    // Two soft wireframe rings for structure
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x46e6b4,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.12,
+    });
+    for (const [radius, tilt, speed] of [[9.5, 0.4, 0.22], [6.5, -0.25, -0.16]]) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.05, 8, 96), ringMat);
+      ring.rotation.x = tilt;
+      ring.rotation.y = 0.6;
+      group.add(ring);
+      ring.userData.speed = speed;
+    }
+
+    let mouseX = 0;
+    let mouseY = 0;
+    window.addEventListener("pointermove", (event) => {
+      mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+      mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+    }, { passive: true });
+
+    function resize() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      renderer.setSize(width, height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    const clock = new THREE.Clock();
+    function tick() {
+      const elapsed = clock.getElapsedTime();
+      group.rotation.y = elapsed * 0.06;
+      group.children.forEach((child) => {
+        if (child.userData.speed) {
+          child.rotation.z += child.userData.speed * 0.004;
+        }
+      });
+      // Parallax toward the cursor
+      const targetY = elapsed * 0.06 + mouseX * 0.15;
+      group.rotation.x += (mouseY * 0.12 - group.rotation.x) * 0.04;
+      group.rotation.y += (targetY - group.rotation.y) * 0.04;
+      camera.position.x += (mouseX * 1.1 - camera.position.x) * 0.03;
+      camera.position.y += (mouseY * 0.7 - camera.position.y) * 0.03;
+      camera.lookAt(scene.position);
+      renderer.render(scene, camera);
+      requestAnimationFrame(tick);
+    }
+    if (!prefersReduced) tick();
+  }
+  mountBackground();
+
+  // ── GSAP entrance + scroll reveals ────────────────────────────────────
+  const gsapOk = window.gsap && !prefersReduced;
+
+  if (gsapOk) {
+    gsap.registerPlugin(window.ScrollTrigger);
+
+    // Hero entrance
+    gsap.from(".hero-badge", { opacity: 0, y: 18, duration: 0.7, ease: "power2.out" });
+    gsap.from(".hero-title", {
+      opacity: 0, y: 30, duration: 0.9, ease: "power3.out", delay: 0.1,
+    });
+    gsap.from(".hero-lead", { opacity: 0, y: 22, duration: 0.8, ease: "power2.out", delay: 0.22 });
+    gsap.from(".hero-actions .button", {
+      opacity: 0, y: 18, duration: 0.6, ease: "power2.out", delay: 0.32, stagger: 0.08,
+    });
+    gsap.from(".hero .code-window", { opacity: 0, y: 26, duration: 0.8, ease: "power2.out", delay: 0.44 });
+
+    // Scroll reveals for cards and blocks
+    gsap.utils.toArray("[data-reveal]").forEach((el) => {
+      gsap.from(el, {
+        opacity: 0,
+        y: 28,
+        duration: 0.7,
+        ease: "power2.out",
+        scrollTrigger: { trigger: el, start: "top 88%", once: true },
+      });
+    });
+
+    // Stagger card grids
+    gsap.utils.toArray(".three-column, .feature-grid").forEach((grid) => {
+      gsap.from(grid.children, {
+        opacity: 0,
+        y: 30,
+        duration: 0.6,
+        ease: "power2.out",
+        stagger: 0.08,
+        scrollTrigger: { trigger: grid, start: "top 86%", once: true },
+      });
+    });
+  } else {
+    // No-JS / reduced-motion fallback: keep everything visible
+    document.querySelectorAll("[data-reveal]").forEach((el) => el.style.opacity = 1);
+    document.querySelectorAll(".hero-badge, .hero-title, .hero-lead, .hero .code-window").forEach((el) => {
+      el.style.opacity = 1;
+    });
+  }
+
+  // Nav blur once scrolled
+  const nav = document.getElementById("site-nav");
+  const onScroll = () => nav && nav.classList.toggle("is-scrolled", window.scrollY > 10);
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  // ── Feature library (search + filter) ─────────────────────────────────
   const examples = [
     { category: "core", name: "Variables", description: "Store and update values.", source: 'remember name as "Ada"\nremember count as 3\ncount becomes count + 1\nshow `Hello, ${name}!`' },
     { category: "core", name: "Conditions", description: "Compare values in plain words.", source: 'if score is at least 80 and name contains "A"\n    show "accepted"\notherwise\n    show "review"\ndone' },
