@@ -2,11 +2,9 @@
 
 [![CI](https://github.com/ayoistooslick/plainscript/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/ayoistooslick/plainscript/actions/workflows/npm-publish.yml)
 
-PlainScript is an intent-oriented language that compiles `.pln` source to
-readable Node.js. The compiler and parser in `compiler/` are the source of
-truth for version `1.0.4-latest`.
+PlainScript is a programming language that reads like English and runs on Node.js. You write `.pln` files, and PlainScript turns them into JavaScript you can run anywhere.
 
-## Quick start
+## Get started in 60 seconds
 
 ```bash
 npx plainscript new hello
@@ -17,34 +15,31 @@ npm run build
 npm start
 ```
 
-Run a single source file without writing build output:
+Run a single file without saving any build output:
 
 ```bash
 npx plainscript run examples/basics.pln
 ```
 
-## CLI
+## Commands
 
-```text
-plainscript new [name]       Create an npm-ready project
-plainscript check [target]   Validate one file, a directory, or the project
-plainscript build [file]     Compile source files to dist/ (--sourcemap / -m for V3 source maps)
-plainscript run <file>       Validate, install missing packages, and run (--sourcemap for inline maps)
-plainscript start            Build src/app.pln and start it
-plainscript fmt <file>       Format a source file in place
-plainscript install          Install packages detected in source
-plainscript add <package>    Add an npm package
-plainscript remove <package> Remove an npm package
-plainscript update           Update installed packages
-plainscript doctor           Inspect the local project setup
-plainscript version          Print 1.0.4-latest
-```
+| Command | What it does |
+| --- | --- |
+| `plainscript new [name]` | Create a new project |
+| `plainscript check` | Validate your code |
+| `plainscript build` | Compile to JavaScript in `dist/` |
+| `plainscript run <file>` | Check, install, and run a file |
+| `plainscript start` | Build and start `src/app.pln` |
+| `plainscript fmt <file>` | Format your code |
+| `plainscript add <package>` | Add an npm package |
+| `plainscript remove <package>` | Remove an npm package |
+| `plainscript update` | Update installed packages |
+| `plainscript doctor` | Check your project setup |
+| `plainscript version` | Print version |
 
-`plainscript check` resolves imports, parses every file, generates JavaScript,
-and verifies the generated output with Node's JavaScript parser. Use it after
-every source change.
+Run `plainscript check` after every change — it validates your code and catches errors early.
 
-## Core syntax
+## Syntax
 
 ### Variables and output
 
@@ -56,8 +51,7 @@ show greeting
 count becomes count + 1
 ```
 
-`remember name as value` is the standard declaration form. `let name be value`
-is an English alias. `show`, `print`, and `display` write a value.
+`remember name as value` declares a variable. `show`, `print`, and `display` all print output.
 
 ### Conditions
 
@@ -69,9 +63,7 @@ otherwise
 done
 ```
 
-Supported readable comparisons include `is`, `same as`, `different from`,
-`more than`, `fewer than`, `is at least`, `is less than`, `contains`,
-`starts with`, `ends with`, `between`, `and`, `or`, and `not`.
+You can use `is`, `more than`, `fewer than`, `contains`, `starts with`, `ends with`, `and`, `or`, and `not`.
 
 ### Lists and records
 
@@ -83,8 +75,7 @@ remember user as record with name "Ada" and active true done
 show user.name
 ```
 
-Inline JavaScript array and object literals are also supported:
-`[1, 2, 3]` and `{name: "Ada", active: true}`.
+You can also use plain JavaScript arrays and objects: `[1, 2, 3]` and `{name: "Ada"}`.
 
 ### Functions
 
@@ -96,16 +87,11 @@ done
 show add(2, 3)
 ```
 
-Defaults use `as` in the parameter list:
-
 ```plainscript
 make greet(name as "friend")
     give `Hello, ${name}`
 done
 ```
-
-The readable declaration form is `to add a and b together`, with `give` as
-the return statement and `together` as the closing marker.
 
 ### Loops
 
@@ -137,48 +123,43 @@ remember player as create a Player with name "Ada" and goals 4
 ### Compound data structures
 
 ```plainscript
-// Dictionaries and Hash Maps
+// Dictionaries
 remember userMap as dictionary with "name" is "Ada" and "role" is "admin" done
 put "role" as "editor" in userMap
 remember mapKeys as keys of userMap
 
-// Sets (Unique Collections)
+// Sets
 remember tags as set with "admin", "editor", "user" done
 remember newTags as union of tags and (set with "moderator" done)
 
-// Tuples (Immutable Sequences)
+// Tuples
 remember point as tuple with 10, 20, 30 done
 unpack point into x, y, z
 ```
 
-### Modules and imports
+### Imports and exports
 
 ```plainscript
-// Selective local imports
+// Import specific functions
 bring circleArea and squareArea from "./math.pln"
 
-// Namespaced module imports
+// Import with a namespace
 bring all from "./math.pln" as math
 show math.circleArea(5)
 
-// Direct third-party package imports
+// Import an npm package
 bring axios from "axios"
-bring express from "express"
 
-// Root path aliasing (@/ -> src)
+// Use @/ to import from src/
 bring button from "@/components/button.pln"
 
-// Barrel re-exports
+// Re-export everything from another file
 export all from "./submodule.pln"
 ```
 
-`bring symbol from "path"` and `import { symbol } from "path"` bring local module symbols or npm packages into scope. `bring all from "path" as name` creates a namespaced module object. Use `@/` to import relative to the project `src/` directory. Export symbols or re-export submodules with `export`, `share`, `expose`, or `export all from "path"`.
+## AI providers
 
-## AI providers and Telegram
-
-AI helpers work across command-line programs, web routes, scheduled jobs, and
-bot handlers. `chat` uses the OpenAI-compatible API shape; choose a built-in
-provider or pass a custom endpoint. API keys stay in environment variables.
+PlainScript can call AI models from any provider that supports the OpenAI API format. Your API keys stay in environment variables.
 
 ```plainscript
 remember answer as chat("llama-3.3-70b-versatile", "Summarize PlainScript", {
@@ -189,13 +170,9 @@ remember answer as chat("llama-3.3-70b-versatile", "Summarize PlainScript", {
 show answer
 ```
 
-`groq`, `openai`, `openrouter`, `together`, `fireworks`, and `deepseek` are
-supported provider presets. `chatWith("groq", model, messages)` and
-`embedWith("groq", model, text)` are explicit provider-first forms. For any
-OpenAI-compatible service, pass `base`, `key`, and optionally `headers`.
+Supported providers: `groq`, `openai`, `openrouter`, `together`, `fireworks`, `deepseek`. You can also point to any custom OpenAI-compatible endpoint with `base`, `key`, and `headers`.
 
-Telegram supports fixed replies, command arguments, regex captures, callbacks,
-inline buttons, and the complete raw Bot API:
+## Telegram bots
 
 ```plainscript
 bot env("TELEGRAM_BOT_TOKEN")
@@ -209,14 +186,11 @@ done
 start telegram bot
 ```
 
-Inside a Telegram handler, `message`, `text`, `args`, `matches`, `chat`,
-`chatId`, and callback `data` refer to the current update. Use
-`telegramCall("sendChatAction", {chat_id: chatId, action: "typing"})` for API
-methods not wrapped by a named helper.
+Inside a handler, `message`, `args`, `matches`, `chat`, and `chatId` give you access to the current update.
 
 ## Standard library
 
-No import is needed for built-ins such as:
+No imports needed — these work out of the box:
 
 ```plainscript
 remember encoded as jsonEncode(user)
@@ -228,13 +202,9 @@ remember currentTime as time()
 remember identifier as uuid()
 ```
 
-Important groups include string and collection helpers, path and file
-operations, JSON, time, environment variables, crypto, passwords and tokens,
-HTTP accessors, cache, and async helpers. The generated runtime is in
-`compiler/generator.js`; do not invent a built-in that is not implemented
-there.
+Other built-in helpers cover strings, collections, file paths, HTTP, caching, environment variables, and crypto.
 
-## Web applications
+## Web apps
 
 ```plainscript
 web app
@@ -256,14 +226,7 @@ done
 start 3000
 ```
 
-Routes support `get`, `post`, `put`, `patch`, and `delete`. Request values use
-`body of request`, `param("id")`, `query("page")`, `header("x-name")`,
-`upload("field")`, and `uploads("field")`. Use `status 404`, `redirect to
-"..."`, and `when nothing matches` for common response behavior.
-
-Backend declarations include `enable sessions "secret"`, `set cookie "name"
-to value`, `limit requests to 100 per minute`, `require api key from key`, and
-`accept uploads limit "5 MB" allow list with "image/png" folder "uploads"`.
+Routes support `get`, `post`, `put`, `patch`, and `delete`. Read request data with `body of request`, `param("id")`, `query("page")`, and `header("x-name")`.
 
 ## HTTP client
 
@@ -273,7 +236,7 @@ remember created as post "https://example.com/data" with {name: "Ada"} headers {
 show response.status
 ```
 
-## SQLite and SQL
+## SQLite
 
 ```plainscript
 database "app.db" using "wasm"
@@ -292,9 +255,7 @@ remember people as query
 done
 ```
 
-`database` accepts `using "native"` or `using "wasm"`. A SQL placeholder
-`{name}` is bound to the PlainScript variable rather than interpolated.
-`transaction ... done` groups writes.
+Use `using "native"` for a Node.js SQLite backend, or `using "wasm"` for in-memory. SQL placeholders like `{name}` bind to PlainScript variables.
 
 ## Errors, async, and concurrency
 
@@ -311,20 +272,7 @@ retry 3 times every 1 second
 done
 ```
 
-Use `allOf(list with one(), two())`, `anyOf(...)`, `settledOf(...)`, and
-`withTimeout(promise, milliseconds)` for concurrent operations. `every 5
-minutes ... done` and `schedule "0 * * * *" ... done` register recurring work.
-
-## Modules and packages
-
-```plainscript
-import { circleArea } from "./math.pln"
-export circleArea
-use express
-```
-
-Imports are bundled in dependency order. `use` declares an npm dependency that
-the CLI can install. Each compiled entry is standalone.
+Run promises in parallel with `allOf()`, `anyOf()`, and `settledOf()`. Schedule recurring work with `every 5 minutes ... done`.
 
 ## Testing
 
@@ -334,45 +282,33 @@ test "addition works"
 done
 ```
 
-Assertions support `equals`, `is`, `contains`, and `raises`.
+Assertions: `equals`, `is`, `contains`, and `raises`.
 
-## Bots, OCR, WebSockets, and cache
+## Examples
 
-The feature examples in `examples/` are the maintained reference programs:
+The `examples/` folder has working code for every feature:
 
-| Capability | Example |
+| Topic | Files |
 | --- | --- |
-| variables and conditions | `examples/basics.pln`, `examples/conditions.pln` |
-| loops, functions, records | `examples/loops.pln`, `examples/functions.pln`, `examples/records.pln` |
-| JSON, files, packages, HTTP | `examples/json.pln`, `examples/files.pln`, `examples/packages.pln`, `examples/http.pln` |
-| SQLite and web routes | `examples/sqlite.pln`, `examples/web-api.pln` |
-| auth, sessions, cookies | `examples/auth-sessions.pln` |
-| async, errors, concurrency | `examples/async-errors.pln`, `examples/concurrency.pln` |
-| WebSockets and cache | `examples/websocket.pln`, `examples/cache-schedule.pln` |
-| Telegram, AI, and WhatsApp | `examples/bots.pln`, `examples/telegram-bot.pln`, `examples/whatsapp-bot/` |
-| OCR and uploads | `examples/ocr.pln`, `examples/id-verification/` |
-| native tests and modules | `examples/testing.pln`, `examples/modules/` |
-| real-world starters | `templates/` |
+| Basics | `examples/basics.pln`, `examples/conditions.pln` |
+| Loops, functions, records | `examples/loops.pln`, `examples/functions.pln`, `examples/records.pln` |
+| JSON, files, HTTP | `examples/json.pln`, `examples/files.pln`, `examples/http.pln` |
+| Database, web routes | `examples/sqlite.pln`, `examples/web-api.pln` |
+| Auth and sessions | `examples/auth-sessions.pln` |
+| Async and errors | `examples/async-errors.pln`, `examples/concurrency.pln` |
+| WebSockets, cache | `examples/websocket.pln`, `examples/cache-schedule.pln` |
+| Bots | `examples/bots.pln`, `examples/telegram-bot.pln`, `examples/whatsapp-bot/` |
+| OCR, uploads | `examples/ocr.pln`, `examples/id-verification/` |
+| Tests, modules | `examples/testing.pln`, `examples/modules/` |
+| Starter projects | `templates/` |
 
-## Verification
-
-```bash
-find examples tests/fixtures -name '*.pln' -print0 |
-  xargs -0 -n1 plainscript check
-npm test
-```
-
-Circular-import fixtures are intentionally rejected by the compiler's
-dependency checks. All maintained runnable examples must pass `plainscript
-check`.
-
-## Project layout
+## Project structure
 
 ```text
-compiler/                 lexer, parser, generator, CLI, bundler
-examples/                 checked feature and acceptance examples
-tests/                    compiler, runtime, compatibility, and acceptance tests
-docs/                     website and language reference
+compiler/                 compiler, parser, and CLI
+examples/                 feature demos and examples
+tests/                    test suite
+docs/                     website and docs
 plainscript-vscode/       VS Code extension
-editors/mt-manager/       TextMate-compatible grammar
+editors/mt-manager/       TextMate grammar
 ```

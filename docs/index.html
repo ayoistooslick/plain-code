@@ -27,9 +27,9 @@
   <main>
     <section class="hero">
       <div class="container hero-content">
-        <p class="hero-badge">1.0.4-latest: intent-oriented Node.js programming</p>
+        <p class="hero-badge">1.0.4-latest: Node.js programming for everyone</p>
         <h1 class="hero-title">Code that reads like plain English.</h1>
-        <p class="hero-lead">Describe what you want. PlainScript compiles it to readable JavaScript while keeping the language small, direct, and checkable.</p>
+        <p class="hero-lead">Write what you want in plain words. PlainScript turns it into JavaScript — simple, readable, and easy to check.</p>
         <div class="hero-actions">
           <a class="button button-primary" href="#quickstart">Start building</a>
           <a class="button button-secondary" href="#library">Browse examples</a>
@@ -44,11 +44,11 @@ done</code></pre>
     <section id="quickstart" class="section">
       <div class="container">
         <p class="section-tag">Quick start</p>
-        <h2 class="section-title">Check first, then build.</h2>
+        <h2 class="section-title">A simple three-step workflow.</h2>
         <div class="three-column">
-          <article class="info-card"><span class="card-number">01</span><h3>Write</h3><p>Create a <code>.pln</code> file with readable declarations and blocks.</p></article>
-          <article class="info-card"><span class="card-number">02</span><h3>Check</h3><p>Run <code>plainscript check file.pln</code> to validate imports and generated JavaScript.</p></article>
-          <article class="info-card"><span class="card-number">03</span><h3>Build</h3><p>Run <code>plainscript build</code> to emit standalone files in <code>dist/</code>.</p></article>
+          <article class="info-card"><span class="card-number">01</span><h3>Write</h3><p>Create a <code>.pln</code> file with readable code blocks.</p></article>
+          <article class="info-card"><span class="card-number">02</span><h3>Check</h3><p>Run <code>plainscript check file.pln</code> to catch mistakes.</p></article>
+          <article class="info-card"><span class="card-number">03</span><h3>Build</h3><p>Run <code>plainscript build</code> to get your files in <code>dist/</code>.</p></article>
         </div>
         <pre class="code-window"><code>npx plainscript new hello
 cd hello
@@ -61,17 +61,17 @@ npm start</code></pre>
     <section id="language" class="section section--alt">
       <div class="container">
         <p class="section-tag">Language</p>
-        <h2 class="section-title">A focused grammar for real programs.</h2>
+        <h2 class="section-title">A small set of words you already know.</h2>
         <div class="feature-grid">
-          <article class="feature-card"><h3>Variables</h3><p><code>remember name as "Ada"</code> and readable assignment with <code>becomes</code>.</p></article>
-          <article class="feature-card"><h3>Conditions</h3><p>Use <code>is at least</code>, <code>contains</code>, <code>between</code>, and logical operators.</p></article>
-          <article class="feature-card"><h3>Functions</h3><p>Define functions with <code>make</code>, return with <code>give</code>, and close with <code>done</code>.</p></article>
-          <article class="feature-card"><h3>Records</h3><p>Model data with record kinds and readable constructors.</p></article>
-          <article class="feature-card"><h3>Modules</h3><p>Import with <code>bring ... from</code>, <code>@/</code> aliases, and barrel re-exports.</p></article>
-          <article class="feature-card"><h3>Compound Types</h3><p>Dictionaries, sets with algebra, and tuples with unpacking.</p></article>
-          <article class="feature-card"><h3>Web apps</h3><p>Declare routes, JSON responses, sessions, cookies, uploads, and auth.</p></article>
-          <article class="feature-card"><h3>Data and async</h3><p>Use SQLite, HTTP, files, schedules, concurrency, and WebSockets.</p></article>
-          <article class="feature-card"><h3>AI providers</h3><p>Call Groq and other OpenAI-compatible providers with environment-backed keys.</p></article>
+          <article class="feature-card"><h3>Variables</h3><p>Store values with <code>remember name as "Ada"</code> and change them with <code>becomes</code>.</p></article>
+          <article class="feature-card"><h3>Conditions</h3><p>Compare things with <code>is at least</code>, <code>contains</code>, <code>between</code>, and more.</p></article>
+          <article class="feature-card"><h3>Functions</h3><p>Create functions with <code>make</code>, return with <code>give</code>, and close with <code>done</code>.</p></article>
+          <article class="feature-card"><h3>Records</h3><p>Model your data with record kinds and easy constructors.</p></article>
+          <article class="feature-card"><h3>Modules</h3><p>Import code with <code>bring ... from</code>, <code>@/</code> aliases, and re-exports.</p></article>
+          <article class="feature-card"><h3>Compound Types</h3><p>Use dictionaries, sets, and tuples with unpacking.</p></article>
+          <article class="feature-card"><h3>Web apps</h3><p>Set up routes, JSON responses, sessions, cookies, uploads, and auth.</p></article>
+          <article class="feature-card"><h3>Data and async</h3><p>Work with SQLite, HTTP, files, schedules, concurrency, and WebSockets.</p></article>
+          <article class="feature-card"><h3>AI providers</h3><p>Call Groq and other OpenAI-compatible providers using your own keys.</p></article>
         </div>
       </div>
     </section>
@@ -79,7 +79,7 @@ npm start</code></pre>
     <section id="capabilities" class="section">
       <div class="container">
         <p class="section-tag">Capabilities</p>
-        <h2 class="section-title">The compiler covers the full path.</h2>
+        <h2 class="section-title">Everything you need is built in.</h2>
         <div class="capability-list">
           <span>JSON</span><span>SQLite and SQL</span><span>HTTP client</span><span>Auth and sessions</span><span>Files</span><span>Packages</span><span>Async</span><span>Errors</span><span>Concurrency</span><span>WebSockets</span><span>Cache</span><span>Bots</span><span>OCR</span><span>Tests</span><span>Modules</span><span>Source Maps</span><span>Compound Types</span>
         </div>
@@ -89,8 +89,8 @@ npm start</code></pre>
     <section id="library" class="section section--alt">
       <div class="container">
         <p class="section-tag">Feature library</p>
-        <h2 class="section-title">Current, checked examples.</h2>
-        <p class="section-lead">These snippets use the grammar accepted by PlainScript 1.0.4-latest.</p>
+        <h2 class="section-title">Examples you can try today.</h2>
+        <p class="section-lead">These snippets use the PlainScript 1.0.4-latest grammar.</p>
         <div class="library-toolbar">
           <label class="sr-only" for="lib-search">Search examples</label>
           <input id="lib-search" class="lib-search-input" type="search" placeholder="Search examples">
@@ -103,8 +103,8 @@ npm start</code></pre>
 
     <section class="section">
       <div class="container split">
-        <div><p class="section-tag">Reference</p><h2 class="section-title">Use the compiler as the authority.</h2></div>
-        <div><p>Read the <a href="PLAINSCRIPT-SPEC.md">language specification</a> and the <a href="../knowledge.md">AI coding specification</a>. The repository's <code>examples/</code> directory is the executable reference set.</p><p>Validate a file with <code>node compiler/cli.js check path/to/file.pln</code>.</p></div>
+        <div><p class="section-tag">Reference</p><h2 class="section-title">The compiler is the source of truth.</h2></div>
+        <div><p>Read the <a href="PLAINSCRIPT-SPEC.md">language specification</a> and the <a href="../knowledge.md">AI coding specification</a>. The repository's <code>examples/</code> directory has runnable examples.</p><p>Validate a file with <code>node compiler/cli.js check path/to/file.pln</code>.</p></div>
       </div>
     </section>
   </main>

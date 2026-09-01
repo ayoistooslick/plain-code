@@ -1,10 +1,11 @@
 # PlainScript real-world starters
 
-These eight MIT-licensed starters are small open-source projects designed to
+These starters are small open-source projects designed to
 be copied, modified, and deployed:
 
 | Starter | What it demonstrates |
 | --- | --- |
+| `messaging-app` | Real-time chat with SQLite, WebSocket, auth, and message history |
 | `telegram-support-bot` | Hardcoded commands, regex replies, buttons, and callbacks |
 | `groq-telegram-bot` | Groq-backed AI replies alongside deterministic commands |
 | `rest-api-service` | JSON routes, validation, and CRUD-shaped state |

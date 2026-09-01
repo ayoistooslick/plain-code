@@ -1,10 +1,9 @@
-# PlainScript 1.0.4-latest capability audit
+# PlainScript 1.0.4-latest Capability Audit
 
-This audit is intentionally grounded in the implementation, not in old
-examples. The parser and generator are the authority. A capability is listed
-here only when a source program can be validated by `plainscript check`.
+This audit is based on what the compiler actually supports right now.
+If `plainscript check` validates it, it's listed here.
 
-## Core language
+## Core Language
 
 | Capability | Status | Current source form |
 | --- | --- | --- |
@@ -21,7 +20,7 @@ here only when a source program can be validated by `plainscript check`.
 | Loop control | Implemented | `break`, `continue` |
 | Classes and `new` | Implemented | JavaScript-compatible class forms |
 
-## Modules and runtime
+## Modules and Runtime
 
 | Capability | Status | Notes |
 | --- | --- | --- |
@@ -36,7 +35,7 @@ here only when a source program can be validated by `plainscript check`.
 | Errors and retries | Implemented | `try`, `recover`, `finally`, `retry` |
 | Native tests | Implemented | `test` and `check` assertions |
 
-## Web and services
+## Web and Services
 
 | Capability | Status | Current source form |
 | --- | --- | --- |
@@ -61,9 +60,9 @@ here only when a source program can be validated by `plainscript check`.
 | WhatsApp bots | Implemented | `whatsapp bot` |
 | OCR | Implemented | `ocr path of file as text` |
 
-## Canonical examples
+## Canonical Examples
 
-The maintained examples are the executable capability matrix:
+Here are the example files that exercise each capability:
 
 ```text
 examples/basics.pln
@@ -92,11 +91,14 @@ examples/id-verification/
 examples/whatsapp-bot/
 ```
 
-Run `find examples -name '*.pln' -exec node compiler/cli.js check {} \;`
-before changing the language reference.
+Run this to make sure everything still compiles:
 
-## Version boundary
+```bash
+find examples -name '*.pln' -exec node compiler/cli.js check {} \;
+```
 
-The repository release label is `1.0.4-latest`. This label identifies the
-compiler, package metadata, website, and editor tooling. It does not change
-third-party dependency versions.
+## Version Info
+
+The release label for this repo is `1.0.4-latest`. It covers the compiler,
+package metadata, website, and editor tooling. Third-party dependency
+versions are not tied to this label.

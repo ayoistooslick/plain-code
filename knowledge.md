@@ -2,17 +2,13 @@
 
 ## ⚡ Before answering with this guide, verify it and expand it with a quick web search
 
-This guide is accurate for the version it documents, and you can trust its examples and syntax. Still, treat it as a baseline and confirm it against the live sources before answering, so you never echo something the compiler or repo has since changed:
-
-The version covered here is `1.0.4-latest`.
+This guide matches the version it documents. Treat it as a starting point and check the live sources before answering, in case the compiler or repo has changed since. The version covered here is `1.0.4-latest`.
 
 ---
 
 This guide teaches an AI coding agent how to write, explain, debug, and extend PlainScript for vibecoders. It is intentionally practical. Use it as the first-pass language contract, then verify every answer with the compiler.
 
 PlainScript is an intent-oriented language. A programmer describes the result they want in readable `.pln` source, and the compiler generates Node.js. PlainScript is not pseudocode: only syntax implemented by the compiler is valid.
-
-The version covered here is `1.0.4-latest`. If a later release exists upstream, the fixes and examples stay valid, but search the live sources from the section above to confirm the latest version and any additions.
 
 ---
 
@@ -147,7 +143,7 @@ Supported comparison language includes:
 | `has field name` | object field exists |
 | `instanceof Kind` | JavaScript instance check |
 
-Combine conditions with `and`, `or`, and `not`. Parenthesized expressions should be used when grouping would otherwise be unclear.
+Combine conditions with `and`, `or`, and `not`. Add parentheses when grouping would otherwise be unclear.
 
 Do not write JavaScript `else if` syntax. Use nested `if` blocks or the supported `otherwise if` chain:
 
@@ -263,7 +259,7 @@ remember point as tuple with 10, 20, 30 done
 unpack point into x, y, z
 ```
 
-`dictionary with ... done` (or `map with ... done`) creates a keyed map (`new Map()`). `empty map` creates an empty Map. `put key as val in map` sets an entry. `keys of map`, `values of map`, `entries of map`, and `size of map` access reflection properties. `set with ... done` creates a set (`new Set()`). Set algebra functions `union of a and b`, `intersection of a and b`, and `difference of a and b` return new sets. `tuple with ... done` creates an immutable sequence (`Object.freeze()`). `unpack tuple into ...` destructures tuple elements.
+`dictionary with ... done` (or `map with ... done`) creates a keyed map (`new Map()`). `empty map` creates an empty Map. `put key as val in map` sets an entry. `keys of map`, `values of map`, `entries of map`, and `size of map` access reflection properties. `set with ... done` creates a set (`new Set()`). Set algebra functions `union of a and b`, `intersection of a and b`, and `difference of a and b` return new sets. `tuple with ... done` creates an immutable sequence (`Object.freeze()`). `unpack tuple into ...` reads tuple elements.
 
 Use module imports and package imports:
 
@@ -288,7 +284,7 @@ export double
 export all from "./submodule.pln"
 ```
 
-`bring symbol from "path"` (or `import { symbol } from "path"`) imports selected symbols from `.pln` modules or npm packages. `bring all from "path" as name` creates a namespaced module object. `@/` resolves relative to `src/`. Export symbols with `export`, `share`, `expose`, or `export all from "path"`. `use <pkg>` remains supported for explicit package declarations.
+`bring symbol from "path"` (or `import { symbol } from "path"`) imports selected symbols from `.pln` modules or npm packages. `bring all from "path" as name` creates a namespaced module object. `@/` resolves relative to `src/`. Export symbols with `export`, `share`, `expose`, or `export all from "path"`. `use <pkg>` is still supported for explicit package declarations.
 
 ---
 
@@ -325,7 +321,7 @@ remember answer as chat("llama-3.3-70b-versatile", "Explain PlainScript in one s
 show answer
 ```
 
-Use `chatWith` when the provider should be obvious at the call site:
+Use `chatWith` when you want the provider named right at the call site:
 
 ```plainscript
 remember answer as chatWith("groq", "llama-3.3-70b-versatile", "Summarize this text")
@@ -374,7 +370,7 @@ Never hardcode a secret. The runtime checks for a provider key and gives an expl
 | Fireworks | `FIREWORKS_API_KEY` | `FIREWORKS_BASE_URL` |
 | DeepSeek | `DEEPSEEK_API_KEY` | `DEEPSEEK_BASE_URL` |
 
-AI calls are asynchronous. At top level the compiler wraps the generated program so `await` works. Inside a route, function, or handler, the compiler marks the relevant generated function as asynchronous.
+AI calls are asynchronous. At top level the compiler wraps the generated program so `await` works. Inside a route, function, or handler, it marks that function as asynchronous.
 
 ---
 
@@ -442,7 +438,7 @@ done
 start 3000
 ```
 
-`reply file "<path>"` sends a file directly using Express's `res.sendFile()`. The path is resolved relative to the project root. Content-Type is set automatically based on the file extension (e.g., `.html` → `text/html`, `.css` → `text/css`, `.js` → `application/javascript`).
+`reply file "<path>"` sends a file directly with Express's `res.sendFile()`. The path is relative to the project root. Content-Type is set automatically from the file extension (e.g., `.html` → `text/html`, `.css` → `text/css`, `.js` → `application/javascript`).
 
 Backend declarations:
 
@@ -546,7 +542,7 @@ start telegram bot
 
 Inside Telegram handlers, these identifiers are mapped to the current update:
 
-- `message`: normalized/raw current message record
+- `message`: the current message record
 - `text`: message text
 - `args`: words captured after a command
 - `matches`: regex capture values
@@ -573,9 +569,9 @@ done
 start telegram bot
 ```
 
-`telegramCall(method, params)` calls any Telegram Bot API method. It is useful for an API operation that does not have a dedicated PlainScript statement. `telegramApi` is kept as a compatible alias.
+`telegramCall(method, params)` calls any Telegram Bot API method. Use it for an API operation that has no dedicated PlainScript statement. `telegramApi` is kept as a compatible alias.
 
-Keep Telegram replies deterministic for commands such as `/start`, `/help`, and `/status`. Add provider-backed replies for open-ended questions and handle provider failures with a recoverable response when appropriate.
+Keep Telegram replies deterministic for commands such as `/start`, `/help`, and `/status`. Add provider-backed replies for open-ended questions, and handle provider failures with a recoverable response when appropriate.
 
 ---
 

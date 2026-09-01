@@ -1,17 +1,17 @@
 # PlainScript 1.0.4-latest language specification
 
-This reference describes the syntax implemented by `compiler/lexer.js` and
-`compiler/parser.js`. The generated runtime is implemented in
-`compiler/generator.js`. Examples in this document are checked from the
+This reference covers the syntax implemented by `compiler/lexer.js` and
+`compiler/parser.js`. The runtime it generates lives in
+`compiler/generator.js`. Every example here is checked against the
 repository's maintained example set.
 
 ## Design
 
-PlainScript is a line-oriented, intent-oriented language for Node.js. Source
-files use `.pln`. Blocks close with `done` unless the syntax explicitly uses
-`together`. Whitespace is not semantic.
+PlainScript is a line-oriented, intent-oriented language made for Node.js.
+Source files use `.pln`. Blocks end with `done` unless the syntax says
+`together`. Whitespace does not matter.
 
-The canonical declaration forms are:
+The basic declaration forms are:
 
 ```plainscript
 remember name as "Ada"
@@ -21,13 +21,13 @@ show name
 ```
 
 Comments begin with `//`. Double-quoted strings support escapes. Backtick
-strings preserve content and support `${expression}` interpolation.
+strings keep their content as-is and support `${expression}` interpolation.
 
 ## Values and expressions
 
-Values include strings, template strings, numbers, booleans, `null`,
-`undefined`, BigInt, arrays, objects, identifiers, calls, member access,
-optional member access, and indexed access.
+PlainScript has strings, template strings, numbers, booleans, `null`,
+`undefined`, BigInt, arrays, objects, identifiers, function calls, member
+access, optional member access, and indexed access.
 
 ```plainscript
 remember names as ["Ada", "Grace"]
@@ -36,7 +36,7 @@ show names[0]
 show user?.name
 ```
 
-English collection expressions:
+English-style collection expressions:
 
 ```plainscript
 remember items as list with "one", "two", "three"
@@ -47,10 +47,10 @@ show item one from items
 show items at position 1
 ```
 
-Arithmetic supports `+`, `-`, `*`, `/`, `%`, and `**`, with normal
-precedence. Word forms `plus`, `minus`, `times`, and `divided by` are also
-recognized. `??` and unary `-`, `wait for`, `typeof`, `void`, and `delete`
-are implemented.
+Arithmetic uses `+`, `-`, `*`, `/`, `%`, and `**`, with normal
+precedence. Word forms `plus`, `minus`, `times`, and `divided by` also work.
+`??` plus unary `-`, `wait for`, `typeof`, `void`, and `delete` are
+supported.
 
 ## Conditions
 
@@ -82,6 +82,8 @@ Use `and`, `or`, and `not` to combine conditions. Inline conditionals use
 
 ## Functions
 
+Write a function with `make` and return a value with `give`:
+
 ```plainscript
 make add(a, b)
     give a + b
@@ -98,8 +100,8 @@ make greet(name as "friend")
 done
 ```
 
-Aliases `define`, `function`, `return`, and `give back` are implemented. The
-readable declaration form is:
+Aliases like `define`, `function`, `return`, and `give back` also work. Use
+`make` and `give` for the readable form:
 
 ```plainscript
 make add(a, b)
@@ -107,8 +109,8 @@ make add(a, b)
 done
 ```
 
-`yield` creates a generator function. Functions may use `wait for` and other
-async operations.
+`yield` turns a function into a generator. Functions can use `wait for` and
+other async operations.
 
 ## Control flow
 
@@ -127,8 +129,8 @@ done
 ```
 
 Use `break` and `continue` inside loops. `match value against` uses `->`
-case arrows and `otherwise`. `switch value against` is an equivalent
-discriminant form.
+case arrows and `otherwise`. `switch value against` works the same way and
+is just another way to write it.
 
 ## Record kinds
 
@@ -141,8 +143,9 @@ done
 remember player as create a Player with name "Ada" and goals 4
 ```
 
-`define a kind called` creates a record kind. Fields use default expressions.
-`create a Kind with field value and field value` constructs an instance.
+`define a kind called` makes a new record kind. Fields use default
+expressions. `create a Kind with field value and field value` builds an
+instance.
 
 ## Modules and packages
 
@@ -153,7 +156,7 @@ export circleArea
 use express
 ```
 
-Imports are bundled in dependency order. `use` declares an npm package.
+Imports get bundled in dependency order. `use` declares an npm package.
 
 ## Web server syntax
 
@@ -179,7 +182,7 @@ Methods are `get`, `post`, `put`, `patch`, and `delete`. Request values use
 `body of request`, `param("id")`, `query("name")`, `header("x-token")`,
 `upload("file")`, and `uploads("file")`.
 
-Server capabilities include:
+The server also supports:
 
 ```plainscript
 enable sessions "secret"
@@ -208,8 +211,8 @@ done
 ```
 
 SQL blocks are closed by `done`. `{variable}` placeholders are bound safely.
-`transaction ... done` groups writes. `postgres connection` selects
-PostgreSQL generation.
+`transaction ... done` groups writes. `postgres connection` generates
+PostgreSQL code instead.
 
 HTTP client expressions:
 
@@ -234,14 +237,14 @@ done
 ```
 
 Concurrency helpers are `allOf`, `anyOf`, `settledOf`, and `withTimeout`.
-Recurring blocks are `every 5 minutes ... done` and
+Recurring blocks use `every 5 minutes ... done` and
 `schedule "0 * * * *" ... done`.
 
 ## AI providers
 
-`chat(model, messages, options)` and `embedText(model, text, options)` use an
-OpenAI-compatible API. Provider presets select safe defaults for the endpoint
-and environment variable:
+`chat(model, messages, options)` and `embedText(model, text, options)` talk
+to an OpenAI-compatible API. Provider presets pick safe defaults for the
+endpoint and the environment variable:
 
 | Provider | API key | Default base |
 | --- | --- | --- |
@@ -264,10 +267,9 @@ show answer
 ```
 
 `base`, `key`, `headers`, `temperature`, `maxTokens`, and `responseFormat`
-are optional call options. Custom providers can use a provider name plus
-`base` and `key`; the runtime uses `PROVIDER_API_KEY` and
-`PROVIDER_BASE_URL` as defaults. These calls work in ordinary programs,
-routes, jobs, and messaging handlers.
+are optional. Custom providers can supply a provider name plus `base` and
+`key`; the runtime falls back to `PROVIDER_API_KEY` and `PROVIDER_BASE_URL`.
+These calls work in ordinary programs, routes, jobs, and messaging handlers.
 
 ## WebSockets, cache, bots, and OCR
 
@@ -297,9 +299,9 @@ start telegram bot
 ```
 
 Inside a Telegram handler, `message`, `text`, `args`, `matches`, `chat`,
-`chatId`, and callback `data` are update context values. Fixed replies use
+`chatId`, and callback `data` hold the update context. Fixed replies use
 `reply "text"`; provider-backed replies can use `chatWith` before `reply`.
-`telegramCall(method, params)` invokes any Telegram Bot API method.
+`telegramCall(method, params)` calls any Telegram Bot API method.
 
 WhatsApp uses `whatsapp bot ... done`, with `auth`, `login qr`, `login
 pairing`, and `on message` clauses. OCR uses:
