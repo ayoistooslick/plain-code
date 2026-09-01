@@ -292,6 +292,7 @@ The `examples/` folder has working code for every feature:
 | --- | --- |
 | Basics | `examples/basics.pln`, `examples/conditions.pln` |
 | Loops, functions, records | `examples/loops.pln`, `examples/functions.pln`, `examples/records.pln` |
+| Natural string verbs | `examples/string-verbs.pln` |
 | JSON, files, HTTP | `examples/json.pln`, `examples/files.pln`, `examples/http.pln` |
 | Database, web routes | `examples/sqlite.pln`, `examples/web-api.pln` |
 | Auth and sessions | `examples/auth-sessions.pln` |

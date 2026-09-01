@@ -3458,6 +3458,20 @@ function generateStatement(node, indent = '', context = createGenerationContext(
         `${indent}});`,
       ].join('\n');
 
+    case 'StringTransformStatement': {
+      const method = { lowercase: 'toLowerCase', uppercase: 'toUpperCase', trim: 'trim' }[node.kind];
+      return `${indent}${node.target} = String(${node.target}).${method}();`;
+    }
+
+    case 'CapitalizeWordsStatement':
+      return `${indent}${node.target} = (${node.target}).map(w => String(w).charAt(0).toUpperCase() + String(w).slice(1));`;
+
+    case 'SplitStatement':
+      return `${indent}${node.target} = String(${node.target}).split(${generateExpr(node.separator, context)});`;
+
+    case 'JoinStatement':
+      return `${indent}(${node.target}) = (${node.target}).join(${generateExpr(node.separator, context)});`;
+
     case 'WebSocketServerStatement': {
       ensureBuiltin(context, 'websocket');
       const handler = (name, params, body) => {

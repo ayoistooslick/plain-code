@@ -477,6 +477,54 @@ function parse(tokens) {
 
     // Statements starting with an identifier: call, becomes, index/member becomes
     if (token.type === TOKEN.IDENTIFIER) {
+      // v2.5 — natural string and collection verbs that transform a variable
+      // in place: "lowercase title", "uppercase first letter of each word in title",
+      // "split title by \" \"", "join title by \" \"", "trim title".
+      const TRANSFORM_VERB = token.value === 'lowercase' || token.value === 'uppercase' ||
+        token.value === 'trim' || token.value === 'split' || token.value === 'join';
+      if (TRANSFORM_VERB && peekAt(1).type === TOKEN.IDENTIFIER) {
+        // "uppercase first letter of each word in <target>"
+        if (token.value === 'uppercase' &&
+            peekAt(1).value === 'first' && peekAt(2).value === 'letter' &&
+            peekAt(3).value === 'of' && peekAt(4).type === TOKEN.EACH && peekAt(4).value === 'each' &&
+            peekAt(5).value === 'word') {
+          for (let t = 0; t < 6; t++) advance(); // uppercase first letter of each word
+          const connector = peek();
+          if (connector.type !== TOKEN.IN && !(connector.type === TOKEN.IDENTIFIER && connector.value === 'in')) {
+            throw new Error(makeError(
+              'Expected "in <name>" after "uppercase first letter of each word".\n\nExample:\n  uppercase first letter of each word in title',
+              connector
+            ));
+          }
+          advance(); // in
+          const target = peek();
+          if (target.type !== TOKEN.IDENTIFIER) {
+            throw new Error(makeError('Expected a variable name after "in".', target));
+          }
+          advance();
+          return { type: 'CapitalizeWordsStatement', target: target.value };
+        }
+
+        // "lowercase title" / "uppercase title" / "trim title"
+        if (token.value === 'lowercase' || token.value === 'uppercase' || token.value === 'trim') {
+          const kind = token.value;
+          advance(); // verb
+          const target = advance().value;
+          return { type: 'StringTransformStatement', kind, target };
+        }
+
+        // "split title by <sep>" / "join list by <sep>"
+        if ((token.value === 'split' || token.value === 'join') &&
+            peekAt(2).type === TOKEN.IDENTIFIER && peekAt(2).value === 'by') {
+          const kind = token.value;
+          advance(); // verb
+          const target = advance().value;
+          advance(); // by
+          const separator = parseExpression();
+          return { type: kind === 'split' ? 'SplitStatement' : 'JoinStatement', target, separator };
+        }
+      }
+
       // switch ... against ... done
       if (token.value === 'switch' && (peekAt(1).type === TOKEN.IDENTIFIER || tokenStartsValue(peekAt(1)))) {
         return parseSwitchStatement();
