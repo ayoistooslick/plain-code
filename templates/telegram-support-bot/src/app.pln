@@ -1,4 +1,4 @@
-// PlainScript 1.0.2-latest: hardcoded Telegram support bot.
+// PlainScript 1.0.3: hardcoded Telegram support bot.
 
 bot env("TELEGRAM_BOT_TOKEN")
 

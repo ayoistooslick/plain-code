@@ -1,4 +1,4 @@
-# PlainScript 1.0.4-latest language specification
+# PlainScript 1.0.3 language specification
 
 This reference covers the syntax implemented by `compiler/lexer.js` and
 `compiler/parser.js`. The runtime it generates lives in

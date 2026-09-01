@@ -1,4 +1,4 @@
-// PlainScript 1.0.2-latest: sessions and cookies.
+// PlainScript 1.0.3: sessions and cookies.
 web app
 enable sessions "session-secret"
 route get "/"
