@@ -655,6 +655,16 @@ function parse(tokens) {
         return { type: 'BroadcastStatement', value };
       }
 
+      // v2.2.0 — send to <connection> <message>: send to a specific stored connection.
+      if (token.value === 'send' &&
+          (peekAt(1).type === TOKEN.TO || (peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'to'))) {
+        advance(); // send
+        advance(); // to
+        const connection = parseExpression();
+        const value = parseExpression();
+        return { type: 'SendToStatement', connection, value };
+      }
+
       // v2.1.0 — send socket <expr>: replies to one connected socket.
       if (token.value === 'send' &&
           peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'socket') {

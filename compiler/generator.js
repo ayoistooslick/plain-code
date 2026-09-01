@@ -3478,6 +3478,10 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       ensureBuiltin(context, 'websocket');
       return `${indent}__wsSend(socket, ${generateExpr(node.value, context)});`;
 
+    case 'SendToStatement':
+      ensureBuiltin(context, 'websocket');
+      return `${indent}__wsSend(${generateExpr(node.connection, context)}, ${generateExpr(node.value, context)});`;
+
     case 'BroadcastStatement':
       ensureBuiltin(context, 'websocket');
       return `${indent}__wsBroadcast(__wsServer, ${generateExpr(node.value, context)});`;
