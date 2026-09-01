@@ -6,8 +6,10 @@
     { category: "core", name: "Conditions", description: "Use readable comparisons.", source: 'if score is at least 80 and name contains "A"\n    show "accepted"\notherwise\n    show "review"\ndone' },
     { category: "core", name: "Loops", description: "Iterate collections and ranges.", source: 'for each item in list with "one", "two"\n    show item\ndone\n\nfor index i from 0 to 2\n    show i\ndone' },
     { category: "core", name: "Functions", description: "Define functions with return values.", source: 'make add(a, b)\n    give a + b\ndone\n\nshow add(2, 3)' },
+    { category: "core", name: "Modules", description: "Import with bring and path aliases.", source: 'bring circleArea from "./math.pln"\nbring button from "@/components/button.pln"\nexport circleArea and squareArea' },
     { category: "data", name: "Records", description: "Define record kinds and values.", source: 'define a kind called "Player" with\n    name is ""\n    goals is 0\ndone\nremember player as create a Player with name "Ada" and goals 4' },
     { category: "data", name: "JSON", description: "Encode and decode structured data.", source: 'remember payload as {ok: true, count: 2}\nremember encoded as jsonEncode(payload)\nshow encoded' },
+    { category: "data", name: "Compound Types", description: "Dictionaries, sets with algebra, and tuples.", source: 'remember userMap as dictionary with "name" is "Ada" and "role" is "admin" done\nremember tags as set with "admin", "editor" done\nremember point as tuple with 10, 20, 30 done' },
     { category: "data", name: "SQLite", description: "Run parameterized SQL blocks.", source: 'database "app.db" using "wasm"\nexecute\n    CREATE TABLE items (name TEXT)\ndone\nremember items as query\n    SELECT name FROM items\ndone' },
     { category: "web", name: "Web routes", description: "Create an HTTP app and JSON route.", source: 'web app\nroute get "/health"\n    reply json\n        ok is true\n    done\ndone\nstart 3000' },
     { category: "web", name: "HTTP client", description: "Call an HTTP endpoint.", source: 'remember response as get "https://example.com/data" timeout 5000\nshow response.status' },
@@ -20,7 +22,7 @@
     { category: "integrations", name: "Groq AI", description: "Use provider-backed replies anywhere.", source: 'remember answer as chatWith("groq", "llama-3.3-70b-versatile", "Hello")\nshow answer' },
     { category: "integrations", name: "OCR uploads", description: "Read text from an uploaded image.", source: 'web app\naccept uploads limit "5 MB" allow list with "image/png" folder "uploads"\nroute post "/scan"\n    remember file as upload("document")\n    ocr path of file as text\n    reply text\ndone' },
     { category: "tooling", name: "Native tests", description: "Check behavior in PlainScript.", source: 'test "addition works"\n    check add(2, 3) equals 5\ndone' },
-    { category: "tooling", name: "Modules", description: "Import a named export.", source: 'import { circleArea } from "./math.pln"\nshow circleArea(2)' }
+    { category: "tooling", name: "Source Maps", description: "Debug .pln source directly.", source: 'plainscript build src/main.pln --sourcemap\n\n// or in code:\n// plainscript run src/main.pln --sourcemap' }
   ];
 
   const grid = document.getElementById("lib-grid");
