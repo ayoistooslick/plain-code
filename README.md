@@ -1,6 +1,7 @@
 # PlainScript
 
 [![CI](https://github.com/ayoistooslick/plainscript/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/ayoistooslick/plainscript/actions/workflows/npm-publish.yml)
+
 PlainScript is an intent-oriented language that compiles `.pln` source to
 readable Node.js. The compiler and parser in `compiler/` are the source of
 truth for version `1.0.4-latest`.
