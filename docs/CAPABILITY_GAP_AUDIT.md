@@ -1,4 +1,4 @@
-# PlainScript 1.0.3 Capability Audit
+# PlainScript 1.0.35 Capability Audit
 
 This audit is based on what the compiler actually supports right now.
 If `plainscript check` validates it, it's listed here.
@@ -18,6 +18,7 @@ If `plainscript check` validates it, it's listed here.
 | For and while loops | Implemented | `for each ... done`, `while ... done` |
 | Match and switch | Implemented | `match value against ... done` |
 | Loop control | Implemented | `break`, `continue` |
+| String verbs | Implemented | `lowercase`, `uppercase`, `split`, `join`, `trim`, `capitalize words` |
 | Classes and `new` | Implemented | JavaScript-compatible class forms |
 
 ## Modules and Runtime
@@ -51,6 +52,11 @@ If `plainscript check` validates it, it's listed here.
 | SQLite | Implemented | native and WebAssembly drivers |
 | PostgreSQL generation | Implemented | `postgres connection` |
 | SQL parameter binding | Implemented | `{variable}` placeholders |
+| MongoDB | Implemented | `mongo connection`, insert, select, update, delete |
+| MongoDB insert | Implemented | `insert into ... done` |
+| MongoDB select | Implemented | `select from ... done` |
+| MongoDB update | Implemented | `update ... set ... done` |
+| MongoDB delete | Implemented | `delete from ... done` |
 | Email | Implemented | `mail transport`, `send mail` |
 | Schedules and jobs | Implemented | `every`, `schedule`, `run background` |
 | WebSockets | Implemented | `websocket server` |
@@ -99,6 +105,6 @@ find examples -name '*.pln' -exec node compiler/cli.js check {} \;
 
 ## Version Info
 
-The release label for this repo is `1.0.3`. It covers the compiler,
+The release label for this repo is `1.0.35`. It covers the compiler,
 package metadata, website, and editor tooling. Third-party dependency
 versions are not tied to this label.

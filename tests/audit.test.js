@@ -790,6 +790,38 @@ test('in-memory cache respects TTL expiry', () => {
   assert(r.code, 0);
 });
 
+console.log('\nNatural string verb runtime tests');
+
+test('runtime: lowercase statement', () => {
+  const r = run('remember x as "HELLO"\nlowercase x\nshow x');
+  assert(r.stdout, 'hello');
+  assert(r.code, 0);
+});
+
+test('runtime: uppercase statement', () => {
+  const r = run('remember x as "hello"\nuppercase x\nshow x');
+  assert(r.stdout, 'HELLO');
+  assert(r.code, 0);
+});
+
+test('runtime: trim statement', () => {
+  const r = run('remember x as "  hi  "\ntrim x\nshow x');
+  assert(r.stdout, 'hi');
+  assert(r.code, 0);
+});
+
+test('runtime: split and join statements', () => {
+  const r = run('remember x as "a,b,c"\nsplit x by ","\njoin x by "-"\nshow x');
+  assert(r.stdout, 'a-b-c');
+  assert(r.code, 0);
+});
+
+test('runtime: capitalize words statement', () => {
+  const r = run('remember title as "hello world"\nsplit title by " "\nuppercase first letter of each word in title\njoin title by " "\nshow title');
+  assert(r.stdout, 'Hello World');
+  assert(r.code, 0);
+});
+
 console.log('\n── audit suite summary ────────────────────────────────────────\n');
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exitCode = 1;

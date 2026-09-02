@@ -5,15 +5,18 @@ be copied, modified, and deployed:
 
 | Starter | What it demonstrates |
 | --- | --- |
-| `messaging-app` | Real-time chat with SQLite, WebSocket, auth, and message history |
-| `telegram-support-bot` | Hardcoded commands, regex replies, buttons, and callbacks |
-| `groq-telegram-bot` | Groq-backed AI replies alongside deterministic commands |
-| `rest-api-service` | JSON routes, validation, and CRUD-shaped state |
-| `sqlite-inventory` | Portable SQLite storage and parameterized SQL |
-| `webhook-receiver` | Authenticated webhooks and fast acknowledgements |
+| `aizen-chat` | MongoDB + Groq AI chat backend |
 | `authenticated-api` | API keys, sessions, and signed tokens |
 | `document-ocr-api` | Upload limits, MIME allow-lists, and OCR |
+| `groq-telegram-bot` | Groq-backed AI replies alongside deterministic commands |
+| `messaging-app` | Real-time chat with SQLite, WebSocket, auth, and message history |
+| `postgres-app` | PostgreSQL connections, parameterized queries, and relational data |
+| `realtime-chat` | WebSocket-powered live chat with presence and typing indicators |
+| `rest-api-service` | JSON routes, validation, and CRUD-shaped state |
 | `scheduled-reporting` | Cron scheduling, report generation, and a status route |
+| `sqlite-inventory` | Portable SQLite storage and parameterized SQL |
+| `telegram-support-bot` | Hardcoded commands, regex replies, buttons, and callbacks |
+| `webhook-receiver` | Authenticated webhooks and fast acknowledgements |
 
 From any starter directory:
 

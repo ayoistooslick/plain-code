@@ -1032,6 +1032,37 @@ const BUILTIN_DECLARATIONS = {
     `    const result = await coll.insertOne(doc);`,
     `    return { insertedId: result.insertedId, acknowledged: result.acknowledged };`,
     `  };`,
+    `  __mongoDb.__update = async function(sql, params) {`,
+    `    if (!__mongoDb) throw new Error('MongoDB: not connected');`,
+    `    const m = String(sql).match(/^\\s*UPDATE\\s+(\\w+)\\s+SET\\s+(.+?)(?:\\s+WHERE\\s+(.+))?\\s*$/i);`,
+    `    if (!m) throw new Error('MongoDB update: use UPDATE collection SET field = ? WHERE field = ?');`,
+    `    const [, collection, setClause, whereClause] = m;`,
+    `    const coll = __mongoCollection(collection);`,
+    `    const filter = {};`,
+    `    if (whereClause) {`,
+    `      const wm = whereClause.match(/(\\w+)\\s*=\\s*\\?/);`,
+    `      if (wm) filter[wm[1]] = params[1] !== undefined ? params[1] : params[0];`,
+    `    }`,
+    `    const updateDoc = {};`,
+    `    const sm = setClause.match(/(\\w+)\\s*=\\s*\\?/);`,
+    `    if (sm) updateDoc[sm[1]] = params[0];`,
+    `    const result = await coll.updateMany(filter, { $set: updateDoc });`,
+    `    return { rowCount: result.modifiedCount };`,
+    `  };`,
+    `  __mongoDb.__delete = async function(sql, params) {`,
+    `    if (!__mongoDb) throw new Error('MongoDB: not connected');`,
+    `    const m = String(sql).match(/^\\s*DELETE\\s+FROM\\s+(\\w+)(?:\\s+WHERE\\s+(.+))?\\s*$/i);`,
+    `    if (!m) throw new Error('MongoDB delete: use DELETE FROM collection WHERE field = ?');`,
+    `    const [, collection, whereClause] = m;`,
+    `    const coll = __mongoCollection(collection);`,
+    `    const filter = {};`,
+    `    if (whereClause) {`,
+    `      const wm = whereClause.match(/(\\w+)\\s*=\\s*\\?/);`,
+    `      if (wm) filter[wm[1]] = params[0];`,
+    `    }`,
+    `    const result = await coll.deleteMany(filter);`,
+    `    return { rowCount: result.deletedCount };`,
+    `  };`,
     `  __mongoDb.__execute = async function(sql, params) {`,
     `    throw new Error('MongoDB execute: use query/insert/update/delete instead');`,
     `  };`,
@@ -2281,14 +2312,13 @@ function emitSqlCall(kind, sql, params, indent, context) {
   }
   if (_sqlDriver === 'mongo') {
     markAsync(context);
-    // For MongoDB, we delegate to helper functions that parse SQL-like syntax
-    // into MongoDB operations. This is a simplified approach.
-    // All MongoDB operations are async, so always await them.
     return `await ${_sqlClientVar}.__${kind}(\`${sql}\`, [${args}])`;
   }
   switch (kind) {
     case 'query':   return `db.prepare(\`${sql}\`).all(${args})`;
     case 'write':   return `db.prepare(\`${sql}\`).run(${args})`;
+    case 'update':  return `db.prepare(\`${sql}\`).run(${args})`;
+    case 'delete':  return `db.prepare(\`${sql}\`).run(${args})`;
     case 'execute': return `db.exec(\`${sql}\`)`;
     default: throw new Error(`Unknown SQL kind "${kind}".`);
   }
@@ -3235,9 +3265,11 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       return `${indent}${emitSqlCall('query', node.sql, node.params, indent, context)};`;
 
     case 'InsertStatement':
-    case 'UpdateStatement':
-    case 'DeleteStatement':
       return `${indent}${emitSqlCall('write', node.sql, node.params, indent, context)};`;
+    case 'UpdateStatement':
+      return `${indent}${emitSqlCall('update', node.sql, node.params, indent, context)};`;
+    case 'DeleteStatement':
+      return `${indent}${emitSqlCall('delete', node.sql, node.params, indent, context)};`;
 
     case 'ExecuteStatement':
       return `${indent}${emitSqlCall('execute', node.sql, node.params, indent, context)};`;
@@ -3245,7 +3277,10 @@ function generateStatement(node, indent = '', context = createGenerationContext(
     // v2.1.0 — remember <name> as query|insert|update|delete … done
     case 'RememberSqlStatement': {
       const kind = node.kind === 'query' ? 'query'
-        : node.kind === 'execute' ? 'execute' : 'write';
+        : node.kind === 'execute' ? 'execute'
+        : node.kind === 'update' ? 'update'
+        : node.kind === 'delete' ? 'delete'
+        : 'write';
       return `${indent}let ${node.name} = ${emitSqlCall(kind, node.sql, node.params, indent, context)};`;
     }
 
