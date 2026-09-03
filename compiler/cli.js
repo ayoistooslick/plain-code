@@ -588,7 +588,7 @@ done
 route get "/api/status"
     reply json
         status is "ok"
-        version is "1.0.3"
+        version is "1.0.35"
     done
 done
 

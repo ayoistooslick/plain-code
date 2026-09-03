@@ -1,4 +1,4 @@
-// PlainScript 1.0.3: scheduled report with a status endpoint.
+// PlainScript 1.0.35: scheduled report with a status endpoint.
 
 remember latest as "No report has run yet"
 
