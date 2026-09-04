@@ -389,8 +389,9 @@ const BUILTIN_DECLARATIONS = {
   // lifecycle and messages.upsert normalization. PlainScript programs only ever
   // see __whatsappStart/__whatsappOnMessage/__whatsappReply.
   whatsapp: [
-    `const { __whatsappStart, __whatsappOnMessage, __whatsappReply } = (() => {`,
+    `const { __whatsappStart, __whatsappOnMessage, __whatsappReply, __whatsappSend, __whatsappDownload } = (() => {`,
     `  let sock = null;`,
+    `  let __waBaileysPkg = '@qwerty-xcv/baileys';`,
     `  const handlers = [];`,
     `  const __waSilentLogger = (() => {`,
     `    const noop = () => {};`,
@@ -415,21 +416,95 @@ const BUILTIN_DECLARATIONS = {
     `  }`,
     `  function __waExtractText(content) {`,
     `    if (!content) return '';`,
-    `    return String(` +
-      `(content.conversation || (content.extendedTextMessage || {}).text || ` +
-      `(content.imageMessage || {}).caption || (content.videoMessage || {}).caption || ` +
-      `(content.documentMessage || {}).caption) || '');`,
+    `    const c = content;`,
+    `    if (c.conversation != null) return String(c.conversation);`,
+    `    if (c.extendedTextMessage && c.extendedTextMessage.text != null) return String(c.extendedTextMessage.text);`,
+    `    if (c.imageMessage && c.imageMessage.caption != null) return String(c.imageMessage.caption);`,
+    `    if (c.videoMessage && c.videoMessage.caption != null) return String(c.videoMessage.caption);`,
+    `    if (c.documentMessage && c.documentMessage.caption != null) return String(c.documentMessage.caption);`,
+    `    if (c.audioMessage && c.audioMessage.caption != null) return String(c.audioMessage.caption);`,
+    `    if (c.stickerMessage && c.stickerMessage.caption != null) return String(c.stickerMessage.caption);`,
+    `    if (c.buttonsResponseMessage && c.buttonsResponseMessage.selectedButtonId != null) return String(c.buttonsResponseMessage.selectedButtonId);`,
+    `    if (c.listResponseMessage && c.listResponseMessage.singleSelectReply && c.listResponseMessage.singleSelectReply.selectedRowId != null) return String(c.listResponseMessage.singleSelectReply.selectedRowId);`,
+    `    if (c.templateButtonReplyMessage && c.templateButtonReplyMessage.selectedId != null) return String(c.templateButtonReplyMessage.selectedId);`,
+    `    if (c.reactionMessage && c.reactionMessage.text != null) return String(c.reactionMessage.text);`,
+    `    if (c.contactMessage && c.contactMessage.displayName != null) return String(c.contactMessage.displayName);`,
+    `    if (c.contactsArrayMessage && c.contactsArrayMessage.contacts) return c.contactsArrayMessage.contacts.map(x => x.displayName || '').join(', ');`,
+    `    if (c.locationMessage) return String(c.locationMessage.degreesLatitude) + ',' + String(c.locationMessage.degreesLongitude);`,
+    `    if (c.groupInviteMessage) return String(c.groupInviteMessage.groupJid || '');`,
+    `    if (c.pollCreationMessage && c.pollCreationMessage.name != null) return String(c.pollCreationMessage.name);`,
+    `    return '';`,
     `  }`,
-    `  async function __whatsappReply(chat, value) {`,
+    `  function __waMessageType(content) {`,
+    `    if (!content) return 'unknown';`,
+    `    const c = content;`,
+    `    if (c.conversation != null || c.extendedTextMessage) return 'text';`,
+    `    if (c.imageMessage) return 'image';`,
+    `    if (c.videoMessage) return 'video';`,
+    `    if (c.audioMessage) return 'audio';`,
+    `    if (c.documentMessage) return 'document';`,
+    `    if (c.stickerMessage) return 'sticker';`,
+    `    if (c.buttonsResponseMessage) return 'button';`,
+    `    if (c.listResponseMessage) return 'list';`,
+    `    if (c.templateButtonReplyMessage) return 'template-button';`,
+    `    if (c.interactiveResponseMessage) return 'interactive';`,
+    `    if (c.reactionMessage) return 'reaction';`,
+    `    if (c.contactMessage) return 'contact';`,
+    `    if (c.contactsArrayMessage) return 'contacts';`,
+    `    if (c.locationMessage) return 'location';`,
+    `    if (c.liveLocationMessage) return 'live-location';`,
+    `    if (c.pollCreationMessage) return 'poll';`,
+    `    if (c.pollUpdateMessage) return 'poll-update';`,
+    `    if (c.groupInviteMessage) return 'group-invite';`,
+    `    if (c.protocolMessage) return 'protocol';`,
+    `    if (c.buttonsMessage) return 'buttons';`,
+    `    if (c.templateMessage) return 'template';`,
+    `    if (c.interactiveMessage) return 'interactive';`,
+    `    return 'other';`,
+    `  }`,
+    `  function __waButtonId(content) {`,
+    `    if (!content) return null;`,
+    `    const c = content;`,
+    `    if (c.buttonsResponseMessage && c.buttonsResponseMessage.selectedButtonId != null) return c.buttonsResponseMessage.selectedButtonId;`,
+    `    if (c.listResponseMessage && c.listResponseMessage.singleSelectReply) return c.listResponseMessage.singleSelectReply.selectedRowId || null;`,
+    `    if (c.templateButtonReplyMessage && c.templateButtonReplyMessage.selectedId != null) return c.templateButtonReplyMessage.selectedId;`,
+    `    if (c.interactiveResponseMessage && c.interactiveResponseMessage.nativeFlowResponseMessage) {`,
+    `      try { return JSON.parse(c.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson).id || null; } catch (_) { return null; }`,
+    `    }`,
+    `    return null;`,
+    `  }`,
+    `  async function __waDownload(message, dest) {`,
+    `    if (!sock) throw new Error('WhatsApp: the bot is not connected.');`,
+    `    const { downloadMediaMessage } = require(__waBaileysPkg);`,
+    `    const raw = message && message.raw ? message.raw : message;`,
+    `    const buffer = await downloadMediaMessage(raw, 'buffer', {}, { logger: __waSilentLogger, reuploadRequest: sock.updateMediaMessage });`,
+    `    if (!dest) return buffer;`,
+    `    const fs = require('fs'), path = require('path');`,
+    `    const dir = path.dirname(path.resolve(dest));`,
+    `    if (dir && dir !== '.') fs.mkdirSync(dir, { recursive: true });`,
+    `    fs.writeFileSync(dest, buffer);`,
+    `    return dest;`,
+    `  }`,
+    `  async function __whatsappDownload(message, dest) {`,
+    `    if (!message) throw new Error('WhatsApp: there is no message to download.');`,
+    `    await __waDownload(message, dest);`,
+    `    console.log('WhatsApp: saved media to ' + dest);`,
+    `  }`,
+    `  async function __whatsappReply(chat, value, extra) {`,
     `    if (!sock) throw new Error('WhatsApp: cannot reply because the bot is not connected yet.');`,
     `    const text = typeof value === 'string' ? value : JSON.stringify(value);`,
-    `    return sock.sendMessage(chat, { text });`,
+    `    return sock.sendMessage(chat, Object.assign({ text }, extra || {}));`,
+    `  }`,
+    `  async function __whatsappSend(chat, value) {`,
+    `    if (!sock) throw new Error('WhatsApp: cannot send because the bot is not connected yet.');`,
+    `    return sock.sendMessage(chat, typeof value === 'string' ? { text: value } : value);`,
     `  }`,
     `  function __whatsappOnMessage(handler) { handlers.push(handler); }`,
     `  async function __whatsappStart(options) {`,
-    `    const baileys = require('@whiskeysockets/baileys');`,
+    `    __waBaileysPkg = options.baileys || '@qwerty-xcv/baileys';`,
+    `    const baileys = require(__waBaileysPkg);`,
     `    const makeWASocket = baileys.default;`,
-    `    const { useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, DisconnectReason } = baileys;`,
+    `    const { useMultiFileAuthState, makeCacheableSignalKeyStore, DisconnectReason } = baileys;`,
     `    const folder = options.folder || 'plainscript-whatsapp-auth';`,
     `    const mode = options.login && options.login.mode === 'pairing' ? 'pairing' : 'qr';`,
     `    const pairingPhone = mode === 'pairing' ? __waNormalizePhone(options.login.phone) : null;`,
@@ -441,35 +516,45 @@ const BUILTIN_DECLARATIONS = {
     // Auth/session persistence: useMultiFileAuthState stores credentials in
     // the folder from `auth "<name>"`; saveCreds writes every update back.
     `        const { state, saveCreds } = await useMultiFileAuthState(folder);`,
-    `        let version;`,
-    `        try { version = (await fetchLatestBaileysVersion()).version; } catch (_) {}`,
-    // Proven socket settings: these exact options are required for pairing
-    // codes to survive WhatsApp's handshake without a 428 connection close.
+    // v2.14 — adopt the proven pairing-safe socket settings used by the
+    // reference Dual-Crasher build on the qwerty fork: a fixed Baileys protocol
+    // version and the exact browser fingerprint that survives WhatsApp's
+    // handshake without a 428 connection close.
     `        sock = makeWASocket({`,
-    `          ...(version ? { version } : {}),`,
-    `          browser: ['Ubuntu', 'Edge', '20.0.04'],`,
+    `          version: [2, 2413, 1],`,
+    `          browser: ['Mac Os', 'chrome', '121.0.6167.159'],`,
     `          printQRInTerminal: false,`,
     `          syncFullHistory: false,`,
     `          markOnlineOnConnect: false,`,
+    `          generateHighQualityLinkPreview: true,`,
     `          defaultQueryTimeoutMs: 60000,`,
-    `          keepAliveIntervalMs: 30000,`,
+    `          keepAliveIntervalMs: 50000,`,
     `          logger: __waSilentLogger,`,
     `          auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, __waSilentLogger) },`,
     `        });`,
     `        sock.ev.on('creds.update', saveCreds);`,
     // Pairing codes are requested two seconds after socket creation — asking
-    // earlier aborts the link attempt. PlainScript calls requestPairingCode(phone)
-    // with no custom suffix; the number was validated at compile time.
+    // earlier aborts the link attempt. PlainScript retries a few times (spam)
+    // so a dropped request never blocks linking. The number was validated at
+    // compile time; no custom suffix is applied.
     `        if (mode === 'pairing' && !state.creds.registered) {`,
-    `          setTimeout(() => {`,
-    `            if (!sock) return;`,
-    `            sock.requestPairingCode(pairingPhone).then((rawCode) => {`,
-    `              const pretty = String(rawCode || '').replace(/[^A-Za-z0-9]/g, '').replace(/(.{4})(?=.)/g, '$1-');`,
-    `              console.log('WhatsApp pairing code: ' + pretty);`,
-    `              console.log('Enter it on your phone: WhatsApp > Settings > Linked devices > Link a device > Link with phone number instead.');`,
-    `            }).catch((error) => {`,
-    `              console.error('WhatsApp pairing code failed: ' + error.message);`,
-    `            });`,
+    `          let attempts = 0;`,
+    `          const requestCode = async () => {`,
+    `            if (!sock || attempts >= 4) return;`,
+    `            attempts += 1;`,
+    `            try {`,
+    `              sock.requestPairingCode(pairingPhone).then((rawCode) => {`,
+    `                const pretty = String(rawCode || '').replace(/[^A-Za-z0-9]/g, '').replace(/(.{4})(?=.)/g, '$1-');`,
+    `                console.log('WhatsApp pairing code: ' + pretty);`,
+    `                console.log('Enter it on your phone: WhatsApp > Settings > Linked devices > Link a device > Link with phone number instead.');`,
+    `              }).catch((error) => {`,
+    `                console.error('WhatsApp pairing code failed: ' + error.message);`,
+    `              });`,
+    `            } catch (_) {}`,
+    `          };`,
+    `          setTimeout(async () => {`,
+    `            await requestCode();`,
+    `            setTimeout(requestCode, 4000);`,
     `          }, 2000);`,
     `        }`,
     // Connection lifecycle: the QR code while linking, a friendly note on
@@ -514,16 +599,23 @@ const BUILTIN_DECLARATIONS = {
     `              if (key.fromMe) continue;`,
     `              const chat = key.remoteJid;`,
     `              if (!chat || chat === 'status@broadcast') continue;`,
+    `              const content = __waUnwrap(msg.message);`,
     `              const message = {`,
-    `                text: __waExtractText(__waUnwrap(msg.message)),`,
+    `                text: __waExtractText(content),`,
+    `                type: __waMessageType(content),`,
+    `                mtype: content ? (Object.keys(content)[0] || 'unknown') : 'unknown',`,
+    `                caption: (content && (content.imageMessage || content.videoMessage || content.documentMessage || content.audioMessage || {}).caption) || null,`,
+    `                buttonId: __waButtonId(content),`,
     `                chat,`,
     `                sender: key.participant || chat,`,
     `                name: msg.pushName || null,`,
     `                id: key.id || null,`,
     `                time: Number(msg.messageTimestamp) > 0 ? Number(msg.messageTimestamp) * 1000 : Date.now(),`,
     `                isGroup: chat.endsWith('@g.us'),`,
+    `                raw: msg,`,
+    `                download: (dest) => __waDownload(msg, dest),`,
     `              };`,
-    `              const ctx = { chat, message, reply: (value) => __whatsappReply(chat, value) };`,
+    `              const ctx = { chat, message, reply: (value, extra) => __whatsappReply(chat, value, extra), send: (to, value) => __whatsappSend(to || chat, value) };`,
     `              for (const handler of handlers) {`,
     `                await handler(ctx);`,
     `              }`,
@@ -538,7 +630,7 @@ const BUILTIN_DECLARATIONS = {
     `    };`,
     `    await connect();`,
     `  }`,
-    `  return { __whatsappStart, __whatsappOnMessage, __whatsappReply };`,
+    `  return { __whatsappStart, __whatsappOnMessage, __whatsappReply, __whatsappSend, __whatsappDownload };`,
     `})();`,
   ].join('\n'),
   // v2.1.1 — HTTP client runtime on the global fetch API (Node.js 18+).
@@ -3370,6 +3462,7 @@ function generateStatement(node, indent = '', context = createGenerationContext(
         `${indent}await __whatsappStart({`,
         `${indent}  folder: ${JSON.stringify(node.authFolder)},`,
         `${indent}  login: ${loginArg},`,
+        ...(node.baileysModule ? [`${indent}  baileys: ${JSON.stringify(node.baileysModule)},`] : []),
         `${indent}});`,
       ];
       for (const handlerNode of node.handlers) {
@@ -3403,6 +3496,16 @@ function generateStatement(node, indent = '', context = createGenerationContext(
       }
       ensureBuiltin(context, 'whatsapp');
       return `${indent}console.log(__waCtx.message);`;
+
+    // v2.14 — download "<path>" — saves the current message's media to a file.
+    // Handler-only by design: outside "on message" there is no message media.
+    case 'WhatsAppDownloadStatement':
+      if (!_inWhatsApp) {
+        throw new Error('"download" can only be used inside an "on message" block to save the current message\'s media.\n\nExample:\n  whatsapp bot\n      on message\n          if message.type is "image"\n              download "media/photo.jpg"\n              reply "Saved your photo!"\n          done\n      done\n  done');
+      }
+      ensureBuiltin(context, 'whatsapp');
+      markAsync(context);
+      return `${indent}await __whatsappDownload(__waCtx.message, ${JSON.stringify(node.filePath)});`;
 
     // v2.1.0 — mail, cache, scheduling, background jobs, websocket
 

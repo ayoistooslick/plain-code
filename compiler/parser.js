@@ -696,6 +696,15 @@ function parse(tokens) {
         return { type: 'WhatsAppLogStatement' };
       }
 
+      // v2.14 — download "<path>": saves the current message's media (image,
+      // video, audio, document, sticker, …) to a file, inside an "on message"
+      // handler. Generation rejects it everywhere else with a teaching error.
+      if (token.value === 'download' && peekAt(1).type === TOKEN.STRING) {
+        advance(); // download
+        const filePath = advance().value;
+        return { type: 'WhatsAppDownloadStatement', filePath };
+      }
+
       // v2.1.0 — broadcast <expr>: sends to every connected socket.
       if (token.value === 'broadcast') {
         advance(); // broadcast
@@ -3431,6 +3440,7 @@ function parseAsk() {
 
     let authFolder = null;
     let login = null;
+    let baileysModule = null;
     const handlers = [];
 
     while (peek().type !== TOKEN.DONE) {
@@ -3439,6 +3449,16 @@ function parseAsk() {
           'Expected keyword "done" to close the "whatsapp bot" block before end of file.',
           peek()
         ));
+      }
+
+      // use baileys "<pkg>" — override the Baileys implementation package.
+      // Default is @qwerty-xcv/baileys. Accepts any require-able package name,
+      // so developers can pin a fork or the upstream @whiskeysockets/baileys.
+      if (peek().type === TOKEN.USE && peekAt(1).value === 'baileys' && peekAt(2).type === TOKEN.STRING) {
+        advance(); // use
+        advance(); // baileys
+        baileysModule = advance().value;
+        continue;
       }
 
       // auth "<folder>" — where WhatsApp session credentials persist.
@@ -3495,7 +3515,7 @@ function parseAsk() {
       }
 
       throw new Error(makeError(
-        'A "whatsapp bot" block may only contain an "auth", a "login", and "on message" statements.\n\nExample:\n  whatsapp bot\n      auth "session"\n      login qr\n\n      on message\n          log message\n      done\n  done',
+        'A "whatsapp bot" block may only contain an "auth", a "login", a "use baileys", and "on message" statements.\n\nExample:\n  whatsapp bot\n      auth "session"\n      use baileys "@qwerty-xcv/baileys"\n      login qr\n\n      on message\n          log message\n      done\n  done',
         peek()
       ));
     }
@@ -3506,6 +3526,7 @@ function parseAsk() {
       authFolder: authFolder || 'plainscript-whatsapp-auth',
       login: login || { mode: 'qr' },
       handlers,
+      baileysModule,
     };
   }
 

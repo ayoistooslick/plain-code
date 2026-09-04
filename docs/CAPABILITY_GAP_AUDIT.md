@@ -63,7 +63,7 @@ If `plainscript check` validates it, it's listed here.
 | Redis/in-memory cache | Implemented | `cache`, `cacheGet`, `cacheSet` |
 | Telegram bots | Implemented | `bot`, message/callback handlers |
 | AI providers | Implemented | `chat`, `chatWith`, `embedText`, provider presets |
-| WhatsApp bots | Implemented | `whatsapp bot` |
+| WhatsApp bots | Implemented | `whatsapp bot` (pairing/QR, message types, media download, custom Baileys) |
 | OCR | Implemented | `ocr path of file as text` |
 
 ## Canonical Examples

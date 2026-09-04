@@ -31,7 +31,9 @@ const PACKAGE_MAP = Object.freeze({
   'wasm-sqlite': 'sql.js',
   // v2.1.1 — WhatsApp bots run on Baileys; QR codes render in the terminal
   // through qrcode-terminal. Neither package ever appears in PlainScript source.
-  whatsapp: '@whiskeysockets/baileys',
+  // The default Baileys is the maintained @qwerty-xcv fork (reliable pairing);
+  // users can override it per-block with `use baileys "<pkg>"`.
+  whatsapp: '@qwerty-xcv/baileys',
   'wa-qrcode': 'qrcode-terminal',
   // v2.2.0 — MongoDB driver.
   mongodb: 'mongodb',
@@ -116,7 +118,9 @@ function visit(node, onUse) {
   } else if (node.type === 'WhatsAppBotStatement') {
     // v2.1.1 — WhatsApp bots run on Baileys and render QR codes with
     // qrcode-terminal; both are implementation packages, never source.
-    onUse('whatsapp');
+    // The user may override the Baileys package per-block with
+    // `use baileys "<pkg>"`; otherwise the default is used.
+    onUse(node.baileysModule || 'whatsapp');
     onUse('wa-qrcode');
   }
 

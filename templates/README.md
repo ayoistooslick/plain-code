@@ -17,6 +17,7 @@ be copied, modified, and deployed:
 | `sqlite-inventory` | Portable SQLite storage and parameterized SQL |
 | `telegram-support-bot` | Hardcoded commands, regex replies, buttons, and callbacks |
 | `webhook-receiver` | Authenticated webhooks and fast acknowledgements |
+| `whatsapp-hybrid-bot` | WhatsApp + Telegram in one process, media download, message types |
 
 From any starter directory:
 
