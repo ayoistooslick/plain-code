@@ -147,6 +147,23 @@
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 
+  // Mobile nav toggle
+  const navToggle = document.getElementById("nav-toggle");
+  const navLinks = document.getElementById("nav-links");
+  if (navToggle && navLinks) {
+    navToggle.addEventListener("click", () => {
+      const expanded = navToggle.getAttribute("aria-expanded") === "true";
+      navToggle.setAttribute("aria-expanded", String(!expanded));
+      navLinks.classList.toggle("is-open", !expanded);
+    });
+    navLinks.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        navToggle.setAttribute("aria-expanded", "false");
+        navLinks.classList.remove("is-open");
+      });
+    });
+  }
+
   // ── Feature library (search + filter) ─────────────────────────────────
   const examples = [
     { category: "core", name: "Variables", description: "Store and update values.", source: 'remember name as "Ada"\nremember count as 3\ncount becomes count + 1\nshow `Hello, ${name}!`' },
@@ -166,6 +183,7 @@
     { category: "runtime", name: "WebSockets", description: "Chat and push updates live.", source: 'websocket server on 8080\n    when socket connects\n        send socket "connected"\n    done\n    when socket sends message\n        broadcast message\n    done\ndone' },
     { category: "runtime", name: "Cache", description: "Keep values ready with a TTL.", source: 'cache env("REDIS_URL")\ncacheSet("status", "ready", 60)\nremember status as cacheGet("status")' },
     { category: "integrations", name: "Telegram", description: "Build a Telegram bot.", source: 'bot env("TELEGRAM_BOT_TOKEN")\nwhen someone sends "/start"\n    reply "Welcome"\ndone\nstart telegram bot' },
+    { category: "integrations", name: "WhatsApp", description: "Build a WhatsApp bot.", source: 'whatsapp bot\n    auth "session"\n    login pairing "2348012345678"\n    on message\n        if message.text is "/start"\n            reply "Welcome!"\n        done\n        if message.type is "image"\n            download "media/photo.jpg"\n            reply "Saved your photo!"\n        done\n    done\ndone' },
     { category: "integrations", name: "Groq AI", description: "Get AI replies in your code.", source: 'remember answer as chatWith("groq", "llama-3.3-70b-versatile", "Hello")\nshow answer' },
     { category: "integrations", name: "OCR uploads", description: "Read text from uploaded images.", source: 'web app\naccept uploads limit "5 MB" allow list with "image/png" folder "uploads"\nroute post "/scan"\n    remember file as upload("document")\n    ocr path of file as text\n    reply text\ndone' },
     { category: "tooling", name: "Native tests", description: "Check that your code works.", source: 'test "addition works"\n    check add(2, 3) equals 5\ndone' },

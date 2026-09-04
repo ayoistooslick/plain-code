@@ -686,6 +686,23 @@ function parse(tokens) {
         return parseWhatsAppBot();
       }
 
+      // v2.1.1 — pair whatsapp "<phone>": starts an on-demand WhatsApp pairing
+      // session for the given phone number. Used by hybrid bots where a
+      // Telegram command triggers a WhatsApp pairing flow.
+      // Accepts a string literal (validated at compile time) or any expression
+      // (e.g. a variable filled by regex matches[1]).
+      if (token.value === 'pair' &&
+          peekAt(1).type === TOKEN.IDENTIFIER && peekAt(1).value === 'whatsapp') {
+        advance(); // pair
+        advance(); // whatsapp
+        if (peek().type === TOKEN.STRING) {
+          const phone = advance().value;
+          return { type: 'WhatsAppPairStatement', phone: { type: 'StringLiteral', value: phone } };
+        }
+        const phoneExpr = parseExpression();
+        return { type: 'WhatsAppPairStatement', phone: phoneExpr };
+      }
+
       // v2.1.1 — log message: prints the normalized message record inside an
       // "on message" handler. Generation rejects it everywhere else with a
       // teaching error.
@@ -3524,7 +3541,7 @@ function parseAsk() {
     return {
       type: 'WhatsAppBotStatement',
       authFolder: authFolder || 'plainscript-whatsapp-auth',
-      login: login || { mode: 'qr' },
+      login: login,
       handlers,
       baileysModule,
     };

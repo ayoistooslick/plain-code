@@ -358,11 +358,11 @@ test('parser: separators and a leading plus are normalized away', () => {
   }
 });
 
-test('parser: defaults are deterministic — no auth/login means default folder and QR', () => {
+test('parser: no login means null login (handlers-only mode for hybrid bots)', () => {
   const ast = parse(tokenize('whatsapp bot\n    on message\n        log message\n    done\ndone'));
   const bot = ast.body[0];
   if (bot.authFolder !== 'plainscript-whatsapp-auth') throw new Error('bad default auth folder');
-  if (bot.login.mode !== 'qr') throw new Error('bad default login mode');
+  if (bot.login !== null) throw new Error('expected null login when no login line present');
 });
 
 test('compile errors: unknown statements inside whatsapp bot are teaching errors', () => {

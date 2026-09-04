@@ -1,40 +1,39 @@
-// PlainScript 1.0.35: a WhatsApp + Telegram hybrid support bot.
+// PlainScript: WhatsApp + Telegram hybrid bot with on-demand pairing.
 //
-// One runtime hosts both channels:
-//  - WhatsApp: pairing login, full message-type detection, media download,
-//    and a command menu.
-//  - Telegram: command handlers and an inline button menu.
+// Architecture:
+//  - The `whatsapp bot` block registers on-message handlers only (no auto-start).
+//  - A Telegram `/pair <phone>` command triggers `pair whatsapp <phone>`, which
+//    starts a real WhatsApp session on demand, relays the pairing code to the
+//    Telegram chat, and connects. From that point the WhatsApp handlers respond
+//    to messages like `.ping`.
 //
-// The default Baileys package is the qwerty fork (@qwerty-xcv/baileys). To pin
-// a different implementation, add a line inside the whatsapp block:
+//  - `/start`, `/menu`, and other Telegram-only commands are handled separately.
 //
-//   use baileys "@whiskeysockets/baileys"
+// The default Baileys package is the qwerty fork (@qwerty-xcv/baileys).
 
 bot env("TELEGRAM_BOT_TOKEN")
 
 // ── WhatsApp channel ─────────────────────────────────────────────────────────
-// Set WHATSAPP_PHONE to the full international number (digits only, no "+").
+// Only registers handlers — does NOT auto-start. The actual session is started
+// on demand by the Telegram `/pair` command via `pair whatsapp`.
 whatsapp bot
     auth "whatsapp-session"
-    login pairing env("WHATSAPP_PHONE")
 
     on message
-        if message.type is "text"
-            if message.text is "/start"
-                reply "Welcome to the hybrid bot. Try /menu or send a photo."
-            done
+        // Log every incoming WhatsApp message for debugging.
+        log message
 
-            if message.text is "/menu"
-                reply "Choose a topic" with buttons
-                    "Hours" -> "hours"
-                    "Pricing" -> "pricing"
-                    "Human" -> "human"
-                done
-            done
+        // .ping → reply with "pong"
+        if message.text is ".ping"
+            reply "pong"
+        done
 
-            if message.text is "/default"
-                reply "I'm online on both WhatsApp and Telegram."
-            done
+        // .start or /start → welcome text
+        if message.text is ".start"
+            reply "Welcome to the WhatsApp hybrid bot."
+        done
+        if message.text is "/start"
+            reply "Welcome to the WhatsApp hybrid bot."
         done
 
         // Media handling: save any image the customer sends.
@@ -43,10 +42,12 @@ whatsapp bot
             reply "Got your picture. We saved it for the team."
         done
 
+        // Button taps carry a buttonId we can reply with.
         if message.type is "button"
             reply "You chose: " + message.buttonId
         done
 
+        // Documents
         if message.type is "document"
             download "downloads/whatsapp-document"
             reply "We received your document."
@@ -55,28 +56,28 @@ whatsapp bot
 done
 
 // ── Telegram channel ─────────────────────────────────────────────────────────
+
+// /start — greet the user
 when someone sends "/start"
-    reply "Welcome to the hybrid bot. Use /menu for options."
+    reply "Welcome! Use /pair <phone> to connect WhatsApp, or /menu for options."
 done
 
+// /menu — list available commands
 when someone sends "/menu"
-    reply "Choose an option" with buttons
-        "Hours" -> "hours"
-        "Pricing" -> "pricing"
-        "Human" -> "human"
-    done
+    reply "/pair <phone> — connect WhatsApp\n/ping — test bot\n/start — welcome message"
 done
 
-when someone clicks "hours"
-    reply "Support is available Monday to Friday, 09:00 to 17:00 UTC."
+// /ping — quick health check
+when someone sends "/ping"
+    reply "pong"
 done
 
-when someone clicks "pricing"
-    reply "Plans start at $10 per month."
-done
-
-when someone clicks "human"
-    reply "A specialist will message you shortly."
+// /pair <phone> — start an on-demand WhatsApp pairing session.
+// The regex captures the phone number (digits) after "/pair ".
+// `matches` is an array from the regex: matches[0] is the full match,
+// matches[1] is the captured phone number group.
+when someone sends matching "/pair (.+)"
+    pair whatsapp matches[1]
 done
 
 start telegram bot

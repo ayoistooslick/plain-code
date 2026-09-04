@@ -18,7 +18,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 body { margin: 0; line-height: 1.6; overflow-x: hidden; }
 a { color: var(--accent); }
 a:hover { color: #9ff2da; }
@@ -73,6 +73,34 @@ code { font-size: .92em; color: #bfe9ff; }
 .nav-links { gap: 22px; }
 .nav-links a { color: var(--muted); font-size: .9rem; text-decoration: none; transition: color .2s; }
 .nav-links a:hover { color: var(--accent); }
+
+/* Hamburger toggle — hidden on desktop */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.nav-toggle-bar {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--text);
+  transition: transform .3s ease, opacity .3s ease;
+}
+.nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(2) { opacity: 0; }
+.nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 /* Hero */
 .hero { position: relative; padding: 108px 0 92px; }
@@ -211,10 +239,81 @@ textarea, input { caret-color: var(--accent); }
   .info-card:hover, .feature-card:hover, .library-card:hover { transform: none; }
 }
 
+/* ──────────────────────────────────────────────────────────────────────
+   MOBILE LAYOUT  (≤ 760px)
+   ────────────────────────────────────────────────────────────────────── */
 @media (max-width: 760px) {
-  .nav-inner { align-items: flex-start; padding: 14px 0; }
-  .nav-links { gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-  .hero { padding: 68px 0 60px; }
-  .three-column, .feature-grid, .lib-grid, .split { grid-template-columns: 1fr; }
-  .section { padding: 60px 0; }
+
+  /* --- Nav: hamburger + collapsible menu --- */
+  .nav-toggle { display: flex; }
+  .nav-inner { flex-wrap: wrap; padding: 12px 0; }
+  .nav-links {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 0 4px;
+  }
+  .nav-links.is-open { display: flex; }
+  .nav-links a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 6px 0;
+    font-size: 1rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-links a:last-child { border-bottom: none; }
+
+  /* --- Hero --- */
+  .hero { padding: 56px 0 48px; }
+  .hero-title { font-size: clamp(2rem, 8vw, 3rem); line-height: 1.05; }
+  .hero-lead { font-size: 1.05rem; line-height: 1.55; }
+  .hero-actions { gap: 10px; margin: 22px 0 24px; }
+
+  /* --- Buttons: touch-friendly --- */
+  .button { padding: 12px 20px; font-size: .95rem; min-height: 44px; }
+
+  /* --- Code windows: full-width, no overflow tricks --- */
+  .code-window {
+    padding: 18px 14px 16px;
+    font-size: .82rem;
+    margin-left: -10px;
+    margin-right: -10px;
+    border-radius: 10px;
+  }
+
+  /* --- Sections --- */
+  .section { padding: 48px 0; }
+  .section-title { font-size: clamp(1.6rem, 6vw, 2.2rem); margin-bottom: 24px; }
+
+  /* --- Grids: single column --- */
+  .three-column,
+  .feature-grid,
+  .lib-grid,
+  .split { grid-template-columns: 1fr; gap: 14px; }
+
+  /* --- Cards: touch-friendly tap targets --- */
+  .info-card,
+  .feature-card,
+  .library-card { padding: 20px 18px; }
+
+  /* --- Capability list --- */
+  .capability-list span { font-size: .8rem; padding: 7px 10px; }
+
+  /* --- Library search & filters --- */
+  .library-toolbar { flex-direction: column; gap: 12px; }
+  .lib-search-input { width: 100%; min-width: 0; font-size: 1rem; }
+  .lib-filters { width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  .lib-filter { white-space: nowrap; min-height: 40px; font-size: .84rem; }
+
+  /* --- Split (reference section) --- */
+  .split { gap: 24px; }
+
+  /* --- Footer --- */
+  .footer-bottom { flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+
+  /* --- Canvas background: prevent horizontal scroll --- */
+  #bg-canvas { width: 100vw; height: 100vh; pointer-events: none; }
 }

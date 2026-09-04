@@ -6,23 +6,7 @@
   <meta name="description" content="PlainScript 1.0.35 language reference and examples">
   <meta name="theme-color" content="#070c16">
   <title>PlainScript 1.0.35</title>
-  <script>
-    // Force desktop rendering on small screens: lay out at a desktop width and
-    // let the browser scale it down, so mobile users see the full site right
-    // away instead of having to pinch-zoom out.
-    (function () {
-      var isMobile = /Android|iPhone|iPod|iPad|Mobile|Windows Phone/i.test(navigator.userAgent);
-      if (isMobile) {
-        var vp = document.querySelector('meta[name="viewport"]');
-        if (vp) {
-          var layoutWidth = 1400;
-          var deviceWidth = window.screen.width || document.documentElement.clientWidth;
-          var scale = Math.min(deviceWidth / layoutWidth, 1).toFixed(5);
-          vp.setAttribute('content', 'width=' + layoutWidth + ', initial-scale=' + scale + ', maximum-scale=5');
-        }
-      }
-    })();
-  </script>
+
   <link rel="stylesheet" href="website/style.css">
 </head>
 <body>
@@ -36,7 +20,12 @@
         <span>PlainScript</span>
         <span class="logo-ver">1.0.35</span>
       </a>
-      <nav class="nav-links" aria-label="Primary navigation">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-links">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+      <nav class="nav-links" id="nav-links" aria-label="Primary navigation">
         <a href="#quickstart">Quick start</a>
         <a href="#language">Language</a>
         <a href="#capabilities">Capabilities</a>

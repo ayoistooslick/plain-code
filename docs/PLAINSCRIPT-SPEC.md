@@ -303,8 +303,115 @@ Inside a Telegram handler, `message`, `text`, `args`, `matches`, `chat`,
 `reply "text"`; provider-backed replies can use `chatWith` before `reply`.
 `telegramCall(method, params)` calls any Telegram Bot API method.
 
-WhatsApp uses `whatsapp bot ... done`, with `auth`, `login qr`, `login
-pairing`, and `on message` clauses. OCR uses:
+### WhatsApp
+
+WhatsApp bots are declared with a `whatsapp bot ... done` block. The block
+accepts the following clauses:
+
+| Clause | Purpose |
+|--------|---------|
+| `auth "<folder>"` | Path where session credentials persist across restarts. |
+| `use baileys "<pkg>"` | Optional. Override the Baileys package (default: `@qwerty-xcv/baileys`). |
+| `login qr` | Authenticate by scanning a QR code in the terminal. |
+| `login pairing "<phone>"` | Authenticate by entering a phone number (digits only, no `+`). The argument may also be an expression such as `env("WHATSAPP_PHONE")`. |
+| `on message ... done` | Handler that fires for every incoming message. |
+
+Inside `on message` the incoming record is bound to `message`. Useful fields
+include `message.text`, `message.type`, `message.mtype`, `message.caption`,
+`message.buttonId`, `message.chat`, `message.sender`, `message.name`,
+`message.id`, `message.time`, and `message.isGroup`.
+
+**Pairing login example:**
+
+```plainscript
+whatsapp bot
+    auth "plain-script-whatsapp"
+    use baileys "@qwerty-xcv/baileys"
+    login pairing "2348012345678"
+    on message
+        if message.text is "/start"
+            reply "Welcome!"
+        done
+        if message.text is "/help"
+            reply "Available commands:\n/start\n/help"
+        done
+    done
+done
+```
+
+**QR login example:**
+
+```plainscript
+whatsapp bot
+    auth "plain-script-whatsapp"
+    login qr
+    on message
+        if message.text is "/start"
+            reply "Welcome"
+        done
+        if message.type is "image"
+            download "media/photo.jpg"
+            reply "Saved your photo!"
+        done
+        if message.type is "button"
+            reply "You chose: " + message.buttonId
+        done
+    done
+done
+```
+
+#### Sending different message types
+
+Inside `on message` you can branch on `message.type` to handle text, images,
+documents, buttons, lists, and more. The following helpers are available:
+
+| Statement | Effect |
+|-----------|--------|
+| `reply <value>` | Send a plain-text reply. |
+| `reply <value> with buttons ... done` | Send interactive buttons. |
+| `download "<path>"` | Save incoming media (image, audio, document …) to disk. |
+| `log message` | Print the full message record for debugging. |
+
+`message.type` values include `"text"`, `"image"`, `"video"`, `"audio"`,
+`"document"`, `"sticker"`, `"button"`, `"list"`, `"template-button"`,
+`"reaction"`, `"contact"`, `"contacts"`, `"location"`, `"live-location"`,
+`"poll"`, `"group-invite"`, and `"other"`.
+
+**Full example — media, buttons, and list replies:**
+
+```plainscript
+whatsapp bot
+    auth "plain-script-whatsapp"
+    use baileys "@qwerty-xcv/baileys"
+    login pairing env("WHATSAPP_PHONE")
+    on message
+        log message
+        if message.text is "/menu"
+            reply "Choose a topic" with buttons
+                "Hours" -> "hours"
+                "Pricing" -> "pricing"
+                "Human" -> "human"
+            done
+        done
+        if message.type is "image"
+            download "downloads/photo.jpg"
+            reply "Got your picture. We saved it for the team."
+        done
+        if message.type is "document"
+            download "downloads/file.bin"
+            reply "We received your document."
+        done
+        if message.type is "button"
+            reply "You chose: " + message.buttonId
+        done
+        if message.type is "list"
+            reply "You picked: " + message.buttonId
+        done
+    done
+done
+```
+
+OCR uses:
 
 ```plainscript
 ocr path of file as text

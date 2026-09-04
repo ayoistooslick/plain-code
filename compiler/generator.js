@@ -389,7 +389,7 @@ const BUILTIN_DECLARATIONS = {
   // lifecycle and messages.upsert normalization. PlainScript programs only ever
   // see __whatsappStart/__whatsappOnMessage/__whatsappReply.
   whatsapp: [
-    `const { __whatsappStart, __whatsappOnMessage, __whatsappReply, __whatsappSend, __whatsappDownload } = (() => {`,
+    `const { __whatsappStart, __whatsappPair, __whatsappOnMessage, __whatsappReply, __whatsappSend, __whatsappDownload } = (() => {`,
     `  let sock = null;`,
     `  let __waBaileysPkg = '@qwerty-xcv/baileys';`,
     `  const handlers = [];`,
@@ -630,7 +630,107 @@ const BUILTIN_DECLARATIONS = {
     `    };`,
     `    await connect();`,
     `  }`,
-    `  return { __whatsappStart, __whatsappOnMessage, __whatsappReply, __whatsappSend, __whatsappDownload };`,
+    `  async function __whatsappPair(phone, onCode, onOpen) {`,
+    `    const digits = __waNormalizePhone(phone);`,
+    `    const baileys = require(__waBaileysPkg);`,
+    `    const makeWASocket = baileys.default;`,
+    `    const { useMultiFileAuthState, makeCacheableSignalKeyStore } = baileys;`,
+    `    const { state, saveCreds } = await useMultiFileAuthState('whatsapp-session');`,
+    `    let pairSock = makeWASocket({`,
+    `      version: [2, 2413, 1],`,
+    `      browser: ['Mac Os', 'chrome', '121.0.6167.159'],`,
+    `      printQRInTerminal: false,`,
+    `      syncFullHistory: false,`,
+    `      markOnlineOnConnect: false,`,
+    `      generateHighQualityLinkPreview: true,`,
+    `      defaultQueryTimeoutMs: 60000,`,
+    `      keepAliveIntervalMs: 50000,`,
+    `      logger: __waSilentLogger,`,
+    `      auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, __waSilentLogger) },`,
+    `    });`,
+    `    pairSock.ev.on('creds.update', saveCreds);`,
+    `    pairSock.ev.on('messages.upsert', async (upsert) => {`,
+    `      try {`,
+    `        if (!upsert || upsert.type !== 'notify') return;`,
+    `        for (const msg of upsert.messages || []) {`,
+    `          const key = msg.key || {};`,
+    `          if (key.fromMe) continue;`,
+    `          const chat = key.remoteJid;`,
+    `          if (!chat || chat === 'status@broadcast') continue;`,
+    `          const content = __waUnwrap(msg.message);`,
+    `          const message = {`,
+    `            text: __waExtractText(content),`,
+    `            type: __waMessageType(content),`,
+    `            mtype: content ? (Object.keys(content)[0] || 'unknown') : 'unknown',`,
+    `            caption: (content && (content.imageMessage || content.videoMessage || content.documentMessage || content.audioMessage || {}).caption) || null,`,
+    `            buttonId: __waButtonId(content),`,
+    `            chat,`,
+    `            sender: key.participant || chat,`,
+    `            name: msg.pushName || null,`,
+    `            id: key.id || null,`,
+    `            time: Number(msg.messageTimestamp) > 0 ? Number(msg.messageTimestamp) * 1000 : Date.now(),`,
+    `            isGroup: chat.endsWith('@g.us'),`,
+    `            raw: msg,`,
+    `            download: (dest) => __waDownload(msg, dest),`,
+    `          };`,
+    `          const ctx = { chat, message, reply: (value, extra) => __whatsappReply(chat, value, extra), send: (to, value) => __whatsappSend(to || chat, value) };`,
+    `          for (const handler of handlers) {`,
+    `            await handler(ctx);`,
+    `          }`,
+    `        }`,
+    `      } catch (error) {`,
+    `        console.error(error);`,
+    `      }`,
+    `    });`,
+    `    if (onCode) {`,
+    `      await new Promise((resolve) => {`,
+    `        let attempts = 0;`,
+    `        const requestCode = async () => {`,
+    `          if (!pairSock || attempts >= 4) { resolve(); return; }`,
+    `          attempts += 1;`,
+    `          try {`,
+    `            pairSock.requestPairingCode(digits).then((rawCode) => {`,
+    `              const pretty = String(rawCode || '').replace(/[^A-Za-z0-9]/g, '').replace(/(.{4})(?=.)/g, '$1-');`,
+    `              console.log('WhatsApp pairing code: ' + pretty);`,
+    `              onCode(pretty);`,
+    `              resolve();`,
+    `            }).catch((error) => {`,
+    `              console.error('WhatsApp pairing code failed: ' + error.message);`,
+    `              resolve();`,
+    `            });`,
+    `          } catch (_) { resolve(); }`,
+    `        };`,
+    `        setTimeout(async () => {`,
+    `          await requestCode();`,
+    `          setTimeout(requestCode, 4000);`,
+    `        }, 2000);`,
+    `      });`,
+    `    } else {`,
+    `      await new Promise((resolve) => {`,
+    `        let attempts = 0;`,
+    `        const requestCode = async () => {`,
+    `          if (!pairSock || attempts >= 4) { resolve(); return; }`,
+    `          attempts += 1;`,
+    `          try {`,
+    `            pairSock.requestPairingCode(digits).then((rawCode) => {`,
+    `              const pretty = String(rawCode || '').replace(/[^A-Za-z0-9]/g, '').replace(/(.{4})(?=.)/g, '$1-');`,
+    `              console.log('WhatsApp pairing code: ' + pretty);`,
+    `              resolve();`,
+    `            }).catch((error) => {`,
+    `              console.error('WhatsApp pairing code failed: ' + error.message);`,
+    `              resolve();`,
+    `            });`,
+    `          } catch (_) { resolve(); }`,
+    `        };`,
+    `        setTimeout(async () => {`,
+    `          await requestCode();`,
+    `          setTimeout(requestCode, 4000);`,
+    `        }, 2000);`,
+    `      });`,
+    `    }`,
+    `    return digits;`,
+    `  }`,
+    `  return { __whatsappStart, __whatsappPair, __whatsappOnMessage, __whatsappReply, __whatsappSend, __whatsappDownload };`,
     `})();`,
   ].join('\n'),
   // v2.1.1 — HTTP client runtime on the global fetch API (Node.js 18+).
@@ -3444,32 +3544,54 @@ function generateStatement(node, indent = '', context = createGenerationContext(
 
     // whatsapp bot … done — starts the Baileys runtime with the declared
     // auth folder and login mode, then registers every "on message" handler.
+    // When no login line is present (login is null), only registers handlers
+    // without auto-starting — used by hybrid bots that pair on-demand.
     case 'WhatsAppBotStatement': {
       ensureBuiltin(context, 'whatsapp');
       markAsync(context);
-      // v2.1.2 — the pairing phone may be a compile-time literal or any
-      // PlainScript expression (e.g. a variable filled by `ask`). Runtime values
-      // are normalized/validated by __waNormalizePhone at startup.
-      let loginArg;
-      if (node.login.mode === 'pairing') {
-        loginArg = node.login.phoneExpr != null
-          ? `{ mode: 'pairing', phone: (${generateExpr(node.login.phoneExpr, context)}) }`
-          : `{ mode: 'pairing', phone: ${JSON.stringify(node.login.phone)} }`;
-      } else {
-        loginArg = `{ mode: 'qr' }`;
+      const lines = [];
+      if (node.login) {
+        // v2.1.2 — the pairing phone may be a compile-time literal or any
+        // PlainScript expression (e.g. a variable filled by `ask`). Runtime values
+        // are normalized/validated by __waNormalizePhone at startup.
+        let loginArg;
+        if (node.login.mode === 'pairing') {
+          loginArg = node.login.phoneExpr != null
+            ? `{ mode: 'pairing', phone: (${generateExpr(node.login.phoneExpr, context)}) }`
+            : `{ mode: 'pairing', phone: ${JSON.stringify(node.login.phone)} }`;
+        } else {
+          loginArg = `{ mode: 'qr' }`;
+        }
+        lines.push(
+          `${indent}await __whatsappStart({`,
+          `${indent}  folder: ${JSON.stringify(node.authFolder)},`,
+          `${indent}  login: ${loginArg},`,
+          ...(node.baileysModule ? [`${indent}  baileys: ${JSON.stringify(node.baileysModule)},`] : []),
+          `${indent}});`,
+        );
       }
-      const lines = [
-        `${indent}await __whatsappStart({`,
-        `${indent}  folder: ${JSON.stringify(node.authFolder)},`,
-        `${indent}  login: ${loginArg},`,
-        ...(node.baileysModule ? [`${indent}  baileys: ${JSON.stringify(node.baileysModule)},`] : []),
-        `${indent}});`,
-      ];
       for (const handlerNode of node.handlers) {
         const generated = generateStatement(handlerNode, indent, context);
         if (generated) lines.push(generated);
       }
       return lines.join('\n');
+    }
+
+    // pair whatsapp "<phone>" — on-demand WhatsApp pairing session.
+    // When _inTelegram is true, relays the pairing code and connection status
+    // to the Telegram chat via ctx.chatId.
+    case 'WhatsAppPairStatement': {
+      ensureBuiltin(context, 'whatsapp');
+      markAsync(context);
+      const phoneArg = node.phone.type === 'StringLiteral'
+        ? JSON.stringify(node.phone.value)
+        : generateExpr(node.phone, context);
+      if (_inTelegram) {
+        return [
+          `${indent}await __whatsappPair(${phoneArg}, (code) => Telegram.sendMessage(ctx.chatId, "WhatsApp pairing code: " + code), () => Telegram.sendMessage(ctx.chatId, "WhatsApp connected."));`,
+        ].join('\n');
+      }
+      return `${indent}await __whatsappPair(${phoneArg}, null, null);`;
     }
 
     // on message … done — registers the handler that receives each incoming
