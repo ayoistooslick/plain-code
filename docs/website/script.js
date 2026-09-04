@@ -164,6 +164,51 @@
     });
   }
 
+  // ── Copy controls for every code block ─────────────────────────────────
+  function enhanceCodeBlock(pre) {
+    if (!pre || pre.querySelector(".copy-button")) return;
+    const code = pre.querySelector("code");
+    if (!code) return;
+
+    const copyButton = document.createElement("button");
+    copyButton.type = "button";
+    copyButton.className = "copy-button";
+    copyButton.textContent = "Copy";
+    copyButton.setAttribute("aria-label", "Copy code to clipboard");
+    copyButton.addEventListener("click", async () => {
+      const originalLabel = "Copy";
+      let copied = false;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(code.textContent);
+          copied = true;
+        } else {
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(code);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          copied = document.execCommand("copy");
+          selection.removeAllRanges();
+        }
+      } catch (error) {
+        copied = false;
+      }
+      if (!copied) return;
+      copyButton.textContent = "Copied";
+      copyButton.classList.add("is-copied");
+      copyButton.setAttribute("aria-label", "Code copied to clipboard");
+      window.setTimeout(() => {
+        copyButton.textContent = originalLabel;
+        copyButton.classList.remove("is-copied");
+        copyButton.setAttribute("aria-label", "Copy code to clipboard");
+      }, 1600);
+    });
+    pre.appendChild(copyButton);
+  }
+
+  document.querySelectorAll("pre").forEach(enhanceCodeBlock);
+
   // ── Feature library (search + filter) ─────────────────────────────────
   const examples = [
     { category: "core", name: "Variables", description: "Store and update values.", source: 'remember name as "Ada"\nremember count as 3\ncount becomes count + 1\nshow `Hello, ${name}!`' },
@@ -226,6 +271,7 @@
       card.className = "library-card";
       card.innerHTML = `<div class="library-card-top"><span class="library-category">${item.category}</span><h3>${item.name}</h3><p>${item.description}</p></div><pre><code></code></pre>`;
       card.querySelector("code").textContent = item.source;
+      enhanceCodeBlock(card.querySelector("pre"));
       grid.appendChild(card);
     });
     empty.hidden = visible.length !== 0;
