@@ -286,6 +286,30 @@ export all from "./submodule.pln"
 
 `bring symbol from "path"` (or `import { symbol } from "path"`) imports selected symbols from `.pln` modules or npm packages. `bring all from "path" as name` creates a namespaced module object. `@/` resolves relative to `src/`. Export symbols with `export`, `share`, `expose`, or `export all from "path"`. `use <pkg>` is still supported for explicit package declarations.
 
+### Starter project structure
+
+The real-world starters in `templates/` use a small module graph rather than putting
+everything in one file:
+
+- Keep `src/app.pln` as the runnable entry point.
+- Put reusable functions and configuration in nearby `.pln` modules.
+- Import those helpers with `bring ... from "./module.pln"`.
+- Keep server, bot, database, and lifecycle declarations in the entry point when
+  they define how the starter runs.
+
+The compiler resolves the imported files and bundles the dependency graph into the
+same JavaScript output. From a starter directory, validate and build it with:
+
+```bash
+npx plainscript check src
+npx plainscript build src/app.pln -o dist/app.js
+node dist/app.js
+```
+
+When checking a starter from the PlainScript repository, validate its entry file
+with `node compiler/cli.js check templates/<starter>/src/app.pln`. Preserve the
+entrypoint and import paths when adding or moving helper modules.
+
 ---
 
 ## 7. Built-in functions
@@ -732,7 +756,9 @@ Run repository tests with:
 npm test
 ```
 
-When changing the compiler, add a focused regression test. When changing documentation, make sure every PlainScript fence still compiles.
+When changing the compiler, add a focused regression test. When changing
+documentation, make sure every PlainScript fence still compiles. When changing a
+starter, validate its `src/app.pln` entry point so imported modules are checked too.
 
 ---
 
