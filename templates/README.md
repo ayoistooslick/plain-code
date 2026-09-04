@@ -19,6 +19,11 @@ be copied, modified, and deployed:
 | `webhook-receiver` | Authenticated webhooks and fast acknowledgements |
 | `whatsapp-hybrid-bot` | WhatsApp + Telegram in one process, media download, message types |
 
+Every starter keeps `src/app.pln` as its runnable entry point, with reusable
+logic split into nearby `.pln` modules. The entry point imports those helpers
+with `bring ... from "./file.pln"`; the compiler bundles the dependency graph
+into the same `dist/app.js` output.
+
 From any starter directory:
 
 ```bash

@@ -1,3 +1,5 @@
+bring broadcastMsg from "./realtime.pln"
+
 database "messaging.db" using "wasm"
 
 execute
@@ -6,15 +8,6 @@ execute
 done
 
 remember connections as []
-
-make broadcastMsg(msg)
-    remember payload as jsonEncode(msg)
-    for each connection in connections
-        if connection.userId is not "" and connection.userId is not msg.sender
-            __wsSend(connection.socket, payload)
-        done
-    done
-done
 
 web app
 require api key from env("API_KEY")
@@ -57,7 +50,7 @@ route post "/messages"
     insert
         INSERT INTO messages (sender, receiver, content) VALUES ({senderId}, {receiverId}, {content})
     done
-    broadcastMsg(msg)
+    broadcastMsg(msg, connections)
     status 201
     reply json
         message is msg

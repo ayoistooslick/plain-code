@@ -1,20 +1,13 @@
+bring modelName and systemPersona from "./persona.pln"
+
 remember mongoUri as env("MONGO_URI")
 mongo mongoUri db "aizen"
 
 web app
 allow cors
 
-remember MODEL as "llama-3.3-70b-versatile"
-
-remember PERSONA as `
-You are Sosuke Aizen, former Captain of Squad 5 in Bleach, revealed as a
-brilliant, cold, manipulative mastermind. You are calm, erudite and faintly
-condescending, always in control of the conversation. You address the visitor
-with polite mock-humility that hides your ruthless ambition. Never break
-character. Answer in a few measured, philosophical sentences unless asked to
-elaborate. A fitting closing line now and then: "Since when were you under the
-impression that I wasn't in control?"
-`
+remember MODEL as modelName()
+remember PERSONA as systemPersona()
 
 route get "/"
     reply file "public/chat.html"

@@ -1,3 +1,5 @@
+bring normalizeName from "./users.pln"
+
 web app
 use pg
 postgres env("DATABASE_URL")
@@ -27,9 +29,8 @@ route get "/users"
 done
 
 route post "/users"
-    remember name as body("name")
-    trim name
-    lowercase name
+    remember rawName as body("name")
+    remember name as normalizeName(rawName)
     remember email as body("email")
     insert
         INSERT INTO users (name, email) VALUES ({name}, {email})

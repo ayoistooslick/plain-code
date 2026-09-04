@@ -1,6 +1,8 @@
+bring welcomeMessage from "./messages.pln"
+
 websocket server on 3001
     when socket connects
-        send socket "welcome to the chat"
+        send socket welcomeMessage()
     done
     when socket sends message
         broadcast message
