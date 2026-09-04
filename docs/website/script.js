@@ -8,7 +8,20 @@
     const canvas = document.getElementById("bg-canvas");
     if (!canvas || !window.WebGLRenderingContext) return;
 
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    let context;
+    try {
+      context = canvas.getContext("webgl", { alpha: true, antialias: true });
+    } catch (error) {
+      return;
+    }
+    if (!context) return;
+
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, context, alpha: true, antialias: true });
+    } catch (error) {
+      return;
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
     const scene = new THREE.Scene();
@@ -165,10 +178,62 @@
   }
 
   // ── Copy controls for every code block ─────────────────────────────────
+  const syntaxGroups = {
+    declaration: new Set(["remember", "let", "make", "define", "function", "use", "import", "export", "database", "postgres", "record", "list", "create", "websocket", "bot", "whatsapp", "ocr"]),
+    web: new Set(["web", "route", "start", "listen", "reply", "respond", "serve", "allow", "cors", "status", "redirect", "param", "query", "header", "upload", "uploads"]),
+    database: new Set(["database", "postgres", "query", "insert", "update", "delete", "execute", "transaction", "native", "wasm"]),
+    error: new Set(["try", "recover", "finally", "retry", "throw", "raise", "raises", "catch", "catches"]),
+    test: new Set(["test", "check", "equals", "contains", "raises"]),
+    comparison: new Set(["contains", "starts", "ends", "between", "is", "same", "different", "more", "fewer", "at", "least", "most"]),
+    keyword: new Set(["if", "otherwise", "else", "for", "each", "every", "index", "from", "to", "while", "in", "when", "on", "done", "give", "return", "yield", "break", "continue", "with", "and", "or", "not", "field", "instanceof", "show", "print", "display", "accept", "require", "enable", "limit", "cache", "schedule", "background", "socket", "message", "broadcast", "send"])
+  };
+
+  function escapeHtml(value) {
+    return value.replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[character]));
+  }
+
+  function highlightPlainScript(source) {
+    const tokenPattern = /\/\/[^\n]*|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`|\b\d+(?:\.\d+)?n?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|\?\?|\?\.|\*\*|->|===|!==|==|!=|<=|>=|[+\-*\/%=<>]/g;
+    let highlighted = "";
+    let lastIndex = 0;
+    let match;
+
+    while ((match = tokenPattern.exec(source))) {
+      highlighted += escapeHtml(source.slice(lastIndex, match.index));
+      const token = match[0];
+      let className = "";
+      if (token.startsWith("//")) className = "comment";
+      else if (token.startsWith('"')) className = "string";
+      else if (token.startsWith("`")) className = "template";
+      else if (/^\d/.test(token)) className = "number";
+      else if (/^(true|false|null|undefined)$/.test(token)) className = "constant";
+      else if (/^(?:\?\?|\?\.|\*\*|->|===|!==|==|!=|<=|>=|[+\-*\/%=<>])$/.test(token)) className = token === "=" ? "assignment" : "operator";
+      else if (syntaxGroups.database.has(token)) className = "database";
+      else if (syntaxGroups.comparison.has(token)) className = "comparison";
+      else if (syntaxGroups.declaration.has(token)) className = "declaration";
+      else if (syntaxGroups.web.has(token)) className = "web";
+      else if (syntaxGroups.error.has(token)) className = "error";
+      else if (syntaxGroups.test.has(token)) className = "test";
+      else if (syntaxGroups.keyword.has(token)) className = "keyword";
+      else if (/\s*\(/.test(source.slice(match.index + token.length))) className = "function";
+      if (token === "becomes") className = "assignment";
+      highlighted += className ? `<span class="code-token code-token--${className}">${escapeHtml(token)}</span>` : escapeHtml(token);
+      lastIndex = match.index + token.length;
+    }
+    return highlighted + escapeHtml(source.slice(lastIndex));
+  }
+
   function enhanceCodeBlock(pre) {
     if (!pre || pre.querySelector(".copy-button")) return;
     const code = pre.querySelector("code");
     if (!code) return;
+    code.innerHTML = highlightPlainScript(code.textContent);
 
     const copyButton = document.createElement("button");
     copyButton.type = "button";
