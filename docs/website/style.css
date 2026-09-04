@@ -120,6 +120,18 @@ code { font-size: .92em; color: #b6e0ba; }
 .button-primary:hover { color: #031004; background: var(--accent-bright); transform: translateY(-2px); }
 .button-secondary { color: var(--text); background: var(--panel); border: 1px solid var(--line-strong); backdrop-filter: blur(8px); }
 .button-secondary:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-2px); }
+.reference-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 24px 0; }
+.button-reference {
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  background: var(--accent-dim);
+}
+.button-reference:hover {
+  color: var(--text);
+  border-color: var(--accent-bright);
+  background: #17551d;
+  transform: translateY(-2px);
+}
 
 /* Code windows */
 .code-window {
