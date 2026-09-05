@@ -204,6 +204,34 @@ remember identifier as uuid()
 
 Other built-in helpers cover strings, collections, file paths, HTTP, caching, environment variables, and crypto.
 
+## Images and visualizations
+
+PlainScript includes a dependency-free SVG image library. Use `barChart` or
+`lineChart` to turn labels and numbers into an image, then save it as an SVG or
+embed it in a web response with `imageDataUri`:
+
+```plainscript
+remember months as ["Jan", "Feb", "Mar", "Apr"]
+remember signups as [12, 18, 27, 35]
+
+remember chart as barChart("Monthly signups", months, signups, {
+    width: 720,
+    height: 420,
+    accent: "#40c463"
+})
+
+saveImage("dist/monthly-signups.svg", chart)
+show "Saved dist/monthly-signups.svg"
+```
+
+Use `lineChart(title, labels, values, options)` for trends, `svgImage(width,
+height, markup, options)` for custom SVG content, and `imageDataUri(image)` when
+an image needs to be returned from a route or embedded in HTML. The generated
+image is a string, so it works with `saveImage`, `reply`, and normal string
+helpers without a native graphics dependency.
+
+![Example PlainScript visualization](docs/visualization-example.svg)
+
 ## Web apps
 
 ```plainscript
@@ -300,6 +328,7 @@ The `examples/` folder has working code for every feature:
 | WebSockets, cache | `examples/websocket.pln`, `examples/cache-schedule.pln` |
 | Bots | `examples/bots.pln`, `examples/telegram-bot.pln`, `examples/whatsapp-bot/` |
 | OCR, uploads | `examples/ocr.pln`, `examples/id-verification/` |
+| Images, visualizations | `examples/visualization.pln` |
 | Tests, modules | `examples/testing.pln`, `examples/modules/` |
 | Starter projects | `templates/` |
 

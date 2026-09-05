@@ -417,6 +417,31 @@ OCR uses:
 ocr path of file as text
 ```
 
+## Images and visualizations
+
+The standard library creates dependency-free SVG images:
+
+```plainscript
+remember labels as ["Jan", "Feb", "Mar"]
+remember values as [12, 18, 27]
+remember chart as barChart("Monthly signups", labels, values)
+saveImage("signups.svg", chart)
+```
+
+The available helpers are:
+
+| Function | Result |
+| --- | --- |
+| `svgImage(width, height, markup, options)` | An SVG image string containing custom markup. |
+| `barChart(title, labels, values, options)` | An SVG bar chart. |
+| `lineChart(title, labels, values, options)` | An SVG line chart. |
+| `saveImage(path, image)` | Writes an SVG image string to disk and returns the path. |
+| `imageDataUri(image)` | Converts an SVG image string to a browser data URI. |
+
+Chart options may include `width`, `height`, `background`, `foreground`,
+`grid`, `accent`, and `muted`. Image values are strings, so they can also be
+returned from a route or inserted into HTML.
+
 ## Native tests
 
 ```plainscript

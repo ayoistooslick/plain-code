@@ -325,8 +325,30 @@ Use only functions implemented in the compiler. Common groups are:
 - **Async**: `sleep`, `allOf`, `anyOf`, `settledOf`, `withTimeout`
 - **Network**: `get`, `post`, `put`, `patch`, `delete`
 - **AI**: `chat`, `chatWith`, `embedText`, `embedWith`, `similarity`
+- **Images and visualizations**: `svgImage`, `barChart`, `lineChart`, `saveImage`, `imageDataUri`
 
 If a requested capability is not in the compiler, explain that plainly and propose the nearest supported construct or an npm package. Do not invent a function because its name sounds reasonable.
+
+### Images and visualizations
+
+PlainScript's image library is dependency-free and produces SVG strings. Use
+charts for common visualizations, save the SVG to disk, or turn it into a data
+URI for a web response:
+
+```plainscript
+remember labels as ["Q1", "Q2", "Q3", "Q4"]
+remember revenue as [18, 24, 21, 32]
+remember chart as lineChart("Quarterly revenue", labels, revenue)
+saveImage("revenue.svg", chart)
+```
+
+`barChart(title, labels, values, options)` and
+`lineChart(title, labels, values, options)` accept an optional record with
+`width`, `height`, `background`, `foreground`, `grid`, `accent`, and `muted`.
+`svgImage(width, height, markup, options)` wraps custom SVG markup, while
+`imageDataUri(image)` returns a browser-ready `data:image/svg+xml` URI. These
+helpers create SVG text; use `readBytes` and `writeBytes` when a program needs
+to move an existing binary image without transforming it.
 
 ---
 
@@ -859,6 +881,7 @@ A good answer is friendly and direct, but compiler-checked. PlainScript makes co
 **HTTP**: `get`, `post`, `put`, `patch`, `delete`
 **Telegram**: `bot`, `when someone sends`, `when someone clicks`, `reply`, `telegramCall`, `start telegram bot`
 **AI**: `chat`, `chatWith`, `embedText`, `embedWith`, `similarity`
+**Images**: `svgImage`, `barChart`, `lineChart`, `saveImage`, `imageDataUri`
 **Async**: `try`, `recover`, `finally`, `retry`, `allOf`, `anyOf`, `settledOf`, `withTimeout`, `sleep`
 **Files**: `readFile`, `writeFile`, `appendFile`, `fileExists`, `copyFile`, `moveFile`, `deleteFile`, `makeFolder`, `listFolder`
 **Testing**: `test`, `check`, `equals`, `is`, `contains`, `raises`

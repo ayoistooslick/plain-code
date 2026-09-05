@@ -822,6 +822,28 @@ test('runtime: capitalize words statement', () => {
   assert(r.code, 0);
 });
 
+console.log('\nSVG image and visualization tests');
+
+test('visualization: charts save SVG images and produce data URIs', () => {
+  const output = path.join(tmpDir, 'chart.svg');
+  const r = run([
+    'remember chart as barChart("Sales", ["Jan", "Feb"], [10, 20])',
+    'remember trend as lineChart("Trend", ["Jan", "Feb"], [10, 20])',
+    'remember custom as svgImage(100, 80, "<circle cx=\\"40\\" cy=\\"40\\" r=\\"20\\"/>")',
+    `saveImage("${output.replace(/\\/g, '\\\\')}", chart)`,
+    'remember uri as imageDataUri(chart)',
+    'show trend',
+    'show custom',
+    'show uri',
+  ].join('\n'));
+  assert(r.code, 0);
+  assertIncludes(r.stdout, '<polyline');
+  assertIncludes(r.stdout, '<circle');
+  assertIncludes(r.stdout, 'data:image/svg+xml;base64,');
+  assertIncludes(fs.readFileSync(output, 'utf8'), '<svg');
+  assertIncludes(fs.readFileSync(output, 'utf8'), 'Sales');
+});
+
 console.log('\n── audit suite summary ────────────────────────────────────────\n');
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exitCode = 1;
