@@ -226,6 +226,7 @@ const BUILTIN_DECLARATIONS = {
   // from a web route without a native graphics dependency.
   visualization: [
     `const __vizFs = require('fs');`,
+    `const __vizPath = require('path');`,
     `function __svgEscape(value) {`,
     `  return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');`,
     `}`,
@@ -304,6 +305,7 @@ const BUILTIN_DECLARATIONS = {
     `}`,
     `function __saveImage(file, image) {`,
     `  const target = String(file);`,
+    `  __vizFs.mkdirSync(__vizPath.dirname(target), { recursive: true });`,
     `  __vizFs.writeFileSync(target, String(image == null ? '' : image), 'utf8');`,
     `  return target;`,
     `}`,
