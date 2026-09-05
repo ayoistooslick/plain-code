@@ -16,6 +16,7 @@ be copied, modified, and deployed:
 | `scheduled-reporting` | Cron scheduling, report generation, and a status route |
 | `sqlite-inventory` | Portable SQLite storage and parameterized SQL |
 | `telegram-support-bot` | Hardcoded commands, regex replies, buttons, and callbacks |
+| `telegram-visualization-bot` | Telegram chart images generated with PlainScript SVG visualizations |
 | `webhook-receiver` | Authenticated webhooks and fast acknowledgements |
 | `whatsapp-hybrid-bot` | WhatsApp + Telegram in one process, media download, message types |
 
